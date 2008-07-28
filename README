@@ -1,0 +1,23 @@
+- CONFIGURATION
+Configuration can be done by modifying options.h and compiling.
+Explaination of paramethers can be found within the file itself.
+
+Base directory, port and interface to listen to can be set using command line
+To see command line options run weborf -h
+
+
+- COMPILING
+make clean
+make
+
+- RUN
+./weborf
+
+
+- INSTALL (Not mandatory)
+make install (as root)
+then you will have weborf's manual
+man weborf
+
+- UNINSTALL (deprecated ;-))
+make uninstall (as root)
