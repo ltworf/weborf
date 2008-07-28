@@ -1,0 +1,14 @@
+#!/bin/bash
+ 
+USERNAME="www-data";
+BASEDIR="/var/www/"
+USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3`
+ 
+case $1 in
+        start)
+                weborf -dp80 -u $USERID -b $BASEDIR;;
+        stop)
+                killall weborf;;
+        * )
+                echo "Usage: $0 {start|stop}";;
+esac

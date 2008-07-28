@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_OPTIONS_H
 #define WEBORF_OPTIONS_H
 
-#define VERSION "0.8"
+#define VERSION "0.9"
 
 //----------System
 //Uid for superuser
@@ -59,7 +59,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //Max size for password
 #define PWDLIMIT 300
 //Buffer to contain the string representation of an integer
-#define NBUFFER 50
+#define NBUFFER 15
 
 //-------------LIMITS
 #define POST_MAX_SIZE 20480

@@ -250,7 +250,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 		//Buffer for field's value
 		char a[NBUFFER];
 		//Gets the value
-		bool r=get_param_value(http_param,"Content-Length", a,100);
+		bool r=get_param_value(http_param,"Content-Length", a,NBUFFER);
 		
 		//If there is a value and method is POST
 		if (r!=false && method_id==POST) {

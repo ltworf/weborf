@@ -25,6 +25,7 @@ LDFLAGS=-lpthread
 
 MANDIR=/usr/local/man/man1/
 BINDIR=/usr/local/bin/
+DAEMONDIR=/etc/init.d/
 
 
 all: weborf
@@ -55,6 +56,7 @@ install:
 	gzip -c weborf.1 > $(MANDIR)/weborf.1.gz
 	
 	cp weborf $(BINDIR)
+	cp weborf.daemon $(DAEMONDIR)/weborf
 
 uninstall:
 	rm -f $(MANDIR)/weborf.1.gz
