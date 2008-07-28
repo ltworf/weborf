@@ -1,0 +1,62 @@
+0.8
+- Improved file listing
+- Added support for large files
+- Bug: Now authentication works even with spaces within file or directory's names
+- Prepared handling for content-lenght
+- Bug: POST works again
+- Maximum size for POST requests
+
+
+0.7
+- Escape sequences in POST requests are now correctly handled
+- Daemon mode added
+- Memory leak removed
+- Support for Basic authentication
+- Parsing program arguments with getopt
+- IPv6 support
+- Improved file listing
+- Changed thread policy: Now the MAXTHREAD number can be reached, because the last group of threads can be smaller
+- Some small changes to make it faster
+- Improved handling several requests on the same connection. It SHOULD work better now.
+
+0.6
+- Added comments
+- Improved speed on string operations
+- Memory leak corrected in script execution and page sending
+- Added control on non http messages
+- Reduced the use of mutex during thread creation
+- Improved signal handling
+- Reduced malloc's total number, this will increase speed
+- Uses printf's return value instead of strlen()
+- Corrected directory listing. Now doesn't show link to parent if already in parent directory.
+- Directory listing doesn't show link to self anymore.
+- Cleaned up logging. It will hide many informations by default
+- Now threads are aware of client's IP address
+
+0.5
+- Bug: active thread's counter was not reduced on thread's termination
+- Logs dropped connections due to not enough threads
+- Handles escape's sequences in url
+- Fixed a warning occurred in amd64 architecture
+- Improved list's generation for directories without index
+- Bug: directories without the ending / are now listed correctly
+- Added stub (not working) for authentication request
+- HTTP's request parameters are passed as enviromentals vars to the scripts
+- Added experimental support to POST method, and use of enviromental vars
+
+0.4
+- Bug: Relative paths can't be used, so the client can't go outside the basedir
+- Support for files with spaces in the name
+- Bug: Added checks on memory allocation failures, and in this case send an error to the client
+- Changed error's sending system
+- Threads are detached
+- Added a thread to monitor how many free threads there are, to stop some if there are too much
+- manpage added
+- Added make install, to copy the binary in /usr/local/bin and install manpage
+- It is possible to start weborf as root to use a low port number and then change the user
+
+0.3
+- Only a few threads are created when started. More are started when there are too few free ones
+- Index page is loaded automatically, even when not specified in the URL
+- When index file is missing, a list of file is dinamically generated, showing all regular files and directories (FIFO, devices and sockets aren't shown)
+- Handles command line parameters

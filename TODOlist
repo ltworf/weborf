@@ -1,0 +1,9 @@
+- kill scripts after a timeout.
+- fix param handling in script
+- change working dir, so the script has the same working dir as its path
+- change the way http messages are received. Considering they could be splitted in several tcp messages
+- use openSSL (instead of using read and write, use wrappers so openssl or direct accesso to socket can be used)
+- use gci
+- implement PUT
+- implement PROPFIND
+- Create a Doxyfile to use doxygen
