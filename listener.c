@@ -111,8 +111,14 @@ int main(int argc, char * argv[]) {
     char *ip=NULL;//IP addr with default value
     char *port=PORT;//port with default value
 
+#ifdef IPV6
     struct sockaddr_in6 locAddr, farAddr;//Local and remote address
     socklen_t farAddrL, ipAddrL;
+#else
+        struct sockaddr_in locAddr,farAddr;
+        int farAddrL, ipAddrL;
+#endif
+    
 
     while (1) { //Block to read command line
 
@@ -184,7 +190,11 @@ int main(int argc, char * argv[]) {
     printf("Run %s --help to see the options\n",argv[0]);
 
     //Creates the socket
+#ifdef IPV6
     s = socket(PF_INET6, SOCK_STREAM, 0);
+#else
+    s = socket(PF_INET, SOCK_STREAM, 0);
+#endif
 
     int val=1;
     //Makes port reusable immediately after termination.
@@ -193,9 +203,8 @@ int main(int argc, char * argv[]) {
         return 1;
     }
 
-
+#ifdef IPV6
     ipAddrL = farAddrL = sizeof(struct sockaddr_in);
-
     //Bind
     memset(&locAddr, 0, sizeof(locAddr));
     locAddr.sin6_family = AF_INET6;
@@ -217,6 +226,45 @@ int main(int argc, char * argv[]) {
 #endif
         exit(-1);
     }
+
+#else
+        //Prepares socket's address
+        locAddr.sin_family = AF_INET;//Internet socket
+
+        {//Check the validity of port param and uses it
+                unsigned int p=strtol( port , NULL, 0 );
+                if (p<1 || p>65535) {
+                        printf("Invalid port number: %d\n",p);
+                        exit(2);
+                }
+                locAddr.sin_port=htons(p);
+        }
+
+        if (inet_aton(ip, &locAddr.sin_addr)==0) {//Converts ip to listen in binary format
+                printf("Invalid IP address: %s\n",ip);
+                exit(2);
+        }
+
+        //#ifdef SOCKETDBG
+        //syslog(LOG_INFO,"Listening on address: %s:%d", inet_ntoa(locAddr.sin_addr),ntohs(locAddr.sin_port));
+        //#endif
+
+
+        ipAddrL = farAddrL = sizeof(struct sockaddr_in);
+
+
+        //Bind
+        if ( bind(s, (struct sockaddr *) &locAddr, ipAddrL) == -1 ) {
+                perror("trying to bind");
+           //     #ifdef SOCKETDBG
+            //            syslog(LOG_ERR,"Port %d already in use",ntohs(locAddr.sin_port));
+             //   #endif
+                exit(-1);
+        }
+
+#endif
+
+
 
 
     //Changes UID.
@@ -258,6 +306,7 @@ int main(int argc, char * argv[]) {
     int loc_free=t_free;//Local t_free, used to avoid deadlock
 
     //Infinite cycle, accept connections
+#ifdef IPV6
     while ((s1 = accept(s, (struct sockaddr *) &farAddr, &farAddrL)) != -1) {
 
         char* ip_addr=malloc(INET6_ADDRSTRLEN);//Buffer for IP Address, to give to the thread
@@ -265,6 +314,17 @@ int main(int argc, char * argv[]) {
             getpeername(s1, (struct sockaddr *)&farAddr, &farAddrL);
             inet_ntop(AF_INET6, &farAddr.sin6_addr, ip_addr, INET6_ADDRSTRLEN);
         }
+#else
+        while ((s1 = accept(s, (struct sockaddr *) &farAddr,(socklen_t *)&farAddrL)) != -1) {
+
+                char* ip_addr=malloc(INET6_ADDRSTRLEN);//Buffer for ascii IP addr, will be freed by the thread
+                {
+                        char* ip=inet_ntoa(farAddr.sin_addr);
+                        memcpy(ip_addr,ip,strlen(ip)+1);
+                }
+
+#endif
+
 
 #ifdef SOCKETDBG
         syslog(LOG_INFO,"Connection from %s", ip_addr);

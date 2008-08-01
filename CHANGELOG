@@ -2,6 +2,7 @@
 - Bug: fixed size hadling of NBUFFER
 - Reduced standard size of NBUFFER
 - Make install installs weborf as a daemon executable by init
+- Switch to compile using ipv4 or ipv6
 
 0.8
 - Improved file listing
