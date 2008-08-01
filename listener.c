@@ -115,10 +115,10 @@ int main(int argc, char * argv[]) {
     struct sockaddr_in6 locAddr, farAddr;//Local and remote address
     socklen_t farAddrL, ipAddrL;
 #else
-        struct sockaddr_in locAddr,farAddr;
-        int farAddrL, ipAddrL;
+    struct sockaddr_in locAddr,farAddr;
+    int farAddrL, ipAddrL;
 #endif
-    
+
 
     while (1) { //Block to read command line
 
@@ -221,6 +221,8 @@ int main(int argc, char * argv[]) {
 
     if ( bind(s, (struct sockaddr *) &locAddr, sizeof(locAddr)) <0 ) {
         perror("trying to bind");
+        char*suggestion="If you don't have any IPv6 address, try recompiling weborf, removing the line '#define IPV6' from options.h\n";
+        write(2,suggestion,strlen(suggestion));
 #ifdef SOCKETDBG
         syslog(LOG_ERR,"Port %d already in use",ntohs(locAddr.sin6_port));
 #endif
@@ -228,39 +230,39 @@ int main(int argc, char * argv[]) {
     }
 
 #else
-        //Prepares socket's address
-        locAddr.sin_family = AF_INET;//Internet socket
+    //Prepares socket's address
+    locAddr.sin_family = AF_INET;//Internet socket
 
-        {//Check the validity of port param and uses it
-                unsigned int p=strtol( port , NULL, 0 );
-                if (p<1 || p>65535) {
-                        printf("Invalid port number: %d\n",p);
-                        exit(2);
-                }
-                locAddr.sin_port=htons(p);
+    {//Check the validity of port param and uses it
+        unsigned int p=strtol( port , NULL, 0 );
+        if (p<1 || p>65535) {
+            printf("Invalid port number: %d\n",p);
+            exit(2);
         }
+        locAddr.sin_port=htons(p);
+    }
 
-        if (inet_aton(ip, &locAddr.sin_addr)==0) {//Converts ip to listen in binary format
-                printf("Invalid IP address: %s\n",ip);
-                exit(2);
-        }
+    if (inet_aton(ip, &locAddr.sin_addr)==0) {//Converts ip to listen in binary format
+        printf("Invalid IP address: %s\n",ip);
+        exit(2);
+    }
 
-        //#ifdef SOCKETDBG
-        //syslog(LOG_INFO,"Listening on address: %s:%d", inet_ntoa(locAddr.sin_addr),ntohs(locAddr.sin_port));
-        //#endif
-
-
-        ipAddrL = farAddrL = sizeof(struct sockaddr_in);
+#ifdef SOCKETDBG
+    syslog(LOG_INFO,"Listening on address: %s:%d", inet_ntoa(locAddr.sin_addr),ntohs(locAddr.sin_port));
+#endif
 
 
-        //Bind
-        if ( bind(s, (struct sockaddr *) &locAddr, ipAddrL) == -1 ) {
-                perror("trying to bind");
-           //     #ifdef SOCKETDBG
-            //            syslog(LOG_ERR,"Port %d already in use",ntohs(locAddr.sin_port));
-             //   #endif
-                exit(-1);
-        }
+    ipAddrL = farAddrL = sizeof(struct sockaddr_in);
+
+
+    //Bind
+    if ( bind(s, (struct sockaddr *) &locAddr, ipAddrL) == -1 ) {
+        perror("trying to bind");
+#ifdef SOCKETDBG
+        syslog(LOG_ERR,"Port %d already in use",ntohs(locAddr.sin_port));
+#endif
+        exit(-1);
+    }
 
 #endif
 
@@ -315,13 +317,12 @@ int main(int argc, char * argv[]) {
             inet_ntop(AF_INET6, &farAddr.sin6_addr, ip_addr, INET6_ADDRSTRLEN);
         }
 #else
-        while ((s1 = accept(s, (struct sockaddr *) &farAddr,(socklen_t *)&farAddrL)) != -1) {
+    while ((s1 = accept(s, (struct sockaddr *) &farAddr,(socklen_t *)&farAddrL)) != -1) {
 
-                char* ip_addr=malloc(INET6_ADDRSTRLEN);//Buffer for ascii IP addr, will be freed by the thread
-                {
-                        char* ip=inet_ntoa(farAddr.sin_addr);
-                        memcpy(ip_addr,ip,strlen(ip)+1);
-                }
+        char* ip_addr=malloc(INET6_ADDRSTRLEN); { //Buffer for ascii IP addr, will be freed by the thread
+            char* ip=inet_ntoa(farAddr.sin_addr);
+            memcpy(ip_addr,ip,strlen(ip)+1);
+        }
 
 #endif
 
