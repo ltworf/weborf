@@ -200,6 +200,8 @@ int main(int argc, char * argv[]) {
     //Makes port reusable immediately after termination.
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0) {
         perror("ruseaddr(any)");
+        char*suggestion="If you don't have any IPv6 address, try recompiling weborf, removing the line '#define IPV6' from options.h\n";
+        write(2,suggestion,strlen(suggestion));
         return 1;
     }
 
@@ -221,8 +223,6 @@ int main(int argc, char * argv[]) {
 
     if ( bind(s, (struct sockaddr *) &locAddr, sizeof(locAddr)) <0 ) {
         perror("trying to bind");
-        char*suggestion="If you don't have any IPv6 address, try recompiling weborf, removing the line '#define IPV6' from options.h\n";
-        write(2,suggestion,strlen(suggestion));
 #ifdef SOCKETDBG
         syslog(LOG_ERR,"Port %d already in use",ntohs(locAddr.sin6_port));
 #endif
@@ -242,6 +242,7 @@ int main(int argc, char * argv[]) {
         locAddr.sin_port=htons(p);
     }
 
+    if (ip==NULL) ip="0.0.0.0";//Default ip address
     if (inet_aton(ip, &locAddr.sin_addr)==0) {//Converts ip to listen in binary format
         printf("Invalid IP address: %s\n",ip);
         exit(2);
@@ -319,7 +320,8 @@ int main(int argc, char * argv[]) {
 #else
     while ((s1 = accept(s, (struct sockaddr *) &farAddr,(socklen_t *)&farAddrL)) != -1) {
 
-        char* ip_addr=malloc(INET6_ADDRSTRLEN); { //Buffer for ascii IP addr, will be freed by the thread
+        char* ip_addr=malloc(INET6_ADDRSTRLEN);
+        { //Buffer for ascii IP addr, will be freed by the thread
             char* ip=inet_ntoa(farAddr.sin_addr);
             memcpy(ip_addr,ip,strlen(ip)+1);
         }
