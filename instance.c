@@ -84,7 +84,7 @@ void * instance(void * nulla) {
 
     int sock;//Socket with the client
     char* ip_addr;//Client's ip address in ascii
-    char keep;//Type of connection
+    char closeConn;//Type of connection
     while (true) {
         q_get(&queue, &sock,&ip_addr);//Gets a socket from the queue coda
         unfree_thread(id);//Sets this thread as busy
@@ -112,7 +112,7 @@ void * instance(void * nulla) {
                 }
                 bufFull+=r;//Sets the end of the user buffer (may contain more than one header)
                 if (bufFull==INBUFFER) { //Buffer full and still no valid http header
-                    send_err(sock,400,"Bad request",ip_addr);
+		    send_err(sock,400,"Bad request",ip_addr);
                     goto closeConnection;
                 }
                 //buf[bufFull]='\0';//Terminates so string functions can be used
@@ -134,29 +134,27 @@ void * instance(void * nulla) {
 	    else req=INVALID;
 	    
             if ( req!=INVALID ) {
-		char * c;
-                reqs=strtok_r(buf," \n",&lasts);//Must be done to eliminate the request
-                page=strtok_r(NULL," \n",&lasts);
-		ver=strtok_r(NULL," \n",&lasts);
-		while((c=strtok_r(NULL," \n",&lasts)) && strncasecmp(c,"connection:",11));
-		if(c && strncmp(strtok_r(NULL," \n",&lasts),"close",5)) keep=0;
-		else if(c) keep=2;
-		else keep=1;
+		char c[11];
+                reqs=strtok_r(buf," \r\n",&lasts);//Must be done to eliminate the request
+                page=strtok_r(NULL," \r\n",&lasts);
+		ver=strtok_r(NULL," \r\n",&lasts);
+		param=lasts;
+		if((closeConn=get_param_value(param, "Connection",c,11)) && !strncmp(c,"close",5)) closeConn=2;
 #ifdef REQUESTDBG
-                syslog(LOG_INFO,"%s: %s %s\n",ip_addr,reqs,page);
+		syslog(LOG_INFO,"%s: %s %s\n",ip_addr,reqs,page);
 #endif
 
 #ifdef THREADDBG
                 syslog(LOG_INFO,"Requested page: %s to Thread %ld",page,id);
 #endif
                 //Stores the parameters of the request
-                param=(char *)(page+strlen(page)+1);
-		if(!strncmp(ver,"HTTP/1.0",8) && keep<2){
+
+		if(!strncmp(ver,"HTTP/1.0",8) && closeConn){
 			sendPage(sock,page,param,req,reqs,ip_addr);
 			break;
 		}
 
-                if (sendPage(sock,page,param,req,reqs,ip_addr)<0 || !keep) {
+                if (sendPage(sock,page,param,req,reqs,ip_addr)<0 || closeConn<2){
                     break;//Unable to send an error
                 }
             } else { //Non supported request

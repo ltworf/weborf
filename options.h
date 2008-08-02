@@ -71,9 +71,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 //-------------Debug options
-//#define THREADDBG
-//#define SOCKETDBG
-//#define SERVERDBG
-//#define SENDINGDBG
+#define THREADDBG
+#define SOCKETDBG
+#define SERVERDBG
+#define SENDINGDBG
 #define REQUESTDBG
 #endif
