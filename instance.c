@@ -138,7 +138,7 @@ void * instance(void * nulla) {
                 reqs=strtok_r(buf," \n",&lasts);//Must be done to eliminate the request
                 page=strtok_r(NULL," \n",&lasts);
 		ver=strtok_r(NULL," \n",&lasts);
-		while((c=strtok_r(NULL," \n",&lasts)) && strncmp(c,"Connection",10));
+		while((c=strtok_r(NULL," \n",&lasts)) && strncasecmp(c,"connection:",11));
 		if(c && strncmp(strtok_r(NULL," \n",&lasts),"close",5)) keep=0;
 		else if(c) keep=2;
 		else keep=1;
