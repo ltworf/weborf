@@ -139,7 +139,10 @@ void * instance(void * nulla) {
                 page=strtok_r(NULL," \r\n",&lasts);
 		ver=strtok_r(NULL," \r\n",&lasts);
 		param=lasts;
-		if((closeConn=get_param_value(param, "Connection",c,11)) && !strncmp(c,"close",5)) closeConn=2;
+		if((closeConn=get_param_value(param, "Connection",c,11)) && !strncmp(c,"close",5)) closeConn=1;
+		else if(!closeConn) closeConn=0;
+		else closeConn=-1;
+
 #ifdef REQUESTDBG
 		syslog(LOG_INFO,"%s: %s %s\n",ip_addr,reqs,page);
 #endif
@@ -149,14 +152,14 @@ void * instance(void * nulla) {
 #endif
                 //Stores the parameters of the request
 
-		if(!strncmp(ver,"HTTP/1.0",8) && closeConn){
+		if(!strncmp(ver,"HTTP/1.0",8) && closeConn!=-1){
 			sendPage(sock,page,param,req,reqs,ip_addr);
 			break;
 		}
 
-                if (sendPage(sock,page,param,req,reqs,ip_addr)<0 || closeConn<2){
+                if (sendPage(sock,page,param,req,reqs,ip_addr)<0 || closeConn>0){
                     break;//Unable to send an error
-                }
+		}               
             } else { //Non supported request
                 send_err(sock,400,"Bad request",ip_addr);
                 break; //Exits from the cycle and then close the connection.
