@@ -281,7 +281,8 @@ size, maximum size of the buffer
 
 Returns false if the parameter isn't found, or true otherwise
 */
-bool get_param_value(char* http_param,char* parameter,char*buf,int size) {
+bool get_param_value(const char* http_param,char* parameter,char*buf,int size) {
+    if(!http_param || strlen(http_param)<1) return false;
     char* val=strstr(http_param,parameter);//Locates the auth information
     if (val==NULL) { //No such field
         return false;

@@ -79,8 +79,7 @@ void * instance(void * nulla) {
     char * page;//Page to load
     char * ver;//Version of protocol
     char * lasts;//Used by strtok_r
-
-    char * param;//HTTP parameter
+    char * param;
 
     int sock;//Socket with the client
     char* ip_addr;//Client's ip address in ascii
@@ -117,7 +116,7 @@ void * instance(void * nulla) {
                 }
                 //buf[bufFull]='\0';//Terminates so string functions can be used
             }
-            end[0]='\0';//Terminates the header
+            end='\0';//Terminates the header
 
             //If the request is a get or a post
 	    
@@ -142,7 +141,6 @@ void * instance(void * nulla) {
 		if((closeConn=get_param_value(param, "Connection",c,11)) && !strncmp(c,"close",5)) closeConn=1;
 		else if(!closeConn) closeConn=0;
 		else closeConn=-1;
-
 #ifdef REQUESTDBG
 		syslog(LOG_INFO,"%s: %s %s\n",ip_addr,reqs,page);
 #endif
@@ -201,13 +199,11 @@ This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
 int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr) {
-	
+	int p_start;
+	char * params=0;
 	modURL(page);//Operations on the url string
-
-    
-	char * params=NULL;//Pointer to the parameters
-	int p_start=nullParams(page);
-	if (p_start!=-1) params=page+p_start+sizeof(char);//Set the pointer to the parameters
+	p_start=nullParams(page);
+	if(p_start!=-1)params=page+p_start*sizeof(char);//Set the pointer to the parameters
 #ifdef SENDINGDBG
 	syslog (LOG_DEBUG,"URL changed into %s",page);
 #endif
@@ -255,13 +251,11 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 	}
 
 	char* post_param=NULL;
-	
 	{
 		//Buffer for field's value
 		char a[NBUFFER];
 		//Gets the value
 		bool r=get_param_value(http_param,"Content-Length", a,NBUFFER);
-		
 		//If there is a value and method is POST
 		if (r!=false && method_id==POST) {
 			int l=strtol( a , NULL, 0 );
@@ -637,7 +631,7 @@ int send_http_header(int sock,unsigned int size) {
     char *head=malloc(HEADBUF);
     if (head==NULL)return ERR_NOMEM;
 
-    int len_head=sprintf(head,"HTTP/1.1 200 OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n\r\n", size);
+    int len_head=sprintf(head,"HTTP/1.1 200 OK Server: Weborf (GNU/Linux)\r\nContent-length: %u\r\n\r\n", size);
 
     int wrote=write (sock,head,len_head);
     free(head);
