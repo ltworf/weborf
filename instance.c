@@ -101,7 +101,6 @@ void * instance(void * nulla) {
 
         bufFull=0;//Chars contained within the buffer
         while (true) { //Infinite cycle to handle all pipelined requests
-
             int r;//Readed char
             char* end;//Pointer to header's end
             while ((end=strstr(buf,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
@@ -146,14 +145,13 @@ void * instance(void * nulla) {
                 //Stores the parameters of the request
                 param=(char *)(page+strlen(page)+1);
 		
-                if (sendPage(sock,page,param,req,reqs,ip_addr)<0) {
+                if (sendPage(sock,page,param,req,reqs,ip_addr)<0 || strstr(buf,"close")) {
                     break;//Unable to send an error
                 }
             } else { //Non supported request
                 send_err(sock,400,"Bad request",ip_addr);
                 break; //Exits from the cycle and then close the connection.
             }
-
             //Deletes the served header and moves the following part of the buffer at the beginning
 		//memmove(buf,end+4,bufFull-(end-buf+4));
 
@@ -400,9 +398,9 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         }
 
         int reads=read(wpipe[0],scrpt_buf,MAXSCRIPTOUT);
-        int wrote=0;
+	int wrote=0;
         send_http_header(sock,reads);
-        wrote=write (sock,scrpt_buf,reads);
+	wrote=write (sock,scrpt_buf,reads);
 #ifdef SOCKETDBG
         if (wrote<0) syslog(LOG_ERR,"The client closed the socket");
 #endif

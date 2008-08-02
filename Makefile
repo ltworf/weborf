@@ -56,7 +56,7 @@ install:
 	gzip -c weborf.1 > $(MANDIR)/weborf.1.gz
 	
 	cp weborf $(BINDIR)
-	cp weborf.daemon $(DAEMONDIR)/weborf
+	cp weborf.daemon $(DAEMONDIR)
 
 uninstall:
 	rm -f $(MANDIR)/weborf.1.gz
