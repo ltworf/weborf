@@ -32,6 +32,7 @@ void help();
 void version();
 void moo();
 void setEnvVars(char * http_param,bool post);
-bool get_param_value(const char* http_param,char* parameter,char*buf,int size);
+bool get_param_value(char* http_param,char* parameter,char*buf,int size);
 
 #endif
+

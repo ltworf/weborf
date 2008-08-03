@@ -44,7 +44,7 @@ debug: listener.o queue.o instance.o mystring.o utils.o base64.o
 	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 clean: 
-	rm *.o weborf debug || echo Nothing to do 
+	rm *.o weborf debug *.orig *~ || echo Nothing to do 
 
 source: clean 
 	astyle --style=kr *c *h
@@ -56,7 +56,7 @@ install:
 	gzip -c weborf.1 > $(MANDIR)/weborf.1.gz
 	
 	cp weborf $(BINDIR)
-	cp weborf.daemon $(DAEMONDIR)
+	cp weborf.daemon $(DAEMONDIR)/weborf
 
 uninstall:
 	rm -f $(MANDIR)/weborf.1.gz

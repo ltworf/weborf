@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //Default port
 #define PORT "8080"
 //Delete the following line to use IPv4 instead.
-//#define IPV6
+#define IPV6
 //-----------Threads
 //Max threads
 #define MAXTHREAD 200
@@ -71,9 +71,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 //-------------Debug options
-#define THREADDBG
-#define SOCKETDBG
-#define SERVERDBG
-#define SENDINGDBG
+//#define THREADDBG
+//#define SOCKETDBG
+//#define SERVERDBG
+//#define SENDINGDBG
 #define REQUESTDBG
 #endif

@@ -77,13 +77,12 @@ void * instance(void * nulla) {
     int req;//Method of the HTTP request INTEGER
     char * reqs;//HTTP request STRING
     char * page;//Page to load
-    char * ver;//Version of protocol
     char * lasts;//Used by strtok_r
-    char * param;
+
+    char * param;//HTTP parameter
 
     int sock;//Socket with the client
     char* ip_addr;//Client's ip address in ascii
-    char closeConn;//Type of connection
     while (true) {
         q_get(&queue, &sock,&ip_addr);//Gets a socket from the queue coda
         unfree_thread(id);//Sets this thread as busy
@@ -102,6 +101,7 @@ void * instance(void * nulla) {
 
         bufFull=0;//Chars contained within the buffer
         while (true) { //Infinite cycle to handle all pipelined requests
+
             int r;//Readed char
             char* end;//Pointer to header's end
             while ((end=strstr(buf,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
@@ -111,20 +111,18 @@ void * instance(void * nulla) {
                 }
                 bufFull+=r;//Sets the end of the user buffer (may contain more than one header)
                 if (bufFull==INBUFFER) { //Buffer full and still no valid http header
-		    send_err(sock,400,"Bad request",ip_addr);
+                    send_err(sock,400,"Bad request",ip_addr);
                     goto closeConnection;
                 }
                 //buf[bufFull]='\0';//Terminates so string functions can be used
             }
-            end='\0';//Terminates the header
+            end[0]='\0';//Terminates the header
 
             //If the request is a get or a post
 	    
 	    
 	    while (buf[0]==10 || buf[0]==13)
 		    buf=buf+1;
-	    
-	    
 	    
 	    //Finds out request's kind
 	    if (buf==strstr(buf,"GET")) req=GET;
@@ -133,35 +131,27 @@ void * instance(void * nulla) {
 	    else req=INVALID;
 	    
             if ( req!=INVALID ) {
-		char c[11];
-                reqs=strtok_r(buf," \r\n",&lasts);//Must be done to eliminate the request
-                page=strtok_r(NULL," \r\n",&lasts);
-		ver=strtok_r(NULL," \r\n",&lasts);
-		param=lasts;
-		if((closeConn=get_param_value(param, "Connection",c,11)) && !strncmp(c,"close",5)) closeConn=1;
-		else if(!closeConn) closeConn=0;
-		else closeConn=-1;
+                reqs=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
+                page=strtok_r(NULL," ",&lasts);
+
 #ifdef REQUESTDBG
-		syslog(LOG_INFO,"%s: %s %s\n",ip_addr,reqs,page);
+                syslog(LOG_INFO,"%s: %s %s\n",ip_addr,reqs,page);
 #endif
 
 #ifdef THREADDBG
                 syslog(LOG_INFO,"Requested page: %s to Thread %ld",page,id);
 #endif
                 //Stores the parameters of the request
-
-		if(!strncmp(ver,"HTTP/1.0",8) && closeConn!=-1){
-			sendPage(sock,page,param,req,reqs,ip_addr);
-			break;
-		}
-
-                if (sendPage(sock,page,param,req,reqs,ip_addr)<0 || closeConn>0){
+                param=(char *)(page+strlen(page)+1);
+		
+                if (sendPage(sock,page,param,req,reqs,ip_addr)<0) {
                     break;//Unable to send an error
-		}               
+                }
             } else { //Non supported request
                 send_err(sock,400,"Bad request",ip_addr);
                 break; //Exits from the cycle and then close the connection.
             }
+
             //Deletes the served header and moves the following part of the buffer at the beginning
 		//memmove(buf,end+4,bufFull-(end-buf+4));
 
@@ -199,11 +189,13 @@ This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
 int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr) {
-	int p_start;
-	char * params=0;
+	
 	modURL(page);//Operations on the url string
-	p_start=nullParams(page);
-	if(p_start!=-1)params=page+p_start*sizeof(char);//Set the pointer to the parameters
+
+    
+	char * params=NULL;//Pointer to the parameters
+	int p_start=nullParams(page);
+	if (p_start!=-1) params=page+p_start+sizeof(char);//Set the pointer to the parameters
 #ifdef SENDINGDBG
 	syslog (LOG_DEBUG,"URL changed into %s",page);
 #endif
@@ -251,11 +243,13 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 	}
 
 	char* post_param=NULL;
+	
 	{
 		//Buffer for field's value
 		char a[NBUFFER];
 		//Gets the value
 		bool r=get_param_value(http_param,"Content-Length", a,NBUFFER);
+		
 		//If there is a value and method is POST
 		if (r!=false && method_id==POST) {
 			int l=strtol( a , NULL, 0 );
@@ -404,9 +398,9 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         }
 
         int reads=read(wpipe[0],scrpt_buf,MAXSCRIPTOUT);
-	int wrote=0;
+        int wrote=0;
         send_http_header(sock,reads);
-	wrote=write (sock,scrpt_buf,reads);
+        wrote=write (sock,scrpt_buf,reads);
 #ifdef SOCKETDBG
         if (wrote<0) syslog(LOG_ERR,"The client closed the socket");
 #endif
@@ -631,7 +625,7 @@ int send_http_header(int sock,unsigned int size) {
     char *head=malloc(HEADBUF);
     if (head==NULL)return ERR_NOMEM;
 
-    int len_head=sprintf(head,"HTTP/1.1 200 OK Server: Weborf (GNU/Linux)\r\nContent-length: %u\r\n\r\n", size);
+    int len_head=sprintf(head,"HTTP/1.1 200 OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n\r\n", size);
 
     int wrote=write (sock,head,len_head);
     free(head);
