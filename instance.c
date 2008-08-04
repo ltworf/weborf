@@ -70,7 +70,7 @@ void * instance(void * nulla) {
 #endif
 
     signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
-
+    bool keep_alive;//True if we are using pipelining
     int bufFull;
     char * buf=malloc(INBUFFER+1);
     memset(buf,0,INBUFFER+1);
@@ -106,9 +106,11 @@ void * instance(void * nulla) {
             char* end;//Pointer to header's end
             while ((end=strstr(buf,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
                 r=read(sock, buf+bufFull,1);//INBUFFER-bufFull);//Adds to the header
+		
                 if (r<=0) { //Connection closed or error
                     goto closeConnection;
                 }
+		printf("%c",buf[bufFull]);
                 bufFull+=r;//Sets the end of the user buffer (may contain more than one header)
                 if (bufFull==INBUFFER) { //Buffer full and still no valid http header
                     send_err(sock,400,"Bad request",ip_addr);
@@ -116,13 +118,15 @@ void * instance(void * nulla) {
                 }
                 //buf[bufFull]='\0';//Terminates so string functions can be used
             }
+	    printf("\n\n",buf[bufFull]);
             end[0]='\0';//Terminates the header
 
-            //If the request is a get or a post
+            
 	    
 	    
-	    while (buf[0]==10 || buf[0]==13)
-		    buf=buf+1;
+	    removeCrLf(buf);
+		    
+	    //If the request is a get or a post
 	    
 	    //Finds out request's kind
 	    if (buf==strstr(buf,"GET")) req=GET;
@@ -255,8 +259,13 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 			int l=strtol( a , NULL, 0 );
 			if (l<=POST_MAX_SIZE) {//Post size is ok
 				post_param=malloc(l+20);
+				
 				int count=read(sock,post_param,l);
 				post_param[count]=0;
+				int removed=removeCrLf(post_param);
+				read(sock,post_param+count-removed,removed);
+				post_param[count+removed]=0;				
+				printf("====== READ POST=====\nred: %d\n1st char: %d\ncount: %d\nremoved: %d\n%s\n==========\n",l,post_param[0],count,removed,post_param);
 			} else {//Post size is too big
 				return ERR_NOMEM;
 			}

@@ -31,5 +31,6 @@ bool endsWith(char * str, char * end);
 void delChar(char* string,int pos,int n);
 void strReplace(char* string,char* substr, char with);
 void replaceEscape(char * string);
+int removeCrLf(char*buf);
 
 #endif
