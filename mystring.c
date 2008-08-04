@@ -138,9 +138,9 @@ bool endsWith(char * str, char * end) {
 Removes cr lf chars from the beginning of the string
 */
 int removeCrLf(char*buf) {//Removing initial \n or \r
-		    int count=0;
-		    while (buf[count]==10 || buf[count]==13)
-			    count++;
-		    delChar(buf,0,count);
-		    return count;
+    int count=0;
+    while (buf[count]==10 || buf[count]==13)
+        count++;
+    delChar(buf,0,count);
+    return count;
 }

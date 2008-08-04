@@ -223,8 +223,8 @@ void moo() {
 This functions set enviromental variables according to the data present in the HTTP request
 */
 void setEnvVars(char * http_param,bool post) { //Sets Enviroment vars
-	if (http_param==NULL) return;
-	
+    if (http_param==NULL) return;
+
     char * lasts;
     char * param;
     int i;
@@ -232,41 +232,41 @@ void setEnvVars(char * http_param,bool post) { //Sets Enviroment vars
 
 
     if (post) {//If the request is a POST
-	    param=strtok_r(http_param,"&",&lasts);
+        param=strtok_r(http_param,"&",&lasts);
 
-	    replaceEscape(param);//Replaces escape code
-	    strReplace(param,"+",' ');//Replaces spaces, they use a different escape
+        replaceEscape(param);//Replaces escape code
+        strReplace(param,"+",' ');//Replaces spaces, they use a different escape
 
-	    putenv(param);//Sets the 1st token as var
+        putenv(param);//Sets the 1st token as var
         //Cycles vars
-	    while ((param=strtok_r(NULL,"&",&lasts))!=NULL) {
-		    replaceEscape(param);//Replaces escape code
-		    strReplace(param,"+",' ');//Replaces spaces, they use a different escape
-		    putenv(param);
-	    }
+        while ((param=strtok_r(NULL,"&",&lasts))!=NULL) {
+            replaceEscape(param);//Replaces escape code
+            strReplace(param,"+",' ');//Replaces spaces, they use a different escape
+            putenv(param);
+        }
     } else {
-	
-    //Removes the 1st part with the protocol
-	    param=strtok_r(http_param,"\r\n",&lasts);
 
-    //Cycles parameters
-	    while ((param=strtok_r(NULL,"\r\n",&lasts))!=NULL) {
+        //Removes the 1st part with the protocol
+        param=strtok_r(http_param,"\r\n",&lasts);
 
-		    p_len=strlen(param);
-		    char * value=NULL;
+        //Cycles parameters
+        while ((param=strtok_r(NULL,"\r\n",&lasts))!=NULL) {
 
-        //Parses the parameter to split name from value
-		    for (i=0;i<p_len;i++) {
-			    if (param[i]==':' && param[i+1]==' ') {
-				    param[i]='\0';
-				    value=&param[i+2];
-				    break;
-			    }
-		    }
+            p_len=strlen(param);
+            char * value=NULL;
 
-		    strReplace(param,"-",'_');
-		    setenv(param,value,true);
-	    }
+            //Parses the parameter to split name from value
+            for (i=0;i<p_len;i++) {
+                if (param[i]==':' && param[i+1]==' ') {
+                    param[i]='\0';
+                    value=&param[i+2];
+                    break;
+                }
+            }
+
+            strReplace(param,"-",'_');
+            setenv(param,value,true);
+        }
     }
 
 }
@@ -281,13 +281,13 @@ size, maximum size of the buffer
 Returns false if the parameter isn't found, or true otherwise
 */
 bool get_param_value(char* http_param,char* parameter,char*buf,int size) {
-    char* val=strstr(http_param,parameter);//Locates the auth information
+    char* val=strstr(http_param,parameter);//Locates the requested parameter information
+
     if (val==NULL) { //No such field
         return false;
     } else { //Retrieves the field
-        char*field_end=strstr(val,"\r\n"); //Searches the end of the parameter
-        if (field_end==NULL) //If no end is found searches the end of the string
-            field_end=strstr(val,"\0");
+        char*field_end;//=strstr(val,"\r\n"); //Searches the end of the parameter
+        field_end=strstr(val,"\0");
         val+=strlen(parameter)+2;//Moves the begin of the string to exclude the name of the field
 
 

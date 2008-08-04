@@ -106,11 +106,11 @@ void * instance(void * nulla) {
             char* end;//Pointer to header's end
             while ((end=strstr(buf,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
                 r=read(sock, buf+bufFull,1);//INBUFFER-bufFull);//Adds to the header
-		
+
                 if (r<=0) { //Connection closed or error
                     goto closeConnection;
                 }
-		printf("%c",buf[bufFull]);
+
                 bufFull+=r;//Sets the end of the user buffer (may contain more than one header)
                 if (bufFull==INBUFFER) { //Buffer full and still no valid http header
                     send_err(sock,400,"Bad request",ip_addr);
@@ -118,22 +118,22 @@ void * instance(void * nulla) {
                 }
                 //buf[bufFull]='\0';//Terminates so string functions can be used
             }
-	    printf("\n\n",buf[bufFull]);
+
             end[0]='\0';//Terminates the header
 
-            
-	    
-	    
-	    removeCrLf(buf);
-		    
-	    //If the request is a get or a post
-	    
-	    //Finds out request's kind
-	    if (buf==strstr(buf,"GET")) req=GET;
-	    else if (buf==strstr(buf,"POST")) req=POST;
-	    //else if (buf==strstr(buf,"Connection: keep-alive")) continue; //ignoring it
-	    else req=INVALID;
-	    
+
+
+
+            removeCrLf(buf);
+
+            //If the request is a get or a post
+
+            //Finds out request's kind
+            if (buf==strstr(buf,"GET")) req=GET;
+            else if (buf==strstr(buf,"POST")) req=POST;
+            //else if (buf==strstr(buf,"Connection: keep-alive")) continue; //ignoring it
+            else req=INVALID;
+
             if ( req!=INVALID ) {
                 reqs=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
                 page=strtok_r(NULL," ",&lasts);
@@ -147,7 +147,7 @@ void * instance(void * nulla) {
 #endif
                 //Stores the parameters of the request
                 param=(char *)(page+strlen(page)+1);
-		
+
                 if (sendPage(sock,page,param,req,reqs,ip_addr)<0) {
                     break;//Unable to send an error
                 }
@@ -157,7 +157,7 @@ void * instance(void * nulla) {
             }
 
             //Deletes the served header and moves the following part of the buffer at the beginning
-		//memmove(buf,end+4,bufFull-(end-buf+4));
+            //memmove(buf,end+4,bufFull-(end-buf+4));
 
             //Sets where load the next incoming data
             bufFull=0;//bufFull-(end-buf+4);
@@ -193,97 +193,96 @@ This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
 int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr) {
-	
-	modURL(page);//Operations on the url string
 
-    
-	char * params=NULL;//Pointer to the parameters
-	int p_start=nullParams(page);
-	if (p_start!=-1) params=page+p_start+sizeof(char);//Set the pointer to the parameters
+    modURL(page);//Operations on the url string
+
+
+    char * params=NULL;//Pointer to the parameters
+    int p_start=nullParams(page);
+    if (p_start!=-1) params=page+p_start+sizeof(char);//Set the pointer to the parameters
 #ifdef SENDINGDBG
-	syslog (LOG_DEBUG,"URL changed into %s",page);
+    syslog (LOG_DEBUG,"URL changed into %s",page);
 #endif
-	
-	if (authbin!=NULL) { //If auth is required
-		char* auths=malloc(INBUFFER+(2*PWDLIMIT));
-		if (auths==NULL) return ERR_NOMEM;
+    if (authbin!=NULL) { //If auth is required
+        char* auths=malloc(INBUFFER+(2*PWDLIMIT));
+        if (auths==NULL) return ERR_NOMEM;
 
-		char username[PWDLIMIT*2];
-		char* password=username+PWDLIMIT;
+        char username[PWDLIMIT*2];
+        char* password=username+PWDLIMIT;
 
-		char* auth=strstr(http_param,"Authorization: Basic ");//Locates the auth information
-		if (auth==NULL) { //No auth informations
-			username[0]=0;
-			password[0]=0;
-		} else { //Retrieves provided username and password
-			char*auth_end=strstr(auth,"\r\n");//
-			char a[PWDLIMIT*2];
-			auth+=21;//Moves the begin of the string to exclude Authorization: Basic
-			if ((auth_end-auth+1)<(PWDLIMIT*2))
-				memcpy(&a,auth,auth_end-auth);
-			else { //Auth string is too long for the buffer
+        char* auth=strstr(http_param,"Authorization: Basic ");//Locates the auth information
+        if (auth==NULL) { //No auth informations
+            username[0]=0;
+            password[0]=0;
+        } else { //Retrieves provided username and password
+            char*auth_end=strstr(auth,"\r\n");//
+            char a[PWDLIMIT*2];
+            auth+=21;//Moves the begin of the string to exclude Authorization: Basic
+            if ((auth_end-auth+1)<(PWDLIMIT*2))
+                memcpy(&a,auth,auth_end-auth);
+            else { //Auth string is too long for the buffer
 #ifdef SERVERDBG
-				syslog(LOG_ERR,"Unable to accept authentication, buffer is too small");
+                syslog(LOG_ERR,"Unable to accept authentication, buffer is too small");
 #endif
-				free(auths);
-				return ERR_NOMEM;
-			}
+                free(auths);
+                return ERR_NOMEM;
+            }
 
-			a[auth_end-auth]=0;
-			decode64(username,a);//Decodes the base64 string
+            a[auth_end-auth]=0;
+            decode64(username,a);//Decodes the base64 string
 
             password=strstr(username,":");//Locates the separator :
-	    password[0]=0;//Nulls the separator to split username and password
-	    password++;//make password point to the beginning of the password
-		}
+            password[0]=0;//Nulls the separator to split username and password
+            password++;//make password point to the beginning of the password
+        }
 
-		sprintf(auths,"%s %s \"%s\" %s \"%s\" \"%s\"",authbin,method,page,ip_addr,username,password);
-		if (system(auths)!=0) { //Failed
-			free(auths);
-			return request_auth(sock,page);//Sends a request for authentication
-		}
+        sprintf(auths,"%s %s \"%s\" %s \"%s\" \"%s\"",authbin,method,page,ip_addr,username,password);
+        if (system(auths)!=0) { //Failed
+            free(auths);
+            return request_auth(sock,page);//Sends a request for authentication
+        }
 
-		free(auths);
-	}
+        free(auths);
+    }
 
-	char* post_param=NULL;
-	
-	{
-		//Buffer for field's value
-		char a[NBUFFER];
-		//Gets the value
-		bool r=get_param_value(http_param,"Content-Length", a,NBUFFER);
-		
-		//If there is a value and method is POST
-		if (r!=false && method_id==POST) {
-			int l=strtol( a , NULL, 0 );
-			if (l<=POST_MAX_SIZE) {//Post size is ok
-				post_param=malloc(l+20);
-				
-				int count=read(sock,post_param,l);
-				post_param[count]=0;
-				int removed=removeCrLf(post_param);
-				read(sock,post_param+count-removed,removed);
-				post_param[count+removed]=0;				
-				printf("====== READ POST=====\nred: %d\n1st char: %d\ncount: %d\nremoved: %d\n%s\n==========\n",l,post_param[0],count,removed,post_param);
-			} else {//Post size is too big
-				return ERR_NOMEM;
-			}
-		}
+    char* post_param=NULL;
 
-	}
+    {
+        //Buffer for field's value
+        char a[NBUFFER];
+        //Gets the value
+        bool r=get_param_value(http_param,"Content-Length", a,NBUFFER);
+
+        //If there is a value and method is POST
+        if (r!=false && method_id==POST) {
+            int l=strtol( a , NULL, 0 );
+            if (l<=POST_MAX_SIZE) {//Post size is ok
+                post_param=malloc(l+20);
+
+                int count=read(sock,post_param,l);
+                post_param[count]=0;
+                int removed=removeCrLf(post_param);
+                read(sock,post_param+count-removed,removed);
+                post_param[count+removed]=0;
+
+            } else {//Post size is too big
+                return ERR_NOMEM;
+            }
+        }
+
+    }
 
     int retval;//Return value after sending the page
 
     if (endsWith(page,".php")) { //File php
         retval= execPage(sock,page,params,"php",http_param,post_param,method);
     } else if (endsWith(page,".bsh")) { //Script bash
-	retval=execPage(sock,page,params,"bash",http_param,post_param,method);
+        retval=execPage(sock,page,params,"bash",http_param,post_param,method);
     } else { //Normal file
         retval= writePage(sock,page);
     }
-    
-    
+
+
     if (post_param!=NULL) free (post_param);
 
     int err_res=0;//suppose no error
@@ -339,10 +338,10 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         return ERR_NOMEM;
     }
     if (wpid==0) { //Child, executes the script
-	setenv("PROTOCOL",method,true);//Sets the protocol used
+        setenv("PROTOCOL",method,true);//Sets the protocol used
         setEnvVars(http_param,false);//Sets http header vars
-	setEnvVars(post_param,true);//Sets post vars
-	
+        setEnvVars(post_param,true);//Sets post vars
+
         close (wpipe[0]); //Closes unused end of the pipe
         fclose (stdout); //Closing the stdout
         fclose (stderr);
