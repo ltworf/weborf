@@ -121,23 +121,18 @@ void * instance(void * nulla) {
 
             end[0]='\0';//Terminates the header
 
-
-
-
+	    //Removes cr and lf chars from the beginning
             removeCrLf(buf);
-
-            //If the request is a get or a post
-
+	    
             //Finds out request's kind
             if (buf==strstr(buf,"GET")) req=GET;
             else if (buf==strstr(buf,"POST")) req=POST;
-            //else if (buf==strstr(buf,"Connection: keep-alive")) continue; //ignoring it
             else req=INVALID;
 
             if ( req!=INVALID ) {
                 reqs=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
                 page=strtok_r(NULL," ",&lasts);
-
+		
 #ifdef REQUESTDBG
                 syslog(LOG_INFO,"%s: %s %s\n",ip_addr,reqs,page);
 #endif
@@ -147,13 +142,35 @@ void * instance(void * nulla) {
 #endif
                 //Stores the parameters of the request
                 param=(char *)(page+strlen(page)+1);
+		
+		//Setting the connection type
+		if (param[5]=='1' && param[7]=='1') {//Keep alive by default
+			keep_alive=true;
+			char a[50];//Gets the value
+			if (get_param_value(param,"Connection", a,50))
+				if (a[0]=='c' && strstr(a,"close")!=NULL)
+					keep_alive=false;
+		} else {
+			keep_alive=false;
+			char a[50];//Gets the value
+			if (get_param_value(param,"Connection", a,50))
+				if (a[0]=='K' && strstr(a,"Keep")!=NULL)
+					keep_alive=true;
+		}
 
                 if (sendPage(sock,page,param,req,reqs,ip_addr)<0) {
                     break;//Unable to send an error
                 }
+		if (keep_alive==false) {//No pipelining
+			
+			printf("close\n");
+			goto closeConnection;
+		} else {
+			printf("pipelining\n");
+		}
             } else { //Non supported request
                 send_err(sock,400,"Bad request",ip_addr);
-                break; //Exits from the cycle and then close the connection.
+		goto closeConnection;//Exits from the cycle and then close the connection.
             }
 
             //Deletes the served header and moves the following part of the buffer at the beginning

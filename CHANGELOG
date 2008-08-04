@@ -6,6 +6,7 @@
 - Memory leak fixed
 - Bug: can now handle firefox's post requests
 - Bug: no more segmentation fault on post requests issued by squid
+- Handles pipelined and not-pipelined requests
 
 
 0.8
