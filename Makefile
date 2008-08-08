@@ -17,7 +17,6 @@
 CC=gcc
 #DEFS=-Ddebug
 OFLAGS=-Os
-DEFS=
 CFLAGS=-Wall $(DEFS) $(ARCHFLAGS) $(OFLAGS)
 LDFLAGS=-lpthread
 #ARCHFLAGS=-m64

@@ -163,10 +163,7 @@ void * instance(void * nulla) {
                 }
 		if (keep_alive==false) {//No pipelining
 			
-			printf("close\n");
 			goto closeConnection;
-		} else {
-			printf("pipelining\n");
 		}
             } else { //Non supported request
                 send_err(sock,400,"Bad request",ip_addr);
@@ -363,6 +360,9 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         fclose (stdout); //Closing the stdout
         fclose (stderr);
         dup(wpipe[1]); //Redirects the stdout
+	
+	alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
+	
         if (params!=NULL) {
             /*
             int args= splitParams(params);//Trasforma i parametri in tante stringhe

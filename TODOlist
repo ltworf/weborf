@@ -1,4 +1,3 @@
-- kill scripts after a timeout.
 - fix param handling in script
 - change working dir, so the script has the same working dir as its path
 - change the way http messages are received. Considering they could be splitted in several tcp messages
