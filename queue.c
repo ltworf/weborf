@@ -20,6 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "queue.h"
 
+/**
+Inits the syncronized queue, allocating memory.
+Requires the syn_queue_t struct and the size of the queue itself.
+To deallocate the queue, use the q_free function.
+*/
 int q_init(syn_queue_t * q, int size) {
     q->num = q->head = q->tail = 0;
     q->size = size;
@@ -33,7 +38,9 @@ int q_init(syn_queue_t * q, int size) {
     return (q->data == NULL) ? 1 : 0;
 }
 
-/* Libera la memoria occupata */
+/** Frees the memory taken by the queue.
+Requires the pointer to the queue struct
+*/
 void q_free(syn_queue_t * q) {
     if (q->data != NULL)
         free(q->data);
