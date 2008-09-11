@@ -71,6 +71,7 @@ void * instance(void * nulla) {
 
     signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
     bool keep_alive;//True if we are using pipelining
+    int served=0;//TODO REMOVE THIS ONE
     int bufFull;
     char * buf=malloc(INBUFFER+1);
     memset(buf,0,INBUFFER+1);
@@ -85,6 +86,7 @@ void * instance(void * nulla) {
     char* ip_addr;//Client's ip address in ascii
     while (true) {
         q_get(&queue, &sock,&ip_addr);//Gets a socket from the queue coda
+	served=0;
         unfree_thread(id);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order
@@ -130,6 +132,7 @@ void * instance(void * nulla) {
             else req=INVALID;
 
             if ( req!=INVALID ) {
+		served++;//TODO REMOVE THIS
                 reqs=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
                 page=strtok_r(NULL," ",&lasts);
 		
@@ -178,6 +181,7 @@ void * instance(void * nulla) {
         }
 
 closeConnection:
+	printf("This thread served %d pipelined requests\n",served);
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",id);
 #endif

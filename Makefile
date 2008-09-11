@@ -50,7 +50,7 @@ source: clean
 	rm -f *~ *.orig
 	cd ..; tar cvjf weborf-`date +\%F | tr -d -`.tar.bz2 weborf/
 
-install:
+install: uninstall
 	mkdir -p $(MANDIR) || echo Creating directories
 	gzip -c weborf.1 > $(MANDIR)/weborf.1.gz
 	
@@ -58,8 +58,8 @@ install:
 	cp weborf.daemon $(DAEMONDIR)/weborf
 
 uninstall:
-	rm -f $(MANDIR)/weborf.1.gz
-	rm -f $(BINDIR)/weborf
+	rm -f $(MANDIR)/weborf.1.gz || echo ok
+	rm -f $(BINDIR)/weborf || echo ok
 
 memcheck: debug
 	valgrind --tool=memcheck --leak-check=yes --leak-resolution=high --show-reachable=yes --num-callers=20 --track-fds=yes ./debug || echo "Valgrind doesn't appear to be installed on this system"
