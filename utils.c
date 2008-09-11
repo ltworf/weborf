@@ -186,6 +186,11 @@ void help() {
 
     printf("\tUsage: weborf [OPTIONS]\n");
     printf("\tStart the weborf webserver\n\n");
+#ifdef IPV6
+	printf("\tCompiled for IPv6\n\n");
+#else
+	printf("\tCompiled for IPv4\n\n");
+#endif
 
     printf("  -p, --port	followed by port number to listen\n");
     printf("  -i, --ip	followed by IP address to listen (dotted format)\n");

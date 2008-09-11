@@ -1,4 +1,4 @@
-.TH Weborf 0.8 "Jul 04, 2008"
+.TH Weborf 0.9 "Sep 11, 2008"
 
 .SH NAME
 .B weborf
@@ -28,15 +28,15 @@ Short command-line switches begin with a "-", and verbose switches begin with a 
 
 .TP
 \fB\-b\fR, \fB\-\-basedir\fR
-Must be followed by a valid directory. Weborf will use this directory as root directory, and won't send files located in parent dirs. But it is still possible for server-side scripts to read contents located anywhere on the filesystem.
+Must be followed by a valid directory. Weborf will use this directory as root directory, and won't send files located in parent dirs. But it is still possible for server-side scripts to read contents located anywhere on the filesystem. Links are also a workaround to exit from the base directory.
 
 .TP
 \fB\-a\fR, \fB\-\-auth\fR
-Must be followed by a program who will handle authentication. It is possible to use a script for this purpose. It will have four parameters on its command line. In the following order: method, page, IP, username, password. A zero exit code will tell to weborf that the authentication was accepted. Since weborf will wait for the program's termination to determine if allow or deny access, a non terminating program will prevent weborf to reply to any request. If no path (absolute or relative) is specified, weborf will use the PATH variable.
+Must be followed by a program who will handle authentication. It is possible to use a script for this purpose. It will have five parameters on its command line. In the following order: method, page, IP, username, password. A zero exit code will tell to weborf that the authentication was accepted. Since weborf will wait for the program's termination to determine if allow or deny access, a non terminating program will prevent weborf to reply to any request. If no path (absolute or relative) is specified, weborf will use the PATH variable.
 
 .TP
 \fB\-i\fR, \fB\-\-ip\fR
-Must be followed by a valid IPv6 address, and weborf will accept only connections directed to that specific IP.
+Must be followed by a valid IP address (v6 or v4, depending on how weborf was compiled. Run weborf -h to know it), and weborf will accept only connections directed to that specific IP.
 If the IP address provided isn't used by a network device on the host, weborf will terminate.
 By default weborf listens to all IP addresses on the local host.
 
@@ -52,10 +52,10 @@ Must be followed by a valid uid, different from 0. Weborf will use this user to 
 
 .TP
 \fB\-d\fR
-Runs weborf as a daemon. It will not terminate when it's father process terminates.
+Runs weborf as a daemon. It will not terminate when it's father process terminates, and it will leave the shell free to receive commands.
 
 .SH SCRIPTING
-Weborf is able to send dinamially generated pages using php (if installed) or bash.
+Weborf is able to send dinamically generated pages using php (if installed) or bash.
 When a filename ends with ".bsh", weborf will use bash to execute this file before sending it to the client.
 Same thing happens when a file ends with ".php"; if php-cli is installed weborf will use it to execute the file and send it to the client.
 
@@ -73,7 +73,7 @@ GET vars are passed to the script as command line options.
 http://galileo.dmi.unict.it/wiki/weborf/
 
 .SH AUTHORS
-Salvo "LtWorf" Tomaselli <ltworf@galileo.dmi.unict.it>
+Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 
-Salvo Rinaldi <salvin@bluebottle.com>
+Salvo Rinaldi <salvin@anche.no>
 
