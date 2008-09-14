@@ -64,17 +64,20 @@ Takes open sockets from the queue and serves the requests
 Doesn't do busy waiting
 */
 void * instance(void * nulla) {
+    //General init of the thread
+    signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
     long int id=(long int)nulla;//Set thread's id
 #ifdef THREADDBG
     syslog(LOG_DEBUG,"Starting thread %ld",id);
 #endif
 
-    signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
+
+
+    //Vars
     bool keep_alive;//True if we are using pipelining
-    int served=0;//TODO REMOVE THIS ONE
-    int bufFull;
-    char * buf=malloc(INBUFFER+1);
-    memset(buf,0,INBUFFER+1);
+    int bufFull=0;
+    char * buf=malloc(INBUFFER+1);//Buffer to contain the HTTP request
+    memset(buf,0,INBUFFER+1);//Sets to 0 the buffer
     int req;//Method of the HTTP request INTEGER
     char * reqs;//HTTP request STRING
     char * page;//Page to load
@@ -85,8 +88,8 @@ void * instance(void * nulla) {
     int sock;//Socket with the client
     char* ip_addr;//Client's ip address in ascii
     while (true) {
-        q_get(&queue, &sock,&ip_addr);//Gets a socket from the queue coda
-	served=0;
+
+        q_get(&queue, &sock,&ip_addr);//Gets a socket from the queue
         unfree_thread(id);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order
@@ -101,41 +104,45 @@ void * instance(void * nulla) {
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",id);
 #endif
 
-        bufFull=0;//Chars contained within the buffer
+
         while (true) { //Infinite cycle to handle all pipelined requests
+
+            memset(buf,0,bufFull+1);//Sets to 0 the buffer
+            bufFull=0;//bufFull-(end-buf+4);
 
             int r;//Readed char
             char* end;//Pointer to header's end
             while ((end=strstr(buf,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
-                r=read(sock, buf+bufFull,1);//INBUFFER-bufFull);//Adds to the header
+                r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
 
                 if (r<=0) { //Connection closed or error
                     goto closeConnection;
                 }
+                if (bufFull!=0) { //Removes Cr Lf from beginning
+                    bufFull+=r;//Sets the end of the user buffer (may contain more than one header)
 
-                bufFull+=r;//Sets the end of the user buffer (may contain more than one header)
-                if (bufFull==INBUFFER) { //Buffer full and still no valid http header
+                } else if (buf[bufFull]!='\n' && buf[bufFull]!='\r') {
+                    bufFull+=r;
+                }
+                if (bufFull>=INBUFFER) { //Buffer full and still no valid http header
                     send_err(sock,400,"Bad request",ip_addr);
                     goto closeConnection;
                 }
-                //buf[bufFull]='\0';//Terminates so string functions can be used
             }
 
             end[0]='\0';//Terminates the header
+            //Removes cr and lf chars from the beginning
+            //removeCrLf(buf);
 
-	    //Removes cr and lf chars from the beginning
-            removeCrLf(buf);
-	    
             //Finds out request's kind
-            if (buf==strstr(buf,"GET")) req=GET;
-            else if (buf==strstr(buf,"POST")) req=POST;
+            if (strncmp(buf,"GET",3)) req=GET;
+            else if (strncmp(buf,"POST",4)) req=POST;
             else req=INVALID;
 
             if ( req!=INVALID ) {
-		served++;//TODO REMOVE THIS
                 reqs=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
                 page=strtok_r(NULL," ",&lasts);
-		
+
 #ifdef REQUESTDBG
                 syslog(LOG_INFO,"%s: %s %s\n",ip_addr,reqs,page);
 #endif
@@ -145,43 +152,39 @@ void * instance(void * nulla) {
 #endif
                 //Stores the parameters of the request
                 param=(char *)(page+strlen(page)+1);
-		
-		//Setting the connection type
-		if (param[5]=='1' && param[7]=='1') {//Keep alive by default
-			keep_alive=true;
-			char a[50];//Gets the value
-			if (get_param_value(param,"Connection", a,50))
-				if (a[0]=='c' && strstr(a,"close")!=NULL)
-					keep_alive=false;
-		} else {
-			keep_alive=false;
-			char a[50];//Gets the value
-			if (get_param_value(param,"Connection", a,50))
-				if (a[0]=='K' && strstr(a,"Keep")!=NULL)
-					keep_alive=true;
-		}
+
+                //Setting the connection type, using protocol version
+                if (param[5]=='1' && param[7]=='1') {//Keep alive by default
+                    keep_alive=true;
+                    char a[50];//Gets the value
+                    if (get_param_value(param,"Connection", a,50))
+                        if (a[0]=='c' && strstr(a,"close")!=NULL)
+                            keep_alive=false;
+                } else {
+                    keep_alive=false;
+                    char a[50];//Gets the value
+                    if (get_param_value(param,"Connection", a,50))
+                        if (a[0]=='K' && strstr(a,"Keep")!=NULL)
+                            keep_alive=true;
+                }
 
                 if (sendPage(sock,page,param,req,reqs,ip_addr)<0) {
                     break;//Unable to send an error
                 }
-		if (keep_alive==false) {//No pipelining
-			
-			goto closeConnection;
-		}
+                if (keep_alive==false) {//No pipelining
+
+                    goto closeConnection;
+                }
             } else { //Non supported request
                 send_err(sock,400,"Bad request",ip_addr);
-		goto closeConnection;//Exits from the cycle and then close the connection.
+                goto closeConnection;//Exits from the cycle and then close the connection.
             }
 
             //Deletes the served header and moves the following part of the buffer at the beginning
             //memmove(buf,end+4,bufFull-(end-buf+4));
-
-            //Sets where load the next incoming data
-            bufFull=0;//bufFull-(end-buf+4);
         }
 
 closeConnection:
-	printf("This thread served %d pipelined requests\n",served);
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",id);
 #endif
@@ -364,9 +367,9 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         fclose (stdout); //Closing the stdout
         fclose (stderr);
         dup(wpipe[1]); //Redirects the stdout
-	
-	alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
-	
+
+        alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
+
         if (params!=NULL) {
             /*
             int args= splitParams(params);//Trasforma i parametri in tante stringhe
