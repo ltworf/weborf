@@ -118,25 +118,28 @@ void * instance(void * nulla) {
                 if (r<=0) { //Connection closed or error
                     goto closeConnection;
                 }
+
                 if (bufFull!=0) { //Removes Cr Lf from beginning
                     bufFull+=r;//Sets the end of the user buffer (may contain more than one header)
 
                 } else if (buf[bufFull]!='\n' && buf[bufFull]!='\r') {
                     bufFull+=r;
                 }
+
+
                 if (bufFull>=INBUFFER) { //Buffer full and still no valid http header
                     send_err(sock,400,"Bad request",ip_addr);
                     goto closeConnection;
                 }
             }
 
-            end[0]='\0';//Terminates the header
+            end[2]='\0';//Terminates the header, leaving a final \r\n in it
             //Removes cr and lf chars from the beginning
-            //removeCrLf(buf);
+            removeCrLf(buf);
 
             //Finds out request's kind
-            if (strncmp(buf,"GET",3)) req=GET;
-            else if (strncmp(buf,"POST",4)) req=POST;
+            if (strncmp(buf,"GET",3)==0) req=GET;
+            else if (strncmp(buf,"POST",4)==0) req=POST;
             else req=INVALID;
 
             if ( req!=INVALID ) {
@@ -199,6 +202,7 @@ closeConnection:
 
 /**
 This function does some changes on the URL.
+The url will never be longer than the original one.
 */
 void modURL(char* url) {
     //Prevents the use of .. to access the whole filesystem
@@ -218,7 +222,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
     modURL(page);//Operations on the url string
 
 
-    char * params=NULL;//Pointer to the parameters
+    char * params=NULL;//Pointer to the GET parameters
     int p_start=nullParams(page);
     if (p_start!=-1) params=page+p_start+sizeof(char);//Set the pointer to the parameters
 #ifdef SENDINGDBG

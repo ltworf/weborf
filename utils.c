@@ -291,15 +291,13 @@ bool get_param_value(char* http_param,char* parameter,char*buf,int size) {
     if (val==NULL) { //No such field
         return false;
     } else { //Retrieves the field
-        char*field_end;//=strstr(val,"\r\n"); //Searches the end of the parameter
-        field_end=strstr(val,"\0");
+        char*field_end=strstr(val,"\r\n"); //Searches the end of the parameter
         val+=strlen(parameter)+2;//Moves the begin of the string to exclude the name of the field
 
-
         if ((field_end-val+1)<size) {//If the parameter's length is less than buffer's size
-            memcpy(buf,val,val-field_end);
+            memcpy(buf,val,field_end-val);
         } else { //Parameter string is too long for the buffer
-            return -1;
+            return false;
         }
         buf[field_end-val]=0; //Ends the string within the destination buffer
     }
