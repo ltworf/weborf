@@ -168,12 +168,12 @@ Prints version information
 */
 void version() {
     printf ("Weborf %s\n",VERSION);
-    printf ("Copyright (C) 2007 LSD: LSD Sicilian Developers.\n");
+    printf ("Copyright (C) 2007 Salvo 'LtWorf' Tomaselli.\n");
     printf ("This is free software.  You may redistribute copies of it under the terms of\n");
     printf ("the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n");
     printf ("There is NO WARRANTY, to the extent permitted by law.\n\n");
 
-    printf ("Written by Salvo 'LtWorf' Tomaselli and Salvo Rinaldi.\n");
+    printf ("Written by Salvo 'LtWorf' Tomaselli.\n");
     printf ("Synchronized queue by Prof. Giuseppe Pappalardo.\n\n\n");
     printf ("https://galileo.dmi.unict.it/wiki/weborf/\n");
     exit(0);
