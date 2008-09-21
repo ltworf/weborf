@@ -8,6 +8,11 @@
 - Bug: no more segmentation fault on post requests issued by squid
 - Handles pipelined and not-pipelined requests
 - Timeout for scripts (not auth scripts)
+- Bug: buffer for requests is now reset after every request
+- Increased speed for identify request
+- Bug: unsigned value used when signed was needed
+- Bug: parameters within HTTP requests are now read correctly
+- Changed buffer allocation for string IP addresses in IPv4 mode
 
 0.8
 - Improved file listing

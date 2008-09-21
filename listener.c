@@ -51,7 +51,7 @@ This function is thread safe.
 
 Notice that this will not start or stop threads, just change the value of thread_c.
 */
-void chn_thread_count(unsigned int val) {
+void chn_thread_count(int val) {
 
     pthread_mutex_lock(&m_thread_c);
     thread_c+=val;
@@ -200,8 +200,10 @@ int main(int argc, char * argv[]) {
     //Makes port reusable immediately after termination.
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0) {
         perror("ruseaddr(any)");
+#ifdef IPV6
         char*suggestion="If you don't have any IPv6 address, try recompiling weborf, removing the line '#define IPV6' from options.h\n";
         write(2,suggestion,strlen(suggestion));
+#endif
         return 1;
     }
 
@@ -320,7 +322,7 @@ int main(int argc, char * argv[]) {
 #else
     while ((s1 = accept(s, (struct sockaddr *) &farAddr,(socklen_t *)&farAddrL)) != -1) {
 
-        char* ip_addr=malloc(INET6_ADDRSTRLEN);
+        char* ip_addr=malloc(INET_ADDRSTRLEN);
         { //Buffer for ascii IP addr, will be freed by the thread
             char* ip=inet_ntoa(farAddr.sin_addr);
             memcpy(ip_addr,ip,strlen(ip)+1);
