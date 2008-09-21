@@ -44,6 +44,8 @@ Requires the pointer to the queue struct
 void q_free(syn_queue_t * q) {
     if (q->data != NULL)
         free(q->data);
+    if (q->ip != NULL)
+	free(q->ip);
 }
 
 int q_get(syn_queue_t * q, int * val,char** ip) {
