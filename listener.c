@@ -422,7 +422,7 @@ void* t_shape(void * nulla) {
         pthread_mutex_unlock(&m_free);
 
         if (loc_free>MAXFREETHREAD) { //Too much free threads, terminates one of them
-            q_put(&queue, -1,0);//Write the termination order to the queue, the thread who will read it, will terminate
+            q_put(&queue, -1,NULL);//Write the termination order to the queue, the thread who will read it, will terminate
             chn_thread_count(-1);//Decreases the number of free total threads
         }
     }

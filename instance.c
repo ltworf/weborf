@@ -75,7 +75,7 @@ void * instance(void * nulla) {
 
     //Vars
     bool keep_alive;//True if we are using pipelining
-    int bufFull=0;
+    int bufFull=0;//Amount of buf used
     char * buf=malloc(INBUFFER+1);//Buffer to contain the HTTP request
     memset(buf,0,INBUFFER+1);//Sets to 0 the buffer
     int req;//Method of the HTTP request INTEGER
@@ -107,7 +107,7 @@ void * instance(void * nulla) {
 
         while (true) { //Infinite cycle to handle all pipelined requests
 
-            memset(buf,0,bufFull+1);//Sets to 0 the buffer
+            memset(buf,0,bufFull+1);//Sets to 0 the buffer, only the part used for the previous request in the same connection
             bufFull=0;//bufFull-(end-buf+4);
 
             int r;//Readed char
@@ -134,8 +134,9 @@ void * instance(void * nulla) {
             }
 
             end[2]='\0';//Terminates the header, leaving a final \r\n in it
-            //Removes cr and lf chars from the beginning
-            removeCrLf(buf);
+            
+	    //Removes cr and lf chars from the beginning
+            //removeCrLf(buf);
 
             //Finds out request's kind
             if (strncmp(buf,"GET",3)==0) req=GET;
@@ -161,13 +162,13 @@ void * instance(void * nulla) {
                     keep_alive=true;
                     char a[50];//Gets the value
                     if (get_param_value(param,"Connection", a,50))
-                        if (a[0]=='c' && strstr(a,"close")!=NULL)
+                        if (strncmp (a,"close",5)==0)
                             keep_alive=false;
                 } else {
                     keep_alive=false;
                     char a[50];//Gets the value
                     if (get_param_value(param,"Connection", a,50))
-                        if (a[0]=='K' && strstr(a,"Keep")!=NULL)
+                        if (strncmp(a,"Keep",4)==0)
                             keep_alive=true;
                 }
 
@@ -193,8 +194,9 @@ closeConnection:
 #endif
 
         close(sock);//Closing the socket
-        free_thread(id);//Settin this thread as free
+	memset(buf,0,bufFull+1);//Sets to 0 the buffer, only the part used for the previous
         if (ip_addr!=NULL) free(ip_addr);//Free the space used to store ip address
+	free_thread(id);//Settin this thread as free
     }
 
     return NULL;//Never reached
