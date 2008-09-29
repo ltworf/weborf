@@ -56,6 +56,7 @@ install: uninstall
 	
 	cp weborf $(BINDIR)
 	cp weborf.daemon $(DAEMONDIR)/weborf
+	chmod u+x $(DAEMONDIR)/weborf
 
 uninstall:
 	rm -f $(MANDIR)/weborf.1.gz || echo ok

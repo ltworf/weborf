@@ -24,7 +24,11 @@ case $1 in
         start)
                 weborf -dp80 -u $USERID -b $BASEDIR;;
         stop)
-                killall weborf;;
+		
+                kill `pidof weborf`;;
+	restart)
+		kill `pidof weborf`
+		weborf -dp80 -u $USERID -b $BASEDIR;;
         * )
-                echo "Usage: $0 {start|stop}";;
+                echo "Usage: $0 {start|stop|restart}";;
 esac
