@@ -71,8 +71,6 @@ void * instance(void * nulla) {
     syslog(LOG_DEBUG,"Starting thread %ld",id);
 #endif
 
-
-
     //Vars
     bool keep_alive;//True if we are using pipelining
     int bufFull=0;//Amount of buf used
@@ -134,8 +132,8 @@ void * instance(void * nulla) {
             }
 
             end[2]='\0';//Terminates the header, leaving a final \r\n in it
-            
-	    //Removes cr and lf chars from the beginning
+
+            //Removes cr and lf chars from the beginning
             //removeCrLf(buf);
 
             //Finds out request's kind
@@ -194,9 +192,9 @@ closeConnection:
 #endif
 
         close(sock);//Closing the socket
-	memset(buf,0,bufFull+1);//Sets to 0 the buffer, only the part used for the previous
+        memset(buf,0,bufFull+1);//Sets to 0 the buffer, only the part used for the previous
         if (ip_addr!=NULL) free(ip_addr);//Free the space used to store ip address
-	free_thread(id);//Settin this thread as free
+        free_thread(id);//Settin this thread as free
     }
 
     return NULL;//Never reached

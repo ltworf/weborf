@@ -308,14 +308,14 @@ int main(int argc, char * argv[]) {
 
     listen(s, MAXQ);//Listen to the socket
 
-    int loc_free=t_free;//Local t_free, used to avoid deadlock
+    //int loc_free=t_free;//Local t_free, used to avoid deadlock
 
     //Infinite cycle, accept connections
 #ifdef IPV6
     while ((s1 = accept(s, (struct sockaddr *) &farAddr, &farAddrL)) != -1) {
 
-        char* ip_addr=malloc(INET6_ADDRSTRLEN);//Buffer for IP Address, to give to the thread
-        if (ip_addr!=NULL ) {
+        char* ip_addr=malloc(INET6_ADDRSTRLEN);
+        if (ip_addr!=NULL) { //Buffer for IP Address, to give to the thread
             getpeername(s1, (struct sockaddr *)&farAddr, &farAddrL);
             inet_ntop(AF_INET6, &farAddr.sin6_addr, ip_addr, INET6_ADDRSTRLEN);
         }
@@ -323,7 +323,7 @@ int main(int argc, char * argv[]) {
     while ((s1 = accept(s, (struct sockaddr *) &farAddr,(socklen_t *)&farAddrL)) != -1) {
 
         char* ip_addr=malloc(INET_ADDRSTRLEN);
-        { //Buffer for ascii IP addr, will be freed by the thread
+        if (ip_addr!=NULL) { //Buffer for ascii IP addr, will be freed by the thread
             char* ip=inet_ntoa(farAddr.sin_addr);
             memcpy(ip_addr,ip,strlen(ip)+1);
         }
@@ -335,7 +335,7 @@ int main(int argc, char * argv[]) {
         syslog(LOG_INFO,"Connection from %s", ip_addr);
 #endif
 
-        if (s1>=0  && loc_free>0) { //Adds s1 to the queue
+        if (s1>=0  && t_free>0) { //Adds s1 to the queue
             q_put(&queue, s1,ip_addr);
         } else { //Closes the socket if there aren't enough free threads.
 #ifdef REQUESTDBG
@@ -344,13 +344,8 @@ int main(int argc, char * argv[]) {
             close(s1);
         }
 
-        //Obtains the number of free threads
-        pthread_mutex_lock(&m_free);
-        loc_free=t_free;
-        pthread_mutex_unlock(&m_free);
-
         //Start new thread if needed
-        if (loc_free<=LOWTHREAD) { //Need to start new thread
+        if (t_free<=LOWTHREAD) { //Need to start new thread
             if (thread_c+INITIALTHREAD<MAXTHREAD) {//Starts a group of threads
                 init_threads(INITIALTHREAD);
             } else { //Can't start a group because the limit is close, starting less than a whole group
@@ -411,17 +406,10 @@ Policies of this function (polling frequence and limit for free threads) are def
  */
 void* t_shape(void * nulla) {
 
-    int loc_free;
-
     for (;;) {
         sleep(THREADCONTROL);
 
-        //Reads the number of free threads
-        pthread_mutex_lock(&m_free);
-        loc_free=t_free;
-        pthread_mutex_unlock(&m_free);
-
-        if (loc_free>MAXFREETHREAD) { //Too much free threads, terminates one of them
+        if (t_free>MAXFREETHREAD) { //Too much free threads, terminates one of them
             q_put(&queue, -1,NULL);//Write the termination order to the queue, the thread who will read it, will terminate
             chn_thread_count(-1);//Decreases the number of free total threads
         }
