@@ -29,7 +29,7 @@ DAEMONDIR=/etc/init.d/
 
 all: weborf
 
-weborf: listener.o queue.o instance.o mystring.o utils.o base64.o
+weborf: listener.o queue.o instance.o mystring.o utils.o base64.o log.o
 	$(CC) $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 queue.c: queue.h
@@ -38,8 +38,9 @@ listener.c: listener.h
 mystring.c: mystring.h
 utils.c: utils.h
 base64.c: base64.h
+log.c: log.h
 
-debug: listener.o queue.o instance.o mystring.o utils.o base64.o
+debug: listener.o queue.o instance.o mystring.o utils.o base64.o log.o
 	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 clean: 
