@@ -33,6 +33,7 @@ extern unsigned int t_free;//free threads
 
 extern char* basedir;//Basedir
 extern char* authbin;//Executable that will authenticate
+extern bool exec_script; //Execute scripts if true, sends the file if false
 
 /**
 Set thread with id as non-free
@@ -298,14 +299,19 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
     }
 
     int retval;//Return value after sending the page
-
-    if (endsWith(page,".php")) { //File php
-        retval= execPage(sock,page,params,"php",http_param,post_param,method);
-    } else if (endsWith(page,".bsh")) { //Script bash
-        retval=execPage(sock,page,params,"bash",http_param,post_param,method);
-    } else { //Normal file
-        retval= writePage(sock,page);
+    
+    if (exec_script) { //Scripts enabled
+      if (endsWith(page,".php")) { //File php
+	  retval= execPage(sock,page,params,"php",http_param,post_param,method);
+      } else if (endsWith(page,".bsh")) { //Script bash
+	  retval=execPage(sock,page,params,"bash",http_param,post_param,method);
+      } else { //Normal file
+	  retval= writePage(sock,page);
+      }
+    } else { //Scripts disabled
+      retval= writePage(sock,page);
     }
+
 
 
     if (post_param!=NULL) free (post_param);

@@ -35,6 +35,10 @@ Must be followed by a valid directory. Weborf will use this directory as root di
 Must be followed by a program who will handle authentication. It is possible to use a script for this purpose. It will have five parameters on its command line. In the following order: method, page, IP, username, password. A zero exit code will tell to weborf that the authentication was accepted. Since weborf will wait for the program's termination to determine if allow or deny access, a non terminating program will prevent weborf to reply to any request. If no path (absolute or relative) is specified, weborf will use the PATH variable.
 
 .TP
+\fB\-x\fR, \fB\-\-noexec\fR
+When used, weborf will send .php and .bsh files instead of executing them and sending their output.
+
+.TP
 \fB\-i\fR, \fB\-\-ip\fR
 Must be followed by a valid IP address (v6 or v4, depending on how weborf was compiled. Run weborf -h to know it), and weborf will accept only connections directed to that specific IP.
 If the IP address provided isn't used by a network device on the host, weborf will terminate.

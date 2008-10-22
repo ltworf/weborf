@@ -196,6 +196,7 @@ void help() {
     printf("  -i, --ip	followed by IP address to listen (dotted format)\n");
     printf("  -b, --basedir	followed by absolute path of basedir\n");
     printf("  -a, --auth    followed by absolute path of the program to handle authentication\n");
+    printf("  -x  --noexec  tells weborf to send each file instead of executing php and bsh files\n");
     printf("  -u            followed by a valid uid\n");
     printf("  -d            run as a daemon\n");
     printf("                If started by root weborf will use this user to read files and execute scripts\n");

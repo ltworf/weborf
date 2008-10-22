@@ -39,6 +39,7 @@ unsigned int thread_c=0;//Number of threads
 
 char * basedir=BASEDIR;//Base directory
 char* authbin;//Executable that will authenticate
+bool exec_script=true; //Execute scripts if true, sends the file if false
 
 uid_t uid=ROOTUID;//Uid to use after bind
 
@@ -133,13 +134,14 @@ int main(int argc, char * argv[]) {
             {"basedir", required_argument, 0, 'b'},
             {"auth", required_argument, 0, 'a'},
             {"moo", no_argument, 0, 'm'},
+	    {"noexec", no_argument,0,'x'},
             {0, 0, 0, 0}
         };
         static int c;//Identify the readed option
         int option_index=0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long (argc, argv, "mvhp:i:u:db:a:",long_options, &option_index);
+        c = getopt_long (argc, argv, "mvhp:i:u:dxb:a:",long_options, &option_index);
 
         //If there are no options it continues
         if (c == -1)
@@ -149,6 +151,9 @@ int main(int argc, char * argv[]) {
         case 'b'://Basedirectory
             setBasedir(optarg);
             break;
+	case 'x'://Noexec scripts
+	    exec_script=false;
+	    break;
         case 'v'://Show version and exit
             version();
             break;
