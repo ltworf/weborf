@@ -39,6 +39,10 @@ int nullParams(char * string) {
 }
 /**
 Replaces escape sequences in the form %HEXCODE with the correct char
+This is used for URLs, after the transformation the URL will probably
+represent a file that exists on filesystem.
+Since after this replace the string will be unchanged or shorter, no
+additional buffer will be needed.
 */
 void replaceEscape(char * string) {
     int i=0;

@@ -392,7 +392,8 @@ void setBasedir(char * bd) {
 Checks that the authentication executable exists and is executable
 */
 void setAuthbin(char* bin) {
-    char command[600];
+    int l=strlen(bin);
+    char command[l+10];
     sprintf(command,"test -x %s",bin);
     if (system(command)!=0) { //Doesn't exist or it isn't executable
         printf("%s doesn't exist or it is not executable\n",bin);
