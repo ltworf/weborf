@@ -233,7 +233,7 @@ int main(int argc, char * argv[]) {
 #ifdef SOCKETDBG
         syslog(LOG_ERR,"Port %d already in use",ntohs(locAddr.sin6_port));
 #endif
-        exit(-1);
+        exit(3);
     }
 
 #else
@@ -244,7 +244,7 @@ int main(int argc, char * argv[]) {
         unsigned int p=strtol( port , NULL, 0 );
         if (p<1 || p>65535) {
             printf("Invalid port number: %d\n",p);
-            exit(2);
+            exit(4);
         }
         locAddr.sin_port=htons(p);
     }
@@ -269,7 +269,7 @@ int main(int argc, char * argv[]) {
 #ifdef SOCKETDBG
         syslog(LOG_ERR,"Port %d already in use",ntohs(locAddr.sin_port));
 #endif
-        exit(-1);
+        exit(3);
     }
 
 #endif
@@ -396,7 +396,7 @@ void setAuthbin(char* bin) {
     sprintf(command,"test -x %s",bin);
     if (system(command)!=0) { //Doesn't exist or it isn't executable
         printf("%s doesn't exist or it is not executable\n",bin);
-        exit(1);
+        exit(5);
     }
     authbin=bin;
 }

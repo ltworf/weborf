@@ -19,7 +19,12 @@
 USERNAME="www-data";
 BASEDIR="/var/www/"
 USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3`
- 
+if test -z $USERID
+then
+	echo "Unable to find user www-data"
+	echo "Change the daemon script in $0"
+	exit 1
+fi
 case $1 in
         start)
                 weborf -dp80 -u $USERID -b $BASEDIR;;

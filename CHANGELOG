@@ -14,6 +14,7 @@
 - Bug: parameters within HTTP requests are now read correctly
 - Changed buffer allocation for string IP addresses in IPv4 mode
 - Possibility to use scripts as normal files
+- Exit codes now have a meaning (documented in manpage)
 
 0.8
 - Improved file listing

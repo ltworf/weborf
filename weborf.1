@@ -67,6 +67,39 @@ Scripts are able to read data sent from the browser inside the HTTP request usin
 POST vars are readeable using env vars too. There will be one var for every field, and there won't be any replacement in the name.
 GET vars are passed to the script as command line options.
 
+.SH RETURN VALUE
+.B 0
+Normal termination occured after a signal, a daemonization or a print version and exit or so on...
+.TP
+
+.B 1
+Basedir is not a directory
+.TP
+
+.B 2
+Invalid IP address
+.TP
+
+.B 3
+Port already in use
+.TP
+
+.B 4
+Invalid port number
+.TP
+
+.B 5
+Authbin is not an executable
+.TP
+
+.B 9
+Unable to change UID
+.TP
+
+.B 19
+Invalid parameters on command line
+.TP
+
 .SH "SEE ALSO"
 .BR php (1), bash(1)
 
