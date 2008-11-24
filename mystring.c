@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mystring.h"
 
 
-/*
+/**
  * This function finds the first ? character and replaces it with a \0 to terminate the string removing GET param from it.
  * Returns the position of ? so param can be retreived.
  * Returns -1 if no ? was found
@@ -39,6 +39,12 @@ int nullParams(char * string) {
 }
 /**
 Replaces escape sequences in the form %HEXCODE with the correct char
+This is used for URLs, after the transformation the URL will probably
+represent a file that exists on filesystem.
+Since after this replace the string will be unchanged or shorter, no
+additional buffer will be needed.
+
+This function is in-place, doesn't create copies but changes the original string.
 */
 void replaceEscape(char * string) {
     int i=0;
@@ -136,6 +142,8 @@ bool endsWith(char * str, char * end) {
 
 /**
 Removes cr lf chars from the beginning of the string
+
+This function is in-place, doesn't create copies but changes the original string.
 */
 int removeCrLf(char*buf) {//Removing initial \n or \r
     int count=0;
