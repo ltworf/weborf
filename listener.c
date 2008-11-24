@@ -26,7 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "options.h"
 #include "utils.h"
 #define _GNU_SOURCE
-#include <getopt.h>
 
 syn_queue_t queue; //Queue for opened sockets
 
@@ -134,7 +133,7 @@ int main(int argc, char * argv[]) {
             {"basedir", required_argument, 0, 'b'},
             {"auth", required_argument, 0, 'a'},
             {"moo", no_argument, 0, 'm'},
-	    {"noexec", no_argument,0,'x'},
+            {"noexec", no_argument,0,'x'},
             {0, 0, 0, 0}
         };
         static int c;//Identify the readed option
@@ -151,9 +150,9 @@ int main(int argc, char * argv[]) {
         case 'b'://Basedirectory
             setBasedir(optarg);
             break;
-	case 'x'://Noexec scripts
-	    exec_script=false;
-	    break;
+        case 'x'://Noexec scripts
+            exec_script=false;
+            break;
         case 'v'://Show version and exit
             version();
             break;
