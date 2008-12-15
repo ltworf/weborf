@@ -27,6 +27,12 @@ def hideErrors():
     '''Closes stderr so errors aren't shown anymore'''
     os.close(2)
 
+def redirect(location):
+    '''Sends to the client the request to redirect to another page.
+    Unless php, here this can be used even after output'''
+    os.write(4,"Location: "+location) #Writes location header
+    sys.exit(33) #Tells weborf that a redirect is requested
+
 #Changing dir to script's one
 #os.chdir()
 
@@ -44,6 +50,6 @@ if len(sys.argv)>2:
 execfile(sys.argv[1])
 
 #Extra needed headers
-os.write(4,"test")
+#os.write(4,"test")
 
 sys.exit(0)

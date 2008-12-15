@@ -301,12 +301,13 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
     int retval;//Return value after sending the page
 
     if (exec_script) { //Scripts enabled
-        if (endsWith(page,".php")) { //File php
-            retval= execPage(sock,page,params,"php",http_param,post_param,method);
-        } else if (endsWith(page,".bsh")) { //Script bash
-            retval=execPage(sock,page,params,"bash",http_param,post_param,method);
-        } else if (endsWith(page,".py")) { //Script bash
-            retval=execPage(sock,page,params,"pywrap.py",http_param,post_param,method);
+        //if (endsWith(page,".php")) { //File php
+        //    retval= execPage(sock,page,params,"php",http_param,post_param,method);
+        //} else if (endsWith(page,".bsh")) { //Script bash
+        //    retval=execPage(sock,page,params,"bash",http_param,post_param,method);
+        //}
+        if (endsWith(page,".py")) { //Script bash
+            retval=execPage(sock,page,params,PY_WRAPPER,http_param,post_param,method);
         } else { //Normal file
             retval= writePage(sock,page);
         }
@@ -371,12 +372,10 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
 #endif
         free(strfile);
         return ERR_NOMEM;
-    }
-    if (wpid==0) { //Child, executes the script
+    } else if (wpid==0) { //Child, executes the script
         setenv("PROTOCOL",method,true);//Sets the protocol used
         setEnvVars(http_param,false);//Sets http header vars
         setEnvVars(post_param,true);//Sets post vars
-
         close (wpipe[0]); //Closes unused end of the pipe
         close (hpipe[0]); //Closes unused end of the pipe
         fclose (stdout); //Closing the stdout
@@ -393,60 +392,65 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
 #ifdef SENDINGDBG
             syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
 #endif
-
             exit(1);
         } else {
 #ifdef SENDINGDBG
             syslog(LOG_DEBUG,"Executing %s interpreter for %s",executor,strfile);
 #endif
-
             execlp(executor,executor,strfile,(char *)0);
-
 #ifdef SENDINGDBG
             syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
 #endif
-
             exit(1);
         }
-    } else { //Reads from pipe and sends
+    } else { //Father: reads from pipe and sends
 
         int state;
         waitpid (wpid,&state,0); //Wait the termination of the script
 
+        //Closing pipes, so if they're empty read is non blocking
+        close (wpipe[1]);
+        close (hpipe[1]);
+        
         //Large buffer, must contain the output of the script
         char* scrpt_buf=malloc(MAXSCRIPTOUT+HEADBUF);
         char* header_buf=scrpt_buf+MAXSCRIPTOUT;
 
-        if (scrpt_buf==NULL) { //Was unable to allocate the buffer
+        if (scrpt_buf==NULL) { //Was unable to allocate the buffer    
             free(strfile);
+            close (wpipe[0]);
+            close (hpipe[0]);
             return ERR_NOMEM;//Returns if buffer was not allocated
         }
-        
-        //Closing pipes, so if they're empty read is non blocking
-        close (wpipe[1]);
-        close (hpipe[1]);
+
+        //Reads output of the script
         int reads=read(wpipe[0],scrpt_buf,MAXSCRIPTOUT);
-        printf("Reading headers\n");
+        //Reads extra headers set by the script
         int h_reads=read(hpipe[0],header_buf,HEADBUF);
-        printf("Read headers\n");
-        
+
         //Closing pipes
         close (wpipe[0]);
         close (hpipe[0]);
-        
-        
-        printf("%s\n",header_buf);
-        
+
         int wrote=0;
-        send_http_header(sock,reads);
-        wrote=write (sock,scrpt_buf,reads);
+        switch (WEXITSTATUS(state)) {
+            case 33: //Redirect
+                send_http_header_code(sock,303,0,header_buf);
+                break;
+            default:
+                if (h_reads>0) {
+                    send_http_header(sock,reads,header_buf);
+                } else {
+                    send_http_header(sock,reads,NULL);
+                }
+                wrote=write (sock,scrpt_buf,reads);
+        }
+        
 #ifdef SOCKETDBG
-        if (wrote<0) syslog(LOG_ERR,"The client closed the socket");
+    if (wrote<0) syslog(LOG_ERR,"The client closed the socket");
 #endif
         free(scrpt_buf);
-        /*} else {
-        	return ERR_BRKPIPE;//Script returned a non 0. Internal server error
-        }*/
+        
     }
     free(strfile);
     return 0;
@@ -480,7 +484,7 @@ int writeDir(int sock, char* page) {
         return ERR_FILENOTFOUND;
     } else { //If there are no errors sends the page
         int pagelen=strlen(html);
-        send_http_header(sock,pagelen);
+        send_http_header(sock,pagelen,NULL);
         write(sock,html,pagelen);
     }
 
@@ -560,7 +564,7 @@ int writePage(int sock,char * file) {
 
         }
 
-        send_http_header(sock,size);//Sends header with content length
+        send_http_header(sock,size,NULL);//Sends header with content length
     }
 
     int reads;
@@ -656,19 +660,33 @@ int send_err(int sock,int err,char* descr,char* ip_addr) {
 }
 
 /**
-This function sends a code 200 header to the specified socket
-size is the Content-Length field
+This function sends a code header to the specified socket
+size is the Content-Length field.
+headers can be NULL or some extra headers to add. Headers must be separated by \r\n and must not have an \r\n at the end or at the beginning.
 */
-int send_http_header(int sock,unsigned int size) {
+int send_http_header_code(int sock,int code, unsigned int size,char* headers) {
 
     char *head=malloc(HEADBUF);
     if (head==NULL)return ERR_NOMEM;
 
-    int len_head=sprintf(head,"HTTP/1.1 200 OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n\r\n", size);
+    int len_head;
+    if (headers==NULL) {
+        len_head=sprintf(head,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n\r\n",code, size);
+    } else {
+        len_head=sprintf(head,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n\r\n",code, size,headers);
+    }
 
     int wrote=write (sock,head,len_head);
     free(head);
     if (wrote!=len_head) return ERR_BRKPIPE;
     return 0;
+}
+
+/**
+This function sends a code 200 header to the specified socket
+size is the Content-Length field
+*/
+int send_http_header(int sock,unsigned int size,char* headers) {
+    return send_http_header_code(sock,200,size,headers);
 }
 
