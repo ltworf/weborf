@@ -305,6 +305,8 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
             retval= execPage(sock,page,params,"php",http_param,post_param,method);
         } else if (endsWith(page,".bsh")) { //Script bash
             retval=execPage(sock,page,params,"bash",http_param,post_param,method);
+        } else if (endsWith(page,".py")) { //Script bash
+            retval=execPage(sock,page,params,"pywrap.py",http_param,post_param,method);
         } else { //Normal file
             retval= writePage(sock,page);
         }
@@ -358,8 +360,10 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
 
     int wpid;//Child's pid
     int wpipe[2];//Pipe's file descriptor
+    int hpipe[2];//Pipe's file descriptor, used for extra headers
 
     pipe(wpipe);//Pipe to comunicate with the child
+    pipe(hpipe);//Pipe to comunicate with the child
     wpid=fork();
     if (wpid<0) { //Error, returns a no memory error
 #ifdef SENDINGDBG
@@ -374,37 +378,16 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         setEnvVars(post_param,true);//Sets post vars
 
         close (wpipe[0]); //Closes unused end of the pipe
+        close (hpipe[0]); //Closes unused end of the pipe
         fclose (stdout); //Closing the stdout
         fclose (stderr);
         dup(wpipe[1]); //Redirects the stdout
+        dup(wpipe[1]); //Redirects the stderr
+        dup2(hpipe[1],4);//Pipe for extra headers
 
         alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
 
         if (params!=NULL) {
-            /*
-            int args= splitParams(params);//Trasforma i parametri in tante stringhe
-            char* prms[args+2];
-            {//Fa puntare alle varie stringhe
-            	int in;
-            	prms[0]=executor;//Points to the program name
-
-            	printf("%s\n",prms[0]);
-
-
-            	char* next=params;
-            	for (in=1;in<=args;in++) {
-            		prms[in]=next;
-            		next=findNext(next);
-
-            		printf("%s\n",prms[in]);
-            	}
-            	prms[args+1]=(char *)0;//Null string
-
-            }
-            execvp(executor,prms);
-            */
-
-
             //Gives GET parameters
             execlp(executor,executor,strfile,params,(char *)0);
 #ifdef SENDINGDBG
@@ -430,16 +413,30 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         int state;
         waitpid (wpid,&state,0); //Wait the termination of the script
 
-        //if (state==0 || state!=0) {
         //Large buffer, must contain the output of the script
-        char* scrpt_buf=malloc(MAXSCRIPTOUT);
+        char* scrpt_buf=malloc(MAXSCRIPTOUT+HEADBUF);
+        char* header_buf=scrpt_buf+MAXSCRIPTOUT;
 
         if (scrpt_buf==NULL) { //Was unable to allocate the buffer
             free(strfile);
             return ERR_NOMEM;//Returns if buffer was not allocated
         }
-
+        
+        //Closing pipes, so if they're empty read is non blocking
+        close (wpipe[1]);
+        close (hpipe[1]);
         int reads=read(wpipe[0],scrpt_buf,MAXSCRIPTOUT);
+        printf("Reading headers\n");
+        int h_reads=read(hpipe[0],header_buf,HEADBUF);
+        printf("Read headers\n");
+        
+        //Closing pipes
+        close (wpipe[0]);
+        close (hpipe[0]);
+        
+        
+        printf("%s\n",header_buf);
+        
         int wrote=0;
         send_http_header(sock,reads);
         wrote=write (sock,scrpt_buf,reads);
