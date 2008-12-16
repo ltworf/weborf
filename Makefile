@@ -54,12 +54,13 @@ install: uninstall
 	mkdir -p $(MANDIR) || echo Creating directories
 	gzip -c weborf.1 > $(MANDIR)/weborf.1.gz
 	
-        cp weborf.pywrap.py $(BINDIR)
+	cp weborf.pywrap.py $(BINDIR)
 	cp weborf $(BINDIR)
 	cp weborf.daemon $(DAEMONDIR)/weborf
 	chmod u+x $(DAEMONDIR)/weborf
 
 uninstall:
+	rm -f $(BINDIR)/weborf.pywrap.py || echo ok
 	rm -f $(MANDIR)/weborf.1.gz || echo ok
 	rm -f $(BINDIR)/weborf || echo ok
 
