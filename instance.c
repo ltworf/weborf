@@ -373,9 +373,12 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         free(strfile);
         return ERR_NOMEM;
     } else if (wpid==0) { //Child, executes the script
-        setenv("PROTOCOL",method,true);//Sets the protocol used
-        setEnvVars(http_param,false);//Sets http header vars
-        setEnvVars(post_param,true);//Sets post vars
+        
+
+        
+        //setenv("PROTOCOL",method,true);//Sets the protocol used
+        //setEnvVars(http_param,false);//Sets http header vars
+        //setEnvVars(post_param,true);//Sets post vars
         close (wpipe[0]); //Closes unused end of the pipe
         close (hpipe[0]); //Closes unused end of the pipe
         fclose (stdout); //Closing the stdout
@@ -386,23 +389,24 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
 
         alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
 
-        if (params!=NULL) {
-            //Gives GET parameters
-            execlp(executor,executor,strfile,params,(char *)0);
-#ifdef SENDINGDBG
-            syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
-#endif
-            exit(1);
-        } else {
-#ifdef SENDINGDBG
-            syslog(LOG_DEBUG,"Executing %s interpreter for %s",executor,strfile);
-#endif
-            execlp(executor,executor,strfile,(char *)0);
-#ifdef SENDINGDBG
-            syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
-#endif
-            exit(1);
+        if (params==NULL) {
+            params="";
         }
+        
+        if (http_param==NULL) {
+            http_param="";
+        }
+        
+        if (post_param==NULL) {
+            post_param="";
+        }
+        
+        execlp(executor,executor,strfile,params,http_param,post_param,method,(char *)0);
+#ifdef SENDINGDBG
+        syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
+#endif
+        exit(1);
+        
     } else { //Father: reads from pipe and sends
 
         int state;
