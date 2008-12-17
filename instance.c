@@ -307,7 +307,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
         //    retval=execPage(sock,page,params,"bash",http_param,post_param,method);
         //}
         if (endsWith(page,".py")) { //Script bash
-            retval=execPage(sock,page,params,PY_WRAPPER,http_param,post_param,method);
+            retval=execPage(sock,page,params,PY_WRAPPER,http_param,post_param,method,ip_addr);
         } else { //Normal file
             retval= writePage(sock,page);
         }
@@ -341,7 +341,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 /**
 Executes a script with a given interpreter and sends the resulting output
 */
-int execPage(int sock, char * file, char * params,char * executor,char * http_param,char* post_param,char * method) {
+int execPage(int sock, char * file, char * params,char * executor,char * http_param,char* post_param,char * method,char* ip_addr) {
 
     char * strfile=malloc(INBUFFER+strlen(basedir));//Buffer for file's name
 
@@ -401,7 +401,7 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
             post_param="";
         }
         
-        execlp(executor,executor,strfile,params,http_param,post_param,method,(char *)0);
+        execlp(executor,executor,strfile,params,http_param,post_param,method,ip_addr,(char *)0);
 #ifdef SENDINGDBG
         syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
 #endif
