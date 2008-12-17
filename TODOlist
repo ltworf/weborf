@@ -1,3 +1,6 @@
+- Handle virtualhost, also on different ports
+- Allow external script for modurl, must have the headers...
+
 - fix param handling in script
 - change working dir, so the script has the same working dir as its path
 - use openSSL (instead of using read and write, use wrappers so openssl or direct accesso to socket can be used)
