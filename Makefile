@@ -49,6 +49,8 @@ source: clean
 	astyle --style=kr *c *h
 	rm -f *~ *.orig
 	cd ..; tar cvjf weborf-`date +\%F | tr -d -`.tar.bz2 weborf/
+purge: uninstall
+	rm -rf /etc/weborf
 
 install: uninstall
 	mkdir -p $(MANDIR) || echo Creating directories
@@ -58,6 +60,10 @@ install: uninstall
 	cp weborf $(BINDIR)
 	cp weborf.daemon $(DAEMONDIR)/weborf
 	chmod u+x $(DAEMONDIR)/weborf
+	
+	#Stuff to execute last, and won't be performed if it is a reinstall
+	mkdir /etc/weborf
+	cp pywrapper.conf /etc/weborf
 
 uninstall:
 	rm -f $(BINDIR)/weborf.pywrap.py || echo ok

@@ -1,6 +1,7 @@
 0.10
-- Pipe with scripts are now closed...
+- Pipe with scripts are now closed
 - Support for python scripts
+- Python scripts can be configured using a configuration file in /etc
 
 0.9
 - Bug: fixed size hadling of NBUFFER

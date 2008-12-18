@@ -1,7 +1,7 @@
 #!/usr/bin/python
 '''
 Weborf
-Copyright (C) 2007  Salvo "LtWorf" Tomaselli
+Copyright (C) 2008  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import os
 import socket
 import base64
 import csv
+import time
 
 def hideErrors():
     '''Closes stderr so errors aren't shown anymore'''
@@ -89,19 +90,30 @@ def session_start():
         _COOKIE['PHPSESSID']=s_id
     else:#Session exists, loading data
         try:
-            fp=file("/tmp/"+_COOKIE['PHPSESSID'])
+            #If session expired after inactivity
+            if (os.stat(TMPDIR+"/"+_COOKIE['PHPSESSID'])[7] + SESSIONEXPIRE) < time.time():
+                #Deletes old session file, just to try to avoid to fill the disk
+                os.unlink(TMPDIR+"/"+_COOKIE['PHPSESSID'])
+                #Creating an empty session
+                _COOKIE['PHPSESSID']=None
+                session_start()
+                return
+            
+            fp=file(TMPDIR+"/"+_COOKIE['PHPSESSID'])
             reader=csv.reader(fp) #Creating a csv reader
             for i in reader.__iter__(): #Iterating rows
                 _SESSION[i[0]]=i[1]
         except:        
-            pass
+            #Start sessions with a new session id
+            _COOKIE['PHPSESSID']=None
+            session_start()
 
 def savesession():
     '''Saves the session to the file'''
     if _COOKIE['PHPSESSID']==None:
         return #No session to save
     #Opens the file with the session
-    fp=file("/tmp/"+_COOKIE['PHPSESSID'],"w")
+    fp=file(TMPDIR+"/"+_COOKIE['PHPSESSID'],"w")
 
     writer=csv.writer(fp)
 
@@ -111,7 +123,16 @@ def savesession():
         a.append((i,_SESSION[i]))
     writer.writerows(a)
     fp.close()
-    
+
+
+#Loading configuration from file or setting default
+try:
+    execfile("/etc/weborf/pywrapper.conf")
+except:
+    TMPDIR="/tmp"
+    SESSIONEXPIRE=600
+    CONTENT="text/html"
+
 #Sets SERVER and HEADER variables
 _SERVER={}
 _HEADER={}
@@ -158,30 +179,7 @@ else:
     _SERVER['AUTH_TYPE']=None
     _SERVER['PHP_AUTH_USER']=None
     _SERVER['PHP_AUTH_PW']=None
-
-'''
-'PHP_SELF' 
- The filename of the currently executing script, relative to the document root. For instance, $_SERVER['PHP_SELF'] in a script at the address http://example.com/test.php/foo.bar would be /test.php/foo.bar. The __FILE__ constant contains the full path and filename of the current (i.e. included) file.   If PHP is running as a command-line processor this variable contains the script name since PHP 4.3.0. Previously it was not available.  
-GATEWAY_INTERFACE' 
- What revision of the CGI specification the server is using; i.e. 'CGI/1.1'.  
-'SERVER_ADDR' 
- The IP address of the server under which the current script is executing.  
-'REQUEST_TIME' 
- The timestamp of the start of the request. Available since PHP 5.1.0.  
-'QUERY_STRING' 
- The query string, if any, via which the page was accessed.  
-'DOCUMENT_ROOT' 
- The document root directory under which the current script is executing, as defined in the server's configuration file.  
-'HTTP_ACCEPT' 
- Contents of the Accept: header from the current request, if there is one.  
-'SERVER_ADMIN' 
- The value given to the SERVER_ADMIN (for Apache) directive in the web server configuration file. If the script is running on a virtual host, this will be the value defined for that virtual host.  
-'PATH_TRANSLATED' 
- Filesystem- (not document root-) based path to the current script, after the server has done any virtual-to-real mapping.  
-Note:  As of PHP 4.3.2, PATH_TRANSLATED is no longer set implicitly under the Apache 2 SAPI in contrast to the situation in Apache 1, where it's set to the same value as the SCRIPT_FILENAME server variable when it's not populated by Apache. This change was made to comply with the CGI specification that PATH_TRANSLATED should only exist if PATH_INFO is defined.   Apache 2 users may use AcceptPathInfo = On inside httpd.conf to define PATH_INFO.  
- 'REQUEST_URI' 
- The URI which was given in order to access this page; for instance, '/index.html'.  
-'''
+    
 #Sets POST variables
 _POST={}
 if len(sys.argv[4])!=0:
@@ -210,7 +208,6 @@ if getVal (_HEADER,'Cookie')!=None:
         else:
             _COOKIE[i.strip()]=None
             
-
 #Changing dir to script's one
 for i in range(len(sys.argv[1])-1,-1,-1):
     if sys.argv[1][i]==os.sep:
@@ -222,5 +219,8 @@ execfile(sys.argv[1])
 
 #Saves session, if there is one
 savesession()
+
+if CONTENT!=None:
+    os.write(4,"Content-Type: "+CONTENT+"\r\n") #Writes content type, by default html
 
 sys.exit(0)
