@@ -1,0 +1,21 @@
+0.5
+- Corretto bug: non veniva decrementato il numero dei thread attivi quando essi venivano chiusi
+- Segnala nei log le connessioni droppate per mancanza di thread disponibili
+- Gestisce correttamente le sequenze di escape nell'url
+
+0.4
+- Corretto bug: Impedisce di usare path relativi nell'url ed uscire dalla directory che si usa come base
+- Supporto per i file che contengono spazi nel nome
+- Corretto bug: Inseriti controlli su eventuali fallimenti delle malloc, ed in caso di errore segnalazione ai client di servizio non disponibile
+- Modificato il sistema di invio degli errori ai client
+- I thread sono ora detached
+- Si usa un thread che monitora il numero di thread liberi tramite polling e li termina quando ci sono troppi thread non occupati
+- Scritta la pagina di manuale
+- Aggiunto il make install che copia il binario in /usr/local/bin ed installa anche la pagina di manuale
+- È possibile avviare weborf come root per fare la bind ad una porta bassa, e quindi specificare l'uid che dovrà usare per le successive operazioni
+
+0.3
+- All'avvio vengono creati pochi thread. Di volta in volta viene controllato il numero di thread non occupati; e se tale numero diventa inferiore di una certa soglia, vengono lanciati degli altri thread.
+- Viene aperta automaticamente l'index per tutte le cartelle, non solo per la root del sito.
+- Nelle cartelle in cui manca l'index, viene generata dinamicamente una pagina che mostra tutti i file regolari e le cartelle in essa contenuti (Le FIFO, i dispositivi, le socket, non vengono mostrate da questa pagina)
+- Supporto per i parametri da linea di comando.

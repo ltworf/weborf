@@ -1,0 +1,4 @@
+Sistemare il passaggio dei parametri quando si esegue un interprete di script.
+	Si deve creare un array di puntatori che puntino ai vari parametri.
+
+Cambiare la directory corrente prima di eseguire uno script, in modo che lo script abbia come working dir quella in cui si trova e non quella del server.

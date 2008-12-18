@@ -1,0 +1,67 @@
+.TH Weborf 0.3 "Jan 11, 2008"
+
+.SH NAME
+.B weborf
+\- Minimal webserver
+
+.SH SYNOPSIS
+.B "weborf "
+[
+.B options
+]
+
+.SH DESCRIPTION
+\fBWeborf\fP  is a minimal webserver, can serve only GET requests.
+
+This manual page documents \fBWeborf\fP's command-line parameters.
+
+\fBWeborf\fP is released under the GNU General Public License version 3.
+.PP
+
+.SH GENERAL COMMAND LINE USAGE
+
+Short command-line switches begin with a "-", and verbose switches begin with a "--".
+
+ The parameter must be separated by the switch using a space.
+
+.SH COMMAND LINE OPTIONS
+
+.TP
+\fB\-b\fR, \fB\-\-basedir\fR
+Must be followed by a valid directory. Weborf will use this directory as root directory, and won't send files located in parent dirs. But it is still possible for server-side scripts to read contents located anywhere on the filesystem.
+
+.TP
+\fB\-i\fR, \fB\-\-ip\fR
+Must be followed by a valid IPv4 address in dotted format, and weborf will accept only connections directed to that specific IP.
+If the IP address provided isn't used by a network device on the host, weborf will terminate.
+By default weborf listens to all IP addresses on the local host.
+
+.TP
+\fB\-p\fR, \fB\-\-port\fR
+Must be followed by a valid port number (between 1 and 65535), and weborf will listen to incoming connection on the specified port.
+If the port is already used weborf will terminate.
+To use low port numbers (less than 1024) it is necessary to execute the process as root. Thus it isn't a good idea to run a webserver with root privileges, so it is possible to specify another user.
+
+.TP
+\fB\-u\fR
+Must be followed by a valid uid, different from 0. Weborf will use this user to do his work, but will lock the network port with the previous user. This mechanism is meant to let users execute it as root and use port 80, and then let it run without root privileges.
+
+
+.SH SCRIPTING
+Weborf is able to send dinamially generated pages using php (if installed) or bash.
+When a filename ends with ".bash", weborf will use bash to execute this file before sending it to the client.
+Same thing happens when a file ends with ".php"; if php-cli is installed weborf will use it to execute the file and send it to the client.
+
+.SH "SEE ALSO"
+.BR php (1), bash(1)
+
+.SH VERSION
+\fBWeborf\fP 0.4
+
+.SH WEB
+https://galileo.dmi.unict.it/utenti/LtWorf/index.php?category=11
+
+.SH AUTHORS
+Salvo "LtWorf" Tomaselli <ltworf@galileo.dmi.unict.it>
+
+Salvo Rinaldi <salvin@bluebottle.com>

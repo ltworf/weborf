@@ -1,0 +1,39 @@
+0.6
+- Added comments
+- Improved speed on string operations
+- Memory leak corrected in script execution
+- Added control on non http messages
+- Reduced the use of mutex during thread creation
+- Improved signal handling
+- Reduced malloc's total number, this will increase speed
+- Uses printf's return value instead of strlen()
+- Corrected directory listing. Now doesn't show link to parent if already in parent directory.
+- Directory listing doesn't show link to self anymore.
+
+0.5
+- Corretto bug: non veniva decrementato il numero dei thread attivi quando essi venivano chiusi
+- Segnala nei log le connessioni droppate per mancanza di thread disponibili
+- Gestisce correttamente le sequenze di escape nell'url
+- Corretto un warning nella compilazione per architetture amd64
+- Migliorata la generazione dell'elenco dei file per le directory prive di index
+- Corretto bug che impediva il listing per directory che venivano passate senza lo / finale
+- Inserito stub non ancora funzionante per la richiesta di autenticazione
+- I parametri della richiesta HTTP vengono impostati come variabili d'ambiente e sono accessibili dagli script
+- Supporto sperimentale al POST, passaggio dei parametri tramite variabili d'ambiente
+
+0.4
+- Corretto bug: Impedisce di usare path relativi nell'url ed uscire dalla directory che si usa come base
+- Supporto per i file che contengono spazi nel nome
+- Corretto bug: Inseriti controlli su eventuali fallimenti delle malloc, ed in caso di errore segnalazione ai client di servizio non disponibile
+- Modificato il sistema di invio degli errori ai client
+- I thread sono ora detached
+- Si usa un thread che monitora il numero di thread liberi tramite polling e li termina quando ci sono troppi thread non occupati
+- Scritta la pagina di manuale
+- Aggiunto il make install che copia il binario in /usr/local/bin ed installa anche la pagina di manuale
+- È possibile avviare weborf come root per fare la bind ad una porta bassa, e quindi specificare l'uid che dovrà usare per le successive operazioni
+
+0.3
+- All'avvio vengono creati pochi thread. Di volta in volta viene controllato il numero di thread non occupati; e se tale numero diventa inferiore di una certa soglia, vengono lanciati degli altri thread.
+- Viene aperta automaticamente l'index per tutte le directory, non solo per la root del sito.
+- Nelle directory in cui manca l'index, viene generata dinamicamente una pagina che mostra tutti i file regolari e le directory in essa contenuti (Le FIFO, i dispositivi, le socket, non vengono mostrate da questa pagina)
+- Supporto per i parametri da linea di comando.
