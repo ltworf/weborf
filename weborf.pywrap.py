@@ -24,6 +24,7 @@ import py_compile
 import os
 import socket
 import base64
+import csv
 
 def hideErrors():
     '''Closes stderr so errors aren't shown anymore'''
@@ -66,6 +67,50 @@ def setcookie(name,value,expires=None):
     if expires!=None:
         os.write(4,"; Max-Age="+str(expires))
     os.write(4,"\r\n")
+
+
+def session_start():   
+    '''Inits the session vars'''
+    s_id=getVal(_COOKIE,'PHPSESSID')#Gets the session ID
+    
+    if s_id==None: #No session, creating a new one
+        import random
+        import md5
+        
+        #Creating session's id with random numbers and multiple hashes
+        r=random.Random()
+        
+        a=md5.md5(sys.argv[6]).hexdigest()+md5.md5(str(r.random())).hexdigest()
+        for i in range(10):
+            a=md5.md5(a).hexdigest()+md5.md5(str(r.random())).hexdigest()
+        
+        s_id= "weborf-"+ str(os.getpid())+ "-" + a
+        setcookie('PHPSESSID',s_id)
+        _COOKIE['PHPSESSID']=s_id
+    else:#Session exists, loading data
+        try:
+            fp=file("/tmp/"+_COOKIE['PHPSESSID'])
+            reader=csv.reader(fp) #Creating a csv reader
+            for i in reader.__iter__(): #Iterating rows
+                _SESSION[i[0]]=i[1]
+        except:        
+            pass
+
+def savesession():
+    '''Saves the session to the file'''
+    if _COOKIE['PHPSESSID']==None:
+        return #No session to save
+    #Opens the file with the session
+    fp=file("/tmp/"+_COOKIE['PHPSESSID'],"w")
+
+    writer=csv.writer(fp)
+
+    #Converting dictionary into 2 level array for csv module
+    a=[]
+    for i in _SESSION:
+        a.append((i,_SESSION[i]))
+    writer.writerows(a)
+    fp.close()
     
 #Sets SERVER and HEADER variables
 _SERVER={}
@@ -101,7 +146,7 @@ _SERVER['HTTPS']=None #Will have to do something better when ssl will be impleme
 _SERVER['REMOTE_HOST']=None
 _SERVER['REMOTE_PORT']=None
 
-#'Authorization': 'Basic d29yZjpwYXNzd29yZA=='
+#Deconding auth field
 v=getVal(_HEADER,'Authorization')
 if v!=None:
     q=v.split(" ")
@@ -161,9 +206,9 @@ if getVal (_HEADER,'Cookie')!=None:
     for i in _HEADER['Cookie'].split(";"):
         q=i.find("=")
         if q!=-1:
-            _COOKIE[i[0:q]]=i[q+1:]
+            _COOKIE[i[0:q].strip()]=i[q+1:].strip()
         else:
-            _COOKIE[i]=None
+            _COOKIE[i.strip()]=None
             
 
 #Changing dir to script's one
@@ -175,7 +220,7 @@ for i in range(len(sys.argv[1])-1,-1,-1):
 #Executes file
 execfile(sys.argv[1])
 
-#Extra needed headers
-#os.write(4,"test")
-#os.write(4,"Set-Cookie: lop=ciao\r\n")
+#Saves session, if there is one
+savesession()
+
 sys.exit(0)
