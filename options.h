@@ -21,7 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_OPTIONS_H
 #define WEBORF_OPTIONS_H
 
-#define VERSION "0.9"
+#define VERSION "0.10"
+#define SIGNATURE "Weborf/0.10 (GNU/Linux)"
 
 //----------System
 //Uid for superuser

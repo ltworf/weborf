@@ -32,7 +32,7 @@ def hideErrors():
 def redirect(location):
     '''Sends to the client the request to redirect to another page.
     Unless php, here this can be used even after output'''
-    os.write(4,"Location: "+location) #Writes location header
+    os.write(4,"Location: "+location+"\r\n") #Writes location header
     sys.exit(33) #Tells weborf that a redirect is requested
 
 def post_escape(val):
@@ -59,6 +59,13 @@ def getVal(dic,key):
         return dic[key]
     except:
         return None
+def setcookie(name,value,expires=None):
+    '''Sets a cookie, by default it will be a session cookie.
+    Expires is the time in seconds to wait to make the cookie expire'''
+    os.write(4,"Set-Cookie: "+str(name)+ "=" + str(value))
+    if expires!=None:
+        os.write(4,"; Max-Age="+str(expires))
+    os.write(4,"\r\n")
     
 #Sets SERVER and HEADER variables
 _SERVER={}
@@ -70,6 +77,9 @@ for i in fields:
     v=i.split(": ",1)
     _HEADER[v[0]]=v[1]
 
+_SERVER['SERVER_SOFTWARE']= os.getenv("WEBORF")
+_SERVER['SERVER_SIGNATURE']=os.getenv("WEBORF")
+_SERVER['SERVER_PORT']=os.getenv("WEBORF_PORT")
 _SERVER["REQUEST_METHOD"]=sys.argv[5]
 _SERVER["HTTP_REFERER"]=getVal(_HEADER,"Referer")
 _SERVER["HTTP_CONNECTION"]=getVal(_HEADER,"Connection")
@@ -87,7 +97,7 @@ else:
     _SERVER['SERVER_NAME']=socket.gethostname()
 
 _SERVER['REMOTE_ADDR']=sys.argv[6]
-
+_SERVER['HTTPS']=None #Will have to do something better when ssl will be implemented!
 _SERVER['REMOTE_HOST']=None
 _SERVER['REMOTE_PORT']=None
 
@@ -99,8 +109,10 @@ if v!=None:
     auth=base64.b64decode(q[1]).split(":",1)
     _SERVER['PHP_AUTH_USER']=auth[0]
     _SERVER['PHP_AUTH_PW']=auth[1]
-    
-    
+else:
+    _SERVER['AUTH_TYPE']=None
+    _SERVER['PHP_AUTH_USER']=None
+    _SERVER['PHP_AUTH_PW']=None
 
 '''
 'PHP_SELF' 
@@ -109,8 +121,6 @@ GATEWAY_INTERFACE'
  What revision of the CGI specification the server is using; i.e. 'CGI/1.1'.  
 'SERVER_ADDR' 
  The IP address of the server under which the current script is executing.  
-'SERVER_SOFTWARE' 
- Server identification string, given in the headers when responding to requests.  
 'REQUEST_TIME' 
  The timestamp of the start of the request. Available since PHP 5.1.0.  
 'QUERY_STRING' 
@@ -119,26 +129,14 @@ GATEWAY_INTERFACE'
  The document root directory under which the current script is executing, as defined in the server's configuration file.  
 'HTTP_ACCEPT' 
  Contents of the Accept: header from the current request, if there is one.  
-'HTTPS' 
- Set to a non-empty value if the script was queried through the HTTPS protocol.   Note that when using ISAPI with IIS, the value will be off if the request was not made through the HTTPS protocol.  
 'SERVER_ADMIN' 
  The value given to the SERVER_ADMIN (for Apache) directive in the web server configuration file. If the script is running on a virtual host, this will be the value defined for that virtual host.  
-'SERVER_PORT' 
- The port on the server machine being used by the web server for communication. For default setups, this will be '80'; using SSL, for instance, will change this to whatever your defined secure HTTP port is.  
-'SERVER_SIGNATURE' 
- String containing the server version and virtual host name which are added to server-generated pages, if enabled.  
 'PATH_TRANSLATED' 
  Filesystem- (not document root-) based path to the current script, after the server has done any virtual-to-real mapping.  
 Note:  As of PHP 4.3.2, PATH_TRANSLATED is no longer set implicitly under the Apache 2 SAPI in contrast to the situation in Apache 1, where it's set to the same value as the SCRIPT_FILENAME server variable when it's not populated by Apache. This change was made to comply with the CGI specification that PATH_TRANSLATED should only exist if PATH_INFO is defined.   Apache 2 users may use AcceptPathInfo = On inside httpd.conf to define PATH_INFO.  
  'REQUEST_URI' 
  The URI which was given in order to access this page; for instance, '/index.html'.  
-'PHP_AUTH_DIGEST' 
- When running under Apache as module doing Digest HTTP authentication this variable is set to the 'Authorization' header sent by the client (which you should then use to make the appropriate validation).
 '''
-
-#Changing dir to script's one
-#os.chdir()
-
 #Sets POST variables
 _POST={}
 if len(sys.argv[4])!=0:
@@ -153,10 +151,31 @@ if len(sys.argv[2])!=0:
         v=i.split("=")
         _GET[v[0]]=v[1]
 
+
+#Sets SESSION variables
+_SESSION={}
+
+#Sets COOKIE variables
+_COOKIE={}
+if getVal (_HEADER,'Cookie')!=None:
+    for i in _HEADER['Cookie'].split(";"):
+        q=i.find("=")
+        if q!=-1:
+            _COOKIE[i[0:q]]=i[q+1:]
+        else:
+            _COOKIE[i]=None
+            
+
+#Changing dir to script's one
+for i in range(len(sys.argv[1])-1,-1,-1):
+    if sys.argv[1][i]==os.sep:
+        os.chdir(sys.argv[1][0:i])
+        break
+
 #Executes file
 execfile(sys.argv[1])
 
 #Extra needed headers
 #os.write(4,"test")
-
+#os.write(4,"Set-Cookie: lop=ciao\r\n")
 sys.exit(0)

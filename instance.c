@@ -666,7 +666,8 @@ int send_err(int sock,int err,char* descr,char* ip_addr) {
 /**
 This function sends a code header to the specified socket
 size is the Content-Length field.
-headers can be NULL or some extra headers to add. Headers must be separated by \r\n and must not have an \r\n at the end or at the beginning.
+headers can be NULL or some extra headers to add. Headers must be 
+separated by \r\n and must have an \r\n at the end.
 */
 int send_http_header_code(int sock,int code, unsigned int size,char* headers) {
 
@@ -677,7 +678,7 @@ int send_http_header_code(int sock,int code, unsigned int size,char* headers) {
     if (headers==NULL) {
         len_head=sprintf(head,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n\r\n",code, size);
     } else {
-        len_head=sprintf(head,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n\r\n",code, size,headers);
+        len_head=sprintf(head,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n",code, size,headers);
     }
 
     int wrote=write (sock,head,len_head);

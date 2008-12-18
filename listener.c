@@ -193,6 +193,8 @@ int main(int argc, char * argv[]) {
     printf("under certain conditions.\nFor details see the GPLv3 Licese.\n");
     printf("Run %s --help to see the options\n",argv[0]);
 
+    setenv("WEBORF",SIGNATURE,true);
+    setenv("WEBORF_PORT",port,true);
     //Creates the socket
 #ifdef IPV6
     s = socket(PF_INET6, SOCK_STREAM, 0);
