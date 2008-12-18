@@ -1,0 +1,17 @@
+- CONFIGURAZIONE
+La configurazione si fa modificando il file options.h e ricompilando.
+
+Le opzioni più interessanti sono 
+PORT //Porta da usare. Se se ne usa una bassa bisognerà avviarlo come root
+MAXTHREAD //Numero di thread massimi da usare (+ quello principale)
+INDEX //Pagina di index
+BASEDIR //Cartella dove si trovano le pagine.
+
+Spero che i nomi parlino da soli.
+
+- COMPILAZIONE
+make clean per ripulire dai vecchi binari
+make per compilare
+
+- ESECUZIONE
+./weborf per eseguire
