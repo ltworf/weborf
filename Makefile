@@ -57,6 +57,7 @@ install: uninstall
 	gzip -c weborf.1 > $(MANDIR)/weborf.1.gz
 	
 	cp weborf.pywrap.py $(BINDIR)
+	cp weborf.cgiwrap $(BINDIR)
 	cp weborf $(BINDIR)
 	cp weborf.daemon $(DAEMONDIR)/weborf
 	chmod u+x $(DAEMONDIR)/weborf
@@ -67,6 +68,7 @@ install: uninstall
 
 uninstall:
 	rm -f $(BINDIR)/weborf.pywrap.py || echo ok
+	rm -f $(BINDIR)/weborf.cgiwrap || echo ok
 	rm -f $(MANDIR)/weborf.1.gz || echo ok
 	rm -f $(BINDIR)/weborf || echo ok
 

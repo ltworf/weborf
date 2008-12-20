@@ -74,6 +74,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //Timeout for the scripts, in seconds
 #define SCRPT_TIMEOUT 15
 #define PY_WRAPPER "weborf.pywrap.py"
+#define PHP_WRAPPER "weborf.phpwrap.py"
 
 //-------------Debug options
 //#define THREADDBG

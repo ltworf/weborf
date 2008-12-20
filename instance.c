@@ -301,21 +301,16 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
     int retval;//Return value after sending the page
 
     if (exec_script) { //Scripts enabled
-        //if (endsWith(page,".php")) { //File php
-        //    retval= execPage(sock,page,params,"php",http_param,post_param,method);
-        //} else if (endsWith(page,".bsh")) { //Script bash
-        //    retval=execPage(sock,page,params,"bash",http_param,post_param,method);
-        //}
-        if (endsWith(page,".py")) { //Script bash
+        if (endsWith(page,".py")) { //Script python
             retval=execPage(sock,page,params,PY_WRAPPER,http_param,post_param,method,ip_addr);
+        } else if (endsWith(page,".php")) { //Script php
+            retval=execPage(sock,page,params,PHP_WRAPPER,http_param,post_param,method,ip_addr);
         } else { //Normal file
             retval= writePage(sock,page);
         }
     } else { //Scripts disabled
         retval= writePage(sock,page);
     }
-
-
 
     if (post_param!=NULL) free (post_param);
 
@@ -362,9 +357,12 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
     int wpid;//Child's pid
     int wpipe[2];//Pipe's file descriptor
     int hpipe[2];//Pipe's file descriptor, used for extra headers
+    int ipipe[2];//Pipe's file descriptor, used to pass POST on script's standard input
 
     pipe(wpipe);//Pipe to comunicate with the child
     pipe(hpipe);//Pipe to comunicate with the child
+    pipe(ipipe);//Pipe to comunicate with the child
+    
     wpid=fork();
     if (wpid<0) { //Error, returns a no memory error
 #ifdef SENDINGDBG
@@ -372,23 +370,23 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
 #endif
         free(strfile);
         return ERR_NOMEM;
-    } else if (wpid==0) { //Child, executes the script
-        
-
-        
+    } else if (wpid==0) { //Child, executes the script        
         //setenv("PROTOCOL",method,true);//Sets the protocol used
         //setEnvVars(http_param,false);//Sets http header vars
         //setEnvVars(post_param,true);//Sets post vars
         close (wpipe[0]); //Closes unused end of the pipe
         close (hpipe[0]); //Closes unused end of the pipe
+        close (ipipe[1]); //Closes unused end of the pipe
         fclose (stdout); //Closing the stdout
         fclose (stderr);
         dup(wpipe[1]); //Redirects the stdout
         dup(wpipe[1]); //Redirects the stderr
         dup2(hpipe[1],4);//Pipe for extra headers
-
-        alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
-
+        
+        //Redirecting standard input
+        fclose(stdin);
+        dup(ipipe[0]);
+        
         if (params==NULL) {
             params="";
         }
@@ -397,21 +395,31 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
             http_param="";
         }
         
-        if (post_param==NULL) {
-            post_param="";
-        }
-        
-        execlp(executor,executor,strfile,params,http_param,post_param,method,ip_addr,(char *)0);
+        alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
+        execlp(executor,executor,strfile,params,http_param,method,ip_addr,(char *)0);
 #ifdef SENDINGDBG
         syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
 #endif
         exit(1);
         
     } else { //Father: reads from pipe and sends
-
+        
+        {//Send post data to script's stdin
+            char*post="";
+            if (post_param!=NULL) {
+                post=post_param;
+            }
+        
+            write(ipipe[1],post,strlen(post));
+            close(ipipe[1]);
+            close(ipipe[0]);
+        }
+        
         int state;
         waitpid (wpid,&state,0); //Wait the termination of the script
 
+        
+        
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
         close (hpipe[1]);
