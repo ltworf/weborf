@@ -304,7 +304,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
         if (endsWith(page,".py")) { //Script python
             retval=execPage(sock,page,params,PY_WRAPPER,http_param,post_param,method,ip_addr);
         } else if (endsWith(page,".php")) { //Script php
-            retval=execPage(sock,page,params,PHP_WRAPPER,http_param,post_param,method,ip_addr);
+            retval=execPage(sock,page,params,CGI_WRAPPER,http_param,post_param,method,ip_addr);
         } else { //Normal file
             retval= writePage(sock,page);
         }
@@ -369,6 +369,12 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         syslog(LOG_ERR,"Unable to fork to execute the file %s",strfile);
 #endif
         free(strfile);
+        close(ipipe[1]);
+        close(ipipe[0]);
+        close(wpipe[1]);
+        close(wpipe[0]);
+        close(hpipe[1]);
+        close(hpipe[0]);
         return ERR_NOMEM;
     } else if (wpid==0) { //Child, executes the script        
         //setenv("PROTOCOL",method,true);//Sets the protocol used
@@ -403,7 +409,6 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         exit(1);
         
     } else { //Father: reads from pipe and sends
-        
         {//Send post data to script's stdin
             char*post="";
             if (post_param!=NULL) {
@@ -415,14 +420,14 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
             close(ipipe[0]);
         }
         
-        int state;
-        waitpid (wpid,&state,0); //Wait the termination of the script
-
-        
-        
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
         close (hpipe[1]);
+        
+        int state;
+        waitpid (wpid,&state,0); //Wait the termination of the script
+
+
         
         //Large buffer, must contain the output of the script
         char* scrpt_buf=malloc(MAXSCRIPTOUT+HEADBUF);
@@ -439,7 +444,7 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         int reads=read(wpipe[0],scrpt_buf,MAXSCRIPTOUT);
         //Reads extra headers set by the script
         int h_reads=read(hpipe[0],header_buf,HEADBUF);
-
+        
         //Closing pipes
         close (wpipe[0]);
         close (hpipe[0]);
@@ -448,6 +453,9 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         switch (WEXITSTATUS(state)) {
             case 33: //Redirect
                 send_http_header_code(sock,303,0,header_buf);
+                break;
+            case 44: //Not found
+                send_err(sock,404,"Page not found",ip_addr);
                 break;
             default:
                 if (h_reads>0) {
@@ -650,7 +658,7 @@ int send_err(int sock,int err,char* descr,char* ip_addr) {
     int page_len=sprintf(page,"%s <H1>Error %d</H1>%s %s",HTMLHEAD,err,descr,HTMLFOOT);
 
     //Prepares the header
-    int head_len = sprintf(head,"HTTP/1.1 %d %s: Weborf (GNU/Linux)\r\nContent-Length: %d\r\n\r\n",err,descr ,(int)page_len);
+    int head_len = sprintf(head,"HTTP/1.1 %d %s: Weborf (GNU/Linux)\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n",err,descr ,(int)page_len);
 
     //Sends the http header
     if (write (sock,head,head_len)!=head_len) {

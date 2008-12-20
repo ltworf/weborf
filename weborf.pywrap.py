@@ -82,7 +82,7 @@ def session_start():
         #Creating session's id with random numbers and multiple hashes
         r=random.Random()
         
-        a=md5.md5(sys.argv[6]).hexdigest()+md5.md5(str(r.random())).hexdigest()
+        a=md5.md5(sys.argv[5]).hexdigest()+md5.md5(str(r.random())).hexdigest()
         for i in range(10):
             a=md5.md5(a).hexdigest()+md5.md5(str(r.random())).hexdigest()
         
@@ -144,9 +144,9 @@ for i in fields:
     v=i.split(": ",1)
     _HEADER[v[0]]=v[1]
 
-_SERVER['SERVER_SOFTWARE']= os.getenv("WEBORF")
-_SERVER['SERVER_SIGNATURE']=os.getenv("WEBORF")
-_SERVER['SERVER_PORT']=os.getenv("WEBORF_PORT")
+_SERVER['SERVER_SOFTWARE']= os.getenv("SERVER_SOFTWARE")
+_SERVER['SERVER_SIGNATURE']=os.getenv("SERVER_SOFTWARE")
+_SERVER['SERVER_PORT']=os.getenv("SERVER_PORT")
 _SERVER["REQUEST_METHOD"]=sys.argv[4]
 _SERVER["HTTP_REFERER"]=getVal(_HEADER,"Referer")
 _SERVER["HTTP_CONNECTION"]=getVal(_HEADER,"Connection")
