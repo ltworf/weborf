@@ -402,7 +402,7 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         }
         
         alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
-        execlp(executor,executor,strfile,params,http_param,method,ip_addr,(char *)0);
+        execlp(executor,executor,strfile,params,http_param,method,ip_addr,basedir,(char *)0);
 #ifdef SENDINGDBG
         syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
 #endif
