@@ -457,6 +457,12 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
             case 44: //Not found
                 send_err(sock,404,"Page not found",ip_addr);
                 break;
+            case 40://Bad request
+                send_err(sock,400,"Bad Request",ip_addr);
+                break;
+            case 51: //Not implemented
+                send_err(sock,400,"Not implemented",ip_addr);
+                break;
             default:
                 if (h_reads>0) {
                     send_http_header(sock,reads,header_buf);

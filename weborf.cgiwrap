@@ -66,12 +66,7 @@ _SERVER={}
 _HEADER={}
 fields = sys.argv[3].split("\r\n")
 
-
-#os.putenv('SERVER_PROTOCOL',fields.pop(0))
 env['SERVER_PROTOCOL']=fields.pop(0)
-
-
-#os.putenv('SCRIPT_NAME',"test.php")
 
 fields.remove("")
 for i in fields:
@@ -79,7 +74,7 @@ for i in fields:
     _HEADER[v[0]]=v[1]
     
 '''          meta-variable-name =  |  |
-                           "CONTENT_TYPE" | "" |
+                            | "" |
                            "PATH_INFO" | "PATH_TRANSLATED" |
                             |  |
                            "REMOTE_HOST" | "REMOTE_IDENT" |
@@ -95,13 +90,16 @@ for i in fields:
 
 #---------------------------------------------------------------------------------------TODO SOLVE
 #os.putenv('REQUEST_METHOD',sys.argv[4])
-#env['REQUEST_METHOD']=sys.argv[4]
-#env["SERVER_NAME"]=getVal(_HEADER,'Host')
-#env['GATEWAY_INTERFACE']="CGI/1.1"
+'''env['REQUEST_METHOD']=sys.argv[4]
+env["SERVER_NAME"]=getVal(_HEADER,'Host')
+env['GATEWAY_INTERFACE']="CGI/0.1"
+env['SERVER_SOFTWARE']=os.getenv('SERVER_SOFTWARE')'''
+
+for i in _HEADER:
+    env["HTTP_"+i.upper().replace("-","_")]=_HEADER[i]
+
 
 env['SCRIPT_NAME']=sys.argv[1][len(sys.argv[6]):]
-#env['SERVER_SOFTWARE']=os.getenv('SERVER_SOFTWARE')
-
 env["QUERY_STRING"]=sys.argv[2]
 env['REMOTE_ADDR']=sys.argv[5]
 
@@ -157,8 +155,9 @@ i_pipe=os.pipe() #Input for child process
 #Sets POST variables
 if getVal(_HEADER,"Content-Length")!="":
     #os.putenv('CONTENT_LENGTH',getVal(_HEADER,"Content-Length"))
-    env['CONTENT_LENGTH']=getVal(_HEADER,"Content-Length")
-    post=sys.stdin.read()
+    
+    env['CONTENT_LENGTH']=getVal(_HEADER,"Content-Length").strip()
+    post=os.read(sys.stdin.fileno(),int(env['CONTENT_LENGTH']))
     print "POST SENT",post,env['CONTENT_LENGTH']
     print getVal(_HEADER,'Content-Type')
     env['CONTENT_TYPE']=_HEADER['Content-Type']
@@ -180,13 +179,8 @@ if pid==0: #Child process
     os.close(o_pipe[0])
     os.dup(o_pipe[1])
     
-    #os.putenv('REDIRECT_STATUS',"200")
-    #os.execv("/usr/lib/cgi-bin/php5",cmd_line)
-    os.execve("/usr/bin/php5-cgi",cmd_line,env)
-    
-    #proc=os.popen("/tmp/test")
-    print proc.read() 
-    
+    #os.execve("/usr/bin/php5-cgi",cmd_line,env) 
+    os.execve("/usr/lib/cgi-bin/php5",cmd_line,env) 
     sys.exit(1)
 else: #Parent process
     os.close(i_pipe[0])
@@ -202,24 +196,25 @@ else: #Parent process
     os.close(o_pipe[0])
 
 out=out.split("\r\n\r\n")
+
+os.write(4,out[0]+"\r\n") #Writing headers
+
+#Sending status to weborf
+f=out[0].find("Status")
+if f!=-1:
+    
+    status=out[0][f+8:f+11]
+    #Redirect
+    if status=="303" or status=="302":
+        sys.exit(33)    
+    elif status=="404":
+        sys.exit(44)
+    elif status=="400":
+        sys.exit(40)
+    elif status=="501":
+        sys.exit(51)
+        
 if len(out)==2:
     print out[1] #Writing page
-    os.write(4,out[0]+"\r\n") #Writing headers
-    
-    #Sending status to weborf
-    f=out[0].find("Status")
-    if f!=-1:
-        
-        status=out[0][f+8:f+11]
-        print status
-        print out[0],f
-        #Redirect
-        if status=="303" or status=="302":
-            sys.exit(33)    
-        elif status=="404":
-            #sys.exit(44)
-            pass
-else:
-    print out[0]
 
 sys.exit(0)
