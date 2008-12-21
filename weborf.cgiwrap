@@ -90,15 +90,26 @@ for i in fields:
 
 #---------------------------------------------------------------------------------------TODO SOLVE
 #os.putenv('REQUEST_METHOD',sys.argv[4])
-'''env['REQUEST_METHOD']=sys.argv[4]
-env["SERVER_NAME"]=getVal(_HEADER,'Host')
-env['GATEWAY_INTERFACE']="CGI/0.1"
-env['SERVER_SOFTWARE']=os.getenv('SERVER_SOFTWARE')'''
+#env['REQUEST_METHOD']=sys.argv[4]
+#env["SERVER_NAME"]=getVal(_HEADER,'Host')
+#env['GATEWAY_INTERFACE']="CGI/0.1"
+#env['SERVER_SOFTWARE']=os.getenv('SERVER_SOFTWARE')
+
+#env['SCRIPT_FILENAME']=sys.argv[1]
 
 for i in _HEADER:
     env["HTTP_"+i.upper().replace("-","_")]=_HEADER[i]
 
+env['REDIRECT_STATUS']="Ciao"#Mah.. i'll never understand php
+env['SCRIPT_FILENAME']=sys.argv[1]
 
+if len( sys.argv[2])!=0:
+    env['REQUEST_URI']=sys.argv[1][len(sys.argv[6]):]+"?" + sys.argv[2]
+else:
+    env['REQUEST_URI']=sys.argv[1][len(sys.argv[6]):]
+
+
+env["SERVER_NAME"]="localhost"
 env['SCRIPT_NAME']=sys.argv[1][len(sys.argv[6]):]
 env["QUERY_STRING"]=sys.argv[2]
 env['REMOTE_ADDR']=sys.argv[5]
@@ -158,8 +169,8 @@ if getVal(_HEADER,"Content-Length")!="":
     
     env['CONTENT_LENGTH']=getVal(_HEADER,"Content-Length").strip()
     post=os.read(sys.stdin.fileno(),int(env['CONTENT_LENGTH']))
-    print "POST SENT",post,env['CONTENT_LENGTH']
-    print getVal(_HEADER,'Content-Type')
+    #print "POST SENT",post,env['CONTENT_LENGTH']
+    #print getVal(_HEADER,'Content-Type')
     env['CONTENT_TYPE']=_HEADER['Content-Type']
     os.write(i_pipe[1],post)
 '''f=file(sys.argv[1])
@@ -179,7 +190,8 @@ if pid==0: #Child process
     os.close(o_pipe[0])
     os.dup(o_pipe[1])
     
-    #os.execve("/usr/bin/php5-cgi",cmd_line,env) 
+    #os.execve("/usr/bin/php5-cgi",cmd_line,env)
+    
     os.execve("/usr/lib/cgi-bin/php5",cmd_line,env) 
     sys.exit(1)
 else: #Parent process
