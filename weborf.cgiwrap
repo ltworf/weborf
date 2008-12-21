@@ -27,24 +27,6 @@ import base64
 import csv
 import time
 
-def post_escape(val):
-    '''Post fields use certains escapes. This function returns the original string'''
-    val=val.replace("+"," ") #Replaces all + with a space
-    
-    i=val.find("%") #% is the char for an exadecimal escape
-    while i!=-1: #If there is a % in the non parsed part of the string
-        s=val[i+1] + val[i+2] #Extract the exadecimal code
-        if s!="37":
-            #Replaces all the escapes in the string
-            val=val.replace("%"+s,chr(int(s,16)))
-        else:
-            '''Replaces only once because this char is a % so there would be %
-            that aren't escapes in the non parsed part of the string'''
-            val=val.replace("%"+s,chr(int(s,16)),1)
-            
-        i=val.find("%",i+1)
-    
-    return val
 def getVal(dic,key):
     '''Returns the value dic[key] or None if the key doesn't exist'''
     try:
@@ -59,10 +41,11 @@ except:
     pass
 
 
+#env vars for the script
 env={}
 
-#Sets SERVER and HEADER variables
-_SERVER={}
+
+#Sets HEADER variables
 _HEADER={}
 fields = sys.argv[3].split("\r\n")
 
@@ -74,13 +57,8 @@ for i in fields:
     _HEADER[v[0]]=v[1]
     
 '''          meta-variable-name =  |  |
-                            | "" |
                            "PATH_INFO" | "PATH_TRANSLATED" |
-                            |  |
                            "REMOTE_HOST" | "REMOTE_IDENT" |
-                           
-                           "" |  |
-                            |  |
                            | scheme |
                            protocol-var-name | extension-var-name
       protocol-var-name  = ( protocol | scheme ) "_" var-name
@@ -88,69 +66,43 @@ for i in fields:
       var-name           = token
       extension-var-name = token'''
 
-#---------------------------------------------------------------------------------------TODO SOLVE
-#os.putenv('REQUEST_METHOD',sys.argv[4])
-#env['REQUEST_METHOD']=sys.argv[4]
-#env["SERVER_NAME"]=getVal(_HEADER,'Host')
-#env['GATEWAY_INTERFACE']="CGI/0.1"
-#env['SERVER_SOFTWARE']=os.getenv('SERVER_SOFTWARE')
+env['PATH']=os.getenv("PATH")
+env['REQUEST_METHOD']=sys.argv[4] #GET | POST, from command line
+env["SERVER_NAME"]=getVal(_HEADER,'Host') #Name of the server from the host field in the header
+env['GATEWAY_INTERFACE']="CGI/1.1" #CGI version
+env['SERVER_SOFTWARE']=os.getenv('SERVER_SOFTWARE') #Weborf version
 
-#env['SCRIPT_FILENAME']=sys.argv[1]
-
+# All header's fields
 for i in _HEADER:
     env["HTTP_"+i.upper().replace("-","_")]=_HEADER[i]
 
-env['REDIRECT_STATUS']="Ciao"#Mah.. i'll never understand php
-env['SCRIPT_FILENAME']=sys.argv[1]
+env['REDIRECT_STATUS']="Ciao"#Mah.. i'll never understand php, this env var is needed
+env['SCRIPT_FILENAME']=sys.argv[1] #This var is needed as well or php say no input file...
 
+
+#Request URI with or without a query
 if len( sys.argv[2])!=0:
     env['REQUEST_URI']=sys.argv[1][len(sys.argv[6]):]+"?" + sys.argv[2]
 else:
     env['REQUEST_URI']=sys.argv[1][len(sys.argv[6]):]
 
-
-env["SERVER_NAME"]="localhost"
 env['SCRIPT_NAME']=sys.argv[1][len(sys.argv[6]):]
-env["QUERY_STRING"]=sys.argv[2]
-env['REMOTE_ADDR']=sys.argv[5]
+env["QUERY_STRING"]=sys.argv[2] #Query after ?
+env['REMOTE_ADDR']=sys.argv[5] #Client's address
 
 #Deconding auth field
 v=getVal(_HEADER,'Authorization')
 if v!="":
     q=v.split(" ")
-    os.putenv('AUTH_TYPE',q[0])
+    env['AUTH_TYPE']=q[0]
     auth=base64.b64decode(q[1]).split(":",1)
-    os.putenv('REMOTE_USER',auth[0])
-    _SERVER['PHP_AUTH_PW']=auth[1]
-
-_SERVER['SERVER_SIGNATURE']=os.getenv("SERVER_SOFTWARE")
-
-_SERVER["HTTP_REFERER"]=getVal(_HEADER,"Referer")
-_SERVER["HTTP_CONNECTION"]=getVal(_HEADER,"Connection")
-_SERVER['HTTP_ACCEPT_LANGUAGE']=getVal(_HEADER,"Accept-Language")
-_SERVER['HTTP_ACCEPT_ENCODING' ]=getVal(_HEADER,"Accept-Encoding")
-_SERVER['HTTP_ACCEPT_CHARSET' ]=getVal(_HEADER,"Accept-Charset")
-_SERVER['HTTP_USER_AGENT']=getVal(_HEADER,'User-Agent')
-_SERVER['SCRIPT_FILENAME']=sys.argv[1]
-_SERVER['SCRIPT_NAME']=sys.argv[1]
-_SERVER['HTTP_HOST']=getVal(_HEADER,'Host')
-if _SERVER['HTTP_HOST']!=None:
-    _SERVER['SERVER_NAME']=_SERVER['HTTP_HOST']
-else:
-    _SERVER['SERVER_NAME']=socket.gethostname()
-
-_SERVER['HTTPS']=None #Will have to do something better when ssl will be implemented!
-_SERVER['REMOTE_HOST']=None
-_SERVER['REMOTE_PORT']=None
-
+    env['REMOTE_USER']=auth[0]
 
 #Changing dir to script's one
-'''
 for i in range(len(sys.argv[1])-1,-1,-1):
     if sys.argv[1][i]==os.sep:
         os.chdir(sys.argv[1][0:i])
         break
-'''
 
 cmd_line=["-f",sys.argv[1]]
 
@@ -160,21 +112,15 @@ if len(sys.argv[2])!=0:
         cmd_line.append(i)
 
 
-o_pipe=os.pipe()
+o_pipe=os.pipe() #Output for child process
 i_pipe=os.pipe() #Input for child process
 
 #Sets POST variables
 if getVal(_HEADER,"Content-Length")!="":
-    #os.putenv('CONTENT_LENGTH',getVal(_HEADER,"Content-Length"))
-    
     env['CONTENT_LENGTH']=getVal(_HEADER,"Content-Length").strip()
     post=os.read(sys.stdin.fileno(),int(env['CONTENT_LENGTH']))
-    #print "POST SENT",post,env['CONTENT_LENGTH']
-    #print getVal(_HEADER,'Content-Type')
     env['CONTENT_TYPE']=_HEADER['Content-Type']
     os.write(i_pipe[1],post)
-'''f=file(sys.argv[1])
-os.write(i_pipe[1],f.read())'''
 
 pid=os.fork()
 out=""
@@ -182,31 +128,39 @@ if pid==0: #Child process
     stdin=sys.stdin.fileno()
     stdout=sys.stdout.fileno()
     
+    #Redirecting stdin to i_pipe
     os.close(stdin)
     os.close(i_pipe[1])
     os.dup(i_pipe[0])
     
+    #Redirecting stdout to o_pipe
     os.close(stdout)
     os.close(o_pipe[0])
     os.dup(o_pipe[1])
     
-    #os.execve("/usr/bin/php5-cgi",cmd_line,env)
-    
+    #Running php
     os.execve("/usr/lib/cgi-bin/php5",cmd_line,env) 
     sys.exit(1)
 else: #Parent process
+
+    #Closing not needed descriptors (i_pipe was already used so it is not needed)
     os.close(i_pipe[0])
     os.close(i_pipe[1])    
     os.close(o_pipe[1])
     
+    #Wait for the termination of the script
     os.waitpid(pid,0)
+    
+    #Reading out generated by the script
     while True:
       o=os.read(o_pipe[0],9000)
       out+=o
       if len(o)<9000:
           break
+    #Closing pipe to read from the script
     os.close(o_pipe[0])
 
+#Splitting header and content
 out=out.split("\r\n\r\n")
 
 os.write(4,out[0]+"\r\n") #Writing headers
@@ -214,18 +168,18 @@ os.write(4,out[0]+"\r\n") #Writing headers
 #Sending status to weborf
 f=out[0].find("Status")
 if f!=-1:
-    
     status=out[0][f+8:f+11]
     #Redirect
     if status=="303" or status=="302":
         sys.exit(33)    
-    elif status=="404":
+    elif status=="404":#Not found, shouldn't happen because weborf verify that the file exists
         sys.exit(44)
-    elif status=="400":
+    elif status=="400":#Error
         sys.exit(40)
-    elif status=="501":
+    elif status=="501":#Wrong request
         sys.exit(51)
-        
+
+#Content not-null, sending content to weborf
 if len(out)==2:
     print out[1] #Writing page
 
