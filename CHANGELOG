@@ -3,6 +3,11 @@
 - Support for python scripts
 - Python scripts can be configured using a configuration file in /etc
 - Support for cgi-php
+- Fixed some possibilities of buffer overflow
+- Enlarged default head's buffer, necessary for script generated headers
+- When the script is terminated for timeout, error 500 is sent to the client
+- Fixed error in cgi wrapper that didn't allow to use \r\n\r\n sequence in output
+- Compile on MacOsX without needing to edit the code
 
 0.9
 - Bug: fixed size hadling of NBUFFER

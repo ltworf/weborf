@@ -115,7 +115,7 @@ for i in range(len(sys.argv[1])-1,-1,-1):
         os.chdir(sys.argv[1][0:i])
         break
 
-cmd_line=["-f",sys.argv[1]]
+cmd_line=["/usr/lib/cgi-bin/php5","-f",sys.argv[1]]
 
 #Sets GET variables
 if len(sys.argv[2])!=0:
@@ -128,10 +128,13 @@ i_pipe=os.pipe() #Input for child process
 
 #Sets POST variables
 if getVal(_HEADER,"Content-Length")!="":
-    env['CONTENT_LENGTH']=getVal(_HEADER,"Content-Length").strip()
+    env['CONTENT_LENGTH']=_HEADER['Content-Length'].strip()
     post=os.read(sys.stdin.fileno(),int(env['CONTENT_LENGTH']))
+    #post=sys.stdin.read()
     env['CONTENT_TYPE']=_HEADER['Content-Type']
     os.write(i_pipe[1],post)
+    os.popen("/tmp/mark.sh \""+_HEADER['Content-Type']+ "\"  "+_HEADER['Content-Length'])
+    
 
 pid=os.fork()
 out=""
@@ -170,9 +173,8 @@ else: #Parent process
           break
     #Closing pipe to read from the script
     os.close(o_pipe[0])
-
-#Splitting header and content
-out=out.split("\r\n\r\n")
+ #Splitting header and content
+out=out.split("\r\n\r\n",1)
 
 os.write(4,out[0]+"\r\n") #Writing headers
 
