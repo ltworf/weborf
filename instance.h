@@ -24,6 +24,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define _GNU_SOURCE
 
+
+#ifndef O_LARGEFILE //Needed to compile on Mac, where this doesn't exist
+#define O_LARGEFILE 0
+#endif
+
 #include <netinet/in.h>
 #include <unistd.h>
 #include <stdio.h>
