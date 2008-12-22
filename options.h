@@ -64,7 +64,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NBUFFER 15
 
 //-------------LIMITS
-#define POST_MAX_SIZE 20480
+#define POST_MAX_SIZE 2000000
 
 //-------------HTML
 #define HTMLHEAD "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\"><html><head><title>Weborf</title></head><body>"
