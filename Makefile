@@ -61,6 +61,7 @@ install: uninstall
 	cp weborf $(BINDIR)
 	cp weborf.daemon $(DAEMONDIR)/weborf
 	chmod u+x $(DAEMONDIR)/weborf
+	chmod a+x $(BINDIR)/weborf*
 	
 	#Stuff to execute last, and won't be performed if it is a reinstall
 	mkdir /etc/weborf

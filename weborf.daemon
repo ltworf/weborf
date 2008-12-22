@@ -16,6 +16,7 @@
 #
 # author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 
+export PATH=$PATH:/usr/local/bin
 USERNAME="www-data";
 BASEDIR="/var/www/"
 USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3`
