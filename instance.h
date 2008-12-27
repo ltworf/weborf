@@ -30,8 +30,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include <netinet/in.h>
-#include <unistd.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
 #include <syslog.h>	//To use syslog
 #include "options.h"
 #include <string.h>

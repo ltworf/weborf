@@ -152,3 +152,4 @@ int removeCrLf(char*buf) {//Removing initial \n or \r
     delChar(buf,0,count);
     return count;
 }
+
