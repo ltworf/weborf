@@ -65,6 +65,7 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
 int send_err(int sock,int err,char* descr,char* ip_addr);
 int send_http_header(int sock,unsigned int size,char* headers);
 int send_http_header_code(int sock,int code, unsigned int size,char* headers);
+int send_http_header_scode(int sock,char* code, unsigned int size,char* headers);
 void piperr();
 void modURL(char* url);
 int request_auth(int sock,char* descr);

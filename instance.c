@@ -357,12 +357,19 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
 
     int wpid;//Child's pid
     int wpipe[2];//Pipe's file descriptor
-    int hpipe[2];//Pipe's file descriptor, used for extra headers
     int ipipe[2];//Pipe's file descriptor, used to pass POST on script's standard input
 
     pipe(wpipe);//Pipe to comunicate with the child
-    pipe(hpipe);//Pipe to comunicate with the child
     pipe(ipipe);//Pipe to comunicate with the child
+
+
+    if (post_param!=NULL) {//Send post data to script's stdin
+        write(ipipe[1],post_param,strlen(post_param));
+    }
+    close (ipipe[1]); //Closes unused end of the pipe
+
+
+
 
     wpid=fork();
     if (wpid<0) { //Error, returns a no memory error
@@ -374,112 +381,127 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         close(ipipe[0]);
         close(wpipe[1]);
         close(wpipe[0]);
-        close(hpipe[1]);
-        close(hpipe[0]);
         return ERR_NOMEM;
     } else if (wpid==0) { //Child, executes the script
+
         close (wpipe[0]); //Closes unused end of the pipe
-        close (hpipe[0]); //Closes unused end of the pipe
-        close (ipipe[1]); //Closes unused end of the pipe
+
         fclose (stdout); //Closing the stdout
         fclose (stderr);
         dup(wpipe[1]); //Redirects the stdout
         dup(wpipe[1]); //Redirects the stderr
-        dup2(hpipe[1],4);//Pipe for extra headers
 
         //Redirecting standard input
         fclose(stdin);
         dup(ipipe[0]);
 
+        {
+            char*port=getenv("SERVER_PORT");
+            clearenv();
+            setenv("SERVER_PORT",port,true);
+        }
+        setEnvVars(http_param); //Sets env var starting with HTTP
+        setIpEnv(); //Sets SERVER_ADDR var
+        //Set CGI needed vars
+        setenv("SERVER_SIGNATURE",SIGNATURE,true);
+        setenv("SERVER_SOFTWARE",SIGNATURE,true);
+        setenv("GATEWAY_INTERFACE","CGI/1.1",true);
+        setenv("REQUEST_METHOD",method,true); //POST GET
+        setenv("SERVER_NAME", getenv("HTTP_HOST"),true);
+        setenv("REDIRECT_STATUS","Ciao",true); // Mah.. i'll never understand php, this env var is needed
+        setenv("SCRIPT_FILENAME",strfile,true); //This var is needed as well or php say no input file...
+        //#env['DOCUMENT_ROOT']=sys.argv[6]
+
+        setenv("REMOTE_ADDR",ip_addr,true); //#Client's address
+        setenv("SCRIPT_NAME",file,true); //Name of the script without complete path
+
+        //Request URI with or without a query
         if (params==NULL) {
-            params="";
+            setenv("REQUEST_URI",file,true);
+            setenv("QUERY_STRING","",true);//Query after ?
+        } else {
+            setenv("QUERY_STRING",params,true);//Query after ?
+
+            //file and params were the same string.
+            //Joining them again temporarily
+            int delim=strlen(file);
+            file[delim]='?';
+            setenv("REQUEST_URI",file,true);
+            file[delim]='\0';
         }
 
-        if (http_param==NULL) {//Should never happen, but not all http clients are compliant
-            http_param="";
+        {//If CONTENT_LENGTH exists
+            char *content_l=getenv("HTTP_CONTENT_LENGTH");
+            if (content_l!=NULL) {
+                setenv("CONTENT_LENGTH",content_l,true);
+                setenv("CONTENT_TYPE",getenv("HTTP_CONTENT_TYPE"),true);
+            }
         }
 
         alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
-        execlp(executor,executor,strfile,params,http_param,method,ip_addr,basedir,(char *)0);
+        execl(executor,executor,(char *)0);
 #ifdef SENDINGDBG
         syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
 #endif
-        printf("Failed\n");
         exit(1);
 
     } else { //Father: reads from pipe and sends
-        {//Send post data to script's stdin
-            char*post="";
-            if (post_param!=NULL) {
-                post=post_param;
-            }
-
-            write(ipipe[1],post,strlen(post));
-            close(ipipe[1]);
-            close(ipipe[0]);
-        }
 
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
-        close (hpipe[1]);
+        close(ipipe[0]);
 
         //Large buffer, must contain the output of the script
-        char* scrpt_buf=malloc(MAXSCRIPTOUT+HEADBUF);
-        char* header_buf=scrpt_buf+MAXSCRIPTOUT;
+        char* header_buf=malloc(MAXSCRIPTOUT+HEADBUF);
 
-        if (scrpt_buf==NULL) { //Was unable to allocate the buffer
+        if (header_buf==NULL) { //Was unable to allocate the buffer
             free(strfile);
             close (wpipe[0]);
-            close (hpipe[0]);
             return ERR_NOMEM;//Returns if buffer was not allocated
         }
 
-        int state;
-        waitpid (wpid,&state,0); //Wait the termination of the script
-
-        //Reads output of the script
-        int reads=read(wpipe[0],scrpt_buf,MAXSCRIPTOUT);
-        //Reads extra headers set by the script
-        int h_reads=read(hpipe[0],header_buf,HEADBUF);
-
-        //Closing pipes
-        close (wpipe[0]);
-        close (hpipe[0]);
-
-        int wrote=0;
-        switch (WEXITSTATUS(state)) {
-        case 31: //Permanent Redirect
-            send_http_header_code(sock,301,0,header_buf);
-            break;
-        case 33: //Redirect
-            send_http_header_code(sock,303,0,header_buf);
-            break;
-        case 44: //Not found
-            send_err(sock,404,"Page not found",ip_addr);
-            break;
-        case 40://Bad request
-            send_err(sock,400,"Bad Request",ip_addr);
-            break;
-        case 51: //Not implemented
-            send_err(sock,501,"Not implemented",ip_addr);
-            break;
-        default:
-            if (reads>0) {//There is output from script
-                if (h_reads>0) {//Sends extra header generated by the script
-                    send_http_header(sock,reads,header_buf);
-                } else {//No extra headers
-                    send_http_header(sock,reads,NULL);
-                }
-                wrote=write (sock,scrpt_buf,reads);
-            } else {//No output from script, maybe terminated...
-                send_err(sock,500,"Internal server error",ip_addr);
-            }
+        {
+            int state;
+            waitpid (wpid,&state,0); //Wait the termination of the script
         }
 
-#ifdef SOCKETDBG
-        if (wrote<0) syslog(LOG_ERR,"The client closed the socket");
-#endif
-        free(scrpt_buf);
+        //Reads output of the script
+        int e_reads=read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF);
+
+        //Separating header from contents
+        char* scrpt_buf=strstr(header_buf,"\r\n\r\n");
+        int reads;
+        if (scrpt_buf!=NULL) {
+            scrpt_buf+=2;
+            scrpt_buf[0]=0;
+            scrpt_buf=scrpt_buf+2;
+            reads=e_reads - (int)(scrpt_buf-header_buf);//Len of the content
+        } else {//Something went wrong, ignoring the output (it's missing the headers)
+            e_reads=0;
+        }
+
+        //Closing pipe
+        close (wpipe[0]);
+
+        if (e_reads>0) {//There is output from script
+            char* status="200"; //Standard status
+            {//Reading if there is another status
+                char*s=strstr(header_buf,"Status: ");
+                if (s!=NULL) {
+                    status=s+8; //Replacing status
+                }
+            }
+            send_http_header_scode(sock,status,reads,header_buf);
+
+
+            if (reads>0) {//Sends the page if there is something to send
+                write (sock,scrpt_buf,reads);
+            }
+        } else {//No output from script, maybe terminated...
+            send_err(sock,500,"Internal server error",ip_addr);
+        }
+
+        free(header_buf);
 
     }
     free(strfile);
@@ -687,6 +709,31 @@ int send_err(int sock,int err,char* descr,char* ip_addr) {
 #endif
 
     free(head);
+    return 0;
+}
+
+/**
+This function sends a code header to the specified socket
+size is the Content-Length field.
+headers can be NULL or some extra headers to add. Headers must be
+separated by \r\n and must have an \r\n at the end.
+Code is a string, no need to terminate it with a \0 because only the 1st 2nd and 3rd chars of it
+will be used in each case. A shorter string will produce unpredictable behaviour
+*/
+int send_http_header_scode(int sock,char* code, unsigned int size,char* headers) {
+
+    char *head=malloc(HEADBUF);
+    if (head==NULL)return ERR_NOMEM;
+
+    int len_head;
+    if (headers==NULL) {
+        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %c%c%c OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n\r\n",code[0],code[1],code[2], size);
+    } else {
+        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %c%c%c OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n",code[0],code[1],code[2], size,headers);
+    }
+    int wrote=write (sock,head,len_head);
+    free(head);
+    if (wrote!=len_head) return ERR_BRKPIPE;
     return 0;
 }
 

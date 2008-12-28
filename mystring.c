@@ -20,6 +20,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mystring.h"
 
+/**
+This function converts a string to upper case
+*/
+void strToUpper(char*str) {
+    int i =0;
+    while (str[i]!=0) {
+        str[++i]=toupper(str[i]);
+    }
+}
 
 /**
  * This function finds the first ? character and replaces it with a \0 to terminate the string removing GET param from it.

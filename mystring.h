@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 int nullParams(char * string);
 int splitParams(char * string);
@@ -32,5 +33,6 @@ void delChar(char* string,int pos,int n);
 void strReplace(char* string,char* substr, char with);
 void replaceEscape(char * string);
 int removeCrLf(char*buf);
+void strToUpper(char*str);
 
 #endif

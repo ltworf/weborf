@@ -45,8 +45,8 @@ else:
         password=""
  
 #If the page requested doesn't begin with the /film/ string, allow the access
-if not page[:6]=="/film/":
-        sys.exit(0)
+#if not page[:6]=="/film/":
+#        sys.exit(0)
  
 #Otherwise it requires a valid username and password
 if (username in auth) and (auth[username]==password):

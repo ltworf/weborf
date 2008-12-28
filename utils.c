@@ -196,7 +196,7 @@ void help() {
     printf("  -i, --ip	followed by IP address to listen (dotted format)\n");
     printf("  -b, --basedir	followed by absolute path of basedir\n");
     printf("  -a, --auth    followed by absolute path of the program to handle authentication\n");
-    printf("  -x  --noexec  tells weborf to send each file instead of executing php and bsh files\n");
+    printf("  -x  --noexec  tells weborf to send each file instead of executing scripts\n");
     printf("  -u            followed by a valid uid\n");
     printf("  -d            run as a daemon\n");
     printf("                If started by root weborf will use this user to read files and execute scripts\n");
@@ -228,7 +228,7 @@ void moo() {
 /**
 This functions set enviromental variables according to the data present in the HTTP request
 */
-void setEnvVars(char * http_param,bool post) { //Sets Enviroment vars
+void setEnvVars(char * http_param) { //Sets Enviroment vars
     if (http_param==NULL) return;
 
     char * lasts;
@@ -236,44 +236,37 @@ void setEnvVars(char * http_param,bool post) { //Sets Enviroment vars
     int i;
     int p_len;
 
+    //Removes the 1st part with the protocol
+    param=strtok_r(http_param,"\r\n",&lasts);
+    setenv("SERVER_PROTOCOL",param,true);
 
-    if (post) {//If the request is a POST
-        param=strtok_r(http_param,"&",&lasts);
+    //Cycles parameters
+    while ((param=strtok_r(NULL,"\r\n",&lasts))!=NULL) {
 
-        replaceEscape(param);//Replaces escape code
-        strReplace(param,"+",' ');//Replaces spaces, they use a different escape
+        p_len=strlen(param);
+        char * value=NULL;
 
-        putenv(param);//Sets the 1st token as var
-        //Cycles vars
-        while ((param=strtok_r(NULL,"&",&lasts))!=NULL) {
-            replaceEscape(param);//Replaces escape code
-            strReplace(param,"+",' ');//Replaces spaces, they use a different escape
-            putenv(param);
-        }
-    } else {
-
-        //Removes the 1st part with the protocol
-        param=strtok_r(http_param,"\r\n",&lasts);
-
-        //Cycles parameters
-        while ((param=strtok_r(NULL,"\r\n",&lasts))!=NULL) {
-
-            p_len=strlen(param);
-            char * value=NULL;
-
-            //Parses the parameter to split name from value
-            for (i=0;i<p_len;i++) {
-                if (param[i]==':' && param[i+1]==' ') {
-                    param[i]='\0';
-                    value=&param[i+2];
-                    break;
-                }
+        //Parses the parameter to split name from value
+        for (i=0;i<p_len;i++) {
+            if (param[i]==':' && param[i+1]==' ') {
+                param[i]='\0';
+                value=&param[i+2];
+                break;
             }
-
-            strReplace(param,"-",'_');
-            setenv(param,value,true);
         }
+        char hparam[200];
+        hparam[0]='H';
+        hparam[1]='T';
+        hparam[2]='T';
+        hparam[3]='P';
+        hparam[4]='_';
+        hparam[5]='\0';
+        strToUpper(param); //Converts to upper case
+        strReplace(param,"-",'_');
+        strcat(hparam,param);
+        setenv(hparam,value,true);
     }
+
 
 }
 
@@ -303,4 +296,68 @@ bool get_param_value(char* http_param,char* parameter,char*buf,int size) {
         buf[field_end-val]=0; //Ends the string within the destination buffer
     }
     return true;
+}
+
+/**
+This function gets the name of the host from the var HTTP_HOST and sets the var 
+SERVER_ADDR using the ip obtained from the reverse lookup of the host.
+
+This is used for cgi.
+
+If the host var isn't set, it will return.
+
+Since the host var can contain the port number too, it does a check to eliminate it,
+before performing the lookup. It works with both ipv4 and 6.
+
+@author Michal Ludvig <michal@logix.cz> (c) 2002, 2003, http://www.logix.cz/michal/devel/
+Modified by Salvo 'LtWorf' Tomaselli
+*/
+int setIpEnv () {
+    //Requested host name
+    char * e_host=getenv("HTTP_HOST");
+    if (e_host==NULL) {//If no host is supplied in the request
+        return -1;
+    }
+    
+    //Since e_host can't be modified or the env var will change too, i have to copy it.
+    char host[256];
+    memmove(&host, e_host, strlen(e_host)+1);
+
+    if (host[0]=='[') {//IPv6 address
+        char * e=strstr(host,"]");
+        e[0]=0;
+        delChar(host,0,1);
+    } else {//IPv4 or hostname
+        char* e=strstr(host,":");
+        if (e!=NULL) e[0]=0; //Removing port number
+    }
+    
+    struct addrinfo hints, *res;
+    int errcode;
+    char addrstr[100];
+    void *ptr;
+    memset (&hints, 0, sizeof (hints));
+    hints.ai_family = PF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags |= AI_CANONNAME;
+    errcode = getaddrinfo (host, NULL, &hints, &res);
+    if (errcode != 0)    {
+        return -1;
+    }
+
+        inet_ntop (res->ai_family, res->ai_addr->sa_data, addrstr, 100);
+
+        switch (res->ai_family) {
+        case AF_INET:
+            ptr = &((struct sockaddr_in *) res->ai_addr)->sin_addr;
+            break;
+        case AF_INET6:
+            ptr = &((struct sockaddr_in6 *) res->ai_addr)->sin6_addr;
+            break;
+        }
+        
+        inet_ntop (res->ai_family, ptr, addrstr, 100);
+        setenv("SERVER_ADDR",addrstr,true);
+        freeaddrinfo(res);
+        return 0;
 }

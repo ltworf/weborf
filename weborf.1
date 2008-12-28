@@ -1,4 +1,4 @@
-.TH Weborf 0.9 "Nov 18, 2008"
+.TH Weborf 0.10 "Dec 28, 2008"
 
 .SH NAME
 .B weborf
@@ -36,7 +36,7 @@ Must be followed by a program who will handle authentication. It is possible to 
 
 .TP
 \fB\-x\fR, \fB\-\-noexec\fR
-When used, weborf will send .php and .bsh files instead of executing them and sending their output.
+When used, weborf will send scripts as if they were normal files instead of executing them and sending their output.
 
 .TP
 \fB\-i\fR, \fB\-\-ip\fR
@@ -59,13 +59,10 @@ Must be followed by a valid uid, different from 0. Weborf will use this user to 
 Runs weborf as a daemon. It will not terminate when it's father process terminates, and it will leave the shell free to receive commands.
 
 .SH SCRIPTING
-Weborf is able to send dinamically generated pages using php (if installed) or bash.
-When a filename ends with ".bsh", weborf will use bash to execute this file before sending it to the client.
-Same thing happens when a file ends with ".php"; if php-cli is installed weborf will use it to execute the file and send it to the client.
+Weborf is able to send dinamically generated pages using php-cgi (if installed).
+When a filename ends with ".php", weborf will use php to execute this file before sending it to the client.
 
-Scripts are able to read data sent from the browser inside the HTTP request using env vars. Var's names will correspond to HTTP fields, except that "-" will be replaced with "_".
-POST vars are readeable using env vars too. There will be one var for every field, and there won't be any replacement in the name.
-GET vars are passed to the script as command line options.
+It is also possible to create scritps or binaries in other languages, just read rfc3875 to know how to handle parameters.
 
 .SH RETURN VALUE
 .TP
@@ -105,7 +102,7 @@ Invalid parameters on command line
 .BR php (1), bash(1)
 
 .SH VERSION
-\fBWeborf\fP 0.9
+\fBWeborf\fP 0.10
 
 .SH WEB
 http://galileo.dmi.unict.it/wiki/weborf/
