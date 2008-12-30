@@ -44,6 +44,8 @@ uid_t uid=ROOTUID;//Uid to use after bind
 
 pthread_attr_t t_attr;//thread's attributes
 
+char* indexes[MAXINDEXCOUNT];
+int indexes_l=1;
 
 /**
 Increases or decreases the number of current active thread.
@@ -119,6 +121,8 @@ int main(int argc, char * argv[]) {
     int farAddrL, ipAddrL;
 #endif
 
+    //default index file
+    indexes[0]=INDEX;
 
     while (1) { //Block to read command line
 
@@ -131,6 +135,7 @@ int main(int argc, char * argv[]) {
             {"uid", required_argument, 0, 'u'},
             {"daemonize", no_argument, 0, 'd'},
             {"basedir", required_argument, 0, 'b'},
+            {"index",required_argument,0,'I'},
             {"auth", required_argument, 0, 'a'},
             {"moo", no_argument, 0, 'm'},
             {"noexec", no_argument,0,'x'},
@@ -140,13 +145,32 @@ int main(int argc, char * argv[]) {
         int option_index=0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long (argc, argv, "mvhp:i:u:dxb:a:",long_options, &option_index);
+        c = getopt_long (argc, argv, "mvhp:i:I:u:dxb:a:",long_options, &option_index);
 
         //If there are no options it continues
         if (c == -1)
             break;
 
         switch (c) {
+        case 'I': { //Setting list of indexes
+            int i=0;
+            indexes_l=1;
+            indexes[0]=optarg;
+            while (optarg[i++]!=0) {//Reads the string
+
+                if (optarg[i]==',') {
+                    optarg[i++]=0;
+                    indexes[indexes_l++] = &optarg[i];
+                    if (indexes_l==MAXINDEXCOUNT) {
+                        perror("Too much indexes, change MAXINDEXCOUNT in options.h to allow more");
+                        exit(6);
+                    }
+                }
+            }
+
+        }
+        break;
+
         case 'b'://Basedirectory
             setBasedir(optarg);
             break;
@@ -192,7 +216,6 @@ int main(int argc, char * argv[]) {
     printf("This is free software, and you are welcome to redistribute it\n");
     printf("under certain conditions.\nFor details see the GPLv3 Licese.\n");
     printf("Run %s --help to see the options\n",argv[0]);
-
 
     setenv("SERVER_PORT",port,true);
     //Creates the socket

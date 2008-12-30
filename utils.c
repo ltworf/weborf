@@ -197,6 +197,7 @@ void help() {
     printf("  -b, --basedir	followed by absolute path of basedir\n");
     printf("  -a, --auth    followed by absolute path of the program to handle authentication\n");
     printf("  -x  --noexec  tells weborf to send each file instead of executing scripts\n");
+    printf("  -I  --index   list of index files, comma-separated\n");
     printf("  -u            followed by a valid uid\n");
     printf("  -d            run as a daemon\n");
     printf("                If started by root weborf will use this user to read files and execute scripts\n");
@@ -299,7 +300,7 @@ bool get_param_value(char* http_param,char* parameter,char*buf,int size) {
 }
 
 /**
-This function gets the name of the host from the var HTTP_HOST and sets the var 
+This function gets the name of the host from the var HTTP_HOST and sets the var
 SERVER_ADDR using the ip obtained from the reverse lookup of the host.
 
 This is used for cgi.
@@ -318,7 +319,7 @@ int setIpEnv () {
     if (e_host==NULL) {//If no host is supplied in the request
         return -1;
     }
-    
+
     //Since e_host can't be modified or the env var will change too, i have to copy it.
     char host[256];
     memmove(&host, e_host, strlen(e_host)+1);
@@ -331,11 +332,11 @@ int setIpEnv () {
         char* e=strstr(host,":");
         if (e!=NULL) e[0]=0; //Removing port number
     }
-    
+
     struct addrinfo hints, *res;
     int errcode;
     char addrstr[100];
-    void *ptr;
+    void *ptr=NULL;
     memset (&hints, 0, sizeof (hints));
     hints.ai_family = PF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -345,19 +346,19 @@ int setIpEnv () {
         return -1;
     }
 
-        inet_ntop (res->ai_family, res->ai_addr->sa_data, addrstr, 100);
+    inet_ntop (res->ai_family, res->ai_addr->sa_data, addrstr, 100);
 
-        switch (res->ai_family) {
-        case AF_INET:
-            ptr = &((struct sockaddr_in *) res->ai_addr)->sin_addr;
-            break;
-        case AF_INET6:
-            ptr = &((struct sockaddr_in6 *) res->ai_addr)->sin6_addr;
-            break;
-        }
-        
-        inet_ntop (res->ai_family, ptr, addrstr, 100);
-        setenv("SERVER_ADDR",addrstr,true);
-        freeaddrinfo(res);
-        return 0;
+    switch (res->ai_family) {
+    case AF_INET:
+        ptr = &((struct sockaddr_in *) res->ai_addr)->sin_addr;
+        break;
+    case AF_INET6:
+        ptr = &((struct sockaddr_in6 *) res->ai_addr)->sin6_addr;
+        break;
+    }
+
+    inet_ntop (res->ai_family, ptr, addrstr, 100);
+    setenv("SERVER_ADDR",addrstr,true);
+    freeaddrinfo(res);
+    return 0;
 }

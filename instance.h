@@ -58,10 +58,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define ERR_FILENOTFOUND -2
 #define ERR_BRKPIPE -1
 
+int writeDir(int sock, char* page);
 void * instance(void *);
 int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr);
-int writePage(int sock,char * file);
-int execPage(int sock, char * file, char * params,char * executor,char * http_param,char* post_param,char * method,char* ip_addr);
+int writePage(int sock,char * strfile);
+int execPage(int sock, char * file,char*strfile, char * params,char * executor,char * http_param,char* post_param,char * method,char* ip_addr);
 int send_err(int sock,int err,char* descr,char* ip_addr);
 int send_http_header(int sock,unsigned int size,char* headers);
 int send_http_header_code(int sock,int code, unsigned int size,char* headers);

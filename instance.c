@@ -35,6 +35,9 @@ extern char* basedir;//Basedir
 extern char* authbin;//Executable that will authenticate
 extern bool exec_script; //Execute scripts if true, sends the file if false
 
+extern char* indexes[MAXINDEXCOUNT];
+extern int indexes_l;
+
 /**
 Set thread with id as non-free
 */
@@ -294,73 +297,92 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
                 return ERR_NOMEM;
             }
         }
-
     }
 
-    int retval;//Return value after sending the page
 
-    if (exec_script) { //Scripts enabled
-        if (endsWith(page,".py")) { //Script python
-            retval=execPage(sock,page,params,PY_WRAPPER,http_param,post_param,method,ip_addr);
-        } else if (endsWith(page,".php")) { //Script php
-            retval=execPage(sock,page,params,CGI_WRAPPER,http_param,post_param,method,ip_addr);
-        } else { //Normal file
-            retval= writePage(sock,page);
+    int strfile_l=strlen(page)+strlen(basedir)+INDEXMAXLEN+1;
+    char * strfile=malloc(strfile_l);//buffer for filename
+    if (strfile==NULL)return ERR_NOMEM;//If no memory is available
+    int strfile_e = snprintf(strfile,strfile_l,"%s%s",basedir,page);//Prepares the string
+    int retval=0;//Return value after sending the page
+
+    int f_mode=fileIsA(strfile);//Get file's mode
+    if (S_ISDIR(f_mode)) {//Requested a directory
+        bool index_found=false;
+        
+        if (!endsWith(strfile,"/")) {//Putting the ending / and redirect
+            char* head=malloc(strfile_l+12);//12 is the size for the location header
+            snprintf(head,strfile_l+12,"Location: %s/\r\n",page);
+            send_http_header_code(sock,303,0,head);
+            free(head);
+        } else {
+
+            char* index_name=&strfile[strfile_e];//Pointer to where to write the filename
+            int i;
+
+            //Cyclyng through the indexes
+            for (i=0; i<indexes_l;i++) {
+                snprintf(index_name,INDEXMAXLEN,"%s",indexes[i]);//Add INDEX to the url
+                if (file_exists(strfile)) { //If index exists, redirect to it
+                    char* head=malloc(strfile_l+12);//12 is the size for the location header
+                    snprintf(head,strfile_l+12,"Location: %s%s\r\n",page,indexes[i]);
+                    send_http_header_code(sock,303,0,head);
+                    free(head);
+                    index_found=true;
+                    break;
+                }
+            }
+            
+            strfile[strfile_e]=0; //Removing the index part
+            if (index_found==false) {//If no index was found in the dir
+                writeDir(sock,strfile);
+            }
         }
-    } else { //Scripts disabled
-        retval= writePage(sock,page);
+    } else if (file_exists(strfile)) {//Requested an existing file
+
+        if (exec_script) { //Scripts enabled
+            if (endsWith(page,".php")) { //Script php
+                retval=execPage(sock,page,strfile,params,CGI_WRAPPER,http_param,post_param,method,ip_addr);
+            } else { //Normal file
+                retval= writePage(sock,strfile);
+            }
+        } else { //Scripts disabled
+            retval= writePage(sock,strfile);
+        }
+    } else {//File doesn't exist
+        retval=ERR_FILENOTFOUND;
     }
 
     if (post_param!=NULL) free (post_param);
-
-    int err_res=0;//suppose no error
+    free(strfile);
+    
 
     switch (retval) {
     case 0:
-        err_res=0;
-        break;
+        return 0;
     case ERR_BRKPIPE:
-        err_res = send_err(sock,500,"Internal server error",ip_addr);
-        break;
+        return send_err(sock,500,"Internal server error",ip_addr);
     case ERR_FILENOTFOUND:
-        err_res = send_err(sock,404,"Page not found",ip_addr);
-        break;
+        return send_err(sock,404,"Page not found",ip_addr);
     case ERR_NOMEM:
-        err_res = send_err(sock,503,"Service Unavailable",ip_addr);
-        break;
+        return send_err(sock,503,"Service Unavailable",ip_addr);
     }
-
-    return err_res;
+    return 0; //Make gcc happy
 }
 /**
 Executes a script with a given interpreter and sends the resulting output
 */
-int execPage(int sock, char * file, char * params,char * executor,char * http_param,char* post_param,char * method,char* ip_addr) {
-
-    int strfile_l=INBUFFER+strlen(basedir);
-    char * strfile=malloc(strfile_l);//Buffer for file's name
-
-    if (strfile==NULL)return ERR_NOMEM;//Returns if buffer was not allocated
-
-    //String with file's name
-    snprintf(strfile,strfile_l,"%s%s",basedir,file);//Puts together path and filename
-
+int execPage(int sock, char * file,char* strfile, char * params,char * executor,char * http_param,char* post_param,char * method,char* ip_addr) {
 #ifdef SENDINGDBG
     syslog(LOG_INFO,"Executing file %s",strfile);
 #endif
-
-    //Checks if the requested file exists
-    if (!file_exists(strfile)) {
-        free(strfile);
-        return ERR_FILENOTFOUND;
-    }
 
     int wpid;//Child's pid
     int wpipe[2];//Pipe's file descriptor
     int ipipe[2];//Pipe's file descriptor, used to pass POST on script's standard input
 
     pipe(wpipe);//Pipe to comunicate with the child
-    
+
     if (post_param!=NULL) {//Pipe created and used only if there is data to send to the script
         //Send post data to script's stdin
         pipe(ipipe);//Pipe to comunicate with the child
@@ -373,7 +395,6 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
 #ifdef SENDINGDBG
         syslog(LOG_ERR,"Unable to fork to execute the file %s",strfile);
 #endif
-        free(strfile);
         if (post_param!=NULL) {
             close(ipipe[0]);
         }
@@ -395,7 +416,7 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
             dup(ipipe[0]);
         }
 
-        {
+        {//Clears all the env var, saving only SERVER_PORT
             char*port=getenv("SERVER_PORT");
             clearenv();
             setenv("SERVER_PORT",port,true);
@@ -430,7 +451,7 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
             file[delim]='\0';
         }
 
-        {//If CONTENT_LENGTH exists
+        {//If Content-Length field exists
             char *content_l=getenv("HTTP_CONTENT_LENGTH");
             if (content_l!=NULL) {
                 setenv("CONTENT_LENGTH",content_l,true);
@@ -450,7 +471,7 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
 
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
-        
+
         if (post_param!=NULL) {
             close(ipipe[0]);
         }
@@ -459,7 +480,6 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         char* header_buf=malloc(MAXSCRIPTOUT+HEADBUF);
 
         if (header_buf==NULL) { //Was unable to allocate the buffer
-            free(strfile);
             close (wpipe[0]);
             return ERR_NOMEM;//Returns if buffer was not allocated
         }
@@ -474,7 +494,7 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
 
         //Separating header from contents
         char* scrpt_buf=strstr(header_buf,"\r\n\r\n");
-        int reads;
+        int reads=0;
         if (scrpt_buf!=NULL) {
             scrpt_buf+=2;
             scrpt_buf[0]=0;
@@ -508,7 +528,6 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         free(header_buf);
 
     }
-    free(strfile);
     return 0;
 }
 
@@ -552,59 +571,16 @@ int writeDir(int sock, char* page) {
 /**
 This function reads a file and writes it to the socket.
 */
-int writePage(int sock,char * file) {
-    int strfile_l=strlen(file)+strlen(basedir)+1;
-    char * strfile=malloc(strfile_l);//buffer for filename
-    if (strfile==NULL)return ERR_NOMEM;//If no memory is available
-
-    snprintf(strfile,strfile_l,"%s%s",basedir,file);//Prepares the string
-
-    {//Check is it was requested a directory instead of a file
-#ifdef SENDINGDBG
-        syslog(LOG_DEBUG,"File: %s",strfile);
-#endif
-
-        int f_mode=fileIsA(strfile);//Get file's mode
-        if (S_ISDIR(f_mode)) { //If it is a directory
-            int newpath_l=strlen(file)+strlen(INDEX)+2;
-            char* newpath=malloc(newpath_l);
-            if (newpath==NULL) {
-                free(strfile);
-                return ERR_NOMEM;
-            }
-
-            if (endsWith(strfile,"/")) {
-                snprintf(newpath,newpath_l,"%s%s",file,INDEX);//Add INDEX to the url
-            } else {
-                snprintf(newpath,newpath_l,"%s/%s",file,INDEX);//Add INDEX to the url
-            }
-
-            int res=writePage(sock,newpath);//Sends the index
-            free(newpath);
-
-            if (res!=ERR_FILENOTFOUND) { //Index page not found
-                free(strfile);
-                return res;
-            } else { //Creates a page with the list of files
-                char* dir=strfile;
-                int dires=writeDir(sock,dir);
-                free(strfile);
-                return dires;
-            }
-        }
-    }
-
+int writePage(int sock,char * strfile) {
     char* buf=malloc(FILEBUF);
 
     if (buf==NULL) {
-        free(strfile);
         return ERR_NOMEM;//If no memory is available
     }
 
 
     int fp=open(strfile,O_RDONLY | O_LARGEFILE);
     if (fp<0) { //open returned an error
-        free((void *) strfile);
         free(buf);
 
         return ERR_FILENOTFOUND;
@@ -638,8 +614,6 @@ int writePage(int sock,char * file) {
     }
 
     close(fp);//File on filesystem
-
-    free((void *) strfile);
     free(buf);
     return 0;
 }

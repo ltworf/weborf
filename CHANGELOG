@@ -8,6 +8,10 @@
 - When the script is terminated for timeout, error 500 is sent to the client
 - Fixed error in cgi wrapper that didn't allow to use \r\n\r\n sequence in output
 - Compile on MacOsX without needing to edit the code
+- Embedded support for cgi
+- Support for list of index files
+- List of index files changable in weborf.conf
+- Refactory of code to send/execute pages and generate dir listing
 
 0.9
 - Bug: fixed size hadling of NBUFFER

@@ -51,6 +51,12 @@ If the port is already used weborf will terminate.
 To use low port numbers (less than 1024) it is necessary to execute the process as root. Thus it isn't a good idea to run a webserver with root privileges, so it is possible to specify another user.
 
 .TP
+\fB\-I\fR, \fB\-\-index\fR
+Must be followed by a list (separated with commas and without spaces) of index files.
+Weborf will try to load an index file following the order they're listed, and if none is found it will list the content of the directory.
+In /etc/weborf.conf there is an 'indexes' directive, corresponding to this option. It is used when launching weborf as SystemV daemon.
+
+.TP
 \fB\-u\fR
 Must be followed by a valid uid, different from 0. Weborf will use this user to do his work, but will bind to the network port with the previous user. This mechanism is meant to let users execute it as root and use port 80, and then let it run without root privileges.
 
@@ -88,6 +94,10 @@ Invalid port number
 
 .B 5
 Authbin is not an executable
+.TP
+
+.B 6
+Too much indexes provided as parameter to -I. Increasing MAXINDEXCOUNT in the file options.h and recompiling can solve the problem. But providing a reasanable amount of index file names would be a better solution.
 .TP
 
 .B 9

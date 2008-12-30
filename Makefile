@@ -25,7 +25,7 @@ LDFLAGS=-lpthread
 MANDIR=/usr/local/man/man1/
 BINDIR=/usr/local/bin/
 DAEMONDIR=/etc/init.d/
-
+CONFDIR=/etc/
 
 all: weborf
 
@@ -44,6 +44,8 @@ debug: listener.o queue.o instance.o mystring.o utils.o base64.o
 
 clean: 
 	rm *.o weborf debug *.orig *~ || echo Nothing to do 
+purge: uninstall
+	rm -f $(CONFDIR)/weborf.conf || echo ok
 
 source: clean 
 	astyle --style=kr *c *h
@@ -59,10 +61,12 @@ install: uninstall
 	cp weborf.daemon $(DAEMONDIR)/weborf
 	chmod u+x $(DAEMONDIR)/weborf
 	chmod a+x $(BINDIR)/weborf*
+	if  ! test -e $(CONFDIR)/weborf.conf; then cp weborf.conf $(CONFDIR)/; fi
 
 uninstall:
 	rm -f $(MANDIR)/weborf.1.gz || echo ok
 	rm -f $(BINDIR)/weborf || echo ok
+	rm -f $(DAEMONDIR)/weborf || echo ok
 
 memcheck: debug
 	valgrind --tool=memcheck --leak-check=yes --leak-resolution=high --show-reachable=yes --num-callers=20 --track-fds=yes ./debug || echo "Valgrind doesn't appear to be installed on this system"
