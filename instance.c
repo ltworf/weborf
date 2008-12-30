@@ -360,16 +360,13 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
     int ipipe[2];//Pipe's file descriptor, used to pass POST on script's standard input
 
     pipe(wpipe);//Pipe to comunicate with the child
-    pipe(ipipe);//Pipe to comunicate with the child
-
-
-    if (post_param!=NULL) {//Send post data to script's stdin
+    
+    if (post_param!=NULL) {//Pipe created and used only if there is data to send to the script
+        //Send post data to script's stdin
+        pipe(ipipe);//Pipe to comunicate with the child
         write(ipipe[1],post_param,strlen(post_param));
+        close (ipipe[1]); //Closes unused end of the pipe
     }
-    close (ipipe[1]); //Closes unused end of the pipe
-
-
-
 
     wpid=fork();
     if (wpid<0) { //Error, returns a no memory error
@@ -377,8 +374,9 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         syslog(LOG_ERR,"Unable to fork to execute the file %s",strfile);
 #endif
         free(strfile);
-        close(ipipe[1]);
-        close(ipipe[0]);
+        if (post_param!=NULL) {
+            close(ipipe[0]);
+        }
         close(wpipe[1]);
         close(wpipe[0]);
         return ERR_NOMEM;
@@ -392,8 +390,10 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         dup(wpipe[1]); //Redirects the stderr
 
         //Redirecting standard input
-        fclose(stdin);
-        dup(ipipe[0]);
+        if (post_param!=NULL) {//Send post data to script's stdin
+            fclose(stdin);
+            dup(ipipe[0]);
+        }
 
         {
             char*port=getenv("SERVER_PORT");
@@ -442,6 +442,7 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
         execl(executor,executor,(char *)0);
 #ifdef SENDINGDBG
         syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
+        perror("Execution of the page failed");
 #endif
         exit(1);
 
@@ -449,7 +450,10 @@ int execPage(int sock, char * file, char * params,char * executor,char * http_pa
 
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
-        close(ipipe[0]);
+        
+        if (post_param!=NULL) {
+            close(ipipe[0]);
+        }
 
         //Large buffer, must contain the output of the script
         char* header_buf=malloc(MAXSCRIPTOUT+HEADBUF);
