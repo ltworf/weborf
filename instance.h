@@ -52,7 +52,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define GET 0
 #define POST 1
 
-
+#define ERR_NONAUTH -5
 #define ERR_SOCKWRITE -4
 #define ERR_NOMEM -3
 #define ERR_FILENOTFOUND -2
@@ -70,6 +70,6 @@ int send_http_header_scode(int sock,char* code, unsigned int size,char* headers)
 void piperr();
 void modURL(char* url);
 int request_auth(int sock,char* descr);
-
+int check_auth(int sock, char* http_param, char * method, char * page, char * ip_addr);
 #endif
 

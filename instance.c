@@ -231,47 +231,11 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 #ifdef SENDINGDBG
     syslog (LOG_DEBUG,"URL changed into %s",page);
 #endif
-    if (authbin!=NULL) { //If auth is required
-        char* auths=malloc(INBUFFER+(2*PWDLIMIT));
-        if (auths==NULL) return ERR_NOMEM;
 
-        char username[PWDLIMIT*2];
-        char* password=username+PWDLIMIT;
-
-        char* auth=strstr(http_param,"Authorization: Basic ");//Locates the auth information
-        if (auth==NULL) { //No auth informations
-            username[0]=0;
-            password[0]=0;
-        } else { //Retrieves provided username and password
-            char*auth_end=strstr(auth,"\r\n");//
-            char a[PWDLIMIT*2];
-            auth+=21;//Moves the begin of the string to exclude Authorization: Basic
-            if ((auth_end-auth+1)<(PWDLIMIT*2))
-                memcpy(&a,auth,auth_end-auth);
-            else { //Auth string is too long for the buffer
-#ifdef SERVERDBG
-                syslog(LOG_ERR,"Unable to accept authentication, buffer is too small");
-#endif
-                free(auths);
-                return ERR_NOMEM;
-            }
-
-            a[auth_end-auth]=0;
-            decode64(username,a);//Decodes the base64 string
-
-            password=strstr(username,":");//Locates the separator :
-            password[0]=0;//Nulls the separator to split username and password
-            password++;//make password point to the beginning of the password
-        }
-
-        snprintf(auths,INBUFFER+(2*PWDLIMIT),"%s %s \"%s\" %s \"%s\" \"%s\"",authbin,method,page,ip_addr,username,password);
-        if (system(auths)!=0) { //Failed
-            free(auths);
-            return request_auth(sock,page);//Sends a request for authentication
-        }
-
-        free(auths);
+    if (authbin!=NULL && check_auth(sock,http_param, method, page, ip_addr)!=0) { //If auth is required
+        return ERR_NONAUTH;
     }
+
 
     char* post_param=NULL;
 
@@ -309,7 +273,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
     int f_mode=fileIsA(strfile);//Get file's mode
     if (S_ISDIR(f_mode)) {//Requested a directory
         bool index_found=false;
-        
+
         if (!endsWith(strfile,"/")) {//Putting the ending / and redirect
             char* head=malloc(strfile_l+12);//12 is the size for the location header
             snprintf(head,strfile_l+12,"Location: %s/\r\n",page);
@@ -332,7 +296,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
                     break;
                 }
             }
-            
+
             strfile[strfile_e]=0; //Removing the index part
             if (index_found==false) {//If no index was found in the dir
                 writeDir(sock,strfile);
@@ -355,7 +319,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 
     if (post_param!=NULL) free (post_param);
     free(strfile);
-    
+
 
     switch (retval) {
     case 0:
@@ -746,3 +710,53 @@ int send_http_header(int sock,unsigned int size,char* headers) {
     return send_http_header_code(sock,200,size,headers);
 }
 
+
+/**
+This function checks if the authentication can be granted or not calling the external program.
+Returns 0 if authorization is granted.
+*/
+int check_auth(int sock, char* http_param, char * method, char * page, char * ip_addr) {
+    //Buffer for username and password
+    char* auths=malloc(INBUFFER+(2*PWDLIMIT));
+    if (auths==NULL) return ERR_NOMEM;
+
+    char username[PWDLIMIT*2];
+    char* password=username; //will be changed if there is a password
+
+    char* auth=strstr(http_param,"Authorization: Basic ");//Locates the auth information
+    if (auth==NULL) { //No auth informations
+        username[0]=0;
+        password[0]=0;
+    } else { //Retrieves provided username and password
+        char*auth_end=strstr(auth,"\r\n");//Finds the end of the header
+        char a[PWDLIMIT*2];
+        auth+=21;//Moves the begin of the string to exclude Authorization: Basic
+        if ((auth_end-auth+1)<(PWDLIMIT*2))
+            memcpy(&a,auth,auth_end-auth); //Copies the base64 encoded string to a temp buffer
+        else { //Auth string is too long for the buffer
+#ifdef SERVERDBG
+            syslog(LOG_ERR,"Unable to accept authentication, buffer is too small");
+#endif
+            free(auths);
+            return ERR_NOMEM;
+        }
+
+        a[auth_end-auth]=0;
+        decode64(username,a);//Decodes the base64 string
+
+        password=strstr(username,":");//Locates the separator :
+        password[0]=0;//Nulls the separator to split username and password
+        password++;//make password point to the beginning of the password
+    }
+
+    snprintf(auths,INBUFFER+(2*PWDLIMIT),"%s %s \"%s\" %s \"%s\" \"%s\"",authbin,method,page,ip_addr,username,password);
+
+    int result=system(auths);
+    free(auths);
+    if (result!=0) { //Failed
+        request_auth(sock,page);//Sends a request for authentication
+    }
+
+    return result;
+
+}

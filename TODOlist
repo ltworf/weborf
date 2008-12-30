@@ -1,7 +1,6 @@
 - Handle virtualhost, also on different ports
 - Allow external script for modurl, must have the headers...
 - use openSSL (instead of using read and write, use wrappers so openssl or direct accesso to socket can be used)
-- use gci
 - implement PUT
 - implement PROPFIND
 - Create a Doxyfile to use doxygen

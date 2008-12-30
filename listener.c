@@ -44,8 +44,8 @@ uid_t uid=ROOTUID;//Uid to use after bind
 
 pthread_attr_t t_attr;//thread's attributes
 
-char* indexes[MAXINDEXCOUNT];
-int indexes_l=1;
+char* indexes[MAXINDEXCOUNT]; //List of pointers to index files
+int indexes_l=1; //Count of the list
 
 /**
 Increases or decreases the number of current active thread.
@@ -154,13 +154,13 @@ int main(int argc, char * argv[]) {
         switch (c) {
         case 'I': { //Setting list of indexes
             int i=0;
-            indexes_l=1;
-            indexes[0]=optarg;
+            indexes_l=1; //count of indexes
+            indexes[0]=optarg; //1st one points to begin of param
             while (optarg[i++]!=0) {//Reads the string
 
                 if (optarg[i]==',') {
-                    optarg[i++]=0;
-                    indexes[indexes_l++] = &optarg[i];
+                    optarg[i++]=0; //Nulling the comma
+                    indexes[indexes_l++] = &optarg[i]; //Increasing counter and making next item point to char after the comma
                     if (indexes_l==MAXINDEXCOUNT) {
                         perror("Too much indexes, change MAXINDEXCOUNT in options.h to allow more");
                         exit(6);
