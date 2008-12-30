@@ -500,12 +500,6 @@ This function writes on the specified socket an html page containing the list of
 specified directory.
 */
 int writeDir(int sock, char* page) {
-
-    char* html=malloc(MAXSCRIPTOUT);//Memory for the html page
-    if (html==NULL) { //No memory
-        return ERR_NOMEM;
-    }
-
     /*
     Determines if has to show the link to parent dir or not.
     If page is the basedir, it won't show the link to ..
@@ -515,6 +509,11 @@ int writeDir(int sock, char* page) {
         size_t page_len=strlen(page);
         size_t basedir_len=strlen(basedir);
         if (page_len-1==basedir_len || page_len==basedir_len) parent=false;
+    }
+
+    char* html=malloc(MAXSCRIPTOUT);//Memory for the html page
+    if (html==NULL) { //No memory
+        return ERR_NOMEM;
     }
 
 
@@ -534,39 +533,43 @@ int writeDir(int sock, char* page) {
 
 /**
 This function reads a file and writes it to the socket.
+Also sends the http header with the content length header
+same as the file's size.
+There is no limit to file size, and it uses O_LARGEFILE flag
+to send file larger than 4gb. Since this flag isn't available on
+all systems, it will be 0 when compiled on system who doesn't have
+this flag. On those systems it is unpredictable if it will be able to
+send large files or not.
 */
 int writePage(int sock,char * strfile) {
-    char* buf=malloc(FILEBUF);
-
-    if (buf==NULL) {
-        return ERR_NOMEM;//If no memory is available
-    }
-
 
     int fp=open(strfile,O_RDONLY | O_LARGEFILE);
     if (fp<0) { //open returned an error
-        free(buf);
-
         return ERR_FILENOTFOUND;
+    }
+
+    char* buf=malloc(FILEBUF);//Buffer to read from file
+    if (buf==NULL) {
+        return ERR_NOMEM;//If no memory is available
     }
 
     {
         unsigned int size;//File's size
         {//Gets file's size
-
             struct stat buf;
             fstat(fp, &buf);
             //Ignoring errors, usually are due to large files, but the size is correctly returned anyway
             size=buf.st_size;
-
         }
 
         send_http_header(sock,size,NULL);//Sends header with content length
     }
 
+
     int reads;
     int wrote;
-
+    
+    //Sends file
     while ((reads=read(fp, buf, FILEBUF))>0) {
         wrote=write(sock,buf,reads);
         if (wrote!=reads) { //Error writing to the socket
@@ -726,7 +729,7 @@ int check_auth(int sock, char* http_param, char * method, char * page, char * ip
     char* auth=strstr(http_param,"Authorization: Basic ");//Locates the auth information
     if (auth==NULL) { //No auth informations
         username[0]=0;
-        password[0]=0;
+        //password[0]=0;
     } else { //Retrieves provided username and password
         char*auth_end=strstr(auth,"\r\n");//Finds the end of the header
         char a[PWDLIMIT*2];

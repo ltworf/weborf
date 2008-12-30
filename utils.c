@@ -39,6 +39,7 @@ Buffer for html must be allocated by the calling function.
 bufsize is the size of the buffer allocated for html. To avoid buffer overflows.
 */
 int list_dir (char* dir,char * html,unsigned int bufsize,bool parent) {
+    //TODO replace strncat with something more efficient
     int maxsize=bufsize-1;//String's max size
     struct dirent *ep;//File's property
     DIR *dp = opendir (dir);//Open dir
