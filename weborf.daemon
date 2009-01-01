@@ -20,23 +20,22 @@ export PATH=$PATH:/usr/local/bin
 USERNAME="www-data";
 BASEDIR="/var/www/"
 USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3`
-INDEXES=`cat weborf.conf | fgrep "indexes=" | cut -d= -f2`
+INDEXES=`cat /etc/weborf.conf | fgrep "indexes=" | cut -d= -f2`
 
 if test -z $USERID
 then
-	echo "Unable to find user www-data"
-	echo "Change the daemon script in $0"
-	exit 1
+    echo "Unable to find user www-data"
+    echo "Change the daemon script in $0"
+    exit 1
 fi
 case $1 in
-        start)
-                weborf -dp80 -u $USERID -b $BASEDIR -I $INDEXES;;
-        stop)
-		
-                kill `pidof weborf`;;
-	restart)
-		kill `pidof weborf`
-		weborf -dp80 -u $USERID -b $BASEDIR -I $INDEXES;;
-        * )
-                echo "Usage: $0 {start|stop|restart}";;
+    start)
+        weborf -dp80 -u $USERID -b $BASEDIR -I $INDEXES;;
+    stop)	
+        kill `pidof weborf`;;
+    restart)
+        kill `pidof weborf`
+        weborf -dp80 -u $USERID -b $BASEDIR -I $INDEXES;;
+    * )
+        echo "Usage: $0 {start|stop|restart}";;
 esac
