@@ -17,8 +17,8 @@
 # author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 
 export PATH=$PATH:/usr/local/bin
-USERNAME="www-data";
-BASEDIR="/var/www/"
+USERNAME=`cat /etc/weborf.conf | fgrep "user=" | cut -d= -f2`
+BASEDIR=`cat /etc/weborf.conf | fgrep "basedir=" | cut -d= -f2`
 USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3`
 INDEXES=`cat /etc/weborf.conf | fgrep "indexes=" | cut -d= -f2`
 
