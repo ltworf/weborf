@@ -1,7 +1,5 @@
 0.10
 - Pipe with scripts are now closed
-- Support for python scripts
-- Python scripts can be configured using a configuration file in /etc
 - Support for cgi-php
 - Fixed some possibilities of buffer overflow
 - Enlarged default head's buffer, necessary for script generated headers
@@ -12,6 +10,7 @@
 - Support for list of index files
 - List of index files changable in weborf.conf
 - Refactory of code to send/execute pages and generate dir listing
+- Changed default optimizations
 
 0.9
 - Bug: fixed size hadling of NBUFFER
