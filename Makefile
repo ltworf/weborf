@@ -16,8 +16,9 @@
 
 CC=gcc
 #DEFS=-Ddebug
-OFLAGS=-Os
-CFLAGS=-Wall $(DEFS) $(ARCHFLAGS) $(OFLAGS)
+OFLAGS=-O3
+#-pedantic -Wextra
+CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat
 LDFLAGS=-lpthread
 #ARCHFLAGS=-m64
 
@@ -30,7 +31,7 @@ CONFDIR=/etc/
 all: weborf
 
 weborf: listener.o queue.o instance.o mystring.o utils.o base64.o
-	$(CC) $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
+	$(CC) $(LDFLAGS) $(ARCHFLAGS) $(OFLAGS) $+ -o $@
 
 queue.c: queue.h
 instance.c: instance.h
@@ -40,7 +41,7 @@ utils.c: utils.h
 base64.c: base64.h
 
 debug: listener.o queue.o instance.o mystring.o utils.o base64.o 
-	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
+	$(CC) -ggdb3 $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 clean: 
 	rm *.o weborf debug *.orig *~ || echo Nothing to do 
