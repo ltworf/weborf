@@ -38,6 +38,7 @@ extern bool exec_script; //Execute scripts if true, sends the file if false
 extern char* indexes[MAXINDEXCOUNT];
 extern int indexes_l;
 extern bool virtual_host; //True if must check for virtual hosts
+extern char ** environ; //To reset environ vars
 
 /**
 Set thread with id as non-free
@@ -369,7 +370,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
 
         {//Clears all the env var, saving only SERVER_PORT
             char*port=getenv("SERVER_PORT");
-            clearenv();
+            environ=NULL;
             setenv("SERVER_PORT",port,true);
         }
         setEnvVars(http_param); //Sets env var starting with HTTP
