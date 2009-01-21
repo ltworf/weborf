@@ -47,6 +47,8 @@ pthread_attr_t t_attr;//thread's attributes
 char* indexes[MAXINDEXCOUNT]; //List of pointers to index files
 int indexes_l=1; //Count of the list
 
+bool virtual_host=false; //True if must check for virtual hosts
+
 /**
 Increases or decreases the number of current active thread.
 This function is thread safe.
@@ -137,6 +139,7 @@ int main(int argc, char * argv[]) {
             {"basedir", required_argument, 0, 'b'},
             {"index",required_argument,0,'I'},
             {"auth", required_argument, 0, 'a'},
+            {"virtual", required_argument, 0, 'V'},
             {"moo", no_argument, 0, 'm'},
             {"noexec", no_argument,0,'x'},
             {0, 0, 0, 0}
@@ -145,13 +148,30 @@ int main(int argc, char * argv[]) {
         int option_index=0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long (argc, argv, "mvhp:i:I:u:dxb:a:",long_options, &option_index);
+        c = getopt_long (argc, argv, "mvhp:i:I:u:dxb:a:V:",long_options, &option_index);
 
         //If there are no options it continues
         if (c == -1)
             break;
 
         switch (c) {
+        case 'V': {//Setting virtual hosts
+            virtual_host=true;
+
+            int i=0;
+            char* virtual=optarg; //1st one points to begin of param
+
+            while (optarg[i++]!=0) {//Reads the string
+                if (optarg[i]==',') {
+                    optarg[i++]=0; //Nulling the comma
+                    putenv(virtual);
+                    virtual=&optarg[i];
+
+                }
+            }
+            putenv(virtual);
+        }
+        break;
         case 'I': { //Setting list of indexes
             int i=0;
             indexes_l=1; //count of indexes

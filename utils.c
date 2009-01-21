@@ -199,6 +199,7 @@ void help() {
     printf("  -a, --auth    followed by absolute path of the program to handle authentication\n");
     printf("  -x  --noexec  tells weborf to send each file instead of executing scripts\n");
     printf("  -I  --index   list of index files, comma-separated\n");
+    printf("  -V  --virtual list of virtualhosts in the form host=basedir, comma-separated\n");
     printf("  -u            followed by a valid uid\n");
     printf("  -d            run as a daemon\n");
     printf("                If started by root weborf will use this user to read files and execute scripts\n");

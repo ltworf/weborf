@@ -16,11 +16,60 @@
 #
 # author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 
+#This function will start all the needed processes for weborf
+
+function stopWeborf {
+    #Stops all the running weborf servers (the ones started with init)
+
+    if ! test -e /var/run/weborf.pid
+    then
+        echo "Weborf is not running or it was not started by init"
+        exit 2
+    fi
+
+    echo -n "Stopping weborf "    
+    for i in `cat /var/run/weborf.pid`
+    do
+        echo -n ..
+        kill $i
+    done
+    echo "done"
+    rm -f /var/run/weborf.pid
+}
+
+function startWeborf {
+    if test -e /var/run/weborf.pid
+    then
+        echo "Weborf already running, if you're sure it is not running, delete /var/run/weborf.pid"
+        exit 2
+    fi
+
+    virtuals=`cat /etc/weborf.conf | egrep ^virtual`
+    if test -z "$virtuals"
+    then
+        echo "Starting weborf"
+        nohup weborf -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
+        echo ${!} >> /var/run/weborf.pid # Writes PID so weborf can be terminated
+    else #Virtual hosts
+    
+        for i in $virtuals
+            do
+                PORT=`echo $i | cut -d# -f2`
+                CMDLINE=`echo $i | cut -d# -f3`
+                echo "Starting weborf on port $PORT"
+                nohup weborf -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
+                echo $! >> /var/run/weborf.pid # Writes PID so weborf can be terminated
+            done
+    fi
+}
+
 export PATH=$PATH:/usr/local/bin
 USERNAME=`cat /etc/weborf.conf | fgrep "user=" | cut -d= -f2`
 BASEDIR=`cat /etc/weborf.conf | fgrep "basedir=" | cut -d= -f2`
 USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3`
 INDEXES=`cat /etc/weborf.conf | fgrep "indexes=" | cut -d= -f2`
+
+
 
 if test -z $USERID
 then
@@ -30,12 +79,12 @@ then
 fi
 case $1 in
     start)
-        weborf -dp80 -u $USERID -b $BASEDIR -I $INDEXES;;
+        startWeborf;;
     stop)	
-        kill `pidof weborf`;;
+        stopWeborf;;
     restart)
-        kill `pidof weborf`
-        weborf -dp80 -u $USERID -b $BASEDIR -I $INDEXES;;
+        stopWeborf
+        startWeborf;;
     * )
         echo "Usage: $0 {start|stop|restart}";;
 esac

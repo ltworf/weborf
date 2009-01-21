@@ -37,7 +37,7 @@ extern bool exec_script; //Execute scripts if true, sends the file if false
 
 extern char* indexes[MAXINDEXCOUNT];
 extern int indexes_l;
-extern char **environ; //Enviromental vars array
+extern bool virtual_host; //True if must check for virtual hosts
 
 /**
 Set thread with id as non-free
@@ -233,42 +233,27 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
     syslog (LOG_DEBUG,"URL changed into %s",page);
 #endif
 
+    char* real_basedir;
+    if (virtual_host) { //Using virtual hosts
+        real_basedir=get_basedir(http_param);
+        if (real_basedir==NULL) real_basedir=basedir;
+    } else {//No virtual Host
+        real_basedir=basedir;
+    }
+
     if (authbin!=NULL && check_auth(sock,http_param, method, page, ip_addr)!=0) { //If auth is required
         return ERR_NONAUTH;
     }
 
+    char* post_param=read_post_data(sock,http_param, method_id);
 
-    char* post_param=NULL;
-
-    {
-        //Buffer for field's value
-        char a[NBUFFER];
-        //Gets the value
-        bool r=get_param_value(http_param,"Content-Length", a,NBUFFER);
-
-        //If there is a value and method is POST
-        if (r!=false && method_id==POST) {
-            int l=strtol( a , NULL, 0 );
-            if (l<=POST_MAX_SIZE) {//Post size is ok
-                post_param=malloc(l+20);
-
-                int count=read(sock,post_param,l);
-                post_param[count]=0;
-                int removed=removeCrLf(post_param);
-                read(sock,post_param+count-removed,removed);
-                post_param[count+removed]=0;
-
-            } else {//Post size is too big
-                return ERR_NOMEM;
-            }
-        }
-    }
-
-
-    int strfile_l=strlen(page)+strlen(basedir)+INDEXMAXLEN+1;
+    int strfile_l=strlen(page)+strlen(real_basedir)+INDEXMAXLEN+1;
     char * strfile=malloc(strfile_l);//buffer for filename
-    if (strfile==NULL)return ERR_NOMEM;//If no memory is available
-    int strfile_e = snprintf(strfile,strfile_l,"%s%s",basedir,page);//Prepares the string
+    if (strfile==NULL) {
+        if (post_param!=NULL) free (post_param);
+        return ERR_NOMEM;//If no memory is available
+    }
+    int strfile_e = snprintf(strfile,strfile_l,"%s%s",real_basedir,page);//Prepares the string
     int retval=0;//Return value after sending the page
 
     int f_mode=fileIsA(strfile);//Get file's mode
@@ -300,14 +285,14 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 
             strfile[strfile_e]=0; //Removing the index part
             if (index_found==false) {//If no index was found in the dir
-                writeDir(sock,strfile);
+                writeDir(sock,strfile,real_basedir);
             }
         }
     } else if (file_exists(strfile)) {//Requested an existing file
 
         if (exec_script) { //Scripts enabled
             if (endsWith(page,".php")) { //Script php
-                retval=execPage(sock,page,strfile,params,CGI_WRAPPER,http_param,post_param,method,ip_addr);
+                retval=execPage(sock,page,strfile,params,CGI_WRAPPER,http_param,post_param,method,ip_addr,real_basedir);
             } else { //Normal file
                 retval= writePage(sock,strfile);
             }
@@ -337,7 +322,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 /**
 Executes a script with a given interpreter and sends the resulting output
 */
-int execPage(int sock, char * file,char* strfile, char * params,char * executor,char * http_param,char* post_param,char * method,char* ip_addr) {
+int execPage(int sock, char * file,char* strfile, char * params,char * executor,char * http_param,char* post_param,char * method,char* ip_addr,char* real_basedir) {
 #ifdef SENDINGDBG
     syslog(LOG_INFO,"Executing file %s",strfile);
 #endif
@@ -362,6 +347,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
 #endif
         if (post_param!=NULL) {
             close(ipipe[0]);
+            close(ipipe[1]);
         }
         close(wpipe[1]);
         close(wpipe[0]);
@@ -382,8 +368,8 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
         }
 
         {//Clears all the env var, saving only SERVER_PORT
-            char*port=getenv("SERVER_PORT");            
-            environ = NULL; //Clears the environmental vars
+            char*port=getenv("SERVER_PORT");
+            clearenv();
             setenv("SERVER_PORT",port,true);
         }
         setEnvVars(http_param); //Sets env var starting with HTTP
@@ -396,7 +382,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
         setenv("SERVER_NAME", getenv("HTTP_HOST"),true);
         setenv("REDIRECT_STATUS","Ciao",true); // Mah.. i'll never understand php, this env var is needed
         setenv("SCRIPT_FILENAME",strfile,true); //This var is needed as well or php say no input file...
-        //#env['DOCUMENT_ROOT']=sys.argv[6]
+        setenv("DOCUMENT_ROOT",real_basedir,true);
 
         setenv("REMOTE_ADDR",ip_addr,true); //#Client's address
         setenv("SCRIPT_NAME",file,true); //Name of the script without complete path
@@ -500,7 +486,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
 This function writes on the specified socket an html page containing the list of files within the
 specified directory.
 */
-int writeDir(int sock, char* page) {
+int writeDir(int sock, char* page,char* real_basedir) {
     /*
     Determines if has to show the link to parent dir or not.
     If page is the basedir, it won't show the link to ..
@@ -508,7 +494,7 @@ int writeDir(int sock, char* page) {
     bool parent=true;
     {
         size_t page_len=strlen(page);
-        size_t basedir_len=strlen(basedir);
+        size_t basedir_len=strlen(real_basedir);
         if (page_len-1==basedir_len || page_len==basedir_len) parent=false;
     }
 
@@ -569,7 +555,7 @@ int writePage(int sock,char * strfile) {
 
     int reads;
     int wrote;
-    
+
     //Sends file
     while ((reads=read(fp, buf, FILEBUF))>0) {
         wrote=write(sock,buf,reads);
@@ -763,4 +749,60 @@ int check_auth(int sock, char* http_param, char * method, char * page, char * ip
 
     return result;
 
+}
+
+/**
+This function reads post data and returns the pointer to the buffer containing the data (if there is any)
+or NULL if there was no data.
+If it doesn't return a null value, the returned pointer must be freed.
+*/
+char* read_post_data(int sock,char* http_param,int method_id) {
+    char * post_param=NULL; //Value to return
+
+    //Buffer for field's value
+    char a[NBUFFER];
+    //Gets the value
+    bool r=get_param_value(http_param,"Content-Length", a,NBUFFER);
+
+    //If there is a value and method is POST
+    if (r!=false && method_id==POST) {
+        int l=strtol( a , NULL, 0 );
+        if (l<=POST_MAX_SIZE) {//Post size is ok
+            post_param=malloc(l+20);
+
+            int count=read(sock,post_param,l);
+            post_param[count]=0;
+            int removed=removeCrLf(post_param);
+            read(sock,post_param+count-removed,removed);
+            post_param[count+removed]=0;
+
+        }
+    }
+    return post_param;
+}
+
+/**
+This function returns a pointer to a string.
+It will use virtualhost settings to return this string and if no virtualhost is set for that host, it will return
+the default basedir.
+Those string must
+*/
+char* get_basedir(char* http_param) {
+    if (virtual_host==false) return basedir;
+
+    char* result;
+    char* h=strstr(http_param,"\r\nHost: ");
+
+
+    if (h==NULL) return basedir;
+
+    h+=8;//Removing "Host:" string
+    char* end=strstr(h,"\r");
+    end[0]=0;
+    result=getenv(h);
+    end[0]='\r';
+
+    if (result==NULL) return basedir; //Reqeusted host doesn't exist
+
+    return result;
 }
