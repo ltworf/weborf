@@ -11,6 +11,8 @@
 - List of index files changable in weborf.conf
 - Refactory of code to send/execute pages and generate dir listing
 - Changed default optimizations
+- Support for virtualhost
+- Support for virtualhost in weborf.conf
 
 0.9
 - Bug: fixed size hadling of NBUFFER
