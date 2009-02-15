@@ -13,6 +13,7 @@
 - Changed default optimizations
 - Support for virtualhost
 - Support for virtualhost in weborf.conf
+- Support for enabling/disabling cgi from weborf.conf
 
 0.9
 - Bug: fixed size hadling of NBUFFER

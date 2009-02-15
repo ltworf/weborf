@@ -48,7 +48,7 @@ function startWeborf {
     if test -z "$virtuals"
     then
         echo "Starting weborf"
-        nohup weborf -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
+        nohup weborf $CGI -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
         echo ${!} >> /var/run/weborf.pid # Writes PID so weborf can be terminated
     else #Virtual hosts
     
@@ -57,7 +57,7 @@ function startWeborf {
                 PORT=`echo $i | cut -d# -f2`
                 CMDLINE=`echo $i | cut -d# -f3`
                 echo "Starting weborf on port $PORT"
-                nohup weborf -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
+                nohup weborf $CGI -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
                 echo $! >> /var/run/weborf.pid # Writes PID so weborf can be terminated
             done
     fi
@@ -68,7 +68,12 @@ USERNAME=`cat /etc/weborf.conf | fgrep "user=" | cut -d= -f2`
 BASEDIR=`cat /etc/weborf.conf | fgrep "basedir=" | cut -d= -f2`
 USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3`
 INDEXES=`cat /etc/weborf.conf | fgrep "indexes=" | cut -d= -f2`
+USE_CGI=`cat /etc/weborf.conf | fgrep "use-cgi=" | cut -d= -f2`
 
+if test $USE_CGI = "false"
+then
+    CGI="-x"
+fi
 
 
 if test -z $USERID
