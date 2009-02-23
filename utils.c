@@ -201,8 +201,8 @@ void help() {
     printf("  -I  --index   list of index files, comma-separated\n");
     printf("  -V  --virtual list of virtualhosts in the form host=basedir, comma-separated\n");
     printf("  -u            followed by a valid uid\n");
-    printf("  -d            run as a daemon\n");
     printf("                If started by root weborf will use this user to read files and execute scripts\n");
+    printf("  -d            run as a daemon\n");
     printf("  -h, --help	display this help and exit\n");
     printf("  -v, --version	print program version\n\n");
 
