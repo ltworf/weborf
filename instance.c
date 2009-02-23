@@ -116,11 +116,17 @@ void * instance(void * nulla) {
 
             int r;//Readed char
             char* end;//Pointer to header's end
-            while ((end=strstr(buf,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
+            int from=0;
+            while ((end=strstr(buf+from,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
+                //printf("Parsing from %d\t strlen=%d\t =========\n%s\n",from,strlen(buf+from),buf+from);
                 r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
 
                 if (r<=0) { //Connection closed or error
                     goto closeConnection;
+                }
+
+                if (!(buf[bufFull]==10 || buf[bufFull]==13)) {//Optimization to make strstr parse only the ending part of the string
+                    from=bufFull;
                 }
 
                 if (bufFull!=0) { //Removes Cr Lf from beginning
@@ -135,6 +141,8 @@ void * instance(void * nulla) {
                     send_err(sock,400,"Bad request",ip_addr);
                     goto closeConnection;
                 }
+
+
             }
 
             end[2]='\0';//Terminates the header, leaving a final \r\n in it

@@ -14,6 +14,7 @@
 - Support for virtualhost
 - Support for virtualhost in weborf.conf
 - Support for enabling/disabling cgi from weborf.conf
+- Heavy optimization in finding the end of the header
 
 0.9
 - Bug: fixed size hadling of NBUFFER
