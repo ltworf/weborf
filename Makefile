@@ -30,17 +30,18 @@ CONFDIR=/etc/
 
 all: weborf
 
-weborf: listener.o queue.o instance.o mystring.o utils.o base64.o
+weborf: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.c
 	$(CC) $(LDFLAGS) $(ARCHFLAGS) $(OFLAGS) $+ -o $@
 
 queue.c: queue.h
 instance.c: instance.h
+buffered_reader.c: buffered_reader.h
 listener.c: listener.h
 mystring.c: mystring.h
 utils.c: utils.h
 base64.c: base64.h
 
-debug: listener.o queue.o instance.o mystring.o utils.o base64.o 
+debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o
 	$(CC) -ggdb3 $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 clean: 
