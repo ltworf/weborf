@@ -17,3 +17,31 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
  */
+
+#include "buffered_reader.h"
+#include <unistd.h>
+#include <stdlib.h>
+
+/**
+This funcion inits the struct allocating a buffer of the specified size.
+It will return 0 on success and 1 on fail.
+*/
+int buffer_init(buffered_read_t * buf, int size) {
+    buf->buffer = malloc(sizeof(char*) * size);
+    buf->start= buf->buffer;
+    buf->end=buf->buffer;
+    
+    return (buf->buffer == NULL) ? 1 : 0;
+}
+
+/**
+This function will free the memory allocated by the buffer used in the struct.
+*/
+void buffer_free(buffered_read_t * buf) {
+    if (buf->buffer != NULL)
+        free(buf->buffer);
+}
+
+ssize_t buffer_read(int fd, void *b, size_t count,buffered_read_t  buf) {
+    
+}

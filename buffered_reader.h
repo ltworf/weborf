@@ -18,12 +18,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
  */
 
+#ifndef BUFFERED_READER_H
+#define BUFFERED_READER_H
+
 typedef struct {
     char * buffer;//Buffer where the reader stores the read data
     char * start;//Pointer to non-consumed data
     char * end;//Pointer to 1st byte after end of the data. A read must continue after end.
 } buffered_read_t;
 
-void buffer_init(buffered_read_t * buf, int size);
+int buffer_init(buffered_read_t * buf, int size);
 void buffer_free(buffered_read_t * buf);
-ssize_t buffer_read(int fd, void *buf, size_t count,buffered_read_t  buf);
+ssize_t buffer_read(int fd, void *b, size_t count,buffered_read_t  buf);
+
+#endif
