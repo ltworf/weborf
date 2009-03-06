@@ -80,7 +80,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PY_WRAPPER "weborf.pywrap.py"
 #define CGI_WRAPPER "/usr/lib/cgi-bin/php5"
 
-//-------------Debug options
+//-------------COMPRESSING PAGES
+//#define __COMPRESSION //enables support for compressing pages, comment to disable
+#ifdef __COMPRESSION
+#define SIZE_COMPRESS_MIN 4000
+#define SIZE_COMPRESS_MAX 4000000000
+#define GZIPNICE 4
+#endif
+
+//-------------Logging options
 //#define THREADDBG
 //#define SOCKETDBG
 //#define SERVERDBG

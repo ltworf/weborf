@@ -13,6 +13,7 @@
 - Changed default optimizations
 - Support for virtualhost
 - Support for virtualhost in weborf.conf
+- Support for gzip encoding, when supported by client
 - Support for enabling/disabling cgi from weborf.conf
 - Heavy optimization in finding the end of the header
 

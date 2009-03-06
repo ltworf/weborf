@@ -48,11 +48,11 @@ clean:
 purge: uninstall
 	rm -f $(CONFDIR)/weborf.conf || echo ok
 
-source: clean 
-	astyle --style=kr *c *h
+source: clean style
 	rm -f *~ *.orig
 	cd ..; tar cvjf weborf-`date +\%F | tr -d -`.tar.bz2 weborf/
-
+style:
+	astyle --style=kr *c *h
 install: uninstall
 	mkdir -p $(MANDIR) || echo Creating directories
 	gzip -c weborf.1 > $(MANDIR)/weborf.1.gz

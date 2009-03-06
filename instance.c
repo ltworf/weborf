@@ -118,7 +118,6 @@ void * instance(void * nulla) {
             char* end;//Pointer to header's end
             int from=0;
             while ((end=strstr(buf+from,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
-                //printf("Parsing from %d\t strlen=%d\t =========\n%s\n",from,strlen(buf+from),buf+from);
                 r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
 
                 if (r<=0) { //Connection closed or error
@@ -136,13 +135,10 @@ void * instance(void * nulla) {
                     bufFull+=r;
                 }
 
-
                 if (bufFull>=INBUFFER) { //Buffer full and still no valid http header
                     send_err(sock,400,"Bad request",ip_addr);
                     goto closeConnection;
                 }
-
-
             }
 
             end[2]='\0';//Terminates the header, leaving a final \r\n in it
@@ -303,10 +299,10 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
             if (endsWith(page,".php")) { //Script php
                 retval=execPage(sock,page,strfile,params,CGI_WRAPPER,http_param,post_param,method,ip_addr,real_basedir);
             } else { //Normal file
-                retval= writePage(sock,strfile);
+                retval= writeFile(sock,strfile,http_param);
             }
         } else { //Scripts disabled
-            retval= writePage(sock,strfile);
+            retval= writeFile(sock,strfile,http_param);
         }
     } else {//File doesn't exist
         retval=ERR_FILENOTFOUND;
@@ -528,6 +524,41 @@ int writeDir(int sock, char* page,char* real_basedir) {
 }
 
 /**
+Writes a file to the socket, compressing it with gzip.
+Then, since it is not possible to know the size of the compressed file,
+it is not possible to send the size in advance, so it will close the connection
+(and will seand the header "Connection: close" before) after sending.
+
+sock is the socket
+strfile is the file to compress and send
+size is the size of the uncompressed file
+*/
+#ifdef __COMPRESSION
+int writeCompressedFile(int sock, char*strfile,unsigned int size) {
+
+    send_http_header_code_content(sock,200,size,"Connection: close\r\nContent-Encoding: gzip\r\n",false);
+    int pid=fork();
+
+    if (pid==0) { //child, executing gzip
+        fclose (stdout); //Closing the stdout
+        dup(sock); //Redirects the stdout
+#ifdef GZIPNICE
+        nice(GZIPNICE); //Reducing priority
+#endif
+        execlp("gzip","gzip","-c",strfile,(char *)0);
+
+    } else if (pid>0) { //Father, reading and sending
+        int status;
+        waitpid(pid,&status,0);
+    } else { //Error
+        return ERR_NOMEM; //Well not enough memory in process table...
+    }
+    close(sock);
+    return 0;
+}
+#endif
+
+/**
 This function reads a file and writes it to the socket.
 Also sends the http header with the content length header
 same as the file's size.
@@ -536,20 +567,19 @@ to send file larger than 4gb. Since this flag isn't available on
 all systems, it will be 0 when compiled on system who doesn't have
 this flag. On those systems it is unpredictable if it will be able to
 send large files or not.
+
+If the file is larger, it will be sent using writeCompressedFile,
+see that function for details.
 */
-int writePage(int sock,char * strfile) {
+int writeFile(int sock,char * strfile,char *http_param) {
 
     int fp=open(strfile,O_RDONLY | O_LARGEFILE);
     if (fp<0) { //open returned an error
         return ERR_FILENOTFOUND;
     }
 
-    char* buf=malloc(FILEBUF);//Buffer to read from file
-    if (buf==NULL) {
-        return ERR_NOMEM;//If no memory is available
-    }
 
-    {
+    { //Get size of the file and decide if to handle it as normal or compressed.
         unsigned int size;//File's size
         {//Gets file's size
             struct stat buf;
@@ -557,10 +587,31 @@ int writePage(int sock,char * strfile) {
             //Ignoring errors, usually are due to large files, but the size is correctly returned anyway
             size=buf.st_size;
         }
+#ifdef __COMPRESSION
+        if (size>SIZE_COMPRESS_MIN && size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
+            char* accept;
 
+            if ((accept=strstr(http_param,"Accept-Encoding:"))!=NULL) {
+                char* end=strstr(accept,"\r\n");
+                
+                //Avoid to parse the entire header.
+                end[0]='\0';
+                char* gzip=strstr(accept,"gzip");
+                end[0]='\r';
+                
+                if (gzip!=NULL) {
+                    return writeCompressedFile(sock,strfile, size);
+                }
+            }
+        }
+#endif
         send_http_header(sock,size,NULL);//Sends header with content length
     }
 
+    char* buf=malloc(FILEBUF);//Buffer to read from file
+    if (buf==NULL) {
+        return ERR_NOMEM;//If no memory is available
+    }
 
     int reads;
     int wrote;
@@ -683,22 +734,32 @@ This function sends a code header to the specified socket
 size is the Content-Length field.
 headers can be NULL or some extra headers to add. Headers must be
 separated by \r\n and must have an \r\n at the end.
+
+Content says if the size is for content-lenght or for entity-length
 */
-int send_http_header_code(int sock,int code, unsigned int size,char* headers) {
+int send_http_header_code_content(int sock,int code, unsigned int size,char* headers,bool content) {
 
     char *head=malloc(HEADBUF);
     if (head==NULL)return ERR_NOMEM;
 
+    if (headers==NULL) headers="";
+
     int len_head;
-    if (headers==NULL) {
-        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n\r\n",code, size);
-    } else {
+    if (content) {
+
         len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n",code, size,headers);
+    } else {
+        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nentity-length: %u\r\n%s\r\n",code, size,headers);
     }
+
     int wrote=write (sock,head,len_head);
     free(head);
     if (wrote!=len_head) return ERR_BRKPIPE;
     return 0;
+}
+
+int send_http_header_code(int sock,int code, unsigned int size,char* headers) {
+    return send_http_header_code_content( sock,code,size,headers,true);
 }
 
 /**
@@ -706,9 +767,8 @@ This function sends a code 200 header to the specified socket
 size is the Content-Length field
 */
 int send_http_header(int sock,unsigned int size,char* headers) {
-    return send_http_header_code(sock,200,size,headers);
+    return send_http_header_code_content(sock,200,size,headers,true);
 }
-
 
 /**
 This function checks if the authentication can be granted or not calling the external program.
