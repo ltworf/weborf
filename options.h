@@ -63,6 +63,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define INDEXMAXLEN 30
 //Buffer to contain the string representation of an integer
 #define NBUFFER 15
+#define BUFFERED_READER_SIZE 128
 
 //Number of index pages allowed to search
 #define MAXINDEXCOUNT 10
