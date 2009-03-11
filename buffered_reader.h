@@ -30,6 +30,6 @@ typedef struct {
 
 int buffer_init(buffered_read_t * buf, int size);
 void buffer_free(buffered_read_t * buf);
-//ssize_t buffer_read(int fd, void *b, size_t count,buffered_read_t * buf);
+//ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf);
 
 #endif
