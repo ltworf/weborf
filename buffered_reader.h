@@ -17,9 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
  */
-
 #ifndef BUFFERED_READER_H
 #define BUFFERED_READER_H
+
+#include <unistd.h>
 
 typedef struct {
     char * buffer;//Buffer where the reader stores the read data
@@ -30,6 +31,5 @@ typedef struct {
 
 int buffer_init(buffered_read_t * buf, int size);
 void buffer_free(buffered_read_t * buf);
-//ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf);
-
+ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf);
 #endif
