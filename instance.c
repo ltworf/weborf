@@ -86,17 +86,22 @@ void * instance(void * nulla) {
     char * reqs;//HTTP request STRING
     char * page;//Page to load
     char * lasts;//Used by strtok_r
+    buffered_read_t read_b; //Buffer for buffered reader
 
     char * param;//HTTP parameter
 
     int sock;//Socket with the client
     char* ip_addr;//Client's ip address in ascii
+    
+    buffer_init(&read_b,BUFFERED_READER_SIZE);
+    
     while (true) {
 
         q_get(&queue, &sock,&ip_addr);//Gets a socket from the queue
         unfree_thread(id);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order
+            buffer_free(&read_b);
 #ifdef THREADDBG
             syslog(LOG_DEBUG,"Terminating thread %ld",id);
 #endif
@@ -118,7 +123,8 @@ void * instance(void * nulla) {
             char* end;//Pointer to header's end
             int from=0;
             while ((end=strstr(buf+from,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
-                r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
+                //r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
+                r=buffer_read(sock, buf+bufFull,1,&read_b);//Reads 1 char and adds to the buffer
 
                 if (r<=0) { //Connection closed or error
                     goto closeConnection;
@@ -180,7 +186,7 @@ void * instance(void * nulla) {
                             keep_alive=true;
                 }
 
-                if (sendPage(sock,page,param,req,reqs,ip_addr)<0) {
+                if (sendPage(sock,page,param,req,reqs,ip_addr,&read_b)<0) {
                     break;//Unable to send an error
                 }
                 if (keep_alive==false) {//No pipelining
@@ -227,7 +233,7 @@ void modURL(char* url) {
 This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
-int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr) {
+int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr,buffered_read_t* read_b) {
 
     modURL(page);//Operations on the url string
 
@@ -250,7 +256,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
         return ERR_NONAUTH;
     }
 
-    char* post_param=read_post_data(sock,http_param, method_id);
+    char* post_param=read_post_data(sock,http_param, method_id,read_b);
 
     int strfile_l=strlen(page)+strlen(real_basedir)+INDEXMAXLEN+1;
     char * strfile=malloc(strfile_l);//buffer for filename
@@ -825,7 +831,7 @@ This function reads post data and returns the pointer to the buffer containing t
 or NULL if there was no data.
 If it doesn't return a null value, the returned pointer must be freed.
 */
-char* read_post_data(int sock,char* http_param,int method_id) {
+char* read_post_data(int sock,char* http_param,int method_id,buffered_read_t* read_b ) {
     char * post_param=NULL; //Value to return
 
     //Buffer for field's value
@@ -839,7 +845,8 @@ char* read_post_data(int sock,char* http_param,int method_id) {
         if (l<=POST_MAX_SIZE) {//Post size is ok
             post_param=malloc(l+20);
 
-            int count=read(sock,post_param,l);
+            //int count=read(sock,post_param,l);
+            int count=buffer_read(sock,post_param,l,read_b);
             post_param[count]=0;
             int removed=removeCrLf(post_param);
             read(sock,post_param+count-removed,removed);
