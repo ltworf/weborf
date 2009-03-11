@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "buffered_reader.h"
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
 This funcion inits the struct allocating a buffer of the specified size.
@@ -30,6 +31,7 @@ int buffer_init(buffered_read_t * buf, int size) {
     buf->buffer = malloc(sizeof(char*) * size);
     buf->start= buf->buffer;
     buf->end=buf->buffer;
+    buf->size=size;
     
     return (buf->buffer == NULL) ? 1 : 0;
 }
@@ -42,6 +44,71 @@ void buffer_free(buffered_read_t * buf) {
         free(buf->buffer);
 }
 
-ssize_t buffer_read(int fd, void *b, size_t count,buffered_read_t  buf) {
+/**
+This function is designed to be similar to a normal read, but it uses an internal
+buffer.
+When the buffer is empty, it will try to fill it.
+An important difference from the normal read is that this function will wait until
+the requested amount of bytes are available.
+On some special cases, the read data could be minor of the requested one. For example if
+end of file is reached and it is impossible to do further reads.
+*/
+ssize_t buffer_read(int fd, void *b, size_t count,buffered_read_t * buf) {
+    ssize_t wrote=0;
+    //size_t _count=count; //Not necessarily needed
+
+    printf("Requested %d bytes\n", count);
+    while (wrote<count) {
+        
+        
+        size_t available;
+        if ((available=buf->end - buf-> start) != 0 ) {//Data available in buffer
+            if (count <= available) {//More data in buffer than needed
+                printf("1 Needed %d bytes, Available %d\n", count,available);
+                memcpy(b, buf->start, count );                
+                buf->start+=count;
+                printf("1 Needed %d bytes, Available %d\n", count,available);
+                return count;
+            } else {//Requesting more data than available
+                printf("2 Needed %d bytes, Available %d\n", count,available);
+                memcpy(b, buf->start, available );
+                b+=available;
+                buf->start+=available;
+                wrote+=available;
+                printf("2 Needed %d bytes, Available %d\n", count,available);
+            }
+        
+        } else {//Need to read some data
+            buf->start= buf->buffer;
+            int r= read(fd,buf->buffer,buf->size);
+            printf("Read %d bytes\n",r);
+            if (r==0) return wrote;
+            buf->end=buf->start+r;
+        }
+        
+        printf("Wrote %d bytes\n", wrote);
+    }
     
+    
+}
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
+int main() {
+    int fp=open("/home/salvo/.bash_history",O_RDONLY);
+    buffered_read_t buffer; //=malloc(sizeof(buffered_read_t));
+    buffer_init(&buffer,128);
+    
+    char* testo = malloc(10);
+    size_t dim;
+    while (dim=buffer_read(fp, testo, 2, &buffer)!=0) {
+        testo[dim]=0;
+        printf("Letti %d: %s\n",dim,testo);
+        //printf("%s",testo);
+    }
+    
+    buffer_free(&buffer);
 }
