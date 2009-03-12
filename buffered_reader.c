@@ -32,7 +32,7 @@ int buffer_init(buffered_read_t * buf, int size) {
     buf->start= buf->buffer;
     buf->end=buf->buffer;
     buf->size=size;
-    
+
     return (buf->buffer == NULL) ? 1 : 0;
 }
 
@@ -58,21 +58,18 @@ ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf) {
     ssize_t available;
 
     while (wrote<count) {
-        
-        if (buf->start!=buf->end) {//Data available in buffer
-            available=buf->end - buf-> start;
-            if (count <= available) {//More data in buffer than needed
-                memcpy(b, buf->start, count );
-                buf->start+=count;
-                return count;
-            } else {//Requesting more data than available
-                memcpy(b, buf->start, available );
-                b+=available;
-                buf->start+=available;
-                wrote+=available;
-            }
-        
-        } else {//Need to read some data
+        available=buf->end - buf-> start;
+        if (count <= available) {//More data in buffer than needed
+            memcpy(b, buf->start, count );
+            buf->start+=count;
+            return count;
+        } else {//Requesting more data than available
+            memcpy(b, buf->start, available );
+            b+=available;
+            buf->start+=available;
+            wrote+=available;
+
+            //Filing the buffer again
             buf->start= buf->buffer;
             ssize_t r = read(fd,buf->buffer,buf->size);
             if (r==0) {
@@ -81,5 +78,7 @@ ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf) {
             }
             buf->end=buf->start+r;
         }
-    }   
+
+
+    }
 }
