@@ -65,26 +65,25 @@ ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf) {
         if (needed <= available) {//More data in buffer than needed
             memcpy(b, buf->start, needed );
             buf->start+=needed;
-            return count;
+            return wrote+needed;
         } else {//Requesting more data than available
-            memcpy(b, buf->start, available );
-            b+=available;
-            buf->start+=available;
-            wrote+=available;
+            if (available>0) {
+                memcpy(b, buf->start, available );
+                b+=available;
+                wrote+=available;
+            }
 
             //Filing the buffer again
             buf->start= buf->buffer;
             r = read(fd,buf->buffer,buf->size);
-            if (r==0) {
+            if (r==0) {//End of the stream
                 buf->end=buf->start;
                 return wrote;
-                
             }
             buf->end=buf->start+r;
         }
 
-
-    }
+    } /*while*/
     return wrote;
 }
 
