@@ -55,13 +55,16 @@ end of file is reached and it is impossible to do further reads.
 */
 ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf) {
     ssize_t wrote=0;//Count of written bytes
-    ssize_t available;
+    ssize_t available, needed;
+    ssize_t r;
 
     while (wrote<count) {
         available=buf->end - buf-> start;
-        if (count <= available) {//More data in buffer than needed
-            memcpy(b, buf->start, count );
-            buf->start+=count;
+        needed=count-wrote;
+        
+        if (needed <= available) {//More data in buffer than needed
+            memcpy(b, buf->start, needed );
+            buf->start+=needed;
             return count;
         } else {//Requesting more data than available
             memcpy(b, buf->start, available );
@@ -71,14 +74,41 @@ ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf) {
 
             //Filing the buffer again
             buf->start= buf->buffer;
-            ssize_t r = read(fd,buf->buffer,buf->size);
+            r = read(fd,buf->buffer,buf->size);
             if (r==0) {
                 buf->end=buf->start;
                 return wrote;
+                
             }
             buf->end=buf->start+r;
         }
 
 
     }
+    return wrote;
 }
+
+
+//#include <sys/types.h>
+//#include <sys/stat.h>
+//#include <fcntl.h>
+
+//int main () {
+//    buffered_read_t buf;
+//    
+//    buffer_init(&buf, 30);
+    
+//    int fp=open("/home/salvo/.bash_history",O_RDONLY);
+//    char * k=malloc (600);
+    
+//    int end=0;
+//    while ((end=buffer_read(fp,k,500,&buf))>=500 ) {
+        
+//        k[end]=0;
+//        printf("---- %s\n",k);
+//    }
+//    printf("%d",end);
+    
+//    free(k);
+//    buffer_free(&buf);
+//}
