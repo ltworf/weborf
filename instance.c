@@ -92,9 +92,9 @@ void * instance(void * nulla) {
 
     int sock;//Socket with the client
     char* ip_addr;//Client's ip address in ascii
-    
+
     buffer_init(&read_b,BUFFERED_READER_SIZE);
-    
+
     while (true) {
 
         q_get(&queue, &sock,&ip_addr);//Gets a socket from the queue
@@ -599,12 +599,12 @@ int writeFile(int sock,char * strfile,char *http_param) {
 
             if ((accept=strstr(http_param,"Accept-Encoding:"))!=NULL) {
                 char* end=strstr(accept,"\r\n");
-                
+
                 //Avoid to parse the entire header.
                 end[0]='\0';
                 char* gzip=strstr(accept,"gzip");
                 end[0]='\r';
-                
+
                 if (gzip!=NULL) {
                     return writeCompressedFile(sock,strfile, size);
                 }
@@ -848,9 +848,10 @@ char* read_post_data(int sock,char* http_param,int method_id,buffered_read_t* re
             //int count=read(sock,post_param,l);
             int count=buffer_read(sock,post_param,l,read_b);
             post_param[count]=0;
-            int removed=removeCrLf(post_param);
-            read(sock,post_param+count-removed,removed);
-            post_param[count+removed]=0;
+            //int removed=removeCrLf(post_param);
+            //buffer_read(sock,post_param+count-removed,removed,read_b);
+            //post_param[count+removed]=0;
+            post_param[count]=0;
 
         }
     }
