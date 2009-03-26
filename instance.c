@@ -464,11 +464,13 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
         close (wpipe[0]);
 
         if (e_reads>0) {//There is output from script
-            char* status="200"; //Standard status
+            char* status; //Standard status
             {//Reading if there is another status
                 char*s=strstr(header_buf,"Status: ");
                 if (s!=NULL) {
                     status=s+8; //Replacing status
+                } else {
+                    status="200"; //Standard status
                 }
             }
             send_http_header_scode(sock,status,reads,header_buf);
@@ -507,7 +509,6 @@ int writeDir(int sock, char* page,char* real_basedir) {
     if (html==NULL) { //No memory
         return ERR_NOMEM;
     }
-
 
     if (list_dir (page,html,MAXSCRIPTOUT,parent)<0) { //Creates the page
         free(html);//Frees the memory used for the page
