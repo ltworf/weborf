@@ -401,7 +401,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
 
             //file and params were the same string.
             //Joining them again temporarily
-            int delim=strlen(file);
+            int delim=params-file;
             file[delim]='?';
             setenv("REQUEST_URI",file,true);
             file[delim]='\0';
