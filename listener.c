@@ -373,8 +373,9 @@ int main(int argc, char * argv[]) {
 
         char* ip_addr=malloc(INET_ADDRSTRLEN);
         if (ip_addr!=NULL) { //Buffer for ascii IP addr, will be freed by the thread
-            char* ip=inet_ntoa(farAddr.sin_addr);
-            memcpy(ip_addr,ip,strlen(ip)+1);
+            getpeername(s1, (struct sockaddr *)&farAddr, &farAddrL);
+            inet_ntop(AF_INET, &farAddr.sin_addr, ip_addr, INET_ADDRSTRLEN);
+        }
         }
 
 #endif

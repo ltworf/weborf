@@ -256,12 +256,12 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
         return ERR_NONAUTH;
     }
 
-    char* post_param=read_post_data(sock,http_param, method_id,read_b);
+    string_t post_param=read_post_data(sock,http_param, method_id,read_b);
 
     int strfile_l=strlen(page)+strlen(real_basedir)+INDEXMAXLEN+1;
     char * strfile=malloc(strfile_l);//buffer for filename
     if (strfile==NULL) {
-        if (post_param!=NULL) free (post_param);
+        if (post_param.data!=NULL) free (post_param.data);
         return ERR_NOMEM;//If no memory is available
     }
     int strfile_e = snprintf(strfile,strfile_l,"%s%s",real_basedir,page);//Prepares the string
@@ -303,7 +303,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 
         if (exec_script) { //Scripts enabled
             if (endsWith(page,".php")) { //Script php
-                retval=execPage(sock,page,strfile,params,CGI_WRAPPER,http_param,post_param,method,ip_addr,real_basedir);
+                retval=execPage(sock,page,strfile,params,CGI_WRAPPER,http_param,&post_param,method,ip_addr,real_basedir);
             } else { //Normal file
                 retval= writeFile(sock,strfile,http_param);
             }
@@ -314,7 +314,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
         retval=ERR_FILENOTFOUND;
     }
 
-    if (post_param!=NULL) free (post_param);
+    if (post_param.data!=NULL) free (post_param.data);
     free(strfile);
 
 
@@ -333,7 +333,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 /**
 Executes a script with a given interpreter and sends the resulting output
 */
-int execPage(int sock, char * file,char* strfile, char * params,char * executor,char * http_param,char* post_param,char * method,char* ip_addr,char* real_basedir) {
+int execPage(int sock, char * file,char* strfile, char * params,char * executor,char * http_param,string_t* post_param,char * method,char* ip_addr,char* real_basedir) {
 #ifdef SENDINGDBG
     syslog(LOG_INFO,"Executing file %s",strfile);
 #endif
@@ -344,10 +344,10 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
 
     pipe(wpipe);//Pipe to comunicate with the child
 
-    if (post_param!=NULL) {//Pipe created and used only if there is data to send to the script
+    if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
         //Send post data to script's stdin
         pipe(ipipe);//Pipe to comunicate with the child
-        write(ipipe[1],post_param,strlen(post_param));
+        write(ipipe[1],post_param->data,post_param->len);
         close (ipipe[1]); //Closes unused end of the pipe
     }
 
@@ -356,7 +356,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
 #ifdef SENDINGDBG
         syslog(LOG_ERR,"Unable to fork to execute the file %s",strfile);
 #endif
-        if (post_param!=NULL) {
+        if (post_param->data!=NULL) {
             close(ipipe[0]);
             close(ipipe[1]);
         }
@@ -373,7 +373,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
         dup(wpipe[1]); //Redirects the stderr
 
         //Redirecting standard input
-        if (post_param!=NULL) {//Send post data to script's stdin
+        if (post_param->data!=NULL) {//Send post data to script's stdin
             fclose(stdin);
             dup(ipipe[0]);
         }
@@ -407,7 +407,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
 
             //file and params were the same string.
             //Joining them again temporarily
-            int delim=strlen(file);
+            int delim=params-file;
             file[delim]='?';
             setenv("REQUEST_URI",file,true);
             file[delim]='\0';
@@ -434,7 +434,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
 
-        if (post_param!=NULL) {
+        if (post_param->data!=NULL) {
             close(ipipe[0]);
         }
 
@@ -470,11 +470,13 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
         close (wpipe[0]);
 
         if (e_reads>0) {//There is output from script
-            char* status="200"; //Standard status
+            char* status; //Standard status
             {//Reading if there is another status
                 char*s=strstr(header_buf,"Status: ");
                 if (s!=NULL) {
                     status=s+8; //Replacing status
+                } else {
+                    status="200"; //Standard status
                 }
             }
             send_http_header_scode(sock,status,reads,header_buf);
@@ -513,7 +515,6 @@ int writeDir(int sock, char* page,char* real_basedir) {
     if (html==NULL) { //No memory
         return ERR_NOMEM;
     }
-
 
     if (list_dir (page,html,MAXSCRIPTOUT,parent)<0) { //Creates the page
         free(html);//Frees the memory used for the page
@@ -623,7 +624,7 @@ int writeFile(int sock,char * strfile,char *http_param) {
     int wrote;
 
     //Sends file
-    while ((reads=read(fp, buf, FILEBUF))>0) {
+    while ((reads=read(fp, buf, FILEBUF))!=0) {
         wrote=write(sock,buf,reads);
         if (wrote!=reads) { //Error writing to the socket
 #ifdef SOCKETDBG
@@ -752,7 +753,6 @@ int send_http_header_code_content(int sock,int code, unsigned int size,char* hea
 
     int len_head;
     if (content) {
-
         len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n",code, size,headers);
     } else {
         len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nentity-length: %u\r\n%s\r\n",code, size,headers);
@@ -831,8 +831,10 @@ This function reads post data and returns the pointer to the buffer containing t
 or NULL if there was no data.
 If it doesn't return a null value, the returned pointer must be freed.
 */
-char* read_post_data(int sock,char* http_param,int method_id,buffered_read_t* read_b ) {
-    char * post_param=NULL; //Value to return
+string_t read_post_data(int sock,char* http_param,int method_id,buffered_read_t* read_b ) {
+    string_t res;
+    res.len=0;
+    res.data=NULL;
 
     //Buffer for field's value
     char a[NBUFFER];
@@ -843,19 +845,12 @@ char* read_post_data(int sock,char* http_param,int method_id,buffered_read_t* re
     if (r!=false && method_id==POST) {
         int l=strtol( a , NULL, 0 );
         if (l<=POST_MAX_SIZE) {//Post size is ok
-            post_param=malloc(l+20);
-
-            //int count=read(sock,post_param,l);
-            int count=buffer_read(sock,post_param,l,read_b);
-            post_param[count]=0;
-            //int removed=removeCrLf(post_param);
-            //buffer_read(sock,post_param+count-removed,removed,read_b);
-            //post_param[count+removed]=0;
-            post_param[count]=0;
-
+            
+            res.data=malloc(l+20);
+            res.len=buffer_read(sock,res.data,l,read_b);
         }
     }
-    return post_param;
+    return res;
 }
 
 /**
