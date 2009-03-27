@@ -17,6 +17,7 @@
 - Support for enabling/disabling cgi from weborf.conf
 - Heavy optimization in finding the end of the header
 - Replaced deprecated inet_ntoa with its replacement inet_ntop
+- POST can read binary data, with 0 bytes in the stream
 
 0.9
 - Bug: fixed size hadling of NBUFFER

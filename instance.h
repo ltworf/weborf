@@ -58,6 +58,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define ERR_FILENOTFOUND -2
 #define ERR_BRKPIPE -1
 
+typedef struct {
+    ssize_t len; //length of the string
+    char * data;//Pointer to string
+} string_t;
+
 int writeDir(int sock, char* page,char* real_basedir);
 void * instance(void *);
 int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr);
@@ -65,7 +70,7 @@ int writeFile(int sock,char * strfile,char *http_param);
 #ifdef __COMPRESSION
 int writeCompressedFile(int sock, char*strfile,unsigned int size);
 #endif
-int execPage(int sock, char * file,char*strfile, char * params,char * executor,char * http_param,char* post_param,char * method,char* ip_addr,char* real_basedir);
+int execPage(int sock, char * file,char*strfile, char * params,char * executor,char * http_param,string_t* post_param,char * method,char* ip_addr,char* real_basedir);
 int send_err(int sock,int err,char* descr,char* ip_addr);
 int send_http_header(int sock,unsigned int size,char* headers);
 int send_http_header_code(int sock,int code, unsigned int size,char* headers);
@@ -75,7 +80,8 @@ void piperr();
 void modURL(char* url);
 int request_auth(int sock,char* descr);
 int check_auth(int sock, char* http_param, char * method, char * page, char * ip_addr);
-char* read_post_data(int sock,char* http_param,int method_id);
+string_t read_post_data(int sock,char* http_param,int method_id);
 char* get_basedir(char* http_param);
+
 #endif
 
