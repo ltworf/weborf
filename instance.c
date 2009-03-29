@@ -86,17 +86,22 @@ void * instance(void * nulla) {
     char * reqs;//HTTP request STRING
     char * page;//Page to load
     char * lasts;//Used by strtok_r
+    buffered_read_t read_b; //Buffer for buffered reader
 
     char * param;//HTTP parameter
 
     int sock;//Socket with the client
     char* ip_addr;//Client's ip address in ascii
+
+    buffer_init(&read_b,BUFFERED_READER_SIZE);
+
     while (true) {
 
         q_get(&queue, &sock,&ip_addr);//Gets a socket from the queue
         unfree_thread(id);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order
+            buffer_free(&read_b);
 #ifdef THREADDBG
             syslog(LOG_DEBUG,"Terminating thread %ld",id);
 #endif
@@ -118,7 +123,8 @@ void * instance(void * nulla) {
             char* end;//Pointer to header's end
             int from=0;
             while ((end=strstr(buf+from,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
-                r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
+                //r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
+                r=buffer_read(sock, buf+bufFull,1,&read_b);//Reads 1 char and adds to the buffer
 
                 if (r<=0) { //Connection closed or error
                     goto closeConnection;
@@ -180,7 +186,7 @@ void * instance(void * nulla) {
                             keep_alive=true;
                 }
 
-                if (sendPage(sock,page,param,req,reqs,ip_addr)<0) {
+                if (sendPage(sock,page,param,req,reqs,ip_addr,&read_b)<0) {
                     break;//Unable to send an error
                 }
                 if (keep_alive==false) {//No pipelining
@@ -227,7 +233,7 @@ void modURL(char* url) {
 This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
-int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr) {
+int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr,buffered_read_t* read_b) {
 
     modURL(page);//Operations on the url string
 
@@ -250,7 +256,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
         return ERR_NONAUTH;
     }
 
-    string_t post_param=read_post_data(sock,http_param, method_id);
+    string_t post_param=read_post_data(sock,http_param, method_id,read_b);
 
     int strfile_l=strlen(page)+strlen(real_basedir)+INDEXMAXLEN+1;
     char * strfile=malloc(strfile_l);//buffer for filename
@@ -297,7 +303,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 
         if (exec_script) { //Scripts enabled
             if (endsWith(page,".php")) { //Script php
-                retval=execPage(sock,page,strfile,params,CGI_WRAPPER,http_param,&post_param,method,ip_addr,real_basedir);
+                retval=execPage(sock,page,strfile,params,CGI_PHP,http_param,&post_param,method,ip_addr,real_basedir);
             } else { //Normal file
                 retval= writeFile(sock,strfile,http_param);
             }
@@ -337,14 +343,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
     int ipipe[2];//Pipe's file descriptor, used to pass POST on script's standard input
 
     pipe(wpipe);//Pipe to comunicate with the child
-
-    if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
-        //Send post data to script's stdin
-        pipe(ipipe);//Pipe to comunicate with the child
-        write(ipipe[1],post_param->data,post_param->len);
-        close (ipipe[1]); //Closes unused end of the pipe
-    }
-
+    
     wpid=fork();
     if (wpid<0) { //Error, returns a no memory error
 #ifdef SENDINGDBG
@@ -424,7 +423,13 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
         exit(1);
 
     } else { //Father: reads from pipe and sends
-
+        if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
+            //Send post data to script's stdin
+            pipe(ipipe);//Pipe to comunicate with the child
+            write(ipipe[1],post_param->data,post_param->len);
+            close (ipipe[1]); //Closes unused end of the pipe
+        }
+        
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
 
@@ -594,12 +599,12 @@ int writeFile(int sock,char * strfile,char *http_param) {
 
             if ((accept=strstr(http_param,"Accept-Encoding:"))!=NULL) {
                 char* end=strstr(accept,"\r\n");
-                
+
                 //Avoid to parse the entire header.
                 end[0]='\0';
                 char* gzip=strstr(accept,"gzip");
                 end[0]='\r';
-                
+
                 if (gzip!=NULL) {
                     return writeCompressedFile(sock,strfile, size);
                 }
@@ -618,7 +623,7 @@ int writeFile(int sock,char * strfile,char *http_param) {
     int wrote;
 
     //Sends file
-    while ((reads=read(fp, buf, FILEBUF))>0) {
+    while ((reads=read(fp, buf, FILEBUF))!=0) {
         wrote=write(sock,buf,reads);
         if (wrote!=reads) { //Error writing to the socket
 #ifdef SOCKETDBG
@@ -747,7 +752,6 @@ int send_http_header_code_content(int sock,int code, unsigned int size,char* hea
 
     int len_head;
     if (content) {
-
         len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n",code, size,headers);
     } else {
         len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nentity-length: %u\r\n%s\r\n",code, size,headers);
@@ -826,7 +830,7 @@ This function reads post data and returns the pointer to the buffer containing t
 or NULL if there was no data.
 If it doesn't return a null value, the returned pointer must be freed.
 */
-string_t read_post_data(int sock,char* http_param,int method_id) {
+string_t read_post_data(int sock,char* http_param,int method_id,buffered_read_t* read_b ) {
     string_t res;
     res.len=0;
     res.data=NULL;
@@ -841,13 +845,8 @@ string_t read_post_data(int sock,char* http_param,int method_id) {
         int l=strtol( a , NULL, 0 );
         if (l<=POST_MAX_SIZE) {//Post size is ok
             
-            res.data=malloc(l+20);
-            res.len=read(sock,res.data,l);
-            //post_param[count]=0;
-            //int removed=removeCrLf(post_param);
-            //read(sock,post_param+count-removed,removed);
-            //post_param[count+removed]=0;
-
+            res.data=malloc(l);
+            res.len=buffer_read(sock,res.data,l,read_b);
         }
     }
     return res;

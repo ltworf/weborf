@@ -47,6 +47,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdbool.h>	//Adds boolean type
 #include <string.h>
 
+#include "buffered_reader.h"
 
 #define INVALID -1
 #define GET 0
@@ -65,7 +66,7 @@ typedef struct {
 
 int writeDir(int sock, char* page,char* real_basedir);
 void * instance(void *);
-int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr);
+int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr,buffered_read_t* read_b);
 int writeFile(int sock,char * strfile,char *http_param);
 #ifdef __COMPRESSION
 int writeCompressedFile(int sock, char*strfile,unsigned int size);
@@ -80,7 +81,7 @@ void piperr();
 void modURL(char* url);
 int request_auth(int sock,char* descr);
 int check_auth(int sock, char* http_param, char * method, char * page, char * ip_addr);
-string_t read_post_data(int sock,char* http_param,int method_id);
+string_t read_post_data(int sock,char* http_param,int method_id,buffered_read_t* read_b);
 char* get_basedir(char* http_param);
 
 #endif
