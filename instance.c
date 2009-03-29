@@ -303,7 +303,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 
         if (exec_script) { //Scripts enabled
             if (endsWith(page,".php")) { //Script php
-                retval=execPage(sock,page,strfile,params,CGI_WRAPPER,http_param,&post_param,method,ip_addr,real_basedir);
+                retval=execPage(sock,page,strfile,params,CGI_PHP,http_param,&post_param,method,ip_addr,real_basedir);
             } else { //Normal file
                 retval= writeFile(sock,strfile,http_param);
             }
@@ -343,14 +343,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
     int ipipe[2];//Pipe's file descriptor, used to pass POST on script's standard input
 
     pipe(wpipe);//Pipe to comunicate with the child
-
-    if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
-        //Send post data to script's stdin
-        pipe(ipipe);//Pipe to comunicate with the child
-        write(ipipe[1],post_param->data,post_param->len);
-        close (ipipe[1]); //Closes unused end of the pipe
-    }
-
+    
     wpid=fork();
     if (wpid<0) { //Error, returns a no memory error
 #ifdef SENDINGDBG
@@ -430,7 +423,13 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
         exit(1);
 
     } else { //Father: reads from pipe and sends
-
+        if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
+            //Send post data to script's stdin
+            pipe(ipipe);//Pipe to comunicate with the child
+            write(ipipe[1],post_param->data,post_param->len);
+            close (ipipe[1]); //Closes unused end of the pipe
+        }
+        
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
 
@@ -846,7 +845,7 @@ string_t read_post_data(int sock,char* http_param,int method_id,buffered_read_t*
         int l=strtol( a , NULL, 0 );
         if (l<=POST_MAX_SIZE) {//Post size is ok
             
-            res.data=malloc(l+20);
+            res.data=malloc(l);
             res.len=buffer_read(sock,res.data,l,read_b);
         }
     }

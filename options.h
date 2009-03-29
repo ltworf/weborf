@@ -79,7 +79,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //Timeout for the scripts, in seconds
 #define SCRPT_TIMEOUT 15
 #define PY_WRAPPER "weborf.pywrap.py"
-#define CGI_WRAPPER "/usr/lib/cgi-bin/php5"
+#define CGI_PHP "/usr/lib/cgi-bin/php5"
 
 //-------------COMPRESSING PAGES
 //#define __COMPRESSION //enables support for compressing pages, comment to disable

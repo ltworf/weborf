@@ -19,6 +19,7 @@
 - Added a buffered reader to reduce the overall amount of read syscalls
 - Replaced deprecated inet_ntoa with its replacement inet_ntop
 - POST can read binary data, with 0 bytes in the stream
+- Correct passing POST data to script. It brokes php since it has a bug, reported as #47825
 
 0.9
 - Bug: fixed size hadling of NBUFFER
