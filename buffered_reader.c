@@ -61,7 +61,7 @@ ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf) {
     while (wrote<count) {
         available=buf->end - buf-> start;
         needed=count-wrote;
-        
+
         if (needed <= available) {//More data in buffer than needed
             memcpy(b, buf->start, needed );
             buf->start+=needed;
@@ -94,20 +94,20 @@ ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf) {
 
 //int main () {
 //    buffered_read_t buf;
-//    
+//
 //    buffer_init(&buf, 30);
-    
+
 //    int fp=open("/home/salvo/.bash_history",O_RDONLY);
 //    char * k=malloc (600);
-    
+
 //    int end=0;
 //    while ((end=buffer_read(fp,k,500,&buf))>=500 ) {
-        
+
 //        k[end]=0;
 //        printf("---- %s\n",k);
 //    }
 //    printf("%d",end);
-    
+
 //    free(k);
 //    buffer_free(&buf);
 //}

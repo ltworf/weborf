@@ -237,9 +237,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 
     modURL(page);//Operations on the url string
 
-    char * params=NULL;//Pointer to the GET parameters
-    int p_start=nullParams(page);
-    if (p_start!=-1) params=page+p_start+sizeof(char);//Set the pointer to the parameters
+    char * params=nullParams(page);//Pointer to the GET parameters
 #ifdef SENDINGDBG
     syslog (LOG_DEBUG,"URL changed into %s",page);
 #endif
@@ -343,7 +341,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
     int ipipe[2];//Pipe's file descriptor, used to pass POST on script's standard input
 
     pipe(wpipe);//Pipe to comunicate with the child
-    
+
     wpid=fork();
     if (wpid<0) { //Error, returns a no memory error
 #ifdef SENDINGDBG
@@ -430,7 +428,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
 
     } else { //Father: reads from pipe and sends
 
-        
+
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
 
@@ -845,7 +843,7 @@ string_t read_post_data(int sock,char* http_param,int method_id,buffered_read_t*
     if (r!=false && method_id==POST) {
         int l=strtol( a , NULL, 0 );
         if (l<=POST_MAX_SIZE) {//Post size is ok
-            
+
             res.data=malloc(l);
             res.len=buffer_read(sock,res.data,l,read_b);
         }

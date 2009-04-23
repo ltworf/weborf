@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdbool.h>
 #include <ctype.h>
 
-int nullParams(char * string);
+char* nullParams(char * string);
 int splitParams(char * string);
 bool endsWith(char * str, char * end);
 void delChar(char* string,int pos,int n);

@@ -32,19 +32,16 @@ void strToUpper(char*str) {
 
 /**
  * This function finds the first ? character and replaces it with a \0 to terminate the string removing GET param from it.
- * Returns the position of ? so param can be retreived.
- * Returns -1 if no ? was found
+ * Returns the pointer to the params,
+ * Returns NULL if no ? was found
  * */
-int nullParams(char * string) {
-    int i=0;
-    while (string[i]!=0) {
-        if (string[i]=='?') {
-            string[i]='\0';
-            return i;
-        }
-        i++;
+char* nullParams(char * string) {
+    char* p=strstr(string,"?");
+    if (p==NULL) {
+        return NULL;
     }
-    return -1;
+    p[0]='\0';
+    return &p[1];
 }
 /**
 Replaces escape sequences in the form %HEXCODE with the correct char
