@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define BUFFERED_READER_H
 
 #include <unistd.h>
-
 typedef struct {
     char * buffer;//Buffer where the reader stores the read data
     char * start;//Pointer to non-consumed data

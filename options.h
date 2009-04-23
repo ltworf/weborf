@@ -50,6 +50,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //------------Server
 #define INDEX "index.html"
 #define BASEDIR "/var/www"
+#define READ_TIMEOUT 5000
 
 //------------Buffers
 #define INBUFFER 6048

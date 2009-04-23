@@ -19,9 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "buffered_reader.h"
+#include "options.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <poll.h>
 
 /**
 This funcion inits the struct allocating a buffer of the specified size.
@@ -49,7 +51,8 @@ This function is designed to be similar to a normal read, but it uses an interna
 buffer.
 When the buffer is empty, it will try to fill it.
 An important difference from the normal read is that this function will wait until
-the requested amount of bytes are available.
+the requested amount of bytes are available, or until the timeout occurs.
+Timeout duration is defined with the READ_TIMEOUT define.
 On some special cases, the read data could be less than the requested one. For example if
 end of file is reached and it is impossible to do further reads.
 */
@@ -75,7 +78,22 @@ ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf) {
 
             //Filing the buffer again
             buf->start= buf->buffer;
-            r = read(fd,buf->buffer,buf->size);
+
+            {//Timeout implementation
+                struct pollfd monitor[1];
+                monitor[0].fd=fd; //File descriptor to monitor
+                monitor[0].events=POLLIN; //Monitor on input events
+                
+                //Waits the timeout or reads the data.
+                //If timeout is reached and no input is available
+                //will behave like the stream is closed.
+                if (poll(monitor,1,READ_TIMEOUT)==0) {
+                    r=0;
+                } else {
+                    r = read(fd,buf->buffer,buf->size);
+                }
+            }
+
             if (r==0) {//End of the stream
                 buf->end=buf->start;
                 return wrote;

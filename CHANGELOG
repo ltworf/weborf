@@ -20,6 +20,7 @@
 - Replaced deprecated inet_ntoa with its replacement inet_ntop
 - POST can read binary data, with 0 bytes in the stream
 - Correct passing POST data to script. It brokes php since it has a bug, reported as #47825
+- Added support to timeout
 
 0.9
 - Bug: fixed size hadling of NBUFFER
