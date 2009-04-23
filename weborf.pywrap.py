@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 '''
 Weborf
 Copyright (C) 2008  Salvo "LtWorf" Tomaselli
@@ -34,8 +35,8 @@ def hideErrors():
 def redirect(location):
     '''Sends to the client the request to redirect to another page.
     Unless php, here this can be used even after output'''
-    os.write(4,"Location: "+location+"\r\n") #Writes location header
-    sys.exit(33) #Tells weborf that a redirect is requested
+    os.write(1,"Status: 303\r\nLocation: "+location+"\r\n\r\n") #Writes location header
+    sys.exit(0) #Redirects
 
 def post_escape(val):
     '''Post fields use certains escapes. This function returns the original string'''
@@ -61,14 +62,15 @@ def getVal(dic,key):
         return dic[key]
     except:
         return None
+
 def setcookie(name,value,expires=None):
     '''Sets a cookie, by default it will be a session cookie.
     Expires is the time in seconds to wait to make the cookie expire'''
-    os.write(4,"Set-Cookie: "+str(name)+ "=" + str(value))
+    os.write(1,"Set-Cookie: "+str(name)+ "=" + str(value))
     _COOKIE[str(name)]=str(value)
     if expires!=None:
-        os.write(4,"; Max-Age="+str(expires))
-    os.write(4,"\r\n")
+        os.write(1,"; Max-Age="+str(expires))
+    os.write(1,"\r\n")
 
 
 def session_start():   
@@ -134,52 +136,14 @@ except:
     SESSIONEXPIRE=600
     CONTENT="text/html"
 
-#Sets SERVER and HEADER variables
-_SERVER={}
-_HEADER={}
-fields = sys.argv[3].split("\r\n")
-protocol=fields.pop(0)
-fields.remove("")
-for i in fields:
-    v=i.split(": ",1)
-    _HEADER[v[0]]=v[1]
-
-_SERVER['SERVER_SOFTWARE']= os.getenv("SERVER_SOFTWARE")
-_SERVER['SERVER_SIGNATURE']=os.getenv("SERVER_SOFTWARE")
-_SERVER['SERVER_PORT']=os.getenv("SERVER_PORT")
-_SERVER["REQUEST_METHOD"]=sys.argv[4]
-_SERVER["HTTP_REFERER"]=getVal(_HEADER,"Referer")
-_SERVER["HTTP_CONNECTION"]=getVal(_HEADER,"Connection")
-_SERVER['HTTP_ACCEPT_LANGUAGE']=getVal(_HEADER,"Accept-Language")
-_SERVER['HTTP_ACCEPT_ENCODING' ]=getVal(_HEADER,"Accept-Encoding")
-_SERVER['HTTP_ACCEPT_CHARSET' ]=getVal(_HEADER,"Accept-Charset")
-_SERVER['HTTP_USER_AGENT']=getVal(_HEADER,'User-Agent')
-_SERVER['SERVER_PROTOCOL']=protocol
-_SERVER['SCRIPT_FILENAME']=sys.argv[1]
-_SERVER['SCRIPT_NAME']=sys.argv[1]
-_SERVER['HTTP_HOST']=getVal(_HEADER,'Host')
-if _SERVER['HTTP_HOST']!=None:
-    _SERVER['SERVER_NAME']=_SERVER['HTTP_HOST']
-else:
-    _SERVER['SERVER_NAME']=socket.gethostname()
-
-_SERVER['REMOTE_ADDR']=sys.argv[5]
-_SERVER['HTTPS']=None #Will have to do something better when ssl will be implemented!
-_SERVER['REMOTE_HOST']=None
-_SERVER['REMOTE_PORT']=None
-
 #Deconding auth field
-v=getVal(_HEADER,'Authorization')
+v=os.getenv("HTTP_AUTHORIZATION")
 if v!=None:
     q=v.split(" ")
-    _SERVER['AUTH_TYPE']=q[0]
+    os.putenv('AUTH_TYPE',q[0])
     auth=base64.b64decode(q[1]).split(":",1)
-    _SERVER['PHP_AUTH_USER']=auth[0]
-    _SERVER['PHP_AUTH_PW']=auth[1]
-else:
-    _SERVER['AUTH_TYPE']=None
-    _SERVER['PHP_AUTH_USER']=None
-    _SERVER['PHP_AUTH_PW']=None
+    os.putenv('AUTH_USER',auth[0])
+    os.putenv('AUTH_PW',auth[1])
     
 #Sets POST variables
 _POST={}

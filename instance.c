@@ -357,6 +357,12 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
         close(wpipe[0]);
         return ERR_NOMEM;
     } else if (wpid==0) { //Child, executes the script
+        if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
+            //Send post data to script's stdin
+            pipe(ipipe);//Pipe to comunicate with the child
+            write(ipipe[1],post_param->data,post_param->len);
+            close (ipipe[1]); //Closes unused end of the pipe
+        }
 
         close (wpipe[0]); //Closes unused end of the pipe
 
@@ -423,12 +429,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
         exit(1);
 
     } else { //Father: reads from pipe and sends
-        if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
-            //Send post data to script's stdin
-            pipe(ipipe);//Pipe to comunicate with the child
-            write(ipipe[1],post_param->data,post_param->len);
-            close (ipipe[1]); //Closes unused end of the pipe
-        }
+
         
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
