@@ -83,7 +83,7 @@ ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf) {
                 struct pollfd monitor[1];
                 monitor[0].fd=fd; //File descriptor to monitor
                 monitor[0].events=POLLIN; //Monitor on input events
-                
+
                 //Waits the timeout or reads the data.
                 //If timeout is reached and no input is available
                 //will behave like the stream is closed.
