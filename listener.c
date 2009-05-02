@@ -114,6 +114,7 @@ int main(int argc, char * argv[]) {
 
     char *ip=NULL;//IP addr with default value
     char *port=PORT;//port with default value
+    char *ip_addr=NULL;
 
 #ifdef IPV6
     struct sockaddr_in6 locAddr, farAddr;//Local and remote address
@@ -363,7 +364,7 @@ int main(int argc, char * argv[]) {
 #ifdef IPV6
     while ((s1 = accept(s, (struct sockaddr *) &farAddr, &farAddrL)) != -1) {
 
-        char* ip_addr=malloc(INET6_ADDRSTRLEN);
+        ip_addr=malloc(INET6_ADDRSTRLEN);
         if (ip_addr!=NULL) { //Buffer for IP Address, to give to the thread
             getpeername(s1, (struct sockaddr *)&farAddr, &farAddrL);
             inet_ntop(AF_INET6, &farAddr.sin6_addr, ip_addr, INET6_ADDRSTRLEN);
@@ -371,9 +372,9 @@ int main(int argc, char * argv[]) {
 #else
     while ((s1 = accept(s, (struct sockaddr *) &farAddr,(socklen_t *)&farAddrL)) != -1) {
 
-        char* ip_addr=malloc(INET_ADDRSTRLEN);
+        ip_addr=malloc(INET_ADDRSTRLEN);
         if (ip_addr!=NULL) { //Buffer for ascii IP addr, will be freed by the thread
-            getpeername(s1, (struct sockaddr *)&farAddr, &farAddrL);
+            getpeername(s1, (struct sockaddr *)&farAddr,(socklen_t *) &farAddrL);
             inet_ntop(AF_INET, &farAddr.sin_addr, ip_addr, INET_ADDRSTRLEN);
         }
     }
@@ -402,7 +403,7 @@ int main(int argc, char * argv[]) {
                 init_threads(MAXTHREAD-thread_c);
             }
         }
-    }
+    
 
     return 0;
 
