@@ -61,8 +61,9 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         while ((end=strstr(buf+from,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
             //r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
             r=buffer_read(sock, buf+*bufFull,1,read_b);//Reads 1 char and adds to the buffer
-
+            
             if (r<=0) { //Connection closed or error
+                
                 return;
             }
 
@@ -184,7 +185,7 @@ void * instance(void * nulla) {
 
 
 
-    int sock;//Socket with the client
+    int sock=0;//Socket with the client
     char* ip_addr;//Client's ip address in ascii
 
     buffer_init(&read_b,BUFFERED_READER_SIZE);
@@ -194,7 +195,7 @@ void * instance(void * nulla) {
         q_get(&queue, &sock,&ip_addr);//Gets a socket from the queue
         unfree_thread(id);//Sets this thread as busy
 
-        if (sock<0) { //Was not a socket but a termination order
+        if (sock<=0) { //Was not a socket but a termination order
             buffer_free(&read_b);
 #ifdef THREADDBG
             syslog(LOG_DEBUG,"Terminating thread %ld",id);
@@ -207,6 +208,7 @@ void * instance(void * nulla) {
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",id);
 #endif
 
+        printf ("Leggo da %d\n", sock);
         handle_requests(sock,buf,&read_b,&bufFull,ip_addr);
 
 #ifdef THREADDBG
