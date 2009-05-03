@@ -71,7 +71,7 @@ uninstall:
 	rm -f $(DAEMONDIR)/weborf || echo ok
 
 memcheck: debug
-	valgrind --tool=memcheck --leak-check=yes --leak-resolution=high --show-reachable=yes --num-callers=20 --track-fds=yes ./debug || echo "Valgrind doesn't appear to be installed on this system"
+	valgrind --track-origins=yes --tool=memcheck --leak-check=yes --leak-resolution=high --show-reachable=yes --num-callers=20 --track-fds=yes ./debug || echo "Valgrind doesn't appear to be installed on this system"
 
 moo:
 	echo Questo Makefile ha i poteri della supermucca

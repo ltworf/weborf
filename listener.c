@@ -319,25 +319,7 @@ int main(int argc, char * argv[]) {
 
 #endif
 
-
-
-
-    //Changes UID.
-    if (uid!=ROOTUID) {
-        if (setuid(uid)==0) {
-            //Uid changed correctly
-#ifdef SERVERDBG
-            syslog(LOG_INFO,"Changed uid. New one is %d",uid);
-#endif
-        } else {
-            //Not enough permissions i guess...
-#ifdef SERVERDBG
-            syslog(LOG_ERR,"Unable to change uid.");
-#endif
-            perror("Unable to change uid");
-            exit(9);
-        }
-    }
+    set_new_uid(uid);
 
     //init the queue for opened sockets
     q_init(&queue,MAXTHREAD+1);
@@ -444,6 +426,25 @@ void setAuthbin(char* bin) {
         exit(5);
     }
     authbin=bin;
+}
+
+void set_new_uid(int uid) {
+    //Changes UID.
+    if (uid!=ROOTUID) {
+        if (setuid(uid)==0) {
+            //Uid changed correctly
+#ifdef SERVERDBG
+            syslog(LOG_INFO,"Changed uid. New one is %d",uid);
+#endif
+        } else {
+            //Not enough permissions i guess...
+#ifdef SERVERDBG
+            syslog(LOG_ERR,"Unable to change uid.");
+#endif
+            perror("Unable to change uid");
+            exit(9);
+        }
+    }
 }
 
 

@@ -33,8 +33,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MAXQ 512
 //Default port
 #define PORT "8080"
-//Delete the following line to use IPv4 instead.
-//#define IPV6
+//Comment the following line to use IPv4 instead.
+#define IPV6
 //-----------Threads
 //Max threads
 #define MAXTHREAD 200
