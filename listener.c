@@ -377,8 +377,6 @@ int main(int argc, char * argv[]) {
             getpeername(s1, (struct sockaddr *)&farAddr,(socklen_t *) &farAddrL);
             inet_ntop(AF_INET, &farAddr.sin_addr, ip_addr, INET_ADDRSTRLEN);
         }
-    }
-
 #endif
 
 
@@ -403,7 +401,7 @@ int main(int argc, char * argv[]) {
                 init_threads(MAXTHREAD-thread_c);
             }
         }
-    
+    }
 
     return 0;
 
