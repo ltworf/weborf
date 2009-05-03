@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //----------Network
 //Queue for connect requests
-#define MAXQ 512
+#define MAXQ 40
 //Default port
 #define PORT "8080"
 //Delete the following line to use IPv4 instead.
