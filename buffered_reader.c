@@ -94,7 +94,7 @@ ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf) {
                 }
             }
 
-            if (r==0) {//End of the stream
+            if (r<=0) {//End of the stream
                 buf->end=buf->start;
                 return wrote;
             }
