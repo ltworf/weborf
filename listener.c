@@ -351,6 +351,7 @@ int main(int argc, char * argv[]) {
             getpeername(s1, (struct sockaddr *)&farAddr, &farAddrL);
             inet_ntop(AF_INET6, &farAddr.sin6_addr, ip_addr, INET6_ADDRSTRLEN);
         }
+     }
 #else
     while ((s1 = accept(s, (struct sockaddr *) &farAddr,(socklen_t *)&farAddrL)) != -1) {
 
@@ -359,6 +360,7 @@ int main(int argc, char * argv[]) {
             getpeername(s1, (struct sockaddr *)&farAddr,(socklen_t *) &farAddrL);
             inet_ntop(AF_INET, &farAddr.sin_addr, ip_addr, INET_ADDRSTRLEN);
         }
+     }
 #endif
 
 
@@ -383,7 +385,7 @@ int main(int argc, char * argv[]) {
                 init_threads(MAXTHREAD-thread_c);
             }
         }
-    }
+   
 
     return 0;
 
