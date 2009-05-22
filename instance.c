@@ -448,7 +448,10 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
         char* header_buf=malloc(MAXSCRIPTOUT+HEADBUF);
 
         if (header_buf==NULL) { //Was unable to allocate the buffer
+            int state;
             close (wpipe[0]);
+            kill(wpid,SIGKILL); //Kills cgi process
+            waitpid (wpid,&state,0); //Removes zombie process
             return ERR_NOMEM;//Returns if buffer was not allocated
         }
 
