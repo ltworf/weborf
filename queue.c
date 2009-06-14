@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "queue.h"
 
+
 /**
 Inits the syncronized queue, allocating memory.
 Requires the syn_queue_t struct and the size of the queue itself.
@@ -29,7 +30,12 @@ int q_init(syn_queue_t * q, int size) {
     q->num = q->head = q->tail = 0;
     q->size = size;
     q->data = (int *) malloc(sizeof(int) * size);
-    q->ip=  malloc(sizeof(char*) * size);
+
+#ifdef IPV6
+    q->addr = (struct sockaddr_in6 *) malloc(sizeof(struct sockaddr_in) * size);
+#else
+    q->addr = malloc(sizeof(struct sockaddr_in) * size);
+#endif
 
     pthread_mutex_init(&q->mutex, NULL);
     pthread_cond_init(&q->for_space, NULL);
@@ -44,18 +50,22 @@ Requires the pointer to the queue struct
 void q_free(syn_queue_t * q) {
     if (q->data != NULL)
         free(q->data);
-    if (q->ip != NULL)
-        free(q->ip);
+    if (q->addr != NULL)
+        free(q->addr);
 }
 
-int q_get(syn_queue_t * q, int * val,char** ip) {
+#ifdef IPV6
+int q_get(syn_queue_t * q, int * val,struct sockaddr_in6 * addr_) {
+#else
+int q_get(syn_queue_t * q, int * val,struct sockaddr_in * addr_) {
+#endif
     pthread_mutex_lock(&q->mutex);
     if (q->num == 0) {
         q->n_wait_dt++;
         pthread_cond_wait(&q->for_data, &q->mutex);
     }
     *val = q->data[q->tail];
-    *ip = q->ip[q->tail];
+    *addr_ = q->addr[q->tail];
 
     q->tail = (q->tail + 1) % q->size;
     if (  (q->num-- == q->size)
@@ -67,15 +77,19 @@ int q_get(syn_queue_t * q, int * val,char** ip) {
     return 0; //   will not proceed
 }
 
-int q_put(syn_queue_t * q, int val,char* ip) {
+
+#ifdef IPV6
+int q_put(syn_queue_t * q, int val,struct sockaddr_in6 addr_) {
+#else
+int q_put(syn_queue_t * q, int val,struct sockaddr_in addr_) {
+#endif
     pthread_mutex_lock(&q->mutex);
     if (q->num == q->size) {
         q->n_wait_sp++;
         pthread_cond_wait(&q->for_space, &q->mutex);
     }
     q->data[q->head] = val;
-
-    q->ip[q->head] = ip;
+    q->addr[q->head] = addr_;
 
     q->head = (q->head + 1) % q->size;
 

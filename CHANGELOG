@@ -21,6 +21,7 @@
 - POST can read binary data, with 0 bytes in the stream
 - Correct passing POST data to script. It brokes php since it has a bug, reported as #47825
 - Added support to timeout
+- Addresses are converted in strings in threads instead of main thread.
 
 0.9
 - Bug: fixed size hadling of NBUFFER

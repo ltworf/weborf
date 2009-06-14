@@ -114,7 +114,6 @@ int main(int argc, char * argv[]) {
 
     char *ip=NULL;//IP addr with default value
     char *port=PORT;//port with default value
-    char *ip_addr=NULL;
 
 #ifdef IPV6
     struct sockaddr_in6 locAddr, farAddr;//Local and remote address
@@ -345,31 +344,14 @@ int main(int argc, char * argv[]) {
     //Infinite cycle, accept connections
 #ifdef IPV6
     while ((s1 = accept(s, (struct sockaddr *) &farAddr, &farAddrL)) != -1) {
-
-        ip_addr=malloc(INET6_ADDRSTRLEN);
-        if (ip_addr!=NULL) { //Buffer for IP Address, to give to the thread
-            getpeername(s1, (struct sockaddr *)&farAddr, &farAddrL);
-            inet_ntop(AF_INET6, &farAddr.sin6_addr, ip_addr, INET6_ADDRSTRLEN);
-        }
      
 #else
     while ((s1 = accept(s, (struct sockaddr *) &farAddr,(socklen_t *)&farAddrL)) != -1) {
-
-        ip_addr=malloc(INET_ADDRSTRLEN);
-        if (ip_addr!=NULL) { //Buffer for ascii IP addr, will be freed by the thread
-            getpeername(s1, (struct sockaddr *)&farAddr,(socklen_t *) &farAddrL);
-            inet_ntop(AF_INET, &farAddr.sin_addr, ip_addr, INET_ADDRSTRLEN);
-        }
      
 #endif
 
-
-#ifdef SOCKETDBG
-        syslog(LOG_INFO,"Connection from %s", ip_addr);
-#endif
-
         if (s1>=0  && t_free>0) { //Adds s1 to the queue
-            q_put(&queue, s1,ip_addr);
+            q_put(&queue, s1,farAddr);
         } else { //Closes the socket if there aren't enough free threads.
 #ifdef REQUESTDBG
             syslog(LOG_ERR,"Not enough resources, dropping connection...");
@@ -463,7 +445,7 @@ void* t_shape(void * nulla) {
         sleep(THREADCONTROL);
 
         if (t_free>MAXFREETHREAD) { //Too much free threads, terminates one of them
-            q_put(&queue, -1,NULL);//Write the termination order to the queue, the thread who will read it, will terminate
+            //TODO q_put(&queue,-1,NULL,NULL);//Write the termination order to the queue, the thread who will read it, will terminate
             chn_thread_count(-1);//Decreases the number of free total threads
         }
     }

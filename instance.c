@@ -48,14 +48,14 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
     char * page;//Page to load
     char * lasts;//Used by strtok_r
     bool keep_alive;//True if we are using pipelining
-    
-    while (true) { //Infinite cycle to handle all pipelined requests
 
+    int r;//Readed char
+    char* end;//Pointer to header's end
+
+    while (true) { //Infinite cycle to handle all pipelined requests
         memset(buf,0,*bufFull+1);//Sets to 0 the buffer, only the part used for the previous request in the same connection
         *bufFull=0;//bufFull-(end-buf+4);
-
-        int r;//Readed char
-        char* end;//Pointer to header's end
+    
         from=0;
 
         while ((end=strstr(buf+from,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
@@ -73,7 +73,6 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
 
             if (*bufFull!=0) { //Removes Cr Lf from beginning
                 *bufFull+=1;//r;//Sets the end of the user buffer (may contain more than one header)
-
             } else if (buf[*bufFull]!='\n' && buf[*bufFull]!='\r') {
                 *bufFull+=1;//r;
             }
@@ -122,10 +121,11 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
                     if (strncmp(a,"Keep",4)==0)
                         keep_alive=true;
             }
-
+            printf("Serving\n");
             if (sendPage(sock,page,param,req,reqs,ip_addr,read_b)<0) {
                 break;//Unable to send an error
             }
+            printf("Served\n");
             if (keep_alive==false) {//No pipelining
                 return;
             }
@@ -180,22 +180,43 @@ void * instance(void * nulla) {
     int bufFull=0;//Amount of buf used
     char * buf=malloc(INBUFFER+1);//Buffer to contain the HTTP request
     memset(buf,0,INBUFFER+1);//Sets to 0 the buffer
-    
+
     buffered_read_t read_b; //Buffer for buffered reader
-
-
-
     int sock=0;//Socket with the client
     char* ip_addr;//Client's ip address in ascii
+
+#ifdef IPV6
+    ip_addr=malloc(INET6_ADDRSTRLEN);
+    struct sockaddr_in6 addr;//Local and remote address
+    socklen_t addr_l=sizeof(struct sockaddr_in);
+#else
+    ip_addr=malloc(INET_ADDRSTRLEN);
+    struct sockaddr_in addr;
+    int addr_l=sizeof(struct sockaddr_in);
+#endif
 
     buffer_init(&read_b,BUFFERED_READER_SIZE);
 
     while (true) {
+        q_get(&queue, &sock,&addr);//Gets a socket from the queue
 
-        q_get(&queue, &sock,&ip_addr);//Gets a socket from the queue
+        //Converting address to string
+#ifdef IPV6
+        if (ip_addr!=NULL) { //Buffer for IP Address, to give to the thread
+            getpeername(sock, (struct sockaddr *)&addr, &addr_l);
+            inet_ntop(AF_INET6, &addr.sin6_addr, ip_addr, INET6_ADDRSTRLEN);
+        }
+#else
+        if (ip_addr!=NULL) { //Buffer for ascii IP addr, will be freed by the thread
+            getpeername(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
+            inet_ntop(AF_INET, &addr.sin_addr, ip_addr, INET_ADDRSTRLEN);
+        }
+#endif
+
         unfree_thread(id);//Sets this thread as busy
 
         if (sock<=0) { //Was not a socket but a termination order
+            if (ip_addr!=NULL) free(ip_addr);//Free the space used to store ip address
             buffer_free(&read_b);
 #ifdef THREADDBG
             syslog(LOG_DEBUG,"Terminating thread %ld",id);
@@ -207,7 +228,6 @@ void * instance(void * nulla) {
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",id);
 #endif
-
         printf ("Leggo da %d\n", sock);
         handle_requests(sock,buf,&read_b,&bufFull,ip_addr);
 
@@ -217,7 +237,6 @@ void * instance(void * nulla) {
 
         close(sock);//Closing the socket
         memset(buf,0,bufFull+1);//Sets to 0 the buffer, only the part used for the previous
-        //if (ip_addr!=NULL) free(ip_addr);//Free the space used to store ip address
         free_thread(id);//Settin this thread as free
     }
 
