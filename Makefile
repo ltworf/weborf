@@ -23,7 +23,7 @@ LDFLAGS=-lpthread
 #ARCHFLAGS=-m64
 
 
-MANDIR=/usr/local/man/man1/
+MANDIR=/usr/local/man/
 BINDIR=/usr/local/bin/
 DAEMONDIR=/etc/init.d/
 CONFDIR=/etc/
@@ -55,8 +55,10 @@ source: clean style
 style:
 	astyle --style=kr *c *h
 install: uninstall
-	mkdir -p $(MANDIR) || echo Creating directories
-	gzip -c weborf.1 > $(MANDIR)/weborf.1.gz
+	mkdir -p $(MANDIR)/man1/ || echo Creating directories
+	mkdir -p $(MANDIR)/man5/ || echo Creating directories
+	gzip -c weborf.1 > $(MANDIR)/man1/weborf.1.gz || echo Manfile already present
+	gzip -c weborf.conf.5 > $(MANDIR)/man5/weborf.conf.5.gz || echo Manfile already present
 	
 	cp weborf.pywrap.py $(BINDIR)
 	cp weborf $(BINDIR)
@@ -66,7 +68,8 @@ install: uninstall
 	if  ! test -e $(CONFDIR)/weborf.conf; then cp weborf.conf $(CONFDIR)/; fi
 
 uninstall:
-	rm -f $(MANDIR)/weborf.1.gz || echo ok
+	rm -f $(MANDIR)/man5/weborf.conf.5.gz || echo ok
+	rm -f $(MANDIR)/man1/weborf.1.gz || echo ok
 	rm -f $(BINDIR)/weborf || echo ok
 	rm -f $(DAEMONDIR)/weborf || echo ok
 

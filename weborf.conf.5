@@ -1,0 +1,66 @@
+.TH Weborf 0.10 "Jun 14, 2009"
+
+.SH NAME
+.B weborf.conf
+\- configuration file for weborf daemon
+
+.SH SYNOPSIS
+.B "/etc/weborf.conf"
+
+.SH DESCRIPTION
+\fBWeborf\fP  is a minimal webserver, can serve only GET and POST requests.
+
+Can be started as stand-alone or as SystemV daemon. This manual page documents \fBWeborf\fP's configuration file, used only when it is started as daemon.
+
+\fBWeborf\fP is released under the GNU General Public License version 3.
+
+.SH DESCRIPTION
+Options are case sensitive. Immediately followed by the equal = sign, without any space between name and value.
+Lines beginning with # will be ignored and treated as comments.
+
+.TP
+\fBindexes\fR
+By default weborf searches for index.html. Anyway it is possible to specify a different index file and also many index files. Name of the pages must be separated by a comma and between them there aren't spaces.
+
+.TP
+\fBbasedir\fR
+Default base directory used by the webserver. The default means that this will be used also when virtual hosts are enabled, if the requested host is unknown. Of course the user used for the webserver will need to have access to this directory.
+
+.TP
+\fBuse-cgi\fR
+Can be true or false. If false weborf will handle all files as normal files. Otherwise it will use the CGI protocol to execute some files.
+
+.TP
+\fBuser\fR
+Username of the user that will run the webserver. On debian this is usually www-data.
+
+.TP
+\fBvirtual\fR
+This directive is used to enable virtualhosts. One line is needed for each port.
+The format is:
+virtual#port#domain1=basedir1,domain2=basedir2
+
+.SH EXAMPLE
+indexes=index.php,index.html,index.htm
+
+basedir=/var/www/
+
+use-cgi=true
+
+user=www-data
+
+virtual#80#pictures.mysite.com=/var/www/pictures/,people.mysite.com=/var/www/people/
+
+virtual#8080#mail.mysite.com:8080=/var/www/webmail/
+
+.SH "SEE ALSO"
+.BR weborf (1)
+
+.SH VERSION
+\fBWeborf\fP 0.10
+
+.SH WEB
+http://galileo.dmi.unict.it/wiki/weborf/
+
+.SH AUTHORS
+Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
