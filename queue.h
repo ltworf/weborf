@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Giuseppe Pappalardo <pappalardo@dmi.unict.it>
+@author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
  */
 
 #ifndef WEBORF_QUEUE_H
@@ -25,22 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <pthread.h>
 #include "options.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-
-#include <unistd.h>
-#include <stdlib.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <syslog.h>
-#include <getopt.h>
-
-
-#include <stdlib.h>
-#include <pthread.h>
 
 
 

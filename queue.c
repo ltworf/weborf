@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Giuseppe Pappalardo <pappalardo@dmi.unict.it>
+@author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
  */
 
 #include "queue.h"
@@ -41,7 +42,12 @@ int q_init(syn_queue_t * q, int size) {
     pthread_cond_init(&q->for_space, NULL);
     pthread_cond_init(&q->for_data, NULL);
     q->n_wait_dt = q->n_wait_sp = 0;
-    return (q->data == NULL) ? 1 : 0;
+    if (q->data == NULL || q->addr == NULL) {//Error, unable to allocate memory
+        if (q->data!=NULL) free(q->data);
+        if (q->addr!=NULL) free(q->addr);
+        return 1;
+    }
+    return 0;
 }
 
 /** Frees the memory taken by the queue.
