@@ -40,6 +40,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <pthread.h>
 
+#define NOMEM 7
+
 void init_logger();
 void init_threads(unsigned int count);
 void quit();

@@ -321,7 +321,7 @@ int main(int argc, char * argv[]) {
     set_new_uid(uid);
 
     //init the queue for opened sockets
-    q_init(&queue,MAXTHREAD+1);
+    if (q_init(&queue,MAXTHREAD+1)!=0) exit(NOMEM);
 
     //Starts the 1st group of threads
     init_thread_attr();
