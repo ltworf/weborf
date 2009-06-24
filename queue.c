@@ -38,15 +38,17 @@ int q_init(syn_queue_t * q, int size) {
     q->addr = malloc(sizeof(struct sockaddr_in) * size);
 #endif
 
-    pthread_mutex_init(&q->mutex, NULL);
-    pthread_cond_init(&q->for_space, NULL);
-    pthread_cond_init(&q->for_data, NULL);
-    q->n_wait_dt = q->n_wait_sp = 0;
     if (q->data == NULL || q->addr == NULL) {//Error, unable to allocate memory
         if (q->data!=NULL) free(q->data);
         if (q->addr!=NULL) free(q->addr);
         return 1;
     }
+
+    pthread_mutex_init(&q->mutex, NULL);
+    pthread_cond_init(&q->for_space, NULL);
+    pthread_cond_init(&q->for_data, NULL);
+    q->n_wait_dt = q->n_wait_sp = 0;
+
     return 0;
 }
 
