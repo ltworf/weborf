@@ -55,15 +55,15 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
     while (true) { //Infinite cycle to handle all pipelined requests
         memset(buf,0,*bufFull+1);//Sets to 0 the buffer, only the part used for the previous request in the same connection
         *bufFull=0;//bufFull-(end-buf+4);
-    
+
         from=0;
 
         while ((end=strstr(buf+from,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
             //r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
             r=buffer_read(sock, buf+*bufFull,1,read_b);//Reads 1 char and adds to the buffer
-            
+
             if (r<=0) { //Connection closed or error
-                
+
                 return;
             }
 

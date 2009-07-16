@@ -66,7 +66,7 @@ function startWeborf {
 export PATH=$PATH:/usr/local/bin
 USERNAME=`cat /etc/weborf.conf | fgrep "user=" | cut -d= -f2`
 BASEDIR=`cat /etc/weborf.conf | fgrep "basedir=" | cut -d= -f2`
-USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3`
+USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
 INDEXES=`cat /etc/weborf.conf | fgrep "indexes=" | cut -d= -f2`
 USE_CGI=`cat /etc/weborf.conf | fgrep "use-cgi=" | cut -d= -f2`
 
@@ -78,8 +78,8 @@ fi
 
 if test -z $USERID
 then
-    echo "Unable to find user www-data"
-    echo "Change the daemon script in $0"
+    echo "Unable to find user $USERNAME"
+    echo "Check your configuration"
     exit 1
 fi
 case $1 in
