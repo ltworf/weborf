@@ -23,6 +23,7 @@
 - Added support to timeout
 - Addresses are converted in strings in threads instead of main thread.
 - Added manpage for weborf.conf
+- Queue does less operations on memory (rev 231)
 
 0.9
 - Bug: fixed size hadling of NBUFFER

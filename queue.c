@@ -30,17 +30,16 @@ To deallocate the queue, use the q_free function.
 int q_init(syn_queue_t * q, int size) {
     q->num = q->head = q->tail = 0;
     q->size = size;
-    q->data = (int *) malloc(sizeof(int) * size);
 
 #ifdef IPV6
-    q->addr = (struct sockaddr_in6 *) malloc(sizeof(struct sockaddr_in) * size);
+    q->data = (int *) malloc(sizeof(int) * size+sizeof(struct sockaddr_in) * size);
+    q->addr = (struct sockaddr_in6 *) q->data+sizeof(int) * size;
 #else
-    q->addr = malloc(sizeof(struct sockaddr_in) * size);
+    q->data = (int *) malloc(sizeof(int) * size+sizeof(struct sockaddr_in) * size);
+    q->addr = q->data+sizeof(int) * size;
 #endif
 
-    if (q->data == NULL || q->addr == NULL) {//Error, unable to allocate memory
-        if (q->data!=NULL) free(q->data);
-        if (q->addr!=NULL) free(q->addr);
+    if (q->data == NULL) {//Error, unable to allocate memory
         return 1;
     }
 
@@ -58,8 +57,6 @@ Requires the pointer to the queue struct
 void q_free(syn_queue_t * q) {
     if (q->data != NULL)
         free(q->data);
-    if (q->addr != NULL)
-        free(q->addr);
 }
 
 #ifdef IPV6
