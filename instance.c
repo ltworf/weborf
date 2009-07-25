@@ -63,7 +63,6 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
             r=buffer_read(sock, buf+*bufFull,1,read_b);//Reads 1 char and adds to the buffer
 
             if (r<=0) { //Connection closed or error
-
                 return;
             }
 
@@ -121,11 +120,9 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
                     if (strncmp(a,"Keep",4)==0)
                         keep_alive=true;
             }
-            printf("Serving\n");
             if (sendPage(sock,page,param,req,reqs,ip_addr,read_b)<0) {
                 break;//Unable to send an error
             }
-            printf("Served\n");
             if (keep_alive==false) {//No pipelining
                 return;
             }
@@ -228,9 +225,8 @@ void * instance(void * nulla) {
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",id);
 #endif
-        printf ("Leggo da %d\n", sock);
         handle_requests(sock,buf,&read_b,&bufFull,ip_addr);
-
+        
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",id);
 #endif
@@ -648,8 +644,7 @@ int writeFile(int sock,char * strfile,char *http_param) {
         return ERR_NOMEM;//If no memory is available
     }
 
-    int reads;
-    int wrote;
+    int reads,wrote;
 
     //Sends file
     while ((reads=read(fp, buf, FILEBUF))!=0) {
@@ -809,10 +804,6 @@ This function checks if the authentication can be granted or not calling the ext
 Returns 0 if authorization is granted.
 */
 int check_auth(int sock, char* http_param, char * method, char * page, char * ip_addr) {
-    //Buffer for username and password
-    char* auths=malloc(INBUFFER+(2*PWDLIMIT));
-    if (auths==NULL) return ERR_NOMEM;
-
     char username[PWDLIMIT*2];
     char* password=username; //will be changed if there is a password
 
@@ -830,7 +821,6 @@ int check_auth(int sock, char* http_param, char * method, char * page, char * ip
 #ifdef SERVERDBG
             syslog(LOG_ERR,"Unable to accept authentication, buffer is too small");
 #endif
-            free(auths);
             return ERR_NOMEM;
         }
 
@@ -842,16 +832,42 @@ int check_auth(int sock, char* http_param, char * method, char * page, char * ip
         password++;//make password point to the beginning of the password
     }
 
-    snprintf(auths,INBUFFER+(2*PWDLIMIT),"%s %s \"%s\" %s \"%s\" \"%s\"",authbin,method,page,ip_addr,username,password);
-
-    int result=system(auths);
-    free(auths);
+    //snprintf(auths,INBUFFER+(2*PWDLIMIT),"%s %s \"%s\" %s \"%s\" \"%s\"",
+    //method,username,password);
+    //int sock, char* http_param, char * method, char * page, char * ip_addr
+    //int result=system(auths);
+    short int result=-1;
+    {
+        #define SOCK_PATH "/var/run/acpid.socket"
+        
+        int s,t,len;
+        struct sockaddr_un remote;
+        s=socket(AF_UNIX,SOCK_STREAM,0);
+        
+        remote.sun_family = AF_UNIX;
+        strcpy(remote.sun_path, authbin);
+        len = strlen(remote.sun_path) + sizeof(remote.sun_family);
+        if (connect(s, (struct sockaddr *)&remote, len) == -1) {//Unable to connect
+            return -1;
+        }
+        char* auth_str=malloc(HEADBUF+PWDLIMIT*2);
+        if (auth_str==NULL) {
+            return -1;
+        }
+        int auth_str_l=snprintf(auth_str,HEADBUF+PWDLIMIT*2,"%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",page,ip_addr,method,username,password,http_param);
+        write(s,auth_str,auth_str_l);
+        if (read(s,auth_str,1)==0) {//No output, ok
+            result=0;
+        }
+        close(s);
+        free(auth_str);
+    }
+    
     if (result!=0) { //Failed
         request_auth(sock,page);//Sends a request for authentication
     }
 
     return result;
-
 }
 
 /**
@@ -892,7 +908,6 @@ char* get_basedir(char* http_param) {
 
     char* result;
     char* h=strstr(http_param,"\r\nHost: ");
-
 
     if (h==NULL) return basedir;
 

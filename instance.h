@@ -29,6 +29,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define O_LARGEFILE 0
 #endif
 
+#include <sys/un.h>
+
+
 #include <netinet/in.h>
 #include <stdio.h>
 #include <unistd.h>

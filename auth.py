@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 # Auth script
 # Copyright (C) 2008  Salvo "LtWorf" Tomaselli
 #
@@ -18,38 +19,20 @@
 # author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 
 # This is an example authentication script. You can modify it to make it fit your needs
-import sys
- 
-auth={} #Creates a dictionary
- 
-#fill it with some data
-auth['worf']="password"
-auth['data']="soong"
-auth['picard']="locutus"
-auth['riker']="smooth"
- 
-#Gives to args readable names
-method=sys.argv[1]
-page=sys.argv[2]
-ip=sys.argv[3]
- 
-#username and password parameters are optional, checks for their presence
-if len(sys.argv)>=5:
-        username=sys.argv[4]
-else:
-        username=""
- 
-if len(sys.argv)>=6:
-        password=sys.argv[5]
-else:
-        password=""
- 
-#If the page requested doesn't begin with the /film/ string, allow the access
-#if not page[:6]=="/film/":
-#        sys.exit(0)
- 
-#Otherwise it requires a valid username and password
-if (username in auth) and (auth[username]==password):
-        sys.exit(0)
- 
-sys.exit(1)
+import socket,os
+
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+try:
+    os.remove("/tmp/weborf_auth.socket")
+except OSError:
+    pass
+s.bind("/tmp/weborf_auth.socket")
+s.listen(1)
+while 1:
+    conn, addr = s.accept()
+    data = conn.recv(4096).split('\r\n')
+    print data
+    if data[0].startswith('/film'):
+        if data[3]!=data[4] or len(data[3])==0:
+            conn.send(' ')
+    conn.close()
