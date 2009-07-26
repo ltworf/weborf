@@ -33,6 +33,6 @@ while 1:
     data = conn.recv(4096).split('\r\n')
     print data
     if data[0].startswith('/film'):
-        if data[3]!=data[4] or len(data[3])==0:
+        if not data[1].startswith('::ffff:10.0.'):
             conn.send(' ')
     conn.close()
