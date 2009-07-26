@@ -663,8 +663,7 @@ if (buf==NULL) {
             if (to==0){ //If no to is specified, it is to the end of the file
                 to=size-1; 
             }
-            
-            snprintf(a,RBUFFER,"Content-Range: bytes=%d-%d\r\n",from,to);
+            snprintf(a,RBUFFER,"Content-Range: bytes=%d-%d/%d\r\nAccept-Ranges: bytes\r\n",from,to,size);
             
             lseek(fp,from,SEEK_SET);
             count=to-from+1;
