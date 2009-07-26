@@ -64,6 +64,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define INDEXMAXLEN 30
 //Buffer to contain the string representation of an integer
 #define NBUFFER 15
+//buffer to contain a range
+#define RBUFFER 128
 #define BUFFERED_READER_SIZE 512//256
 
 //Number of index pages allowed to search
@@ -89,6 +91,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SIZE_COMPRESS_MAX 4000000000
 #define GZIPNICE 4
 #endif
+
+//-------------RANGE
+#define __RANGE
 
 //-------------Logging options
 //#define THREADDBG

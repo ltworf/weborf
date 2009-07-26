@@ -610,7 +610,7 @@ int writeFile(int sock,char * strfile,char *http_param) {
     }
 
 
-    { //Get size of the file and decide if to handle it as normal or compressed.
+     //Get size of the file and decide if to handle it as normal or compressed.
         unsigned int size;//File's size
         {//Gets file's size
             struct stat buf;
@@ -636,18 +636,50 @@ int writeFile(int sock,char * strfile,char *http_param) {
             }
         }
 #endif
-        send_http_header(sock,size,NULL);//Sends header with content length
-    }
 
-    char* buf=malloc(FILEBUF);//Buffer to read from file
-    if (buf==NULL) {
-        return ERR_NOMEM;//If no memory is available
-    }
+char* buf=malloc(FILEBUF);//Buffer to read from file
+if (buf==NULL) {
+    return ERR_NOMEM;//If no memory is available
+}
 
+        
+        
+        off_t count=size;//Bytes to send to the client
+
+#ifdef __RANGE
+        char a[RBUFFER]; //Buffer for Range, Content-Range headers
+        if (get_param_value(http_param,"Range",a,RBUFFER)) {//Find if it is a range request
+            //Range: bytes=393148-\r\n
+            int from,to;
+            
+            {//Locating from and to
+            char* eq=strstr(&a,"=");
+            char* sep=strstr(eq,"-");
+            sep[0]=0;
+            from=strtol(eq+1,NULL,0);
+            to=strtol(sep+1,NULL,0);            
+            }
+            
+            if (to==0){ //If no to is specified, it is to the end of the file
+                to=size-1; 
+            }
+            
+            snprintf(a,RBUFFER,"Content-Range: bytes=%d-%d\r\n",from,to);
+            
+            lseek(fp,from,SEEK_SET);
+            count=to-from+1;
+            
+            send_http_header_code(sock,206,count,a);
+        } else //Normal request
+#endif
+            send_http_header(sock,size,NULL);//Sends header with content length
+        
+            
     int reads,wrote;
 
     //Sends file
-    while ((reads=read(fp, buf, FILEBUF))!=0) {
+    while (count==0 || (reads=read(fp, buf, FILEBUF<count? FILEBUF:count ))!=0) {
+        count-=reads;
         wrote=write(sock,buf,reads);
         if (wrote!=reads) { //Error writing to the socket
 #ifdef SOCKETDBG
