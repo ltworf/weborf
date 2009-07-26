@@ -840,7 +840,7 @@ int check_auth(int sock, char* http_param, char * method, char * page, char * ip
     {
         #define SOCK_PATH "/var/run/acpid.socket"
         
-        int s,t,len;
+        int s,len;
         struct sockaddr_un remote;
         s=socket(AF_UNIX,SOCK_STREAM,0);
         
