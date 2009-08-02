@@ -226,7 +226,7 @@ void * instance(void * nulla) {
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",id);
 #endif
         handle_requests(sock,buf,&read_b,&bufFull,ip_addr);
-        
+
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",id);
 #endif
@@ -610,70 +610,70 @@ int writeFile(int sock,char * strfile,char *http_param) {
     }
 
 
-     //Get size of the file and decide if to handle it as normal or compressed.
-        unsigned int size;//File's size
-        {//Gets file's size
-            struct stat buf;
-            fstat(fp, &buf);
-            //Ignoring errors, usually are due to large files, but the size is correctly returned anyway
-            size=buf.st_size;
-        }
+    //Get size of the file and decide if to handle it as normal or compressed.
+    unsigned int size;//File's size
+    {//Gets file's size
+        struct stat buf;
+        fstat(fp, &buf);
+        //Ignoring errors, usually are due to large files, but the size is correctly returned anyway
+        size=buf.st_size;
+    }
 #ifdef __COMPRESSION
-        if (size>SIZE_COMPRESS_MIN && size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
-            char* accept;
+    if (size>SIZE_COMPRESS_MIN && size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
+        char* accept;
 
-            if ((accept=strstr(http_param,"Accept-Encoding:"))!=NULL) {
-                char* end=strstr(accept,"\r\n");
+        if ((accept=strstr(http_param,"Accept-Encoding:"))!=NULL) {
+            char* end=strstr(accept,"\r\n");
 
-                //Avoid to parse the entire header.
-                end[0]='\0';
-                char* gzip=strstr(accept,"gzip");
-                end[0]='\r';
+            //Avoid to parse the entire header.
+            end[0]='\0';
+            char* gzip=strstr(accept,"gzip");
+            end[0]='\r';
 
-                if (gzip!=NULL) {
-                    return writeCompressedFile(sock,strfile, size);
-                }
+            if (gzip!=NULL) {
+                return writeCompressedFile(sock,strfile, size);
             }
         }
+    }
 #endif
 
-char* buf=malloc(FILEBUF);//Buffer to read from file
-if (buf==NULL) {
-    return ERR_NOMEM;//If no memory is available
-}
+    char* buf=malloc(FILEBUF);//Buffer to read from file
+    if (buf==NULL) {
+        return ERR_NOMEM;//If no memory is available
+    }
 
-        
-        
-        off_t count=size;//Bytes to send to the client
+
+
+    off_t count=size;//Bytes to send to the client
 
 #ifdef __RANGE
-        char a[RBUFFER]; //Buffer for Range, Content-Range headers
-        if (get_param_value(http_param,"Range",a,RBUFFER)) {//Find if it is a range request
-            //Range: bytes=393148-\r\n
-            int from,to;
-            
-            {//Locating from and to
+    char a[RBUFFER]; //Buffer for Range, Content-Range headers
+    if (get_param_value(http_param,"Range",a,RBUFFER)) {//Find if it is a range request
+        int from,to;
+
+        {//Locating from and to
+            //Range: bytes=12323-123401
             char* eq=strstr(&a,"=");
             char* sep=strstr(eq,"-");
             sep[0]=0;
             from=strtol(eq+1,NULL,0);
-            to=strtol(sep+1,NULL,0);            
-            }
-            
-            if (to==0){ //If no to is specified, it is to the end of the file
-                to=size-1; 
-            }
-            snprintf(a,RBUFFER,"Content-Range: bytes=%d-%d/%d\r\nAccept-Ranges: bytes\r\n",from,to,size);
-            
-            lseek(fp,from,SEEK_SET);
-            count=to-from+1;
-            
-            send_http_header_code(sock,206,count,a);
-        } else //Normal request
+            to=strtol(sep+1,NULL,0);
+        }
+
+        if (to==0) { //If no to is specified, it is to the end of the file
+            to=size-1;
+        }
+        snprintf(a,RBUFFER,"Content-Range: bytes=%d-%d/%d\r\nAccept-Ranges: bytes\r\n",from,to,size);
+
+        lseek(fp,from,SEEK_SET);
+        count=to-from+1;
+
+        send_http_header_code(sock,206,count,a);
+    } else //Normal request
 #endif
-            send_http_header(sock,size,NULL);//Sends header with content length
-        
-            
+        send_http_header(sock,size,NULL);//Sends header with content length
+
+
     int reads,wrote;
 
     //Sends file
@@ -869,12 +869,12 @@ int check_auth(int sock, char* http_param, char * method, char * page, char * ip
     //int result=system(auths);
     short int result=-1;
     {
-        #define SOCK_PATH "/var/run/acpid.socket"
-        
+#define SOCK_PATH "/var/run/acpid.socket"
+
         int s,len;
         struct sockaddr_un remote;
         s=socket(AF_UNIX,SOCK_STREAM,0);
-        
+
         remote.sun_family = AF_UNIX;
         strcpy(remote.sun_path, authbin);
         len = strlen(remote.sun_path) + sizeof(remote.sun_family);
@@ -893,7 +893,7 @@ int check_auth(int sock, char* http_param, char * method, char * page, char * ip
         close(s);
         free(auth_str);
     }
-    
+
     if (result!=0) { //Failed
         request_auth(sock,page);//Sends a request for authentication
     }
