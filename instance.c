@@ -303,7 +303,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
             int i;
 
             //Cyclyng through the indexes
-            for (i=0; i<indexes_l;i++) {
+            for (i=0; i<indexes_l; i++) {
                 snprintf(index_name,INDEXMAXLEN,"%s",indexes[i]);//Add INDEX to the url
                 if (file_exists(strfile)) { //If index exists, redirect to it
                     char* head=malloc(strfile_l+12);//12 is the size for the location header

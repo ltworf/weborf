@@ -250,7 +250,7 @@ void setEnvVars(char * http_param) { //Sets Enviroment vars
         char * value=NULL;
 
         //Parses the parameter to split name from value
-        for (i=0;i<p_len;i++) {
+        for (i=0; i<p_len; i++) {
             if (param[i]==':' && param[i+1]==' ') {
                 param[i]='\0';
                 value=&param[i+2];

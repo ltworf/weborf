@@ -83,7 +83,7 @@ char getCode(char c) {
     };
 
     int i;
-    for (i=0;i<64;i++) {
+    for (i=0; i<64; i++) {
         if (encodingTable[i]==c) return i;
     }
     return 0;

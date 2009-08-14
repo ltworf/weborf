@@ -118,7 +118,7 @@ int splitParams(char * string) {
     int i;
     int to=strlen(string);
 
-    for (i=0;i<to;i++) {
+    for (i=0; i<to; i++) {
         if (string[i]=='&') {
             string[i]='\0';
             params++;
@@ -139,7 +139,7 @@ bool endsWith(char * str, char * end) {
     int len_end=strlen(end);
     int len_str=strlen(str);
 
-    for (i=1;i<=len_end;i++) {
+    for (i=1; i<=len_end; i++) {
         if (end[len_end-i]!=str[len_str-i]) return false;
     }
 
