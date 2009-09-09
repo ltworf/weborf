@@ -55,8 +55,7 @@ int q_init(syn_queue_t * q, int size) {
 Requires the pointer to the queue struct
 */
 void q_free(syn_queue_t * q) {
-    if (q->data != NULL)
-        free(q->data);
+    free(q->data);
 }
 
 #ifdef IPV6

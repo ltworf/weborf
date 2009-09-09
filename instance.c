@@ -213,7 +213,7 @@ void * instance(void * nulla) {
         unfree_thread(id);//Sets this thread as busy
 
         if (sock<=0) { //Was not a socket but a termination order
-            if (ip_addr!=NULL) free(ip_addr);//Free the space used to store ip address
+            free(ip_addr);//Free the space used to store ip address
             buffer_free(&read_b);
 #ifdef THREADDBG
             syslog(LOG_DEBUG,"Terminating thread %ld",id);
@@ -282,7 +282,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
     int strfile_l=strlen(page)+strlen(real_basedir)+INDEXMAXLEN+1;
     char * strfile=malloc(strfile_l);//buffer for filename
     if (strfile==NULL) {
-        if (post_param.data!=NULL) free (post_param.data);
+        free(post_param.data);
         return ERR_NOMEM;//If no memory is available
     }
     int strfile_e = snprintf(strfile,strfile_l,"%s%s",real_basedir,page);//Prepares the string
@@ -335,7 +335,7 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
         retval=ERR_FILENOTFOUND;
     }
 
-    if (post_param.data!=NULL) free (post_param.data);
+    free(post_param.data);
     free(strfile);
 
 
@@ -631,6 +631,7 @@ int writeFile(int sock,char * strfile,char *http_param) {
             end[0]='\r';
 
             if (gzip!=NULL) {
+                close(fp)
                 return writeCompressedFile(sock,strfile, size);
             }
         }
@@ -639,6 +640,7 @@ int writeFile(int sock,char * strfile,char *http_param) {
 
     char* buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
+        close(fp);
         return ERR_NOMEM;//If no memory is available
     }
 

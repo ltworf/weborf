@@ -42,8 +42,7 @@ int buffer_init(buffered_read_t * buf, int size) {
 This function will free the memory allocated by the buffer used in the struct.
 */
 void buffer_free(buffered_read_t * buf) {
-    if (buf->buffer != NULL)
-        free(buf->buffer);
+    free(buf->buffer);
 }
 
 /**

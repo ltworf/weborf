@@ -70,12 +70,12 @@ int list_dir (char* dir,char * html,unsigned int bufsize,bool parent) {
                 char measure[3];
                 unsigned int size=f_prop.st_size;
                 if (size<1024) {
-                    sprintf(measure,"B");
+                    snprintf(measure,3,"B");
                 } else if ((size=(size/1024))<1024) {
-                    sprintf(measure,"KB");
+                    snprintf(measure,3,"KB");
                 } else {
                     size=size/1024;
-                    sprintf(measure,"MB");
+                    snprintf(measure,3,"MB");
                 }
 
                 char* color; //Depending on row count chooses a background color
