@@ -36,7 +36,7 @@ int q_init(syn_queue_t * q, int size) {
     q->addr = (struct sockaddr_in6 *) q->data+sizeof(int) * size;
 #else
     q->data = (int *) malloc(sizeof(int) * size+sizeof(struct sockaddr_in) * size);
-    q->addr = q->data+sizeof(int) * size;
+    q->addr = (struct sockaddr_in *) q->data + sizeof(int) * size;
 #endif
 
     if (q->data == NULL) {//Error, unable to allocate memory

@@ -655,7 +655,7 @@ int writeFile(int sock,char * strfile,char *http_param) {
 
         {//Locating from and to
             //Range: bytes=12323-123401
-            char* eq=strstr(&a,"=");
+            char* eq=strstr(a,"=");
             char* sep=strstr(eq,"-");
             sep[0]=0;
             from=strtol(eq+1,NULL,0);

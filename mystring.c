@@ -25,8 +25,8 @@ This function converts a string to upper case
 */
 void strToUpper(char*str) {
     int i =0;
-    while (str[i]!=0) {
-        str[++i]=toupper(str[i]);
+    while (str[i++]!=0) {
+        str[i]=toupper(str[i]);
     }
 }
 
