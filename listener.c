@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 @author Giuseppe Pappalardo <pappalardo@dmi.unict.it>
-@author Salvo Rinaldi <salvin@bluebottle.com>
+@author Salvo Rinaldi <salvin@anche.no>
 */
 
 #include "listener.h"

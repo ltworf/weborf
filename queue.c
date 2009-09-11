@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Giuseppe Pappalardo <pappalardo@dmi.unict.it>
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
- */
+@author Salvo Rinaldi <salvin@anche.no>
+*/
 
 #include "queue.h"
 
