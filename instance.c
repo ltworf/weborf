@@ -602,7 +602,7 @@ send large files or not.
 If the file is larger, it will be sent using writeCompressedFile,
 see that function for details.
 */
-int writeFile(int sock,char * strfile,char *http_param) {    
+int writeFile(int sock,char * strfile,char *http_param) {
     int fp=open(strfile,O_RDONLY | O_LARGEFILE);
     if (fp<0) { //open returned an error
         return ERR_FILENOTFOUND;
@@ -662,16 +662,16 @@ int writeFile(int sock,char * strfile,char *http_param) {
         if (to==0) { //If no to is specified, it is to the end of the file
             to=size-1;
         }
-        snprintf(a,RBUFFER,"Content-Range: bytes=%d-%d/%d\r\nAccept-Ranges: bytes\r\n",from,to,size);        
+        snprintf(a,RBUFFER,"Content-Range: bytes=%d-%d/%d\r\nAccept-Ranges: bytes\r\n",from,to,size);
         lseek(fp,from,SEEK_SET);
         count=to-from+1;
 
         send_http_header_code(sock,206,count,a);
     } else //Normal request
 #endif
-        {
-            send_http_header(sock,size,NULL);//Sends header with content length
-        }
+    {
+        send_http_header(sock,size,NULL);//Sends header with content length
+    }
 
     int reads,wrote;
 
