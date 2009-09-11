@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "queue.h"
 
-
 /**
 Inits the syncronized queue, allocating memory.
 Requires the syn_queue_t struct and the size of the queue itself.
@@ -64,14 +63,14 @@ int q_get(syn_queue_t * q, int * val,struct sockaddr_in6 * addr_) {
 int q_get(syn_queue_t * q, int * val,struct sockaddr_in * addr_) {
 #endif
     pthread_mutex_lock(&q->mutex);
-    if (q->num == 0) {
+    while (q->num == 0) {
         q->n_wait_dt++;
         pthread_cond_wait(&q->for_data, &q->mutex);
     }
-    *val = q->data[q->tail];
-    *addr_ = q->addr[q->tail];
+    *val = q->data[q->head];
+    *addr_ = q->addr[q->head];
 
-    q->tail = (q->tail + 1) % q->size;
+    q->head = (q->head + 1) % q->size;
     if (  (q->num-- == q->size)
             &&(q->n_wait_sp > 0) ) {
         q->n_wait_sp--;
@@ -87,15 +86,15 @@ int q_put(syn_queue_t * q, int val,struct sockaddr_in6 addr_) {
 #else
 int q_put(syn_queue_t * q, int val,struct sockaddr_in addr_) {
 #endif
-    pthread_mutex_lock(&q->mutex);
-    if (q->num == q->size) {
+  pthread_mutex_lock(&q->mutex);
+    while (q->num == q->size) {
         q->n_wait_sp++;
         pthread_cond_wait(&q->for_space, &q->mutex);
     }
-    q->data[q->head] = val;
-    q->addr[q->head] = addr_;
+    q->data[q->tail] = val;
+    q->addr[q->tail] = addr_;
 
-    q->head = (q->head + 1) % q->size;
+    q->tail = (q->tail + 1) % q->size;
 
     if (  (q->num++ == 0)
             &&(q->n_wait_dt > 0) ) {
