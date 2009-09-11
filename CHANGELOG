@@ -26,6 +26,9 @@
 - Queue does less operations on memory (rev 231)
 - Changed authentication from child process to unix socket (rev 232)
 - Partial (but enough) support for range headers (rev 235)
+- Solved problem which caused 100% cpu usage (Salvo Rinaldi)
+- Solved problem which caused partial resending of files
+- Removed redoundant conditions to free memory (Angelo Puglisi)
 
 0.9
 - Bug: fixed size hadling of NBUFFER
