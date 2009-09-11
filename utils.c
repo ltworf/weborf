@@ -174,7 +174,7 @@ void version() {
     printf ("the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n");
     printf ("There is NO WARRANTY, to the extent permitted by law.\n\n");
 
-    printf ("Written by Salvo 'LtWorf' Tomaselli.\n");
+    printf ("Written by Salvo 'LtWorf' Tomaselli and Salvo Rinaldi.\n");
     printf ("Synchronized queue by Prof. Giuseppe Pappalardo.\n\n\n");
     printf ("https://galileo.dmi.unict.it/wiki/weborf/\n");
     exit(0);
