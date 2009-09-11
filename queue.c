@@ -87,7 +87,7 @@ int q_put(syn_queue_t * q, int val,struct sockaddr_in6 addr_) {
 #else
 int q_put(syn_queue_t * q, int val,struct sockaddr_in addr_) {
 #endif
-  pthread_mutex_lock(&q->mutex);
+    pthread_mutex_lock(&q->mutex);
     while (q->num == q->size) {
         q->n_wait_sp++;
         pthread_cond_wait(&q->for_space, &q->mutex);
