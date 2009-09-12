@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WEBORF_OPTIONS_H
 
 #define VERSION "0.11"
-#define SIGNATURE "Weborf/0.10 (GNU/Linux)"
+#define SIGNATURE "Weborf/0.11 (GNU/Linux)"
 
 //----------System
 //Uid for superuser
@@ -67,6 +67,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //buffer to contain a range
 #define RBUFFER 128
 #define BUFFERED_READER_SIZE 512//256
+//Buffer for text date
+#define DATEBUFFER 50
 
 //Number of index pages allowed to search
 #define MAXINDEXCOUNT 10
@@ -92,7 +94,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define GZIPNICE 4
 #endif
 
-//The following header is disabled because it really slows down weborf
+//The following header can be disabled to increase a little the speed
 //#define SEND_DATE_HEADER
 
 //-------------RANGE

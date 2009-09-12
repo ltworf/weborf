@@ -670,12 +670,11 @@ int writeFile(int sock,char * strfile,char *http_param) {
             from=strtol(eq+1,NULL,0);
             to=strtol(sep+1,NULL,0);
         }
-        printf("Range from %d to %d\n",from,to);
 
         if (to==0) { //If no to is specified, it is to the end of the file
             to=stat_f.st_size-1;
         }
-        snprintf(a,RBUFFER,"Content-Range: bytes=%d-%d/%d\r\nAccept-Ranges: bytes\r\n",from,to,(int)stat_f.st_size);
+        snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%d-%d/%d\r\n",from,to,(int)stat_f.st_size);
         lseek(fp,from,SEEK_SET);
         count=to-from+1;
 
@@ -944,7 +943,7 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
     if (head==NULL)return ERR_NOMEM;
     if (headers==NULL) headers="";
 
-    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d OK\r\nServer: Weborf (GNU/Linux)\r\n",code);
+    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\n",code);
     wrote=write (sock,head,len_head);
     if (wrote!=len_head) goto ret_err;
 
@@ -959,14 +958,16 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
     if (wrote!=len_head) goto ret_err;
 
 #ifdef SEND_DATE_HEADER
-    //Sends Date
-    struct tm  ts;
-    char buf[80];
+    {
+        //Sends Date
+        struct tm  ts;
+        char buf[DATEBUFFER];
 
-    localtime_r((time_t)&timestamp,&ts);
-    len_head = strftime(buf, sizeof(buf), "Date: %a, %d %b %Y %H:%M:%S GMT\r\n", &ts);
-    wrote=write (sock,head,len_head);
-    if (wrote!=len_head) goto ret_err;
+        localtime_r((time_t)&timestamp,&ts);
+        len_head = strftime(buf,DATEBUFFER, "Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n", &ts);        
+        wrote=write (sock,buf,len_head);
+        if (wrote!=len_head) goto ret_err;
+    }
 #endif
 
     //Content length (or entity lenght) and extra headers
