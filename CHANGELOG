@@ -1,3 +1,8 @@
+0.11
+- Support for ETag header
+- Support for If-None-Match header. Weborf will not re-send files that are cached into the browser
+- Cleaned up some send_header functions
+
 0.10
 - Pipe with scripts are now closed
 - Support for cgi-php

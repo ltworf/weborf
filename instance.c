@@ -295,7 +295,9 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
         if (!endsWith(strfile,"/")) {//Putting the ending / and redirect
             char* head=malloc(strfile_l+12);//12 is the size for the location header
             snprintf(head,strfile_l+12,"Location: %s/\r\n",page);
-            send_http_header_code(sock,303,0,head);
+            send_http_header_full(sock,303,0,head,true,-1);
+
+
             free(head);
         } else {
 
@@ -308,7 +310,8 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
                 if (file_exists(strfile)) { //If index exists, redirect to it
                     char* head=malloc(strfile_l+12);//12 is the size for the location header
                     snprintf(head,strfile_l+12,"Location: %s%s\r\n",page,indexes[i]);
-                    send_http_header_code(sock,303,0,head);
+                    send_http_header_full(sock,303,0,head,true,-1);
+
                     free(head);
                     index_found=true;
                     break;
@@ -505,7 +508,6 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
             }
             send_http_header_scode(sock,status,reads,header_buf);
 
-
             if (reads>0) {//Sends the page if there is something to send
                 write (sock,scrpt_buf,reads);
             }
@@ -545,7 +547,7 @@ int writeDir(int sock, char* page,char* real_basedir) {
         return ERR_FILENOTFOUND;
     } else { //If there are no errors sends the page
         int pagelen=strlen(html);
-        send_http_header(sock,pagelen,NULL);
+        send_http_header_full(sock,200,pagelen,NULL,true,-1);
         write(sock,html,pagelen);
     }
 
@@ -565,9 +567,8 @@ strfile is the file to compress and send
 size is the size of the uncompressed file
 */
 #ifdef __COMPRESSION
-int writeCompressedFile(int sock, char*strfile,unsigned int size) {
-
-    send_http_header_code_content(sock,200,size,"Connection: close\r\nContent-Encoding: gzip\r\n",false);
+int writeCompressedFile(int sock, char*strfile,unsigned int size,time_t timestamp) {
+    send_http_header_full(sock,200,size,"Connection: close\r\nContent-Encoding: gzip\r\n",false,timestamp);
     int pid=fork();
 
     if (pid==0) { //child, executing gzip
@@ -603,22 +604,29 @@ If the file is larger, it will be sent using writeCompressedFile,
 see that function for details.
 */
 int writeFile(int sock,char * strfile,char *http_param) {
+    char a[RBUFFER]; //Buffer for Range, Content-Range headers
+
     int fp=open(strfile,O_RDONLY | O_LARGEFILE);
     if (fp<0) { //open returned an error
         return ERR_FILENOTFOUND;
     }
 
+    //get properties of file
+    struct stat stat_f;
+    fstat(fp, &stat_f);
 
-    //Get size of the file and decide if to handle it as normal or compressed.
-    unsigned int size;//File's size
-    {//Gets file's size
-        struct stat buf;
-        fstat(fp, &buf);
-        //Ignoring errors, usually are due to large files, but the size is correctly returned anyway
-        size=buf.st_size;
+    //If the file has the same date, there is no need of sending it again
+    if (get_param_value(http_param,"If-None-Match",a,RBUFFER)) {//Find if it is a range request
+        time_t etag=(time_t)strtol(a+1,NULL,0);
+        if (stat_f.st_mtime==etag) {//Browser has the item in its cache, sending 304
+            close(fp);
+            send_http_header_full(sock,304,0,NULL,true,etag);
+            return 0;
+        }
+
     }
 #ifdef __COMPRESSION
-    if (size>SIZE_COMPRESS_MIN && size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
+    if (stat_f.st_size>SIZE_COMPRESS_MIN && stat_f.st_size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
         char* accept;
 
         if ((accept=strstr(http_param,"Accept-Encoding:"))!=NULL) {
@@ -630,8 +638,8 @@ int writeFile(int sock,char * strfile,char *http_param) {
             end[0]='\r';
 
             if (gzip!=NULL) {
-                close(fp)
-                return writeCompressedFile(sock,strfile, size);
+                close(fp);
+                return writeCompressedFile(sock,strfile, stat_f.st_size,stat_f.st_mtime);
             }
         }
     }
@@ -643,10 +651,9 @@ int writeFile(int sock,char * strfile,char *http_param) {
         return ERR_NOMEM;//If no memory is available
     }
 
-    off_t count=size;//Bytes to send to the client
+    off_t count=stat_f.st_size;//Bytes to send to the client
 
 #ifdef __RANGE
-    char a[RBUFFER]; //Buffer for Range, Content-Range headers
     if (get_param_value(http_param,"Range",a,RBUFFER)) {//Find if it is a range request
         int from,to;
 
@@ -660,17 +667,18 @@ int writeFile(int sock,char * strfile,char *http_param) {
         }
 
         if (to==0) { //If no to is specified, it is to the end of the file
-            to=size-1;
+            to=stat_f.st_size-1;
         }
-        snprintf(a,RBUFFER,"Content-Range: bytes=%d-%d/%d\r\nAccept-Ranges: bytes\r\n",from,to,size);
+        snprintf(a,RBUFFER,"Content-Range: bytes=%d-%d/%d\r\nAccept-Ranges: bytes\r\n",from,to,(int)stat_f.st_size);
         lseek(fp,from,SEEK_SET);
         count=to-from+1;
 
-        send_http_header_code(sock,206,count,a);
+        send_http_header_full(sock,206,count,a,true,stat_f.st_mtime);
+
     } else //Normal request
 #endif
     {
-        send_http_header(sock,size,NULL);//Sends header with content length
+        send_http_header_full(sock,200,stat_f.st_size,NULL,true,stat_f.st_mtime);
     }
 
     int reads,wrote;
@@ -787,46 +795,6 @@ int send_http_header_scode(int sock,char* code, unsigned int size,char* headers)
     free(head);
     if (wrote!=len_head) return ERR_BRKPIPE;
     return 0;
-}
-
-/**
-This function sends a code header to the specified socket
-size is the Content-Length field.
-headers can be NULL or some extra headers to add. Headers must be
-separated by \r\n and must have an \r\n at the end.
-
-Content says if the size is for content-lenght or for entity-length
-*/
-int send_http_header_code_content(int sock,int code, unsigned int size,char* headers,bool content) {
-
-    char *head=malloc(HEADBUF);
-    if (head==NULL)return ERR_NOMEM;
-
-    if (headers==NULL) headers="";
-
-    int len_head;
-    if (content) {
-        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n",code, size,headers);
-    } else {
-        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d OK Server: Weborf (GNU/Linux)\r\nentity-length: %u\r\n%s\r\n",code, size,headers);
-    }
-
-    int wrote=write (sock,head,len_head);
-    free(head);
-    if (wrote!=len_head) return ERR_BRKPIPE;
-    return 0;
-}
-
-int send_http_header_code(int sock,int code, unsigned int size,char* headers) {
-    return send_http_header_code_content( sock,code,size,headers,true);
-}
-
-/**
-This function sends a code 200 header to the specified socket
-size is the Content-Length field
-*/
-int send_http_header(int sock,unsigned int size,char* headers) {
-    return send_http_header_code_content(sock,200,size,headers,true);
 }
 
 /**
@@ -950,4 +918,63 @@ char* get_basedir(char* http_param) {
     if (result==NULL) return basedir; //Reqeusted host doesn't exist
 
     return result;
+}
+
+
+/**
+This function sends a code header to the specified socket
+size is the Content-Length field.
+headers can be NULL or some extra headers to add. Headers must be
+separated by \r\n and must have an \r\n at the end.
+
+Content says if the size is for content-lenght or for entity-length
+
+Timestamp is the timestamp for the content. Set to -1 to use the current timestamp
+*/
+int send_http_header_full(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp) {
+    int len_head,wrote;
+    char *head=malloc(HEADBUF);
+
+    if (head==NULL)return ERR_NOMEM;
+    if (headers==NULL) headers="";
+
+    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d OK\r\nServer: Weborf (GNU/Linux)\r\n",code);
+    wrote=write (sock,head,len_head);
+    if (wrote!=len_head) goto ret_err;
+
+    //Creating ETag and date from timestamp
+    if (timestamp==-1) {//Etag with actual timestamp
+        timestamp=time(NULL);
+    }
+
+    //Sends ETag
+    len_head = snprintf(head,HEADBUF,"ETag: \"%d\"\r\n",(int)timestamp);
+    wrote=write (sock,head,len_head);
+    if (wrote!=len_head) goto ret_err;
+
+#ifdef SEND_DATE_HEADER
+    //Sends Date
+    struct tm  ts;
+    char buf[80];
+
+    localtime_r((time_t)&timestamp,&ts);
+    len_head = strftime(buf, sizeof(buf), "Date: %a, %d %b %Y %H:%M:%S GMT\r\n", &ts);
+    wrote=write (sock,head,len_head);
+    if (wrote!=len_head) goto ret_err;
+#endif
+
+    //Content length (or entity lenght) and extra headers
+    if (content) {
+        len_head=snprintf(head,HEADBUF,"Content-Length: %u\r\n%s\r\n",size,headers);
+    } else {
+        len_head=snprintf(head,HEADBUF,"entity-length: %u\r\n%s\r\n",size,headers);
+    }
+    wrote=write (sock,head,len_head);
+    if (wrote!=len_head) goto ret_err;
+
+    free(head);
+    return 0;
+ret_err:
+    free(head);
+    return ERR_BRKPIPE;
 }

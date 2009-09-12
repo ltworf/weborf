@@ -92,6 +92,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define GZIPNICE 4
 #endif
 
+//The following header is disabled because it really slows down weborf
+//#define SEND_DATE_HEADER
+
 //-------------RANGE
 #define __RANGE
 
