@@ -40,7 +40,7 @@ extern int indexes_l;
 extern bool virtual_host; //True if must check for virtual hosts
 extern char ** environ; //To reset environ vars
 
-void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,char* ip_addr) {
+void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,char* ip_addr,int id) {
     int from;
     int req;//Method of the HTTP request INTEGER
     char * reqs;//HTTP request STRING
@@ -54,13 +54,12 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
 
     while (true) { //Infinite cycle to handle all pipelined requests
         memset(buf,0,*bufFull+1);//Sets to 0 the buffer, only the part used for the previous request in the same connection
-        *bufFull=0;//bufFull-(end-buf+4);
-
+        *bufFull=0;//bufFull-(end-buf+4);                
         from=0;
 
-        while ((end=strstr(buf+from,"\r\n\r\n"))==NULL) { //Determines if there is a double \r\n
+        while ((end=strstr(buf+from,"\r\n\r"))==NULL) { //Determines if there is a \r\n\r which is an ending sequence
             //r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
-            r=buffer_read(sock, buf+*bufFull,1,read_b);//Reads 1 char and adds to the buffer
+            r=buffer_read(sock, buf+*bufFull,2,read_b);//Reads 1 char and adds to the buffer
 
             if (r<=0) { //Connection closed or error
                 return;
@@ -71,9 +70,9 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
             }
 
             if (*bufFull!=0) { //Removes Cr Lf from beginning
-                *bufFull+=1;//r;//Sets the end of the user buffer (may contain more than one header)
+                *bufFull+=r;//Sets the end of the user buffer (may contain more than one header)
             } else if (buf[*bufFull]!='\n' && buf[*bufFull]!='\r') {
-                *bufFull+=1;//r;
+                *bufFull+=r;
             }
 
             if (*bufFull>=INBUFFER) { //Buffer full and still no valid http header
@@ -81,12 +80,13 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
                 return;
             }
         }
-
+        
+        if (strstr(buf+from,"\r\n\r\n")==NULL) {//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
+            *bufFull+=buffer_read(sock, buf+*bufFull,1,read_b);//Reads 1 char and adds to the buffer
+        }
+        
         end[2]='\0';//Terminates the header, leaving a final \r\n in it
-
-        //Removes cr and lf chars from the beginning
-        //removeCrLf(buf);
-
+        
         //Finds out request's kind
         if (strncmp(buf,"GET",3)==0) req=GET;
         else if (strncmp(buf,"POST",4)==0) req=POST;
@@ -95,6 +95,8 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         if ( req!=INVALID ) {
             reqs=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
             page=strtok_r(NULL," ",&lasts);
+            //param=strtok_r(NULL," ",&lasts);
+            param=lasts;
 
 #ifdef REQUESTDBG
             syslog(LOG_INFO,"%s: %s %s\n",ip_addr,reqs,page);
@@ -104,19 +106,19 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
             syslog(LOG_INFO,"Requested page: %s to Thread %ld",page,id);
 #endif
             //Stores the parameters of the request
-            param=(char *)(page+strlen(page)+1);
+            //param=(char *)(page+strlen(page)+1);
 
             //Setting the connection type, using protocol version
             if (param[5]=='1' && param[7]=='1') {//Keep alive by default
                 keep_alive=true;
-                char a[50];//Gets the value
-                if (get_param_value(param,"Connection", a,50))
+                char a[12];//Gets the value
+                if (get_param_value(param,"Connection", a,12))
                     if (strncmp (a,"close",5)==0)
                         keep_alive=false;
             } else {
                 keep_alive=false;
-                char a[50];//Gets the value
-                if (get_param_value(param,"Connection", a,50))
+                char a[12];//Gets the value
+                if (get_param_value(param,"Connection", a,12))
                     if (strncmp(a,"Keep",4)==0)
                         keep_alive=true;
             }
@@ -130,9 +132,6 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
             send_err(sock,400,"Bad request",ip_addr);
             return;
         }
-
-        //Deletes the served header and moves the following part of the buffer at the beginning
-        //memmove(buf,end+4,bufFull-(end-buf+4));
     }
 }
 
@@ -225,7 +224,7 @@ void * instance(void * nulla) {
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",id);
 #endif
-        handle_requests(sock,buf,&read_b,&bufFull,ip_addr);
+        handle_requests(sock,buf,&read_b,&bufFull,ip_addr,id);
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",id);
@@ -694,7 +693,7 @@ int writeFile(int sock,char * strfile,char *http_param) {
         wrote=write(sock,buf,reads);
         if (wrote!=reads) { //Error writing to the socket
 #ifdef SOCKETDBG
-            syslog(LOG_ERR,"Unable to send %s: error writing to the socket",file);
+            syslog(LOG_ERR,"Unable to send %s: error writing to the socket",strfile);
 #endif
             break;
         }
@@ -939,49 +938,47 @@ Timestamp is the timestamp for the content. Set to -1 to use the current timesta
 int send_http_header_full(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp) {
     int len_head,wrote;
     char *head=malloc(HEADBUF);
+    char* h_ptr=head;
+    int left_head=HEADBUF;
 
     if (head==NULL)return ERR_NOMEM;
     if (headers==NULL) headers="";
 
     len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\n",code);
-    wrote=write (sock,head,len_head);
-    if (wrote!=len_head) goto ret_err;
-
+    head+=len_head;
+    left_head-=len_head;
+    
     //Creating ETag and date from timestamp
     if (timestamp==-1) {//Etag with actual timestamp
         timestamp=time(NULL);
     }
 
     //Sends ETag
-    len_head = snprintf(head,HEADBUF,"ETag: \"%d\"\r\n",(int)timestamp);
-    wrote=write (sock,head,len_head);
-    if (wrote!=len_head) goto ret_err;
+    len_head = snprintf(head,left_head,"ETag: \"%d\"\r\n",(int)timestamp);
+    head+=len_head;
+    left_head-=len_head;
 
 #ifdef SEND_DATE_HEADER
-    {
-        //Sends Date
+    { //Sends Date        
         struct tm  ts;
-        char buf[DATEBUFFER];
-
         localtime_r((time_t)&timestamp,&ts);
-        len_head = strftime(buf,DATEBUFFER, "Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n", &ts);        
-        wrote=write (sock,buf,len_head);
-        if (wrote!=len_head) goto ret_err;
+        len_head = strftime(head,left_head, "Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n", &ts);
+        head+=len_head;
+        left_head-=len_head;
     }
 #endif
 
     //Content length (or entity lenght) and extra headers
     if (content) {
-        len_head=snprintf(head,HEADBUF,"Content-Length: %u\r\n%s\r\n",size,headers);
+        len_head=snprintf(head,left_head,"Content-Length: %u\r\n%s\r\n",size,headers);        
     } else {
-        len_head=snprintf(head,HEADBUF,"entity-length: %u\r\n%s\r\n",size,headers);
+        len_head=snprintf(head,left_head,"entity-length: %u\r\n%s\r\n",size,headers);
     }
-    wrote=write (sock,head,len_head);
-    if (wrote!=len_head) goto ret_err;
-
-    free(head);
+    head+=len_head;
+    left_head-=len_head;
+    
+    wrote=write (sock,h_ptr,HEADBUF-left_head);
+    free(h_ptr);
+    if (wrote!=HEADBUF-left_head) return ERR_BRKPIPE;    
     return 0;
-ret_err:
-    free(head);
-    return ERR_BRKPIPE;
 }

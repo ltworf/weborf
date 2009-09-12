@@ -84,7 +84,7 @@ int request_auth(int sock,char* descr);
 int check_auth(int sock, char* http_param, char * method, char * page, char * ip_addr);
 string_t read_post_data(int sock,char* http_param,int method_id,buffered_read_t* read_b);
 char* get_basedir(char* http_param);
-void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,char* ip_addr);
+void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,char* ip_addr,int id);
 int send_http_header_full(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp);
 #endif
 
