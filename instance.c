@@ -604,7 +604,7 @@ If the file is larger, it will be sent using writeCompressedFile,
 see that function for details.
 */
 int writeFile(int sock,char * strfile,char *http_param) {
-    char a[RBUFFER]; //Buffer for Range, Content-Range headers
+    char a[RBUFFER]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
     int fp=open(strfile,O_RDONLY | O_LARGEFILE);
     if (fp<0) { //open returned an error
@@ -659,12 +659,18 @@ int writeFile(int sock,char * strfile,char *http_param) {
 
         {//Locating from and to
             //Range: bytes=12323-123401
-            char* eq=strstr(a,"=");
+            char* eq=strstr(a,"=");            
             char* sep=strstr(eq,"-");
+            if (eq==NULL||sep==NULL) {//Invalid data in Range header.
+                free(buf);
+                close(fp);
+                return ERR_NOTHTTP;
+            }
             sep[0]=0;
             from=strtol(eq+1,NULL,0);
             to=strtol(sep+1,NULL,0);
         }
+        printf("Range from %d to %d\n",from,to);
 
         if (to==0) { //If no to is specified, it is to the end of the file
             to=stat_f.st_size-1;
