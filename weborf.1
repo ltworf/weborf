@@ -1,4 +1,4 @@
-.TH Weborf 0.10 "Dec 28, 2008"
+.TH Weborf 0.11 "Sep 13, 2009"
 
 .SH NAME
 .B weborf
@@ -32,7 +32,7 @@ Must be followed by a valid directory. Weborf will use this directory as root di
 
 .TP
 \fB\-a\fR, \fB\-\-auth\fR
-Must be followed by a program who will handle authentication. It is possible to use a script for this purpose. It will have five parameters on its command line. In the following order: method, page, IP, username, password. A zero exit code will tell to weborf that the authentication was accepted. Since weborf will wait for the program's termination to determine if allow or deny access, a non terminating program will prevent weborf to reply to any request. If no path (absolute or relative) is specified, weborf will use the PATH variable.
+Must be followed by a unix socket listened by a program who will handle authentication.
 
 .TP
 \fB\-x\fR, \fB\-\-noexec\fR
@@ -122,7 +122,7 @@ Invalid parameters on command line
 .BR weborf.conf(5), php (1)
 
 .SH VERSION
-\fBWeborf\fP 0.10
+\fBWeborf\fP 0.11
 
 .SH WEB
 http://galileo.dmi.unict.it/wiki/weborf/
