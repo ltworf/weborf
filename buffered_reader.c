@@ -105,26 +105,26 @@ ssize_t buffer_read(int fd, void *b, ssize_t count,buffered_read_t * buf) {
 }
 
 
-//#include <sys/types.h>
-//#include <sys/stat.h>
-//#include <fcntl.h>
+/*#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
-//int main () {
-//    buffered_read_t buf;
-//
-//    buffer_init(&buf, 30);
+int main () {
+    buffered_read_t buf;
 
-//    int fp=open("/home/salvo/.bash_history",O_RDONLY);
-//    char * k=malloc (600);
+    buffer_init(&buf, 30);
 
-//    int end=0;
-//    while ((end=buffer_read(fp,k,500,&buf))>=500 ) {
+    int fp=open("/home/salvo/.bash_history",O_RDONLY);
+    char * k=malloc (600);
 
-//        k[end]=0;
-//        printf("---- %s\n",k);
-//    }
-//    printf("%d",end);
+    int end=0;
+    while ((end=buffer_read(fp,k,500,&buf))>=500 ) {
 
-//    free(k);
-//    buffer_free(&buf);
-//}
+        k[end]=0;
+        printf("---- %s\n",k);
+    }
+    printf("%d",end);
+
+    free(k);
+    buffer_free(&buf);
+}*/

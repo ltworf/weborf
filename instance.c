@@ -96,7 +96,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
             reqs=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
             page=strtok_r(NULL," ",&lasts);
             //param=strtok_r(NULL," ",&lasts);
-            param=lasts;
+            param=lasts; //Might cause instability
 
 #ifdef REQUESTDBG
             syslog(LOG_INFO,"%s: %s %s\n",ip_addr,reqs,page);
