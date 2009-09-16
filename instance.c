@@ -40,14 +40,9 @@ extern int indexes_l;
 extern bool virtual_host; //True if must check for virtual hosts
 extern char ** environ; //To reset environ vars
 
-void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,char* ip_addr,int id) {
+void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,int id){
     int from;
-    int req;//Method of the HTTP request INTEGER
-    char * reqs;//HTTP request STRING
-    char * param;//HTTP parameter
-    char * page;//Page to load
     char * lasts;//Used by strtok_r
-    bool keep_alive;//True if we are using pipelining
 
     int r;//Readed char
     char* end;//Pointer to header's end
@@ -76,7 +71,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
             }
 
             if (*bufFull>=INBUFFER) { //Buffer full and still no valid http header
-                send_err(sock,400,"Bad request",ip_addr);
+                send_err(sock,400,"Bad request",connection_prop->ip_addr);
                 return;
             }
         }
@@ -88,48 +83,56 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         end[2]='\0';//Terminates the header, leaving a final \r\n in it
         
         //Finds out request's kind
-        if (strncmp(buf,"GET",3)==0) req=GET;
-        else if (strncmp(buf,"POST",4)==0) req=POST;
-        else req=INVALID;
+        if (strncmp(buf,"GET",3)==0) connection_prop->method_id=GET;
+        else if (strncmp(buf,"POST",4)==0) connection_prop->method_id=POST;
+        else connection_prop->method_id=INVALID;
 
-        if ( req!=INVALID ) {
-            reqs=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
-            page=strtok_r(NULL," ",&lasts);
+        if (connection_prop->method_id!=INVALID ) {
+            connection_prop->method=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
+            connection_prop->page=strtok_r(NULL," ",&lasts);
             //param=strtok_r(NULL," ",&lasts);
-            param=lasts; //Might cause instability
+            connection_prop->http_param=lasts; //Might cause instability
 
 #ifdef REQUESTDBG
-            syslog(LOG_INFO,"%s: %s %s\n",ip_addr,reqs,page);
+        syslog(LOG_INFO,"%s: %s %s\n",connection_prop->ip_addr,connection_prop->reqs,connection_prop->page);
 #endif
 
 #ifdef THREADDBG
-            syslog(LOG_INFO,"Requested page: %s to Thread %ld",page,id);
+        syslog(LOG_INFO,"Requested page: %s to Thread %ld",connection_prop->page,id);
 #endif
             //Stores the parameters of the request
             //param=(char *)(page+strlen(page)+1);
-
+{
+    char a[12];//Gets the value
+    bool connection=get_param_value(connection_prop->http_param,"Connection", a,12);
+    
             //Setting the connection type, using protocol version
-            if (param[5]=='1' && param[7]=='1') {//Keep alive by default
-                keep_alive=true;
-                char a[12];//Gets the value
-                if (get_param_value(param,"Connection", a,12))
-                    if (strncmp (a,"close",5)==0)
-                        keep_alive=false;
-            } else {
-                keep_alive=false;
-                char a[12];//Gets the value
-                if (get_param_value(param,"Connection", a,12))
-                    if (strncmp(a,"Keep",4)==0)
-                        keep_alive=true;
+            if (connection_prop->http_param[7]=='1' && connection_prop->http_param[5]=='1') {//Keep alive by default (protocol 1.1)
+                connection_prop->protocol_version=HTTP_1_1;
+                connection_prop->keep_alive=true;
+                
+                if (connection && strncmp (a,"close",5)==0)
+                        connection_prop->keep_alive=false;
+            } else {//Not http1.1
+                if (connection_prop->http_param[7]=='9') {//version 0.9
+                    connection_prop->protocol_version=HTTP_0_9;
+                } else { //version 1.0
+                    connection_prop->protocol_version=HTTP_1_0;
+                }
+            
+                connection_prop->keep_alive=false;
+                if (connection && strncmp(a,"Keep",4)==0)
+                        connection_prop->keep_alive=true;
             }
-            if (sendPage(sock,page,param,req,reqs,ip_addr,read_b)<0) {
+        }
+            if (sendPage(sock,read_b, connection_prop)<0) {
                 break;//Unable to send an error
             }
-            if (keep_alive==false) {//No pipelining
+            if (connection_prop->keep_alive==false) {//No pipelining
                 return;
             }
         } else { //Non supported request
-            send_err(sock,400,"Bad request",ip_addr);
+            send_err(sock,400,"Bad request",connection_prop->ip_addr);
             return;
         }
     }
@@ -176,17 +179,17 @@ void * instance(void * nulla) {
     int bufFull=0;//Amount of buf used
     char * buf=malloc(INBUFFER+1);//Buffer to contain the HTTP request
     memset(buf,0,INBUFFER+1);//Sets to 0 the buffer
+    connection_t connection_prop; //Struct to contain properties of the connection
 
     buffered_read_t read_b; //Buffer for buffered reader
     int sock=0;//Socket with the client
-    char* ip_addr;//Client's ip address in ascii
 
 #ifdef IPV6
-    ip_addr=malloc(INET6_ADDRSTRLEN);
+    connection_prop.ip_addr=malloc(INET6_ADDRSTRLEN);
     struct sockaddr_in6 addr;//Local and remote address
     socklen_t addr_l=sizeof(struct sockaddr_in);
 #else
-    ip_addr=malloc(INET_ADDRSTRLEN);
+    connection_prop.ip_addr=malloc(INET_ADDRSTRLEN);
     struct sockaddr_in addr;
     int addr_l=sizeof(struct sockaddr_in);
 #endif
@@ -198,12 +201,12 @@ void * instance(void * nulla) {
 
         //Converting address to string
 #ifdef IPV6
-        if (ip_addr!=NULL) { //Buffer for IP Address, to give to the thread
+        if (connection_prop.ip_addr!=NULL) { //Buffer for IP Address, to give to the thread
             getpeername(sock, (struct sockaddr *)&addr, &addr_l);
-            inet_ntop(AF_INET6, &addr.sin6_addr, ip_addr, INET6_ADDRSTRLEN);
+            inet_ntop(AF_INET6, &addr.sin6_addr, connection_prop.ip_addr, INET6_ADDRSTRLEN);
         }
 #else
-        if (ip_addr!=NULL) { //Buffer for ascii IP addr, will be freed by the thread
+        if (connection_prop.ip_addr!=NULL) { //Buffer for ascii IP addr, will be freed by the thread
             getpeername(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
             inet_ntop(AF_INET, &addr.sin_addr, ip_addr, INET_ADDRSTRLEN);
         }
@@ -212,7 +215,7 @@ void * instance(void * nulla) {
         unfree_thread(id);//Sets this thread as busy
 
         if (sock<=0) { //Was not a socket but a termination order
-            free(ip_addr);//Free the space used to store ip address
+            free(connection_prop.ip_addr);//Free the space used to store ip address
             buffer_free(&read_b);
 #ifdef THREADDBG
             syslog(LOG_DEBUG,"Terminating thread %ld",id);
@@ -224,7 +227,7 @@ void * instance(void * nulla) {
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",id);
 #endif
-        handle_requests(sock,buf,&read_b,&bufFull,ip_addr,id);
+        handle_requests(sock,buf,&read_b,&bufFull,&connection_prop,id);
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",id);
@@ -255,36 +258,35 @@ void modURL(char* url) {
 This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
-int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr,buffered_read_t* read_b) {
-
-    modURL(page);//Operations on the url string
-
-    char * params=nullParams(page);//Pointer to the GET parameters
+int sendPage(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
+    modURL(connection_prop->page);//Operations on the url string
+    connection_prop->get_params=nullParams(connection_prop->page);//Pointer to the GET parameters
+    
 #ifdef SENDINGDBG
-    syslog (LOG_DEBUG,"URL changed into %s",page);
+    syslog (LOG_DEBUG,"URL changed into %s",connection_prop->page);
 #endif
 
     char* real_basedir;
     if (virtual_host) { //Using virtual hosts
-        real_basedir=get_basedir(http_param);
+        real_basedir=get_basedir(connection_prop->http_param);
         if (real_basedir==NULL) real_basedir=basedir;
     } else {//No virtual Host
         real_basedir=basedir;
     }
 
-    if (authbin!=NULL && check_auth(sock,http_param, method, page, ip_addr)!=0) { //If auth is required
+    if (authbin!=NULL && check_auth(sock,connection_prop)!=0) { //If auth is required
         return ERR_NONAUTH;
     }
 
-    string_t post_param=read_post_data(sock,http_param, method_id,read_b);
+    string_t post_param=read_post_data(sock,connection_prop->http_param, connection_prop->method_id,read_b);
 
-    int strfile_l=strlen(page)+strlen(real_basedir)+INDEXMAXLEN+1;
+    int strfile_l=strlen(connection_prop->page)+strlen(real_basedir)+INDEXMAXLEN+1;
     char * strfile=malloc(strfile_l);//buffer for filename
     if (strfile==NULL) {
         free(post_param.data);
         return ERR_NOMEM;//If no memory is available
     }
-    int strfile_e = snprintf(strfile,strfile_l,"%s%s",real_basedir,page);//Prepares the string
+    int strfile_e = snprintf(strfile,strfile_l,"%s%s",real_basedir,connection_prop->page);//Prepares the string
     int retval=0;//Return value after sending the page
 
     int f_mode=fileIsA(strfile);//Get file's mode
@@ -293,9 +295,8 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 
         if (!endsWith(strfile,"/")) {//Putting the ending / and redirect
             char* head=malloc(strfile_l+12);//12 is the size for the location header
-            snprintf(head,strfile_l+12,"Location: %s/\r\n",page);
-            send_http_header_full(sock,303,0,head,true,-1);
-
+            snprintf(head,strfile_l+12,"Location: %s/\r\n",connection_prop->page);
+            send_http_header_full(sock,303,0,head,true,-1,connection_prop);
 
             free(head);
         } else {
@@ -308,8 +309,8 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
                 snprintf(index_name,INDEXMAXLEN,"%s",indexes[i]);//Add INDEX to the url
                 if (file_exists(strfile)) { //If index exists, redirect to it
                     char* head=malloc(strfile_l+12);//12 is the size for the location header
-                    snprintf(head,strfile_l+12,"Location: %s%s\r\n",page,indexes[i]);
-                    send_http_header_full(sock,303,0,head,true,-1);
+                    snprintf(head,strfile_l+12,"Location: %s%s\r\n",connection_prop->page,indexes[i]);
+                    send_http_header_full(sock,303,0,head,true,-1,connection_prop);
 
                     free(head);
                     index_found=true;
@@ -319,19 +320,19 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
 
             strfile[strfile_e]=0; //Removing the index part
             if (index_found==false) {//If no index was found in the dir
-                writeDir(sock,strfile,real_basedir);
+                writeDir(sock,strfile,real_basedir,connection_prop);
             }
         }
     } else if (file_exists(strfile)) {//Requested an existing file
 
         if (exec_script) { //Scripts enabled
-            if (endsWith(page,".php")) { //Script php
-                retval=execPage(sock,page,strfile,params,CGI_PHP,http_param,&post_param,method,ip_addr,real_basedir);
+            if (endsWith(connection_prop->page,".php")) { //Script php
+                retval=execPage(sock,connection_prop->page,strfile,connection_prop->get_params,CGI_PHP,connection_prop->http_param,&post_param,connection_prop->method,connection_prop->ip_addr,real_basedir);
             } else { //Normal file
-                retval= writeFile(sock,strfile,http_param);
+                retval= writeFile(sock,strfile,connection_prop);
             }
         } else { //Scripts disabled
-            retval= writeFile(sock,strfile,http_param);
+            retval= writeFile(sock,strfile,connection_prop);
         }
     } else {//File doesn't exist
         retval=ERR_FILENOTFOUND;
@@ -345,11 +346,11 @@ int sendPage(int sock,char * page,char * http_param,int method_id,char * method,
     case 0:
         return 0;
     case ERR_BRKPIPE:
-        return send_err(sock,500,"Internal server error",ip_addr);
+        return send_err(sock,500,"Internal server error",connection_prop->ip_addr);
     case ERR_FILENOTFOUND:
-        return send_err(sock,404,"Page not found",ip_addr);
+        return send_err(sock,404,"Page not found",connection_prop->ip_addr);
     case ERR_NOMEM:
-        return send_err(sock,503,"Service Unavailable",ip_addr);
+        return send_err(sock,503,"Service Unavailable",connection_prop->ip_addr);
     }
     return 0; //Make gcc happy
 }
@@ -524,7 +525,7 @@ int execPage(int sock, char * file,char* strfile, char * params,char * executor,
 This function writes on the specified socket an html page containing the list of files within the
 specified directory.
 */
-int writeDir(int sock, char* page,char* real_basedir) {
+int writeDir(int sock, char* page,char* real_basedir,connection_t* connection_prop) {
     /*
     Determines if has to show the link to parent dir or not.
     If page is the basedir, it won't show the link to ..
@@ -546,7 +547,7 @@ int writeDir(int sock, char* page,char* real_basedir) {
         return ERR_FILENOTFOUND;
     } else { //If there are no errors sends the page
         int pagelen=strlen(html);
-        send_http_header_full(sock,200,pagelen,NULL,true,-1);
+        send_http_header_full(sock,200,pagelen,NULL,true,-1,connection_prop);
         write(sock,html,pagelen);
     }
 
@@ -566,8 +567,9 @@ strfile is the file to compress and send
 size is the size of the uncompressed file
 */
 #ifdef __COMPRESSION
-int writeCompressedFile(int sock, char*strfile,unsigned int size,time_t timestamp) {
-    send_http_header_full(sock,200,size,"Connection: close\r\nContent-Encoding: gzip\r\n",false,timestamp);
+int writeCompressedFile(int sock, char*strfile,unsigned int size,time_t timestamp,connection_t* connection_prop ) {
+    connection_prop->keep_alive=false;
+    send_http_header_full(sock,200,size,"Connection: close\r\nContent-Encoding: gzip\r\n",false,timestamp,connection_prop);
     int pid=fork();
 
     if (pid==0) { //child, executing gzip
@@ -602,7 +604,7 @@ send large files or not.
 If the file is larger, it will be sent using writeCompressedFile,
 see that function for details.
 */
-int writeFile(int sock,char * strfile,char *http_param) {
+int writeFile(int sock,char * strfile, connection_t* connection_prop) {
     char a[RBUFFER]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
     int fp=open(strfile,O_RDONLY | O_LARGEFILE);
@@ -615,11 +617,11 @@ int writeFile(int sock,char * strfile,char *http_param) {
     fstat(fp, &stat_f);
 
     //If the file has the same date, there is no need of sending it again
-    if (get_param_value(http_param,"If-None-Match",a,RBUFFER)) {//Find if it is a range request
+    if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER)) {//Find if it is a range request
         time_t etag=(time_t)strtol(a+1,NULL,0);
         if (stat_f.st_mtime==etag) {//Browser has the item in its cache, sending 304
             close(fp);
-            send_http_header_full(sock,304,0,NULL,true,etag);
+            send_http_header_full(sock,304,0,NULL,true,etag,connection_prop);
             return 0;
         }
 
@@ -628,7 +630,7 @@ int writeFile(int sock,char * strfile,char *http_param) {
     if (stat_f.st_size>SIZE_COMPRESS_MIN && stat_f.st_size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
         char* accept;
 
-        if ((accept=strstr(http_param,"Accept-Encoding:"))!=NULL) {
+        if ((accept=strstr(connection_prop->http_param,"Accept-Encoding:"))!=NULL) {
             char* end=strstr(accept,"\r\n");
 
             //Avoid to parse the entire header.
@@ -638,7 +640,7 @@ int writeFile(int sock,char * strfile,char *http_param) {
 
             if (gzip!=NULL) {
                 close(fp);
-                return writeCompressedFile(sock,strfile, stat_f.st_size,stat_f.st_mtime);
+                return writeCompressedFile(sock,strfile, stat_f.st_size,stat_f.st_mtime,connection_prop);
             }
         }
     }
@@ -653,7 +655,7 @@ int writeFile(int sock,char * strfile,char *http_param) {
     off_t count=stat_f.st_size;//Bytes to send to the client
 
 #ifdef __RANGE
-    if (get_param_value(http_param,"Range",a,RBUFFER)) {//Find if it is a range request
+    if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER)) {//Find if it is a range request
         int from,to;
 
         {//Locating from and to
@@ -677,12 +679,12 @@ int writeFile(int sock,char * strfile,char *http_param) {
         lseek(fp,from,SEEK_SET);
         count=to-from+1;
 
-        send_http_header_full(sock,206,count,a,true,stat_f.st_mtime);
+        send_http_header_full(sock,206,count,a,true,stat_f.st_mtime,connection_prop);
 
     } else //Normal request
 #endif
     {
-        send_http_header_full(sock,200,stat_f.st_size,NULL,true,stat_f.st_mtime);
+        send_http_header_full(sock,200,stat_f.st_size,NULL,true,stat_f.st_mtime,connection_prop);
     }
 
     int reads,wrote;
@@ -805,11 +807,11 @@ int send_http_header_scode(int sock,char* code, unsigned int size,char* headers)
 This function checks if the authentication can be granted or not calling the external program.
 Returns 0 if authorization is granted.
 */
-int check_auth(int sock, char* http_param, char * method, char * page, char * ip_addr) {
+int check_auth(int sock, connection_t* connection_prop) {
     char username[PWDLIMIT*2];
     char* password=username; //will be changed if there is a password
 
-    char* auth=strstr(http_param,"Authorization: Basic ");//Locates the auth information
+    char* auth=strstr(connection_prop->http_param,"Authorization: Basic ");//Locates the auth information
     if (auth==NULL) { //No auth informations
         username[0]=0;
         //password[0]=0;
@@ -856,7 +858,7 @@ int check_auth(int sock, char* http_param, char * method, char * page, char * ip
         if (auth_str==NULL) {
             return -1;
         }
-        int auth_str_l=snprintf(auth_str,HEADBUF+PWDLIMIT*2,"%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",page,ip_addr,method,username,password,http_param);
+        int auth_str_l=snprintf(auth_str,HEADBUF+PWDLIMIT*2,"%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",connection_prop->page,connection_prop->ip_addr,connection_prop->method,username,password,connection_prop->http_param);
         write(s,auth_str,auth_str_l);
         if (read(s,auth_str,1)==0) {//No output, ok
             result=0;
@@ -866,7 +868,7 @@ int check_auth(int sock, char* http_param, char * method, char * page, char * ip
     }
 
     if (result!=0) { //Failed
-        request_auth(sock,page);//Sends a request for authentication
+        request_auth(sock,connection_prop->page);//Sends a request for authentication
     }
 
     return result;
@@ -935,7 +937,7 @@ Content says if the size is for content-lenght or for entity-length
 
 Timestamp is the timestamp for the content. Set to -1 to use the current timestamp
 */
-int send_http_header_full(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp) {
+int send_http_header_full(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
     int len_head,wrote;
     char *head=malloc(HEADBUF);
     char* h_ptr=head;
@@ -943,8 +945,13 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
 
     if (head==NULL)return ERR_NOMEM;
     if (headers==NULL) headers="";
-
-    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\n",code);
+    if (connection_prop->protocol_version!=HTTP_1_1 && connection_prop->keep_alive==true) {
+        //Putting explicit keep-alive header, since client is not 1.1 but is using keep alive
+        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\nConnection: Keep-Alive\r\n",code);
+    } else {
+        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\n",code);
+    }
+    
     head+=len_head;
     left_head-=len_head;
     

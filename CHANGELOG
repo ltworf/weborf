@@ -5,6 +5,8 @@
 - Fixed bug: malformed range header was able to cause segfault (Rev 251)
 - Support for Last-Modified header (Rev 252)
 - Introduced optimizations in parsing request and sending an header
+- Code refactory to reduce amount of passed parameters
+- Will now send connection header if an old client is using keep-alive
 
 0.10
 - Pipe with scripts are now closed

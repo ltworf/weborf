@@ -1,10 +1,9 @@
 - CONFIGURATION
-Configuration can be done by modifying options.h and compiling.
-Explaination of paramethers can be found within the file itself.
-
 Base directory, port and interface to listen to can be set using command line
 To see command line options run weborf -h
 
+Further configuration can be done by modifying options.h and compiling.
+Explaination of paramethers can be found within the file itself.
 
 - COMPILING
 make clean

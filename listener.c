@@ -344,10 +344,8 @@ int main(int argc, char * argv[]) {
     //Infinite cycle, accept connections
 #ifdef IPV6
     while ((s1 = accept(s, (struct sockaddr *) &farAddr, &farAddrL)) != -1) {
-
 #else
     while ((s1 = accept(s, (struct sockaddr *) &farAddr,(socklen_t *)&farAddrL)) != -1) {
-
 #endif
 
         if (s1>=0  && t_free>0) { //Adds s1 to the queue

@@ -52,10 +52,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "buffered_reader.h"
 
+//Request
 #define INVALID -1
 #define GET 0
 #define POST 1
 
+//Errors
 #define ERR_NOTHTTP -6
 #define ERR_NONAUTH -5
 #define ERR_SOCKWRITE -4
@@ -63,17 +65,36 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define ERR_FILENOTFOUND -2
 #define ERR_BRKPIPE -1
 
+//Protocol version
+#define HTTP_0_9 0
+#define HTTP_1_0 1
+#define HTTP_1_1 2
+
+
 typedef struct {
     ssize_t len; //length of the string
     char * data;//Pointer to string
 } string_t;
 
-int writeDir(int sock, char* page,char* real_basedir);
+typedef struct {
+    char* ip_addr;//Pointer to ip address
+    bool keep_alive;//True if we are using pipelining
+    short int protocol_version;
+    
+    int method_id; //Index of the http method used
+    char * method; //String version of the http method used
+    char * http_param; //Param string
+    char * page; //Requested URI
+    char* get_params;
+} connection_t;
+
+
+int writeDir(int sock, char* page,char* real_basedir,connection_t* connection_prop);
 void * instance(void *);
-int sendPage(int sock,char * page,char * http_param,int method_id,char * method,char* ip_addr,buffered_read_t* read_b);
-int writeFile(int sock,char * strfile,char *http_param);
+int sendPage(int sock,buffered_read_t* read_b, connection_t* connection_prop);
+int writeFile(int sock,char * strfile, connection_t* connection_prop);
 #ifdef __COMPRESSION
-int writeCompressedFile(int sock, char*strfile,unsigned int size,time_t timestamp);
+int writeCompressedFile(int sock, char*strfile,unsigned int size,time_t timestamp,connection_t* connection_prop);
 #endif
 int execPage(int sock, char * file,char*strfile, char * params,char * executor,char * http_param,string_t* post_param,char * method,char* ip_addr,char* real_basedir);
 int send_err(int sock,int err,char* descr,char* ip_addr);
@@ -81,10 +102,10 @@ int send_http_header_scode(int sock,char* code, unsigned int size,char* headers)
 void piperr();
 void modURL(char* url);
 int request_auth(int sock,char* descr);
-int check_auth(int sock, char* http_param, char * method, char * page, char * ip_addr);
+int check_auth(int sock, connection_t* connection_prop);
 string_t read_post_data(int sock,char* http_param,int method_id,buffered_read_t* read_b);
 char* get_basedir(char* http_param);
-void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,char* ip_addr,int id);
-int send_http_header_full(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp);
+void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,int id);
+int send_http_header_full(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop);
 #endif
 
