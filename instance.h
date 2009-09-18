@@ -80,13 +80,11 @@ typedef struct {
     char* ip_addr;//Pointer to ip address
     bool keep_alive;//True if we are using pipelining
     short int protocol_version;
-
     int method_id; //Index of the http method used
-    char * method; //String version of the http method used
-    char * http_param; //Param string
-    char * page; //Requested URI
+    char* method; //String version of the http method used
+    char* http_param; //Param string
+    char* page; //Requested URI
     char* get_params; //Params in the URI, after the ? char
-    
     char* strfile; //File on filesystem
     ssize_t strfile_len; //Length of string strfile
 } connection_t;

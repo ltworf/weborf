@@ -7,6 +7,7 @@
 - Introduced optimizations in parsing request and sending an header
 - Code refactory to reduce amount of passed parameters
 - Will now send connection header if an old client is using keep-alive
+- Corrected sending post data to cgi-bin
 
 0.10
 - Pipe with scripts are now closed

@@ -367,11 +367,17 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
     int wpipe[2];//Pipe's file descriptor
     int ipipe[2];//Pipe's file descriptor, used to pass POST on script's standard input
 
+    //Pipe created and used only if there is POST data to send to the script
+    if (post_param->data!=NULL) {
+        pipe(ipipe);//Pipe to comunicate with the child
+    }
+
+    //Pipe to get the output of the child
     pipe(wpipe);//Pipe to comunicate with the child
 
     if ((wpid=fork())<0) { //Error, returns a no memory error
 #ifdef SENDINGDBG
-    syslog(LOG_ERR,"Unable to fork to execute the file %s",connection_prop->strfile);
+        syslog(LOG_ERR,"Unable to fork to execute the file %s",connection_prop->strfile);
 #endif
         if (post_param->data!=NULL) {
             close(ipipe[0]);
@@ -381,13 +387,6 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         close(wpipe[0]);
         return ERR_NOMEM;
     } else if (wpid==0) { //Child, executes the script
-        if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
-            //Send post data to script's stdin
-            pipe(ipipe);//Pipe to comunicate with the child
-            write(ipipe[1],post_param->data,post_param->len);
-            close (ipipe[1]); //Closes unused end of the pipe
-        }
-
         close (wpipe[0]); //Closes unused end of the pipe
 
         fclose (stdout); //Closing the stdout
@@ -395,7 +394,7 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         dup(wpipe[1]); //Redirects the stdout
         dup(wpipe[1]); //Redirects the stderr
 
-        //Redirecting standard input
+        //Redirecting standard input only if there is POST data
         if (post_param->data!=NULL) {//Send post data to script's stdin
             fclose(stdin);
             dup(ipipe[0]);
@@ -453,14 +452,15 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         exit(1);
 
     } else { //Father: reads from pipe and sends
-
+        if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
+            //Send post data to script's stdin
+            write(ipipe[1],post_param->data,post_param->len);
+            close (ipipe[0]); //Closes unused end of the pipe
+            close (ipipe[1]); //Closes the pipe
+        }
 
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
-
-        if (post_param->data!=NULL) {
-            close(ipipe[0]);
-        }
 
         //Large buffer, must contain the output of the script
         char* header_buf=malloc(MAXSCRIPTOUT+HEADBUF);
@@ -694,7 +694,7 @@ int write_file(int sock,connection_t* connection_prop) {
         wrote=write(sock,buf,reads);
         if (wrote!=reads) { //Error writing to the socket
 #ifdef SOCKETDBG
-    syslog(LOG_ERR,"Unable to send %s: error writing to the socket",connection_prop->strfile);
+            syslog(LOG_ERR,"Unable to send %s: error writing to the socket",connection_prop->strfile);
 #endif
             break;
         }
