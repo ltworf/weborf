@@ -8,6 +8,9 @@
 - Code refactory to reduce amount of passed parameters
 - Will now send connection header if an old client is using keep-alive
 - Corrected sending post data to cgi-bin
+- Fixed REQUEST_URI header which was broken some revisions ago
+- Doesn't send CGI errors and warning to the client anymore
+- Shows CGI errors on standard error, but an option in options.h can hide them
 
 0.10
 - Pipe with scripts are now closed

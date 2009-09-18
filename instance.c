@@ -390,10 +390,11 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         close (wpipe[0]); //Closes unused end of the pipe
 
         fclose (stdout); //Closing the stdout
-        fclose (stderr);
         dup(wpipe[1]); //Redirects the stdout
-        dup(wpipe[1]); //Redirects the stderr
 
+#ifdef HIDE_CGI_ERRORS
+        fclose (stderr); //Not printing any error
+#endif
         //Redirecting standard input only if there is POST data
         if (post_param->data!=NULL) {//Send post data to script's stdin
             fclose(stdin);
@@ -429,7 +430,8 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
 
             //file and params were the same string.
             //Joining them again temporarily
-            int delim=connection_prop->http_param-connection_prop->page;
+            int delim=connection_prop->get_params-connection_prop->page-1;
+            //printf("delim=%d\nstrlen=%d\n",delim,strlen(connection_prop->page));
             connection_prop->page[delim]='?';
             setenv("REQUEST_URI",connection_prop->page,true);
             connection_prop->page[delim]='\0';
