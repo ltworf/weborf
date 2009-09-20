@@ -7,6 +7,7 @@ else
 version=$WEBORF_VERSION
 fi
 
+echo "Format: 1.0"
 echo "Source: weborf"
 echo "Binary: weborf"
 echo "Architecture: any"
