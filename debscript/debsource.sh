@@ -16,9 +16,20 @@ echo "Copied in /tmp"
 cd /tmp/weborf_$version
 make clean
 
-echo generating dsc file
-$origdir/debscript/gencontrol.sh dsc > $origdir/../weborf_$version.dsc
-
 echo creating tarball
 cd /tmp
 tar -cvvzf $origdir/../weborf_$version.tar.gz weborf_$version
+
+echo generating dsc file
+$origdir/debscript/gencontrol.sh dsc > $origdir/../weborf_$version.dsc
+
+echo appending hashes
+echo "Files:" >> $origdir/../weborf_$version.dsc
+
+md5=`md5sum $origdir/../weborf_$version.tar.gz | cut -d' ' -f1`
+size=`ls -l $origdir/../weborf_$version.tar.gz  | cut -d' ' -f5`
+filename=weborf_$version.tar.gz
+echo " $md5 $size $filename">> $origdir/../weborf_$version.dsc
+
+echo "sign dsc file"
+gpg --clearsign -s $origdir/../weborf_$version.dsc
