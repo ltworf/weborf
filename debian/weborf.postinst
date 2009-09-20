@@ -45,4 +45,4 @@ case "$1" in
     ;;
 esac
 
-update-rc.d gpm defaults >/dev/null
+#update-rc.d gpm defaults >/dev/null
