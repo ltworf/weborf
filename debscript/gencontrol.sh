@@ -1,8 +1,16 @@
 #!/bin/bash
+
+if test -z $WEBORF_VERSION
+then
+version=`./weborf -v | fgrep Weborf | cut -d' ' -f2`
+else
+version=$WEBORF_VERSION
+fi
+
 echo "Source: weborf"
 echo "Binary: weborf"
 echo "Architecture: any"
-echo "Version: "`./weborf -v | fgrep Weborf | cut -d' ' -f2`
+echo "Version: "$version
 echo "Maintainer: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>"
 echo "Homepage: http://galileo.dmi.unict.it/wiki/weborf/"
 echo "Standards-Version: 3.8.3"
@@ -21,7 +29,7 @@ fi
 
 echo ""
 echo "Package: weborf"
-echo "Version: "`./weborf -v | fgrep Weborf | cut -d' ' -f2`
+echo "Version: "$version
 echo "Architecture: "`apt-cache show bash | fgrep Architecture | cut -d' ' -f2 | uniq`
 echo "Maintainer: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>"
 echo "Installed-Size: "`du -s --apparent-size weborf | cut -f1`

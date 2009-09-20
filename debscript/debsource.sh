@@ -2,6 +2,8 @@
 make
 origdir=`pwd`/
 version=`$origdir/weborf -v | fgrep Weborf | cut -d' ' -f2`
+export WEBORF_VERSION=$version
+
 pwd
 echo Weborf version $version
 
