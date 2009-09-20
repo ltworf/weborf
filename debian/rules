@@ -21,10 +21,8 @@ DOCS =          $(DESTDIR)/usr/share/doc/weborf
 
 
 clean:
-	dh_testdir
-	dh_testroot
 	$(MAKE) clean
-	dh_clean
+	
 
 binary: binary-indep binary-arch
 binary-arch: build
@@ -45,6 +43,8 @@ binary-indep: build
 	dh_builddeb
 
 build: clean
+	echo "Making binary"
 	$(MAKE)
+	echo "Generating control file"
 	debscript/gencontrol.sh>debian/control
 	dh_testdir

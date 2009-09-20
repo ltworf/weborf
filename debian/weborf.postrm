@@ -4,7 +4,11 @@ then
 	exit 0
 fi
 
-if test $1 == "purge"
-then
-	echo ok
+if [ "$1" = "purge" ]; then
+  echo " Removing weborf config file."
+  rm -f /etc/weborf.conf*
+  if [ -x "/usr/bin/ucf" ]; then
+    ucf --purge /etc/weborf.conf
+  fi
 fi
+
