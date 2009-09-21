@@ -281,13 +281,12 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
     string_t post_param=read_post_data(sock,connection_prop,read_b);
 
-    int strfile_max_len=strlen(connection_prop->page)+strlen(real_basedir)+INDEXMAXLEN+1;
-    connection_prop->strfile=malloc(strfile_max_len);//buffer for filename
+    connection_prop->strfile=malloc(URI_LEN);//buffer for filename
     if (connection_prop->strfile==NULL) {
         free(post_param.data);
         return ERR_NOMEM;//If no memory is available
     }
-    connection_prop->strfile_len = snprintf(connection_prop->strfile,strfile_max_len,"%s%s",real_basedir,connection_prop->page);//Prepares the string
+    connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",real_basedir,connection_prop->page);//Prepares the string
     int retval=0;//Return value after sending the page
 
     int f_mode=fileIsA(connection_prop->strfile);//Get file's mode
@@ -295,8 +294,8 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         bool index_found=false;
 
         if (!endsWith(connection_prop->strfile,"/")) {//Putting the ending / and redirect
-            char* head=malloc(strfile_max_len+12);//12 is the size for the location header
-            snprintf(head,strfile_max_len+12,"Location: %s/\r\n",connection_prop->page);
+            char* head=malloc(URI_LEN+12);//12 is the size for the location header
+            snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
             send_http_header_full(sock,303,0,head,true,-1,connection_prop);
 
             free(head);
@@ -309,8 +308,8 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
             for (i=0; i<indexes_l; i++) {
                 snprintf(index_name,INDEXMAXLEN,"%s",indexes[i]);//Add INDEX to the url
                 if (file_exists(connection_prop->strfile)) { //If index exists, redirect to it
-                    char* head=malloc(strfile_max_len+12);//12 is the size for the location header
-                    snprintf(head,strfile_max_len+12,"Location: %s%s\r\n",connection_prop->page,indexes[i]);
+                    char* head=malloc(URI_LEN+12);//12 is the size for the location header
+                    snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,indexes[i]);
                     send_http_header_full(sock,303,0,head,true,-1,connection_prop);
 
                     free(head);
@@ -407,7 +406,26 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
             setenv("SERVER_PORT",port,true);
         }
         setEnvVars(connection_prop->http_param); //Sets env var starting with HTTP
-        setIpEnv(); //Sets SERVER_ADDR var
+        {//Sets SERVER_ADDR var
+#ifdef IPV6
+            char loc_addr[INET6_ADDRSTRLEN];
+            struct sockaddr_in6 addr;//Local and remote address
+            socklen_t addr_l=sizeof(struct sockaddr_in);
+
+            getsockname(sock, (struct sockaddr *)&addr, &addr_l);
+            inet_ntop(AF_INET6, &addr.sin6_addr,(char*)&loc_addr, INET6_ADDRSTRLEN);
+#else
+            char loc_addr[INET6_ADDRSTRLEN];
+            struct sockaddr_in addr;
+            int addr_l=sizeof(struct sockaddr_in);
+
+            getsockname(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
+            inet_ntop(AF_INET, &addr.sin_addr,(char*)&loc_addr, INET_ADDRSTRLEN);
+#endif
+
+            setenv("SERVER_ADDR",(char*)&loc_addr,true);
+        }
+
         //Set CGI needed vars
         setenv("SERVER_SIGNATURE",SIGNATURE,true);
         setenv("SERVER_SOFTWARE",SIGNATURE,true);
