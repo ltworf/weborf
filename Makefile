@@ -46,8 +46,8 @@ debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader
 
 clean: 
 	debian/rules debclean || echo Nothing to do
-	cd debian; rm *.o weborf debug *.orig *~ || echo Nothing to do 
-	rm -f *~ *.orig
+	rm *.o weborf debug *.orig *~ || echo Nothing to do 
+	rm -f *~ *.orig || echo nothing to do
 purge: uninstall
 	rm -f $(CONFDIR)/weborf.conf || echo ok
 
