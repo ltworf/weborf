@@ -30,6 +30,9 @@ md5=`md5sum $origdir/../weborf_$version.tar.gz | cut -d' ' -f1`
 size=`ls -l $origdir/../weborf_$version.tar.gz  | cut -d' ' -f5`
 filename=weborf_$version.tar.gz
 echo " $md5 $size $filename">> $origdir/../weborf_$version.dsc
+echo "">> $origdir/../weborf_$version.dsc
 
 echo "sign dsc file"
-debsign $origdir/../weborf_$version.dsc
+#debsign $origdir/../weborf_$version.dsc
+gpg --clearsign -s $origdir/../weborf_$version.dsc
+mv $origdir/../weborf_$version.dsc.asc $origdir/../weborf_$version.dsc
