@@ -242,6 +242,13 @@ void setEnvVars(char * http_param) { //Sets Enviroment vars
     //Removes the 1st part with the protocol
     param=strtok_r(http_param,"\r\n",&lasts);
     setenv("SERVER_PROTOCOL",param,true);
+    
+    char hparam[200];
+    hparam[0]='H';
+    hparam[1]='T';
+    hparam[2]='T';
+    hparam[3]='P';
+    hparam[4]='_';    
 
     //Cycles parameters
     while ((param=strtok_r(NULL,"\r\n",&lasts))!=NULL) {
@@ -257,20 +264,12 @@ void setEnvVars(char * http_param) { //Sets Enviroment vars
                 break;
             }
         }
-        char hparam[200];
-        hparam[0]='H';
-        hparam[1]='T';
-        hparam[2]='T';
-        hparam[3]='P';
-        hparam[4]='_';
         hparam[5]='\0';
         strToUpper(param); //Converts to upper case
         strReplace(param,"-",'_');
         strcat(hparam,param);
         setenv(hparam,value,true);
     }
-
-
 }
 
 /**
