@@ -18,7 +18,7 @@ CC=gcc
 #DEFS=-Ddebug
 OFLAGS=-O3
 #-pedantic -Wextra
-CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat -pedantic
+CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat
 LDFLAGS=-lpthread
 #ARCHFLAGS=-m64
 
@@ -45,9 +45,9 @@ debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader
 	$(CC) -ggdb3 $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 clean: 
-	debian/rules debclean || echo Nothing to do
-	rm *.o weborf debug *.orig *~ || echo Nothing to do 
-	rm -f *~ *.orig || echo nothing to do
+	debian/rules debclean || echo
+	rm *.o weborf debug *.orig *~ || echo 
+	rm -f *~ *.orig || echo
 	cd debian; rm -rf tmp files debhelper.log substvars 
 purge: uninstall
 	rm -f $(CONFDIR)/weborf.conf || echo ok
