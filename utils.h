@@ -32,15 +32,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <arpa/inet.h>
 #include "mystring.h"
 
-bool file_exists (char *file);
-char *findNext (char *str);
-int list_dir (char *dir, char *html, unsigned int bufsize, bool parent);
-int fileIsA (char *file);
-void help ();
-void version ();
-void moo ();
-void setEnvVars (char *http_param);
-bool get_param_value (char *http_param, char *parameter, char *buf, int size);
-int setIpEnv ();
+bool file_exists(char *file);
+char *findNext(char *str);
+int list_dir(char *dir, char *html, unsigned int bufsize, bool parent);
+int fileIsA(char *file);
+void help();
+void version();
+void moo();
+void setEnvVars(char *http_param);
+bool get_param_value(char *http_param, char *parameter, char *buf,
+		     int size);
+int setIpEnv();
 
 #endif

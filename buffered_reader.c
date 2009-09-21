@@ -29,24 +29,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 This funcion inits the struct allocating a buffer of the specified size.
 It will return 0 on success and 1 on fail.
 */
-int
-buffer_init (buffered_read_t * buf, int size)
+int buffer_init(buffered_read_t * buf, int size)
 {
-  buf->buffer = malloc (sizeof (char *) * size);
-  buf->start = buf->buffer;
-  buf->end = buf->buffer;
-  buf->size = size;
+    buf->buffer = malloc(sizeof(char *) * size);
+    buf->start = buf->buffer;
+    buf->end = buf->buffer;
+    buf->size = size;
 
-  return (buf->buffer == NULL) ? 1 : 0;
+    return (buf->buffer == NULL) ? 1 : 0;
 }
 
 /**
 This function will free the memory allocated by the buffer used in the struct.
 */
-void
-buffer_free (buffered_read_t * buf)
+void buffer_free(buffered_read_t * buf)
 {
-  free (buf->buffer);
+    free(buf->buffer);
 }
 
 /**
@@ -59,64 +57,53 @@ Timeout duration is defined with the READ_TIMEOUT define.
 On some special cases, the read data could be less than the requested one. For example if
 end of file is reached and it is impossible to do further reads.
 */
-ssize_t
-buffer_read (int fd, void *b, ssize_t count, buffered_read_t * buf)
+ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf)
 {
-  ssize_t wrote = 0;		//Count of written bytes
-  ssize_t available, needed;
-  ssize_t r;
+    ssize_t wrote = 0;		//Count of written bytes
+    ssize_t available, needed;
+    ssize_t r;
 
-  while (wrote < count)
-    {
-      available = buf->end - buf->start;
-      needed = count - wrote;
+    while (wrote < count) {
+	available = buf->end - buf->start;
+	needed = count - wrote;
 
-      if (needed <= available)
-	{			//More data in buffer than needed
-	  memcpy (b, buf->start, needed);
-	  buf->start += needed;
-	  return wrote + needed;
-	}
-      else
-	{			//Requesting more data than available
-	  if (available > 0)
-	    {
-	      memcpy (b, buf->start, available);
-	      b += available;
-	      wrote += available;
+	if (needed <= available) {	//More data in buffer than needed
+	    memcpy(b, buf->start, needed);
+	    buf->start += needed;
+	    return wrote + needed;
+	} else {		//Requesting more data than available
+	    if (available > 0) {
+		memcpy(b, buf->start, available);
+		b += available;
+		wrote += available;
+	    }
+	    //Filing the buffer again
+	    buf->start = buf->buffer;
+
+	    {			//Timeout implementation
+		struct pollfd monitor[1];
+		monitor[0].fd = fd;	//File descriptor to monitor
+		monitor[0].events = POLLIN;	//Monitor on input events
+
+		//Waits the timeout or reads the data.
+		//If timeout is reached and no input is available
+		//will behave like the stream is closed.
+		if (poll(monitor, 1, READ_TIMEOUT) == 0) {
+		    r = 0;
+		} else {
+		    r = read(fd, buf->buffer, buf->size);
+		}
 	    }
 
-	  //Filing the buffer again
-	  buf->start = buf->buffer;
-
-	  {			//Timeout implementation
-	    struct pollfd monitor[1];
-	    monitor[0].fd = fd;	//File descriptor to monitor
-	    monitor[0].events = POLLIN;	//Monitor on input events
-
-	    //Waits the timeout or reads the data.
-	    //If timeout is reached and no input is available
-	    //will behave like the stream is closed.
-	    if (poll (monitor, 1, READ_TIMEOUT) == 0)
-	      {
-		r = 0;
-	      }
-	    else
-	      {
-		r = read (fd, buf->buffer, buf->size);
-	      }
-	  }
-
-	  if (r <= 0)
-	    {			//End of the stream
-	      buf->end = buf->start;
-	      return wrote;
+	    if (r <= 0) {	//End of the stream
+		buf->end = buf->start;
+		return wrote;
 	    }
-	  buf->end = buf->start + r;
+	    buf->end = buf->start + r;
 	}
 
     }				/*while */
-  return wrote;
+    return wrote;
 }
 
 

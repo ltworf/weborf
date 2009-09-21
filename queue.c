@@ -27,98 +27,89 @@ Inits the syncronized queue, allocating memory.
 Requires the syn_queue_t struct and the size of the queue itself.
 To deallocate the queue, use the q_free function.
 */
-int
-q_init (syn_queue_t * q, int size)
+int q_init(syn_queue_t * q, int size)
 {
-  q->num = q->head = q->tail = 0;
-  q->size = size;
+    q->num = q->head = q->tail = 0;
+    q->size = size;
 
 #ifdef IPV6
-  q->data =
-    (int *) malloc (sizeof (int) * size + sizeof (struct sockaddr_in) * size);
-  q->addr = (struct sockaddr_in6 *) q->data + sizeof (int) * size;
+    q->data =
+	(int *) malloc(sizeof(int) * size +
+		       sizeof(struct sockaddr_in) * size);
+    q->addr = (struct sockaddr_in6 *) q->data + sizeof(int) * size;
 #else
-  q->data =
-    (int *) malloc (sizeof (int) * size + sizeof (struct sockaddr_in) * size);
-  q->addr = (struct sockaddr_in *) q->data + sizeof (int) * size;
+    q->data =
+	(int *) malloc(sizeof(int) * size +
+		       sizeof(struct sockaddr_in) * size);
+    q->addr = (struct sockaddr_in *) q->data + sizeof(int) * size;
 #endif
 
-  if (q->data == NULL)
-    {				//Error, unable to allocate memory
-      return 1;
+    if (q->data == NULL) {	//Error, unable to allocate memory
+	return 1;
     }
 
-  pthread_mutex_init (&q->mutex, NULL);
-  pthread_cond_init (&q->for_space, NULL);
-  pthread_cond_init (&q->for_data, NULL);
-  q->n_wait_dt = q->n_wait_sp = 0;
+    pthread_mutex_init(&q->mutex, NULL);
+    pthread_cond_init(&q->for_space, NULL);
+    pthread_cond_init(&q->for_data, NULL);
+    q->n_wait_dt = q->n_wait_sp = 0;
 
-  return 0;
+    return 0;
 }
 
 /** Frees the memory taken by the queue.
 Requires the pointer to the queue struct
 */
-void
-q_free (syn_queue_t * q)
+void q_free(syn_queue_t * q)
 {
-  free (q->data);
+    free(q->data);
 }
 
 #ifdef IPV6
-int
-q_get (syn_queue_t * q, int *val, struct sockaddr_in6 *addr_)
+int q_get(syn_queue_t * q, int *val, struct sockaddr_in6 *addr_)
 {
 #else
-int
-q_get (syn_queue_t * q, int *val, struct sockaddr_in *addr_)
+int q_get(syn_queue_t * q, int *val, struct sockaddr_in *addr_)
 {
 #endif
-  pthread_mutex_lock (&q->mutex);
-  while (q->num == 0)
-    {
-      q->n_wait_dt++;
-      pthread_cond_wait (&q->for_data, &q->mutex);
+    pthread_mutex_lock(&q->mutex);
+    while (q->num == 0) {
+	q->n_wait_dt++;
+	pthread_cond_wait(&q->for_data, &q->mutex);
     }
-  *val = q->data[q->head];
-  *addr_ = q->addr[q->head];
+    *val = q->data[q->head];
+    *addr_ = q->addr[q->head];
 
-  q->head = (q->head + 1) % q->size;
-  if ((q->num-- == q->size) && (q->n_wait_sp > 0))
-    {
-      q->n_wait_sp--;
-      pthread_cond_signal (&q->for_space);
+    q->head = (q->head + 1) % q->size;
+    if ((q->num-- == q->size) && (q->n_wait_sp > 0)) {
+	q->n_wait_sp--;
+	pthread_cond_signal(&q->for_space);
     }				// unlock also needed after signal
-  pthread_mutex_unlock (&q->mutex);	//   or threads blocked on wait
-  return 0;			//   will not proceed
+    pthread_mutex_unlock(&q->mutex);	//   or threads blocked on wait
+    return 0;			//   will not proceed
 }
 
 
 #ifdef IPV6
-int
-q_put (syn_queue_t * q, int val, struct sockaddr_in6 addr_)
+int q_put(syn_queue_t * q, int val, struct sockaddr_in6 addr_)
 {
 #else
-int
-q_put (syn_queue_t * q, int val, struct sockaddr_in addr_)
+int q_put(syn_queue_t * q, int val, struct sockaddr_in addr_)
 {
 #endif
-  pthread_mutex_lock (&q->mutex);
-  while (q->num == q->size)
-    {
-      q->n_wait_sp++;
-      pthread_cond_wait (&q->for_space, &q->mutex);
+    pthread_mutex_lock(&q->mutex);
+    while (q->num == q->size) {
+	q->n_wait_sp++;
+	pthread_cond_wait(&q->for_space, &q->mutex);
     }
-  q->data[q->tail] = val;
-  q->addr[q->tail] = addr_;
+    q->data[q->tail] = val;
+    q->addr[q->tail] = addr_;
 
-  q->tail = (q->tail + 1) % q->size;
+    q->tail = (q->tail + 1) % q->size;
 
-  if ((q->num++ == 0) && (q->n_wait_dt > 0))
-    {
-      q->n_wait_dt--;
-      pthread_cond_signal (&q->for_data);
+    if ((q->num++ == 0) && (q->n_wait_dt > 0)) {
+	q->n_wait_dt--;
+	pthread_cond_signal(&q->for_data);
     }				// unlock also needed after signal
-  pthread_mutex_unlock (&q->mutex);	//   or threads blocked on wait
-  return 0;			//   will not proceed
+    pthread_mutex_unlock(&q->mutex);	//   or threads blocked on wait
+    return 0;			//   will not proceed
 }
