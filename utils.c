@@ -145,26 +145,6 @@ bool file_exists(char * file) {
 }
 
 /**
-Returns file's mode
--1 in case of error
-*/
-int fileIsA(char* file) {
-
-    struct stat buf;
-    if (stat(file, &buf) < 0) {
-        return -1;
-    }
-    return (buf.st_mode);
-}
-
-/**
-Finds the first 0 char and returns a pointer to the next char
-*/
-char* findNext(char* str) {
-    return (char *)(str+strlen(str)+2);
-}
-
-/**
 Prints version information
 */
 void version() {

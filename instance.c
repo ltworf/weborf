@@ -289,8 +289,18 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",real_basedir,connection_prop->page);//Prepares the string
     int retval=0;//Return value after sending the page
 
-    int f_mode=fileIsA(connection_prop->strfile);//Get file's mode
-    if (S_ISDIR(f_mode)) {//Requested a directory
+    //Opening file and doing stat
+    if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY | O_LARGEFILE))<0) {
+        //File doesn't exist. Must return errorcode
+        retval=ERR_FILENOTFOUND;
+        goto escape;
+    }
+
+    fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
+    int f_mode=connection_prop->strfile_stat.st_mode;//Get file's mode
+
+
+    if (S_ISDIR(f_mode)) {//Requested a directory without ending /
         bool index_found=false;
 
         if (!endsWith(connection_prop->strfile,"/")) {//Putting the ending / and redirect
@@ -299,7 +309,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
             send_http_header_full(sock,303,0,head,true,-1,connection_prop);
 
             free(head);
-        } else {
+        } else {//Requested directory with /. Search for index files or list directory
 
             char* index_name=&connection_prop->strfile[connection_prop->strfile_len];//Pointer to where to write the filename
             int i;
@@ -323,8 +333,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
                 write_dir(sock,real_basedir,connection_prop);
             }
         }
-    } else if (file_exists(connection_prop->strfile)) {//Requested an existing file
-
+    } else {//Requested an existing file
         if (exec_script) { //Scripts enabled
             if (endsWith(connection_prop->page,".php")) { //Script php
                 retval=exec_page(sock,CGI_PHP,&post_param,real_basedir,connection_prop);
@@ -334,13 +343,16 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         } else { //Scripts disabled
             retval= write_file(sock,connection_prop);
         }
-    } else {//File doesn't exist
-        retval=ERR_FILENOTFOUND;
     }
 
+escape:
     free(post_param.data);
     free(connection_prop->strfile);
 
+    //Closing local file previously opened
+    if (connection_prop->strfile_fd>=0) {
+        close(connection_prop->strfile_fd);
+    }
 
     switch (retval) {
     case 0:
@@ -626,27 +638,17 @@ see that function for details.
 int write_file(int sock,connection_t* connection_prop) {
     char a[RBUFFER]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
-    int fp=open(connection_prop->strfile,O_RDONLY | O_LARGEFILE);
-    if (fp<0) { //open returned an error
-        return ERR_FILENOTFOUND;
-    }
-
-    //get properties of file
-    struct stat stat_f;
-    fstat(fp, &stat_f);
-
     //If the file has the same date, there is no need of sending it again
     if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER)) {//Find if it is a range request
         time_t etag=(time_t)strtol(a+1,NULL,0);
-        if (stat_f.st_mtime==etag) {//Browser has the item in its cache, sending 304
-            close(fp);
+        if (connection_prop->strfile_stat.st_mtime==etag) {//Browser has the item in its cache, sending 304
             send_http_header_full(sock,304,0,NULL,true,etag,connection_prop);
             return 0;
         }
 
     }
 #ifdef __COMPRESSION
-    if (stat_f.st_size>SIZE_COMPRESS_MIN && stat_f.st_size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
+    if (connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN && connection_prop->strfile_stat.st_size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
         char* accept;
 
         if ((accept=strstr(connection_prop->http_param,"Accept-Encoding:"))!=NULL) {
@@ -658,7 +660,6 @@ int write_file(int sock,connection_t* connection_prop) {
             end[0]='\r';
 
             if (gzip!=NULL) {
-                close(fp);
                 return write_compressed_file(sock,stat_f.st_size,stat_f.st_mtime,connection_prop);
             }
         }
@@ -667,11 +668,10 @@ int write_file(int sock,connection_t* connection_prop) {
 
     char* buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
-        close(fp);
         return ERR_NOMEM;//If no memory is available
     }
 
-    off_t count=stat_f.st_size;//Bytes to send to the client
+    off_t count=connection_prop->strfile_stat.st_size;//Bytes to send to the client
 
 #ifdef __RANGE
     if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER)) {//Find if it is a range request
@@ -683,7 +683,6 @@ int write_file(int sock,connection_t* connection_prop) {
             char* sep=strstr(eq,"-");
             if (eq==NULL||sep==NULL) {//Invalid data in Range header.
                 free(buf);
-                close(fp);
                 return ERR_NOTHTTP;
             }
             sep[0]=0;
@@ -692,24 +691,24 @@ int write_file(int sock,connection_t* connection_prop) {
         }
 
         if (to==0) { //If no to is specified, it is to the end of the file
-            to=stat_f.st_size-1;
+            to=connection_prop->strfile_stat.st_size-1;
         }
-        snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%d-%d/%d\r\n",from,to,(int)stat_f.st_size);
-        lseek(fp,from,SEEK_SET);
+        snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%d-%d/%d\r\n",from,to,(int)connection_prop->strfile_stat.st_size);
+        lseek(connection_prop->strfile_fd,from,SEEK_SET);
         count=to-from+1;
 
-        send_http_header_full(sock,206,count,a,true,stat_f.st_mtime,connection_prop);
+        send_http_header_full(sock,206,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
 
     } else //Normal request
 #endif
     {
-        send_http_header_full(sock,200,stat_f.st_size,NULL,true,stat_f.st_mtime,connection_prop);
+        send_http_header_full(sock,200,connection_prop->strfile_stat.st_size,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
     }
 
     int reads,wrote;
 
     //Sends file
-    while (count>0 && (reads=read(fp, buf, FILEBUF<count? FILEBUF:count ))!=0) {
+    while (count>0 && (reads=read(connection_prop->strfile_fd, buf, FILEBUF<count? FILEBUF:count ))!=0) {
         count-=reads;
         wrote=write(sock,buf,reads);
         if (wrote!=reads) { //Error writing to the socket
@@ -720,7 +719,6 @@ int write_file(int sock,connection_t* connection_prop) {
         }
     }
 
-    close(fp);//File on filesystem
     free(buf);
     return 0;
 }

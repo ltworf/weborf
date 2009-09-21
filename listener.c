@@ -387,7 +387,10 @@ void quit() {
 Sets the base dir, making sure that it is really a directory.
  */
 void setBasedir(char * bd) {
-    int f_mode=fileIsA(bd);//Gets file's mode
+    struct stat stat_buf;
+    stat(bd, &stat_buf);
+
+    int f_mode=stat_buf.st_mode;//Get file's mode
     if (!S_ISDIR(f_mode)) {
         //Not a directory
         printf("%s must be a directory\n",bd);

@@ -87,6 +87,8 @@ typedef struct {
     char* get_params; //Params in the URI, after the ? char
     char* strfile; //File on filesystem
     ssize_t strfile_len; //Length of string strfile
+    struct stat strfile_stat; //Stat of strfile
+    int strfile_fd; //File descriptor for strfile
 } connection_t;
 
 
