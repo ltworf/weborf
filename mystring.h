@@ -26,13 +26,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdbool.h>
 #include <ctype.h>
 
-char* nullParams(char * string);
-int splitParams(char * string);
-bool endsWith(char * str, char * end);
-void delChar(char* string,int pos,int n);
-void strReplace(char* string,char* substr, char with);
-void replaceEscape(char * string);
-int removeCrLf(char*buf);
-void strToUpper(char*str);
+char *nullParams (char *string);
+int splitParams (char *string);
+bool endsWith (char *str, char *end);
+void delChar (char *string, int pos, int n);
+void strReplace (char *string, char *substr, char with);
+void replaceEscape (char *string);
+int removeCrLf (char *buf);
+void strToUpper (char *str);
 
 #endif

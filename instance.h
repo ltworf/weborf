@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _GNU_SOURCE
 
 
-#ifndef O_LARGEFILE //Needed to compile on Mac, where this doesn't exist
+#ifndef O_LARGEFILE		//Needed to compile on Mac, where this doesn't exist
 #define O_LARGEFILE 0
 #endif
 
@@ -36,7 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
-#include <syslog.h>	//To use syslog
+#include <syslog.h>		//To use syslog
 #include "options.h"
 #include <string.h>
 #include <sys/stat.h>
@@ -47,7 +47,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <stdbool.h>	//Adds boolean type
+#include <stdbool.h>		//Adds boolean type
 #include <string.h>
 
 #include "buffered_reader.h"
@@ -71,44 +71,54 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HTTP_1_1 2
 
 
-typedef struct {
-    ssize_t len; //length of the string
-    char * data;//Pointer to string
+typedef struct
+{
+  ssize_t len;			//length of the string
+  char *data;			//Pointer to string
 } string_t;
 
-typedef struct {
-    char* ip_addr;//Pointer to ip address
-    bool keep_alive;//True if we are using pipelining
-    short int protocol_version;
-    int method_id; //Index of the http method used
-    char* method; //String version of the http method used
-    char* http_param; //Param string
-    char* page; //Requested URI
-    char* get_params; //Params in the URI, after the ? char
-    char* strfile; //File on filesystem
-    ssize_t strfile_len; //Length of string strfile
-    struct stat strfile_stat; //Stat of strfile
-    int strfile_fd; //File descriptor for strfile
+typedef struct
+{
+  char *ip_addr;		//Pointer to ip address
+  bool keep_alive;		//True if we are using pipelining
+  short int protocol_version;
+  int method_id;		//Index of the http method used
+  char *method;			//String version of the http method used
+  char *http_param;		//Param string
+  char *page;			//Requested URI
+  char *get_params;		//Params in the URI, after the ? char
+  char *strfile;		//File on filesystem
+  ssize_t strfile_len;		//Length of string strfile
+  struct stat strfile_stat;	//Stat of strfile
+  int strfile_fd;		//File descriptor for strfile
 } connection_t;
 
 
-int write_dir(int sock, char* real_basedir,connection_t* connection_prop);
-void * instance(void *);
-int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop);
-int write_file(int sock,connection_t* connection_prop);
+int write_dir (int sock, char *real_basedir, connection_t * connection_prop);
+void *instance (void *);
+int send_page (int sock, buffered_read_t * read_b,
+	       connection_t * connection_prop);
+int write_file (int sock, connection_t * connection_prop);
 #ifdef __COMPRESSION
-int write_compressed_file(int sock,unsigned int size,time_t timestamp,connection_t* connection_prop);
+int write_compressed_file (int sock, unsigned int size, time_t timestamp,
+			   connection_t * connection_prop);
 #endif
-int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,connection_t* connection_prop);
-int send_err(int sock,int err,char* descr,char* ip_addr);
-int send_http_header_scode(int sock,char* code, unsigned int size,char* headers);
-void piperr();
-void modURL(char* url);
-int request_auth(int sock,char* descr);
-int check_auth(int sock, connection_t* connection_prop);
-string_t read_post_data(int sock,connection_t* connection_prop,buffered_read_t* read_b);
-char* get_basedir(char* http_param);
-void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id);
-int send_http_header_full(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop);
+int exec_page (int sock, char *executor, string_t * post_param,
+	       char *real_basedir, connection_t * connection_prop);
+int send_err (int sock, int err, char *descr, char *ip_addr);
+int send_http_header_scode (int sock, char *code, unsigned int size,
+			    char *headers);
+void piperr ();
+void modURL (char *url);
+int request_auth (int sock, char *descr);
+int check_auth (int sock, connection_t * connection_prop);
+string_t read_post_data (int sock, connection_t * connection_prop,
+			 buffered_read_t * read_b);
+char *get_basedir (char *http_param);
+void handle_requests (int sock, char *buf, buffered_read_t * read_b,
+		      int *bufFull, connection_t * connection_prop,
+		      long int id);
+int send_http_header_full (int sock, int code, unsigned int size,
+			   char *headers, bool content, time_t timestamp,
+			   connection_t * connection_prop);
 #endif
-

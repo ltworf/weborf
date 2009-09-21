@@ -42,13 +42,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define NOMEM 7
 
-void init_logger();
-void init_threads(unsigned int count);
-void quit();
-void setBasedir(char * bd);
-void* t_shape(void * nulla);
-void setAuthbin(char* bin);
-void chn_thread_count(int val);
-void set_new_uid(int uid);
+void init_logger ();
+void init_threads (unsigned int count);
+void quit ();
+void setBasedir (char *bd);
+void *t_shape (void *nulla);
+void setAuthbin (char *bin);
+void chn_thread_count (int val);
+void set_new_uid (int uid);
 
 #endif

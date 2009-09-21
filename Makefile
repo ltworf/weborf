@@ -18,7 +18,7 @@ CC=gcc
 #DEFS=-Ddebug
 OFLAGS=-O3
 #-pedantic -Wextra
-CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat
+CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat -pedantic
 LDFLAGS=-lpthread
 #ARCHFLAGS=-m64
 

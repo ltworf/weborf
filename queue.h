@@ -31,32 +31,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 
-typedef struct {
-    int	num, size;//Filled positions in the queue, and its maximum size
-    int head, tail;//pointers to head and tail of the round queue
-    int * data;//Socket with client
+typedef struct
+{
+  int num, size;		//Filled positions in the queue, and its maximum size
+  int head, tail;		//pointers to head and tail of the round queue
+  int *data;			//Socket with client
 
 #ifdef IPV6
-    struct sockaddr_in6 * addr;//Local and remote address
+  struct sockaddr_in6 *addr;	//Local and remote address
 #else
-    struct sockaddr_in * addr;
+  struct sockaddr_in *addr;
 #endif
 
-    pthread_mutex_t mutex;//mutex to modify the queue
-    pthread_cond_t for_space, for_data;
-    int n_wait_sp, n_wait_dt;
+  pthread_mutex_t mutex;	//mutex to modify the queue
+  pthread_cond_t for_space, for_data;
+  int n_wait_sp, n_wait_dt;
 } syn_queue_t;
 
-int q_init(syn_queue_t * q, int size);
+int q_init (syn_queue_t * q, int size);
 
 #ifdef IPV6
-int q_put(syn_queue_t * q, int val,struct sockaddr_in6 addr_);
-int q_get(syn_queue_t * q, int * val,struct sockaddr_in6 * addr_);
+int q_put (syn_queue_t * q, int val, struct sockaddr_in6 addr_);
+int q_get (syn_queue_t * q, int *val, struct sockaddr_in6 *addr_);
 #else
-int q_put(syn_queue_t * q, int val,struct sockaddr_in addr_);
-int q_get(syn_queue_t * q, int * val,struct sockaddr_in * addr_);
+int q_put (syn_queue_t * q, int val, struct sockaddr_in addr_);
+int q_get (syn_queue_t * q, int *val, struct sockaddr_in *addr_);
 #endif
 
-void q_free(syn_queue_t * q);
+void q_free (syn_queue_t * q);
 
 #endif

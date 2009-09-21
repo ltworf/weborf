@@ -21,8 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_BASE64_H
 #define WEBORF_BASE64_H
 
-void decode64(char*result,char*encoded);
-void decode4_64(char*res, char* group);
-char getCode(char c);
+void decode64 (char *result, char *encoded);
+void decode4_64 (char *res, char *group);
+char getCode (char c);
 
 #endif

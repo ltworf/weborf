@@ -66,7 +66,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NBUFFER 15
 //buffer to contain a range
 #define RBUFFER 128
-#define BUFFERED_READER_SIZE 512//256
+#define BUFFERED_READER_SIZE 512	//256
 //Buffer for text date
 #define DATEBUFFER 50
 #define URI_LEN 256

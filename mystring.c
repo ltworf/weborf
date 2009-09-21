@@ -23,10 +23,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /**
 This function converts a string to upper case
 */
-void strToUpper(char*str) {
-    int i =0;
-    while (str[i++]!=0) {
-        str[i]=toupper(str[i]);
+void
+strToUpper (char *str)
+{
+  int i = 0;
+  while (str[i++] != 0)
+    {
+      str[i] = toupper (str[i]);
     }
 }
 
@@ -35,14 +38,18 @@ void strToUpper(char*str) {
  * Returns the pointer to the params,
  * Returns NULL if no ? was found
  * */
-char* nullParams(char * string) {
-    char* p=strstr(string,"?");
-    if (p==NULL) {
-        return NULL;
+char *
+nullParams (char *string)
+{
+  char *p = strstr (string, "?");
+  if (p == NULL)
+    {
+      return NULL;
     }
-    p[0]='\0';
-    return &p[1];
+  p[0] = '\0';
+  return &p[1];
 }
+
 /**
 Replaces escape sequences in the form %HEXCODE with the correct char
 This is used for URLs, after the transformation the URL will probably
@@ -52,25 +59,29 @@ additional buffer will be needed.
 
 This function is in-place, doesn't create copies but changes the original string.
 */
-void replaceEscape(char * string) {
-    int i=0;
-    char e_seq[3];
-    e_seq[2]=0;
+void
+replaceEscape (char *string)
+{
+  int i = 0;
+  char e_seq[3];
+  e_seq[2] = 0;
 
-    //Parses the string
-    while (string[i]!=0) {
-        //Search for escape char %
-        if (string[i]=='%') {
-            //Puts hex value in the buffer
-            e_seq[0]=string[i+1];
-            e_seq[1]=string[i+2];
+  //Parses the string
+  while (string[i] != 0)
+    {
+      //Search for escape char %
+      if (string[i] == '%')
+	{
+	  //Puts hex value in the buffer
+	  e_seq[0] = string[i + 1];
+	  e_seq[1] = string[i + 2];
 
-            delChar(string,i,2);//Deletes 2 chars from the url
+	  delChar (string, i, 2);	//Deletes 2 chars from the url
 
-            //Replaces the 3rd character with the char corresponding to the escape
-            string[i]=strtol( e_seq , NULL, 16);
-        }
-        i++;
+	  //Replaces the 3rd character with the char corresponding to the escape
+	  string[i] = strtol (e_seq, NULL, 16);
+	}
+      i++;
     }
 }
 
@@ -79,13 +90,16 @@ This function replaces, within the string string, the substring substr with the 
 
 This function is in-place, doesn't create copies but changes the original string.
 */
-void strReplace(char* string,char* substr, char with) {
-    char* pointer;
-    int substrlen=strlen(substr);
+void
+strReplace (char *string, char *substr, char with)
+{
+  char *pointer;
+  int substrlen = strlen (substr);
 
-    while ((pointer=strstr (string, substr))!=NULL) {
-        delChar(pointer,0,substrlen-1);
-        pointer[0]=with;
+  while ((pointer = strstr (string, substr)) != NULL)
+    {
+      delChar (pointer, 0, substrlen - 1);
+      pointer[0] = with;
     }
 }
 
@@ -95,16 +109,20 @@ In case deleting of more chars than the string's len itself, the string will be 
 
 This function is in-place, doesn't create copies but changes the original string.
 */
-void delChar(char* string,int pos, int n) {
-    if (strlen (string) < n + pos) { //String is long enough
-        return;
+void
+delChar (char *string, int pos, int n)
+{
+  if (strlen (string) < n + pos)
+    {				//String is long enough
+      return;
     }
 
-    char *c1, *c2;
-    for (c1 = string + pos, c2 = c1 + n; *c2 != 0; c1++, c2++) {
-        *c1=*c2;
+  char *c1, *c2;
+  for (c1 = string + pos, c2 = c1 + n; *c2 != 0; c1++, c2++)
+    {
+      *c1 = *c2;
     }
-    *c1=0;
+  *c1 = 0;
 }
 
 
@@ -113,18 +131,22 @@ void delChar(char* string,int pos, int n) {
 This function changes param's separator from & to \0, to create several strings.
 Returns number of strings
 */
-int splitParams(char * string) {
-    int params=0;
-    int i;
-    int to=strlen(string);
+int
+splitParams (char *string)
+{
+  int params = 0;
+  int i;
+  int to = strlen (string);
 
-    for (i=0; i<to; i++) {
-        if (string[i]=='&') {
-            string[i]='\0';
-            params++;
-        }
+  for (i = 0; i < to; i++)
+    {
+      if (string[i] == '&')
+	{
+	  string[i] = '\0';
+	  params++;
+	}
     }
-    return params+1;
+  return params + 1;
 }
 
 /**
@@ -134,16 +156,20 @@ str String to compare
 end second string. If str ends with end, true is returned
 false otherwise
 */
-bool endsWith(char * str, char * end) {
-    int i;
-    int len_end=strlen(end);
-    int len_str=strlen(str);
+bool
+endsWith (char *str, char *end)
+{
+  int i;
+  int len_end = strlen (end);
+  int len_str = strlen (str);
 
-    for (i=1; i<=len_end; i++) {
-        if (end[len_end-i]!=str[len_str-i]) return false;
+  for (i = 1; i <= len_end; i++)
+    {
+      if (end[len_end - i] != str[len_str - i])
+	return false;
     }
 
-    return true;
+  return true;
 }
 
 /**
@@ -151,11 +177,12 @@ Removes cr lf chars from the beginning of the string
 
 This function is in-place, doesn't create copies but changes the original string.
 */
-int removeCrLf(char*buf) {//Removing initial \n or \r
-    int count=0;
-    while (buf[count]==10 || buf[count]==13)
-        count++;
-    delChar(buf,0,count);
-    return count;
+int
+removeCrLf (char *buf)
+{				//Removing initial \n or \r
+  int count = 0;
+  while (buf[count] == 10 || buf[count] == 13)
+    count++;
+  delChar (buf, 0, count);
+  return count;
 }
-
