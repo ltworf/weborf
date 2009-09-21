@@ -54,6 +54,7 @@ purge: uninstall
 source: clean style
 	cd ..; tar cvzf weborf-`date +\%F | tr -d -`.tar.gz weborf/
 debsource:
+	debscript/gencontrol.sh>debian/control
 	debscript/debsource.sh
 style:
 	astyle --style=kr *c *h

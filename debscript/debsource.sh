@@ -32,4 +32,4 @@ filename=weborf_$version.tar.gz
 echo " $md5 $size $filename">> $origdir/../weborf_$version.dsc
 
 echo "sign dsc file"
-gpg --clearsign -s $origdir/../weborf_$version.dsc
+debsign $origdir/../weborf_$version.dsc

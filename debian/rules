@@ -46,5 +46,5 @@ build: clean
 	echo "Making binary"
 	$(MAKE)
 	echo "Generating control file"
-	debscript/gencontrol.sh>debian/control
+	test -e debian/control || debscript/gencontrol.sh>debian/control
 	dh_testdir
