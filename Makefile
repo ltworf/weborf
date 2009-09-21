@@ -48,6 +48,7 @@ clean:
 	debian/rules debclean || echo Nothing to do
 	rm *.o weborf debug *.orig *~ || echo Nothing to do 
 	rm -f *~ *.orig || echo nothing to do
+	cd debian; rm -rf tmp files debhelper.log substvars 
 purge: uninstall
 	rm -f $(CONFDIR)/weborf.conf || echo ok
 

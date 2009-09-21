@@ -23,7 +23,7 @@ DOCS =          $(DESTDIR)/usr/share/doc/weborf
 clean: debclean
 	$(MAKE) clean
 debclean:
-	rm -rf tmp control files debhelper.log substvars
+	rm -rf tmp files debhelper.log substvars
 binary: binary-indep binary-arch
 binary-arch: build
 	echo exit
