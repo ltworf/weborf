@@ -42,8 +42,7 @@ extern char **environ;		//To reset environ vars
 
 void
 handle_requests(int sock, char *buf, buffered_read_t * read_b,
-		int *bufFull, connection_t * connection_prop, long int id)
-{
+                int *bufFull, connection_t * connection_prop, long int id) {
     int from;
     char *lasts;		//Used by strtok_r
 
@@ -51,111 +50,110 @@ handle_requests(int sock, char *buf, buffered_read_t * read_b,
     char *end;			//Pointer to header's end
 
     while (true) {		//Infinite cycle to handle all pipelined requests
-	memset(buf, 0, *bufFull + 1);	//Sets to 0 the buffer, only the part used for the previous request in the same connection
-	*bufFull = 0;		//bufFull-(end-buf+4);
-	from = 0;
+        memset(buf, 0, *bufFull + 1);	//Sets to 0 the buffer, only the part used for the previous request in the same connection
+        *bufFull = 0;		//bufFull-(end-buf+4);
+        from = 0;
 
-	while ((end = strstr(buf + from, "\r\n\r")) == NULL) {	//Determines if there is a \r\n\r which is an ending sequence
-	    //r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
-	    r = buffer_read(sock, buf + *bufFull, 2, read_b);	//Reads 1 char and adds to the buffer
+        while ((end = strstr(buf + from, "\r\n\r")) == NULL) {	//Determines if there is a \r\n\r which is an ending sequence
+            //r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
+            r = buffer_read(sock, buf + *bufFull, 2, read_b);	//Reads 1 char and adds to the buffer
 
-	    if (r <= 0) {	//Connection closed or error
-		return;
-	    }
+            if (r <= 0) {	//Connection closed or error
+                return;
+            }
 
-	    if (!(buf[*bufFull] == 10 || buf[*bufFull] == 13)) {	//Optimization to make strstr parse only the ending part of the string
-		from = *bufFull;
-	    }
+            if (!(buf[*bufFull] == 10 || buf[*bufFull] == 13)) {	//Optimization to make strstr parse only the ending part of the string
+                from = *bufFull;
+            }
 
-	    if (*bufFull != 0) {	//Removes Cr Lf from beginning
-		*bufFull += r;	//Sets the end of the user buffer (may contain more than one header)
-	    } else if (buf[*bufFull] != '\n' && buf[*bufFull] != '\r') {
-		*bufFull += r;
-	    }
+            if (*bufFull != 0) {	//Removes Cr Lf from beginning
+                *bufFull += r;	//Sets the end of the user buffer (may contain more than one header)
+            } else if (buf[*bufFull] != '\n' && buf[*bufFull] != '\r') {
+                *bufFull += r;
+            }
 
-	    if (*bufFull >= INBUFFER) {	//Buffer full and still no valid http header
-		send_err(sock, 400, "Bad request",
-			 connection_prop->ip_addr);
-		return;
-	    }
-	}
+            if (*bufFull >= INBUFFER) {	//Buffer full and still no valid http header
+                send_err(sock, 400, "Bad request",
+                         connection_prop->ip_addr);
+                return;
+            }
+        }
 
-	if (strstr(buf + from, "\r\n\r\n") == NULL) {	//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
-	    *bufFull += buffer_read(sock, buf + *bufFull, 1, read_b);	//Reads 1 char and adds to the buffer
-	}
+        if (strstr(buf + from, "\r\n\r\n") == NULL) {	//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
+            *bufFull += buffer_read(sock, buf + *bufFull, 1, read_b);	//Reads 1 char and adds to the buffer
+        }
 
-	end[2] = '\0';		//Terminates the header, leaving a final \r\n in it
+        end[2] = '\0';		//Terminates the header, leaving a final \r\n in it
 
-	//Finds out request's kind
-	if (strncmp(buf, "GET", 3) == 0)
-	    connection_prop->method_id = GET;
-	else if (strncmp(buf, "POST", 4) == 0)
-	    connection_prop->method_id = POST;
-	else
-	    connection_prop->method_id = INVALID;
+        //Finds out request's kind
+        if (strncmp(buf, "GET", 3) == 0)
+            connection_prop->method_id = GET;
+        else if (strncmp(buf, "POST", 4) == 0)
+            connection_prop->method_id = POST;
+        else
+            connection_prop->method_id = INVALID;
 
-	if (connection_prop->method_id != INVALID) {
-	    connection_prop->method = strtok_r(buf, " ", &lasts);	//Must be done to eliminate the request
-	    connection_prop->page = strtok_r(NULL, " ", &lasts);
-	    //connection_prop->http_param=strtok_r(NULL," ",&lasts);
-	    connection_prop->http_param = lasts;	//Might cause instability
+        if (connection_prop->method_id != INVALID) {
+            connection_prop->method = strtok_r(buf, " ", &lasts);	//Must be done to eliminate the request
+            connection_prop->page = strtok_r(NULL, " ", &lasts);
+            //connection_prop->http_param=strtok_r(NULL," ",&lasts);
+            connection_prop->http_param = lasts;	//Might cause instability
 
 #ifdef REQUESTDBG
-	    syslog(LOG_INFO, "%s: %s %s\n", connection_prop->ip_addr,
-		   connection_prop->method, connection_prop->page);
+            syslog(LOG_INFO, "%s: %s %s\n", connection_prop->ip_addr,
+                   connection_prop->method, connection_prop->page);
 #endif
 
 #ifdef THREADDBG
-	    syslog(LOG_INFO, "Requested page: %s to Thread %ld",
-		   connection_prop->page, id);
+            syslog(LOG_INFO, "Requested page: %s to Thread %ld",
+                   connection_prop->page, id);
 #endif
-	    //Stores the parameters of the request
-	    //param=(char *)(page+strlen(page)+1);
-	    {
-		char a[12];	//Gets the value
-		//Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
-		bool connection =
-		    get_param_value(connection_prop->http_param,
-				    "Connection", a,
-				    12);
+            //Stores the parameters of the request
+            //param=(char *)(page+strlen(page)+1);
+            {
+                char a[12];	//Gets the value
+                //Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
+                bool connection =
+                    get_param_value(connection_prop->http_param,
+                                    "Connection", a,
+                                    12);
 
-		//Setting the connection type, using protocol version
-		if (connection_prop->http_param[7] == '1' && connection_prop->http_param[5] == '1') {	//Keep alive by default (protocol 1.1)
-		    connection_prop->protocol_version = HTTP_1_1;
-		    connection_prop->keep_alive = true;
+                //Setting the connection type, using protocol version
+                if (connection_prop->http_param[7] == '1' && connection_prop->http_param[5] == '1') {	//Keep alive by default (protocol 1.1)
+                    connection_prop->protocol_version = HTTP_1_1;
+                    connection_prop->keep_alive = true;
 
-		    if (connection && strncmp(a, "close", 5) == 0)	//Connection close header
-			connection_prop->keep_alive = false;
-		} else {	//Not http1.1
-		    if (connection_prop->http_param[7] == '9') {	//version 0.9
-			connection_prop->protocol_version = HTTP_0_9;
-		    } else {	//version 1.0
-			connection_prop->protocol_version = HTTP_1_0;
-		    }
+                    if (connection && strncmp(a, "close", 5) == 0)	//Connection close header
+                        connection_prop->keep_alive = false;
+                } else {	//Not http1.1
+                    if (connection_prop->http_param[7] == '9') {	//version 0.9
+                        connection_prop->protocol_version = HTTP_0_9;
+                    } else {	//version 1.0
+                        connection_prop->protocol_version = HTTP_1_0;
+                    }
 
-		    connection_prop->keep_alive = false;
-		    if (connection && strncmp(a, "Keep", 4) == 0)
-			connection_prop->keep_alive = true;
-		}
-	    }
-	    if (send_page(sock, read_b, connection_prop) < 0) {
-		break;		//Unable to send an error
-	    }
-	    if (connection_prop->keep_alive == false) {	//No pipelining
-		return;
-	    }
-	} else {		//Non supported request
-	    send_err(sock, 400, "Bad request", connection_prop->ip_addr);
-	    return;
-	}
+                    connection_prop->keep_alive = false;
+                    if (connection && strncmp(a, "Keep", 4) == 0)
+                        connection_prop->keep_alive = true;
+                }
+            }
+            if (send_page(sock, read_b, connection_prop) < 0) {
+                break;		//Unable to send an error
+            }
+            if (connection_prop->keep_alive == false) {	//No pipelining
+                return;
+            }
+        } else {		//Non supported request
+            send_err(sock, 400, "Bad request", connection_prop->ip_addr);
+            return;
+        }
     }
 }
 
 /**
 Set thread with id as non-free
 */
-void unfree_thread(long int id)
-{
+void unfree_thread(long int id) {
     pthread_mutex_lock(&m_free);
     t_free--;
 #ifdef THREADDBG
@@ -167,8 +165,7 @@ void unfree_thread(long int id)
 /**
 Set thread with id as free
 */
-void free_thread(long int id)
-{
+void free_thread(long int id) {
     pthread_mutex_lock(&m_free);
     t_free++;
 #ifdef THREADDBG
@@ -182,8 +179,7 @@ Function executed at the beginning of the thread
 Takes open sockets from the queue and serves the requests
 Doesn't do busy waiting
 */
-void *instance(void *nulla)
-{
+void *instance(void *nulla) {
     //General init of the thread
     signal(SIGPIPE, SIG_IGN);	//Ignores SIGPIPE
     long int id = (long int) nulla;	//Set thread's id
@@ -213,48 +209,48 @@ void *instance(void *nulla)
     buffer_init(&read_b, BUFFERED_READER_SIZE);
 
     while (true) {
-	q_get(&queue, &sock, &addr);	//Gets a socket from the queue
+        q_get(&queue, &sock, &addr);	//Gets a socket from the queue
 
-	//Converting address to string
+        //Converting address to string
 #ifdef IPV6
-	if (connection_prop.ip_addr != NULL) {	//Buffer for IP Address, to give to the thread
-	    getpeername(sock, (struct sockaddr *) &addr, &addr_l);
-	    inet_ntop(AF_INET6, &addr.sin6_addr, connection_prop.ip_addr,
-		      INET6_ADDRSTRLEN);
-	}
+        if (connection_prop.ip_addr != NULL) {	//Buffer for IP Address, to give to the thread
+            getpeername(sock, (struct sockaddr *) &addr, &addr_l);
+            inet_ntop(AF_INET6, &addr.sin6_addr, connection_prop.ip_addr,
+                      INET6_ADDRSTRLEN);
+        }
 #else
-	if (connection_prop.ip_addr != NULL) {	//Buffer for ascii IP addr, will be freed by the thread
-	    getpeername(sock, (struct sockaddr *) &addr,
-			(socklen_t *) & addr_l);
-	    inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr,
-		      INET_ADDRSTRLEN);
-	}
+        if (connection_prop.ip_addr != NULL) {	//Buffer for ascii IP addr, will be freed by the thread
+            getpeername(sock, (struct sockaddr *) &addr,
+                        (socklen_t *) & addr_l);
+            inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr,
+                      INET_ADDRSTRLEN);
+        }
 #endif
 
-	unfree_thread(id);	//Sets this thread as busy
+        unfree_thread(id);	//Sets this thread as busy
 
-	if (sock <= 0) {	//Was not a socket but a termination order
-	    free(connection_prop.ip_addr);	//Free the space used to store ip address
-	    buffer_free(&read_b);
+        if (sock <= 0) {	//Was not a socket but a termination order
+            free(connection_prop.ip_addr);	//Free the space used to store ip address
+            buffer_free(&read_b);
 #ifdef THREADDBG
-	    syslog(LOG_DEBUG, "Terminating thread %ld", id);
+            syslog(LOG_DEBUG, "Terminating thread %ld", id);
 #endif
-	    free(buf);
-	    pthread_exit(0);
-	}
+            free(buf);
+            pthread_exit(0);
+        }
 #ifdef THREADDBG
-	syslog(LOG_DEBUG, "Thread %ld: Reading from socket", id);
+        syslog(LOG_DEBUG, "Thread %ld: Reading from socket", id);
 #endif
-	handle_requests(sock, buf, &read_b, &bufFull, &connection_prop,
-			id);
+        handle_requests(sock, buf, &read_b, &bufFull, &connection_prop,
+                        id);
 
 #ifdef THREADDBG
-	syslog(LOG_DEBUG, "Thread %ld: Closing socket with client", id);
+        syslog(LOG_DEBUG, "Thread %ld: Closing socket with client", id);
 #endif
 
-	close(sock);		//Closing the socket
-	memset(buf, 0, bufFull + 1);	//Sets to 0 the buffer, only the part used for the previous
-	free_thread(id);	//Settin this thread as free
+        close(sock);		//Closing the socket
+        memset(buf, 0, bufFull + 1);	//Sets to 0 the buffer, only the part used for the previous
+        free_thread(id);	//Settin this thread as free
     }
 
     return NULL;		//Never reached
@@ -264,8 +260,7 @@ void *instance(void *nulla)
 This function does some changes on the URL.
 The url will never be longer than the original one.
 */
-void modURL(char *url)
-{
+void modURL(char *url) {
     //Prevents the use of .. to access the whole filesystem
     strReplace(url, "../", '\0');
 
@@ -280,8 +275,7 @@ http_param is a string containing parameters of the HTTP request
 */
 int
 send_page(int sock, buffered_read_t * read_b,
-	  connection_t * connection_prop)
-{
+          connection_t * connection_prop) {
     modURL(connection_prop->page);	//Operations on the url string
     connection_prop->get_params = nullParams(connection_prop->page);	//Pointer to the GET parameters
 
@@ -291,84 +285,84 @@ send_page(int sock, buffered_read_t * read_b,
 
     char *real_basedir;
     if (virtual_host) {		//Using virtual hosts
-	real_basedir = get_basedir(connection_prop->http_param);
-	if (real_basedir == NULL)
-	    real_basedir = basedir;
+        real_basedir = get_basedir(connection_prop->http_param);
+        if (real_basedir == NULL)
+            real_basedir = basedir;
     } else {			//No virtual Host
-	real_basedir = basedir;
+        real_basedir = basedir;
     }
 
     if (authbin != NULL && check_auth(sock, connection_prop) != 0) {	//If auth is required
-	return ERR_NONAUTH;
+        return ERR_NONAUTH;
     }
 
     string_t post_param = read_post_data(sock, connection_prop, read_b);
 
     int strfile_max_len =
-	strlen(connection_prop->page) + strlen(real_basedir) +
-	INDEXMAXLEN + 1;
+        strlen(connection_prop->page) + strlen(real_basedir) +
+        INDEXMAXLEN + 1;
     connection_prop->strfile = malloc(strfile_max_len);	//buffer for filename
     if (connection_prop->strfile == NULL) {
-	free(post_param.data);
-	return ERR_NOMEM;	//If no memory is available
+        free(post_param.data);
+        return ERR_NOMEM;	//If no memory is available
     }
     connection_prop->strfile_len = snprintf(connection_prop->strfile, strfile_max_len, "%s%s", real_basedir, connection_prop->page);	//Prepares the string
     int retval = 0;		//Return value after sending the page
 
     int f_mode = fileIsA(connection_prop->strfile);	//Get file's mode
     if (S_ISDIR(f_mode)) {	//Requested a directory
-	bool index_found = false;
+        bool index_found = false;
 
-	if (!endsWith(connection_prop->strfile, "/")) {	//Putting the ending / and redirect
-	    char *head = malloc(strfile_max_len + 12);	//12 is the size for the location header
-	    snprintf(head, strfile_max_len + 12, "Location: %s/\r\n",
-		     connection_prop->page);
-	    send_http_header_full(sock, 303, 0, head, true, -1,
-				  connection_prop);
+        if (!endsWith(connection_prop->strfile, "/")) {	//Putting the ending / and redirect
+            char *head = malloc(strfile_max_len + 12);	//12 is the size for the location header
+            snprintf(head, strfile_max_len + 12, "Location: %s/\r\n",
+                     connection_prop->page);
+            send_http_header_full(sock, 303, 0, head, true, -1,
+                                  connection_prop);
 
-	    free(head);
-	} else {
+            free(head);
+        } else {
 
-	    char *index_name = &connection_prop->strfile[connection_prop->strfile_len];	//Pointer to where to write the filename
-	    int i;
+            char *index_name = &connection_prop->strfile[connection_prop->strfile_len];	//Pointer to where to write the filename
+            int i;
 
-	    //Cyclyng through the indexes
-	    for (i = 0; i < indexes_l; i++) {
-		snprintf(index_name, INDEXMAXLEN, "%s", indexes[i]);	//Add INDEX to the url
-		if (file_exists(connection_prop->strfile)) {	//If index exists, redirect to it
-		    char *head = malloc(strfile_max_len + 12);	//12 is the size for the location header
-		    snprintf(head, strfile_max_len + 12,
-			     "Location: %s%s\r\n", connection_prop->page,
-			     indexes[i]);
-		    send_http_header_full(sock, 303, 0, head, true, -1,
-					  connection_prop);
+            //Cyclyng through the indexes
+            for (i = 0; i < indexes_l; i++) {
+                snprintf(index_name, INDEXMAXLEN, "%s", indexes[i]);	//Add INDEX to the url
+                if (file_exists(connection_prop->strfile)) {	//If index exists, redirect to it
+                    char *head = malloc(strfile_max_len + 12);	//12 is the size for the location header
+                    snprintf(head, strfile_max_len + 12,
+                             "Location: %s%s\r\n", connection_prop->page,
+                             indexes[i]);
+                    send_http_header_full(sock, 303, 0, head, true, -1,
+                                          connection_prop);
 
-		    free(head);
-		    index_found = true;
-		    break;
-		}
-	    }
+                    free(head);
+                    index_found = true;
+                    break;
+                }
+            }
 
-	    connection_prop->strfile[connection_prop->strfile_len] = 0;	//Removing the index part
-	    if (index_found == false) {	//If no index was found in the dir
-		write_dir(sock, real_basedir, connection_prop);
-	    }
-	}
+            connection_prop->strfile[connection_prop->strfile_len] = 0;	//Removing the index part
+            if (index_found == false) {	//If no index was found in the dir
+                write_dir(sock, real_basedir, connection_prop);
+            }
+        }
     } else if (file_exists(connection_prop->strfile)) {	//Requested an existing file
 
-	if (exec_script) {	//Scripts enabled
-	    if (endsWith(connection_prop->page, ".php")) {	//Script php
-		retval =
-		    exec_page(sock, CGI_PHP, &post_param, real_basedir,
-			      connection_prop);
-	    } else {		//Normal file
-		retval = write_file(sock, connection_prop);
-	    }
-	} else {		//Scripts disabled
-	    retval = write_file(sock, connection_prop);
-	}
+        if (exec_script) {	//Scripts enabled
+            if (endsWith(connection_prop->page, ".php")) {	//Script php
+                retval =
+                    exec_page(sock, CGI_PHP, &post_param, real_basedir,
+                              connection_prop);
+            } else {		//Normal file
+                retval = write_file(sock, connection_prop);
+            }
+        } else {		//Scripts disabled
+            retval = write_file(sock, connection_prop);
+        }
     } else {			//File doesn't exist
-	retval = ERR_FILENOTFOUND;
+        retval = ERR_FILENOTFOUND;
     }
 
     free(post_param.data);
@@ -376,21 +370,21 @@ send_page(int sock, buffered_read_t * read_b,
 
     //Closing local file previously opened
     if (connection_prop->strfile_fd >= 0) {
-	close(connection_prop->strfile_fd);
+        close(connection_prop->strfile_fd);
     }
 
     switch (retval) {
     case 0:
-	return 0;
+        return 0;
     case ERR_BRKPIPE:
-	return send_err(sock, 500, "Internal server error",
-			connection_prop->ip_addr);
+        return send_err(sock, 500, "Internal server error",
+                        connection_prop->ip_addr);
     case ERR_FILENOTFOUND:
-	return send_err(sock, 404, "Page not found",
-			connection_prop->ip_addr);
+        return send_err(sock, 404, "Page not found",
+                        connection_prop->ip_addr);
     case ERR_NOMEM:
-	return send_err(sock, 503, "Service Unavailable",
-			connection_prop->ip_addr);
+        return send_err(sock, 503, "Service Unavailable",
+                        connection_prop->ip_addr);
     }
     return 0;			//Make gcc happy
 }
@@ -400,8 +394,7 @@ Executes a script with a given interpreter and sends the resulting output
 */
 int
 exec_page(int sock, char *executor, string_t * post_param,
-	  char *real_basedir, connection_t * connection_prop)
-{
+          char *real_basedir, connection_t * connection_prop) {
 #ifdef SENDINGDBG
     syslog(LOG_INFO, "Executing file %s", connection_prop->strfile);
 #endif
@@ -412,157 +405,157 @@ exec_page(int sock, char *executor, string_t * post_param,
 
     //Pipe created and used only if there is POST data to send to the script
     if (post_param->data != NULL) {
-	pipe(ipipe);		//Pipe to comunicate with the child
+        pipe(ipipe);		//Pipe to comunicate with the child
     }
     //Pipe to get the output of the child
     pipe(wpipe);		//Pipe to comunicate with the child
 
     if ((wpid = fork()) < 0) {	//Error, returns a no memory error
 #ifdef SENDINGDBG
-	syslog(LOG_ERR, "Unable to fork to execute the file %s",
-	       connection_prop->strfile);
+        syslog(LOG_ERR, "Unable to fork to execute the file %s",
+               connection_prop->strfile);
 #endif
-	if (post_param->data != NULL) {
-	    close(ipipe[0]);
-	    close(ipipe[1]);
-	}
-	close(wpipe[1]);
-	close(wpipe[0]);
-	return ERR_NOMEM;
+        if (post_param->data != NULL) {
+            close(ipipe[0]);
+            close(ipipe[1]);
+        }
+        close(wpipe[1]);
+        close(wpipe[0]);
+        return ERR_NOMEM;
     } else if (wpid == 0) {	//Child, executes the script
-	close(wpipe[0]);	//Closes unused end of the pipe
+        close(wpipe[0]);	//Closes unused end of the pipe
 
-	fclose(stdout);		//Closing the stdout
-	dup(wpipe[1]);		//Redirects the stdout
+        fclose(stdout);		//Closing the stdout
+        dup(wpipe[1]);		//Redirects the stdout
 
 #ifdef HIDE_CGI_ERRORS
-	fclose(stderr);		//Not printing any error
+        fclose(stderr);		//Not printing any error
 #endif
-	//Redirecting standard input only if there is POST data
-	if (post_param->data != NULL) {	//Send post data to script's stdin
-	    fclose(stdin);
-	    dup(ipipe[0]);
-	}
+        //Redirecting standard input only if there is POST data
+        if (post_param->data != NULL) {	//Send post data to script's stdin
+            fclose(stdin);
+            dup(ipipe[0]);
+        }
 
-	{			//Clears all the env var, saving only SERVER_PORT
-	    char *port = getenv("SERVER_PORT");
-	    environ = NULL;
-	    setenv("SERVER_PORT", port, true);
-	}
-	setEnvVars(connection_prop->http_param);	//Sets env var starting with HTTP
-	setIpEnv();		//Sets SERVER_ADDR var
-	//Set CGI needed vars
-	setenv("SERVER_SIGNATURE", SIGNATURE, true);
-	setenv("SERVER_SOFTWARE", SIGNATURE, true);
-	setenv("GATEWAY_INTERFACE", "CGI/1.1", true);
-	setenv("REQUEST_METHOD", connection_prop->method, true);	//POST GET
-	setenv("SERVER_NAME", getenv("HTTP_HOST"), true);
-	setenv("REDIRECT_STATUS", "Ciao", true);	// Mah.. i'll never understand php, this env var is needed
-	setenv("SCRIPT_FILENAME", connection_prop->strfile, true);	//This var is needed as well or php say no input file...
-	setenv("DOCUMENT_ROOT", real_basedir, true);
+        {			//Clears all the env var, saving only SERVER_PORT
+            char *port = getenv("SERVER_PORT");
+            environ = NULL;
+            setenv("SERVER_PORT", port, true);
+        }
+        setEnvVars(connection_prop->http_param);	//Sets env var starting with HTTP
+        setIpEnv();		//Sets SERVER_ADDR var
+        //Set CGI needed vars
+        setenv("SERVER_SIGNATURE", SIGNATURE, true);
+        setenv("SERVER_SOFTWARE", SIGNATURE, true);
+        setenv("GATEWAY_INTERFACE", "CGI/1.1", true);
+        setenv("REQUEST_METHOD", connection_prop->method, true);	//POST GET
+        setenv("SERVER_NAME", getenv("HTTP_HOST"), true);
+        setenv("REDIRECT_STATUS", "Ciao", true);	// Mah.. i'll never understand php, this env var is needed
+        setenv("SCRIPT_FILENAME", connection_prop->strfile, true);	//This var is needed as well or php say no input file...
+        setenv("DOCUMENT_ROOT", real_basedir, true);
 
-	setenv("REMOTE_ADDR", connection_prop->ip_addr, true);	//#Client's address
-	setenv("SCRIPT_NAME", connection_prop->page, true);	//Name of the script without complete path
+        setenv("REMOTE_ADDR", connection_prop->ip_addr, true);	//#Client's address
+        setenv("SCRIPT_NAME", connection_prop->page, true);	//Name of the script without complete path
 
-	//Request URI with or without a query
-	if (connection_prop->get_params == NULL) {
-	    setenv("REQUEST_URI", connection_prop->page, true);
-	    setenv("QUERY_STRING", "", true);	//Query after ?
-	} else {
-	    setenv("QUERY_STRING", connection_prop->get_params, true);	//Query after ?
+        //Request URI with or without a query
+        if (connection_prop->get_params == NULL) {
+            setenv("REQUEST_URI", connection_prop->page, true);
+            setenv("QUERY_STRING", "", true);	//Query after ?
+        } else {
+            setenv("QUERY_STRING", connection_prop->get_params, true);	//Query after ?
 
-	    //file and params were the same string.
-	    //Joining them again temporarily
-	    int delim =
-		connection_prop->get_params - connection_prop->page - 1;
-	    //printf("delim=%d\nstrlen=%d\n",delim,strlen(connection_prop->page));
-	    connection_prop->page[delim] = '?';
-	    setenv("REQUEST_URI", connection_prop->page, true);
-	    connection_prop->page[delim] = '\0';
-	}
+            //file and params were the same string.
+            //Joining them again temporarily
+            int delim =
+                connection_prop->get_params - connection_prop->page - 1;
+            //printf("delim=%d\nstrlen=%d\n",delim,strlen(connection_prop->page));
+            connection_prop->page[delim] = '?';
+            setenv("REQUEST_URI", connection_prop->page, true);
+            connection_prop->page[delim] = '\0';
+        }
 
-	{			//If Content-Length field exists
-	    char *content_l = getenv("HTTP_CONTENT_LENGTH");
-	    if (content_l != NULL) {
-		setenv("CONTENT_LENGTH", content_l, true);
-		setenv("CONTENT_TYPE", getenv("HTTP_CONTENT_TYPE"), true);
-	    }
-	}
+        {			//If Content-Length field exists
+            char *content_l = getenv("HTTP_CONTENT_LENGTH");
+            if (content_l != NULL) {
+                setenv("CONTENT_LENGTH", content_l, true);
+                setenv("CONTENT_TYPE", getenv("HTTP_CONTENT_TYPE"), true);
+            }
+        }
 
-	alarm(SCRPT_TIMEOUT);	//Sets the timeout for the script
-	execl(executor, executor, (char *) 0);
+        alarm(SCRPT_TIMEOUT);	//Sets the timeout for the script
+        execl(executor, executor, (char *) 0);
 #ifdef SENDINGDBG
-	syslog(LOG_ERR, "Execution of the %s interpreter failed",
-	       executor);
-	perror("Execution of the page failed");
+        syslog(LOG_ERR, "Execution of the %s interpreter failed",
+               executor);
+        perror("Execution of the page failed");
 #endif
-	exit(1);
+        exit(1);
 
     } else {			//Father: reads from pipe and sends
-	if (post_param->data != NULL) {	//Pipe created and used only if there is data to send to the script
-	    //Send post data to script's stdin
-	    write(ipipe[1], post_param->data, post_param->len);
-	    close(ipipe[0]);	//Closes unused end of the pipe
-	    close(ipipe[1]);	//Closes the pipe
-	}
-	//Closing pipes, so if they're empty read is non blocking
-	close(wpipe[1]);
+        if (post_param->data != NULL) {	//Pipe created and used only if there is data to send to the script
+            //Send post data to script's stdin
+            write(ipipe[1], post_param->data, post_param->len);
+            close(ipipe[0]);	//Closes unused end of the pipe
+            close(ipipe[1]);	//Closes the pipe
+        }
+        //Closing pipes, so if they're empty read is non blocking
+        close(wpipe[1]);
 
-	//Large buffer, must contain the output of the script
-	char *header_buf = malloc(MAXSCRIPTOUT + HEADBUF);
+        //Large buffer, must contain the output of the script
+        char *header_buf = malloc(MAXSCRIPTOUT + HEADBUF);
 
-	if (header_buf == NULL) {	//Was unable to allocate the buffer
-	    int state;
-	    close(wpipe[0]);
-	    kill(wpid, SIGKILL);	//Kills cgi process
-	    waitpid(wpid, &state, 0);	//Removes zombie process
-	    return ERR_NOMEM;	//Returns if buffer was not allocated
-	}
+        if (header_buf == NULL) {	//Was unable to allocate the buffer
+            int state;
+            close(wpipe[0]);
+            kill(wpid, SIGKILL);	//Kills cgi process
+            waitpid(wpid, &state, 0);	//Removes zombie process
+            return ERR_NOMEM;	//Returns if buffer was not allocated
+        }
 
-	{
-	    int state;
-	    waitpid(wpid, &state, 0);	//Wait the termination of the script
-	}
+        {
+            int state;
+            waitpid(wpid, &state, 0);	//Wait the termination of the script
+        }
 
-	//Reads output of the script
-	int e_reads = read(wpipe[0], header_buf, MAXSCRIPTOUT + HEADBUF);
+        //Reads output of the script
+        int e_reads = read(wpipe[0], header_buf, MAXSCRIPTOUT + HEADBUF);
 
-	//Separating header from contents
-	char *scrpt_buf = strstr(header_buf, "\r\n\r\n");
-	int reads = 0;
-	if (scrpt_buf != NULL) {
-	    scrpt_buf += 2;
-	    scrpt_buf[0] = 0;
-	    scrpt_buf = scrpt_buf + 2;
-	    reads = e_reads - (int) (scrpt_buf - header_buf);	//Len of the content
-	} else {		//Something went wrong, ignoring the output (it's missing the headers)
-	    e_reads = 0;
-	}
+        //Separating header from contents
+        char *scrpt_buf = strstr(header_buf, "\r\n\r\n");
+        int reads = 0;
+        if (scrpt_buf != NULL) {
+            scrpt_buf += 2;
+            scrpt_buf[0] = 0;
+            scrpt_buf = scrpt_buf + 2;
+            reads = e_reads - (int) (scrpt_buf - header_buf);	//Len of the content
+        } else {		//Something went wrong, ignoring the output (it's missing the headers)
+            e_reads = 0;
+        }
 
-	//Closing pipe
-	close(wpipe[0]);
+        //Closing pipe
+        close(wpipe[0]);
 
-	if (e_reads > 0) {	//There is output from script
-	    char *status;	//Standard status
-	    {			//Reading if there is another status
-		char *s = strstr(header_buf, "Status: ");
-		if (s != NULL) {
-		    status = s + 8;	//Replacing status
-		} else {
-		    status = "200";	//Standard status
-		}
-	    }
-	    send_http_header_scode(sock, status, reads, header_buf);
+        if (e_reads > 0) {	//There is output from script
+            char *status;	//Standard status
+            {			//Reading if there is another status
+                char *s = strstr(header_buf, "Status: ");
+                if (s != NULL) {
+                    status = s + 8;	//Replacing status
+                } else {
+                    status = "200";	//Standard status
+                }
+            }
+            send_http_header_scode(sock, status, reads, header_buf);
 
-	    if (reads > 0) {	//Sends the page if there is something to send
-		write(sock, scrpt_buf, reads);
-	    }
-	} else {		//No output from script, maybe terminated...
-	    send_err(sock, 500, "Internal server error",
-		     connection_prop->ip_addr);
-	}
+            if (reads > 0) {	//Sends the page if there is something to send
+                write(sock, scrpt_buf, reads);
+            }
+        } else {		//No output from script, maybe terminated...
+            send_err(sock, 500, "Internal server error",
+                     connection_prop->ip_addr);
+        }
 
-	free(header_buf);
+        free(header_buf);
 
     }
     return 0;
@@ -572,33 +565,32 @@ exec_page(int sock, char *executor, string_t * post_param,
 This function writes on the specified socket an html page containing the list of files within the
 specified directory.
 */
-int write_dir(int sock, char *real_basedir, connection_t * connection_prop)
-{
+int write_dir(int sock, char *real_basedir, connection_t * connection_prop) {
     /*
        Determines if has to show the link to parent dir or not.
        If page is the basedir, it won't show the link to ..
      */
     bool parent = true;
     {
-	size_t basedir_len = strlen(real_basedir);
-	if (connection_prop->strfile_len - 1 == basedir_len
-	    || connection_prop->strfile_len == basedir_len)
-	    parent = false;
+        size_t basedir_len = strlen(real_basedir);
+        if (connection_prop->strfile_len - 1 == basedir_len
+                || connection_prop->strfile_len == basedir_len)
+            parent = false;
     }
 
     char *html = malloc(MAXSCRIPTOUT);	//Memory for the html page
     if (html == NULL) {		//No memory
-	return ERR_NOMEM;
+        return ERR_NOMEM;
     }
 
     if (list_dir(connection_prop->strfile, html, MAXSCRIPTOUT, parent) < 0) {	//Creates the page
-	free(html);		//Frees the memory used for the page
-	return ERR_FILENOTFOUND;
+        free(html);		//Frees the memory used for the page
+        return ERR_FILENOTFOUND;
     } else {			//If there are no errors sends the page
-	int pagelen = strlen(html);
-	send_http_header_full(sock, 200, pagelen, NULL, true, -1,
-			      connection_prop);
-	write(sock, html, pagelen);
+        int pagelen = strlen(html);
+        send_http_header_full(sock, 200, pagelen, NULL, true, -1,
+                              connection_prop);
+        write(sock, html, pagelen);
     }
 
     free(html);			//Frees the memory used for the page
@@ -619,27 +611,26 @@ size is the size of the uncompressed file
 #ifdef __COMPRESSION
 int
 write_compressed_file(int sock, unsigned int size, time_t timestamp,
-		      connection_t * connection_prop)
-{
+                      connection_t * connection_prop) {
     connection_prop->keep_alive = false;
     send_http_header_full(sock, 200, size,
-			  "Connection: close\r\nContent-Encoding: gzip\r\n",
-			  false, timestamp, connection_prop);
+                          "Connection: close\r\nContent-Encoding: gzip\r\n",
+                          false, timestamp, connection_prop);
     int pid = fork();
 
     if (pid == 0) {		//child, executing gzip
-	fclose(stdout);		//Closing the stdout
-	dup(sock);		//Redirects the stdout
+        fclose(stdout);		//Closing the stdout
+        dup(sock);		//Redirects the stdout
 #ifdef GZIPNICE
-	nice(GZIPNICE);		//Reducing priority
+        nice(GZIPNICE);		//Reducing priority
 #endif
-	execlp("gzip", "gzip", "-c", connection_prop->strfile, (char *) 0);
+        execlp("gzip", "gzip", "-c", connection_prop->strfile, (char *) 0);
 
     } else if (pid > 0) {	//Father, reading and sending
-	int status;
-	waitpid(pid, &status, 0);
+        int status;
+        waitpid(pid, &status, 0);
     } else {			//Error
-	return ERR_NOMEM;	//Well not enough memory in process table...
+        return ERR_NOMEM;	//Well not enough memory in process table...
     }
     close(sock);
     return 0;
@@ -659,13 +650,12 @@ send large files or not.
 If the file is larger, it will be sent using write_compressed_file,
 see that function for details.
 */
-int write_file(int sock, connection_t * connection_prop)
-{
+int write_file(int sock, connection_t * connection_prop) {
     char a[RBUFFER];		//Buffer for Range, Content-Range headers, and reading if-none-match from header
 
     int fp = open(connection_prop->strfile, O_RDONLY | O_LARGEFILE);
     if (fp < 0) {		//open returned an error
-	return ERR_FILENOTFOUND;
+        return ERR_FILENOTFOUND;
     }
     //get properties of file
     struct stat stat_f;
@@ -673,100 +663,100 @@ int write_file(int sock, connection_t * connection_prop)
 
     //If the file has the same date, there is no need of sending it again
     if (get_param_value(connection_prop->http_param, "If-None-Match", a, RBUFFER)) {	//Find if it is a range request
-	time_t etag = (time_t) strtol(a + 1, NULL, 0);
-	if (stat_f.st_mtime == etag) {	//Browser has the item in its cache, sending 304
-	    close(fp);
-	    send_http_header_full(sock, 304, 0, NULL, true, etag,
-				  connection_prop);
-	    return 0;
-	}
+        time_t etag = (time_t) strtol(a + 1, NULL, 0);
+        if (stat_f.st_mtime == etag) {	//Browser has the item in its cache, sending 304
+            close(fp);
+            send_http_header_full(sock, 304, 0, NULL, true, etag,
+                                  connection_prop);
+            return 0;
+        }
 
     }
 #ifdef __COMPRESSION
     if (stat_f.st_size > SIZE_COMPRESS_MIN && stat_f.st_size < SIZE_COMPRESS_MAX) {	//Using compressed file method instead of sending it raw
-	char *accept;
+        char *accept;
 
-	if ((accept =
-	     strstr(connection_prop->http_param,
-		    "Accept-Encoding:")) != NULL) {
-	    char *end = strstr(accept, "\r\n");
+        if ((accept =
+                    strstr(connection_prop->http_param,
+                           "Accept-Encoding:")) != NULL) {
+            char *end = strstr(accept, "\r\n");
 
-	    //Avoid to parse the entire header.
-	    end[0] = '\0';
-	    char *gzip = strstr(accept, "gzip");
-	    end[0] = '\r';
+            //Avoid to parse the entire header.
+            end[0] = '\0';
+            char *gzip = strstr(accept, "gzip");
+            end[0] = '\r';
 
-	    if (gzip != NULL) {
-		close(fp);
-		return write_compressed_file(sock, stat_f.st_size,
-					     stat_f.st_mtime,
-					     connection_prop);
-	    }
-	}
+            if (gzip != NULL) {
+                close(fp);
+                return write_compressed_file(sock, stat_f.st_size,
+                                             stat_f.st_mtime,
+                                             connection_prop);
+            }
+        }
     }
 #endif
 
     char *buf = malloc(FILEBUF);	//Buffer to read from file
     if (buf == NULL) {
-	close(fp);
-	return ERR_NOMEM;	//If no memory is available
+        close(fp);
+        return ERR_NOMEM;	//If no memory is available
     }
 
     off_t count = stat_f.st_size;	//Bytes to send to the client
 
 #ifdef __RANGE
     if (get_param_value(connection_prop->http_param, "Range", a, RBUFFER)) {	//Find if it is a range request
-	int from, to;
+        int from, to;
 
-	{			//Locating from and to
-	    //Range: bytes=12323-123401
-	    char *eq = strstr(a, "=");
-	    char *sep = strstr(eq, "-");
-	    if (eq == NULL || sep == NULL) {	//Invalid data in Range header.
-		free(buf);
-		close(fp);
-		return ERR_NOTHTTP;
-	    }
-	    sep[0] = 0;
-	    from = strtol(eq + 1, NULL, 0);
-	    to = strtol(sep + 1, NULL, 0);
-	}
+        {			//Locating from and to
+            //Range: bytes=12323-123401
+            char *eq = strstr(a, "=");
+            char *sep = strstr(eq, "-");
+            if (eq == NULL || sep == NULL) {	//Invalid data in Range header.
+                free(buf);
+                close(fp);
+                return ERR_NOTHTTP;
+            }
+            sep[0] = 0;
+            from = strtol(eq + 1, NULL, 0);
+            to = strtol(sep + 1, NULL, 0);
+        }
 
-	if (to == 0) {		//If no to is specified, it is to the end of the file
-	    to = stat_f.st_size - 1;
-	}
-	snprintf(a, RBUFFER,
-		 "Accept-Ranges: bytes\r\nContent-Range: bytes=%d-%d/%d\r\n",
-		 from, to, (int) stat_f.st_size);
-	lseek(fp, from, SEEK_SET);
-	count = to - from + 1;
+        if (to == 0) {		//If no to is specified, it is to the end of the file
+            to = stat_f.st_size - 1;
+        }
+        snprintf(a, RBUFFER,
+                 "Accept-Ranges: bytes\r\nContent-Range: bytes=%d-%d/%d\r\n",
+                 from, to, (int) stat_f.st_size);
+        lseek(fp, from, SEEK_SET);
+        count = to - from + 1;
 
-	send_http_header_full(sock, 206, count, a, true, stat_f.st_mtime,
-			      connection_prop);
+        send_http_header_full(sock, 206, count, a, true, stat_f.st_mtime,
+                              connection_prop);
 
     } else			//Normal request
 #endif
     {
-	send_http_header_full(sock, 200, stat_f.st_size, NULL, true,
-			      stat_f.st_mtime, connection_prop);
+        send_http_header_full(sock, 200, stat_f.st_size, NULL, true,
+                              stat_f.st_mtime, connection_prop);
     }
 
     int reads, wrote;
 
     //Sends file
     while (count > 0
-	   && (reads =
-	       read(fp, buf, FILEBUF < count ? FILEBUF : count)) != 0) {
-	count -= reads;
-	wrote = write(sock, buf, reads);
-	if (wrote != reads) {	//Error writing to the socket
+            && (reads =
+                    read(fp, buf, FILEBUF < count ? FILEBUF : count)) != 0) {
+        count -= reads;
+        wrote = write(sock, buf, reads);
+        if (wrote != reads) {	//Error writing to the socket
 #ifdef SOCKETDBG
-	    syslog(LOG_ERR,
-		   "Unable to send %s: error writing to the socket",
-		   connection_prop->strfile);
+            syslog(LOG_ERR,
+                   "Unable to send %s: error writing to the socket",
+                   connection_prop->strfile);
 #endif
-	    break;
-	}
+            break;
+        }
     }
 
     close(fp);			//File on filesystem
@@ -778,36 +768,35 @@ int write_file(int sock, connection_t * connection_prop)
 /**
 Sends a request for authentication
 */
-int request_auth(int sock, char *descr)
-{
+int request_auth(int sock, char *descr) {
 
     //Buffer for both header and page
     char *head = malloc(MAXSCRIPTOUT + HEADBUF);
     if (head == NULL)
-	return ERR_NOMEM;
+        return ERR_NOMEM;
 
     char *page = head + HEADBUF;
 
     //Prepares html page
     int page_len = snprintf(page, MAXSCRIPTOUT,
-			    "%s<H1>Authorization required</H1><p>%s</p>%s",
-			    HTMLHEAD, descr,
-			    HTMLFOOT);
+                            "%s<H1>Authorization required</H1><p>%s</p>%s",
+                            HTMLHEAD, descr,
+                            HTMLFOOT);
 
     //Prepares http header
     int head_len = snprintf(head, HEADBUF,
-			    "HTTP/1.1 401 Authorization Required: Weborf (GNU/Linux)\r\nContent-Length: %d\r\nWWW-Authenticate: Basic realm=\"%s\"\r\n\r\n",
-			    page_len, descr);
+                            "HTTP/1.1 401 Authorization Required: Weborf (GNU/Linux)\r\nContent-Length: %d\r\nWWW-Authenticate: Basic realm=\"%s\"\r\n\r\n",
+                            page_len, descr);
 
     //Sends the header
     if (write(sock, head, head_len) != head_len) {
-	free(head);
-	return ERR_SOCKWRITE;
+        free(head);
+        return ERR_SOCKWRITE;
     }
     //Sends the page
     if (write(sock, page, page_len) != page_len) {
-	free(head);
-	return ERR_SOCKWRITE;
+        free(head);
+        return ERR_SOCKWRITE;
     }
 
     free(head);
@@ -818,37 +807,36 @@ int request_auth(int sock, char *descr)
 /**
 Sends an error to the client
 */
-int send_err(int sock, int err, char *descr, char *ip_addr)
-{
+int send_err(int sock, int err, char *descr, char *ip_addr) {
 
     //Buffer for both header and page
     char *head = malloc(MAXSCRIPTOUT + HEADBUF);
 
     if (head == NULL)
-	return ERR_NOMEM;
+        return ERR_NOMEM;
 
     char *page = head + HEADBUF;
 
     //Prepares the page
     int page_len =
-	snprintf(page, MAXSCRIPTOUT, "%s <H1>Error %d</H1>%s %s", HTMLHEAD,
-		 err,
-		 descr, HTMLFOOT);
+        snprintf(page, MAXSCRIPTOUT, "%s <H1>Error %d</H1>%s %s", HTMLHEAD,
+                 err,
+                 descr, HTMLFOOT);
 
     //Prepares the header
     int head_len = snprintf(head, HEADBUF,
-			    "HTTP/1.1 %d %s: Weborf (GNU/Linux)\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n",
-			    err, descr, (int) page_len);
+                            "HTTP/1.1 %d %s: Weborf (GNU/Linux)\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n",
+                            err, descr, (int) page_len);
 
     //Sends the http header
     if (write(sock, head, head_len) != head_len) {
-	free(head);
-	return ERR_SOCKWRITE;
+        free(head);
+        return ERR_SOCKWRITE;
     }
     //Sends the html page
     if (write(sock, page, page_len) != page_len) {
-	free(head);
-	return ERR_SOCKWRITE;
+        free(head);
+        return ERR_SOCKWRITE;
     }
 #ifdef REQUESTDBG
     syslog(LOG_ERR, "%s: Error %d: %s", ip_addr, err, descr);
@@ -868,29 +856,28 @@ will be used in each case. A shorter string will produce unpredictable behaviour
 */
 int
 send_http_header_scode(int sock, char *code, unsigned int size,
-		       char *headers)
-{
+                       char *headers) {
 
     char *head = malloc(HEADBUF);
     if (head == NULL)
-	return ERR_NOMEM;
+        return ERR_NOMEM;
 
     int len_head;
     if (headers == NULL) {
-	len_head =
-	    snprintf(head, HEADBUF,
-		     "HTTP/1.1 %c%c%c OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n\r\n",
-		     code[0], code[1], code[2], size);
+        len_head =
+            snprintf(head, HEADBUF,
+                     "HTTP/1.1 %c%c%c OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n\r\n",
+                     code[0], code[1], code[2], size);
     } else {
-	len_head =
-	    snprintf(head, HEADBUF,
-		     "HTTP/1.1 %c%c%c OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n",
-		     code[0], code[1], code[2], size, headers);
+        len_head =
+            snprintf(head, HEADBUF,
+                     "HTTP/1.1 %c%c%c OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n",
+                     code[0], code[1], code[2], size, headers);
     }
     int wrote = write(sock, head, len_head);
     free(head);
     if (wrote != len_head)
-	return ERR_BRKPIPE;
+        return ERR_BRKPIPE;
     return 0;
 }
 
@@ -898,35 +885,34 @@ send_http_header_scode(int sock, char *code, unsigned int size,
 This function checks if the authentication can be granted or not calling the external program.
 Returns 0 if authorization is granted.
 */
-int check_auth(int sock, connection_t * connection_prop)
-{
+int check_auth(int sock, connection_t * connection_prop) {
     char username[PWDLIMIT * 2];
     char *password = username;	//will be changed if there is a password
 
     char *auth = strstr(connection_prop->http_param, "Authorization: Basic ");	//Locates the auth information
     if (auth == NULL) {		//No auth informations
-	username[0] = 0;
-	//password[0]=0;
+        username[0] = 0;
+        //password[0]=0;
     } else {			//Retrieves provided username and password
-	char *auth_end = strstr(auth, "\r\n");	//Finds the end of the header
-	char a[PWDLIMIT * 2];
-	auth += 21;		//Moves the begin of the string to exclude Authorization: Basic
-	if ((auth_end - auth + 1) < (PWDLIMIT * 2))
-	    memcpy(&a, auth, auth_end - auth);	//Copies the base64 encoded string to a temp buffer
-	else {			//Auth string is too long for the buffer
+        char *auth_end = strstr(auth, "\r\n");	//Finds the end of the header
+        char a[PWDLIMIT * 2];
+        auth += 21;		//Moves the begin of the string to exclude Authorization: Basic
+        if ((auth_end - auth + 1) < (PWDLIMIT * 2))
+            memcpy(&a, auth, auth_end - auth);	//Copies the base64 encoded string to a temp buffer
+        else {			//Auth string is too long for the buffer
 #ifdef SERVERDBG
-	    syslog(LOG_ERR,
-		   "Unable to accept authentication, buffer is too small");
+            syslog(LOG_ERR,
+                   "Unable to accept authentication, buffer is too small");
 #endif
-	    return ERR_NOMEM;
-	}
+            return ERR_NOMEM;
+        }
 
-	a[auth_end - auth] = 0;
-	decode64(username, a);	//Decodes the base64 string
+        a[auth_end - auth] = 0;
+        decode64(username, a);	//Decodes the base64 string
 
-	password = strstr(username, ":");	//Locates the separator :
-	password[0] = 0;	//Nulls the separator to split username and password
-	password++;		//make password point to the beginning of the password
+        password = strstr(username, ":");	//Locates the separator :
+        password[0] = 0;	//Nulls the separator to split username and password
+        password++;		//make password point to the beginning of the password
     }
 
     //snprintf(auths,INBUFFER+(2*PWDLIMIT),"%s %s \"%s\" %s \"%s\" \"%s\"",
@@ -937,36 +923,36 @@ int check_auth(int sock, connection_t * connection_prop)
     {
 #define SOCK_PATH "/var/run/acpid.socket"
 
-	int s, len;
-	struct sockaddr_un remote;
-	s = socket(AF_UNIX, SOCK_STREAM, 0);
+        int s, len;
+        struct sockaddr_un remote;
+        s = socket(AF_UNIX, SOCK_STREAM, 0);
 
-	remote.sun_family = AF_UNIX;
-	strcpy(remote.sun_path, authbin);
-	len = strlen(remote.sun_path) + sizeof(remote.sun_family);
-	if (connect(s, (struct sockaddr *) &remote, len) == -1) {	//Unable to connect
-	    return -1;
-	}
-	char *auth_str = malloc(HEADBUF + PWDLIMIT * 2);
-	if (auth_str == NULL) {
-	    return -1;
-	}
-	int auth_str_l = snprintf(auth_str, HEADBUF + PWDLIMIT * 2,
-				  "%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",
-				  connection_prop->page,
-				  connection_prop->ip_addr,
-				  connection_prop->method, username,
-				  password, connection_prop->http_param);
-	write(s, auth_str, auth_str_l);
-	if (read(s, auth_str, 1) == 0) {	//No output, ok
-	    result = 0;
-	}
-	close(s);
-	free(auth_str);
+        remote.sun_family = AF_UNIX;
+        strcpy(remote.sun_path, authbin);
+        len = strlen(remote.sun_path) + sizeof(remote.sun_family);
+        if (connect(s, (struct sockaddr *) &remote, len) == -1) {	//Unable to connect
+            return -1;
+        }
+        char *auth_str = malloc(HEADBUF + PWDLIMIT * 2);
+        if (auth_str == NULL) {
+            return -1;
+        }
+        int auth_str_l = snprintf(auth_str, HEADBUF + PWDLIMIT * 2,
+                                  "%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",
+                                  connection_prop->page,
+                                  connection_prop->ip_addr,
+                                  connection_prop->method, username,
+                                  password, connection_prop->http_param);
+        write(s, auth_str, auth_str_l);
+        if (read(s, auth_str, 1) == 0) {	//No output, ok
+            result = 0;
+        }
+        close(s);
+        free(auth_str);
     }
 
     if (result != 0) {		//Failed
-	request_auth(sock, connection_prop->page);	//Sends a request for authentication
+        request_auth(sock, connection_prop->page);	//Sends a request for authentication
     }
 
     return result;
@@ -979,8 +965,7 @@ If it doesn't return a null value, the returned pointer must be freed.
 */
 string_t
 read_post_data(int sock, connection_t * connection_prop,
-	       buffered_read_t * read_b)
-{
+               buffered_read_t * read_b) {
     string_t res;
     res.len = 0;
     res.data = NULL;
@@ -989,17 +974,17 @@ read_post_data(int sock, connection_t * connection_prop,
     char a[NBUFFER];
     //Gets the value
     bool r =
-	get_param_value(connection_prop->http_param, "Content-Length", a,
-			NBUFFER);
+        get_param_value(connection_prop->http_param, "Content-Length", a,
+                        NBUFFER);
 
     //If there is a value and method is POST
     if (r != false && connection_prop->method_id == POST) {
-	int l = strtol(a, NULL, 0);
-	if (l <= POST_MAX_SIZE) {	//Post size is ok
+        int l = strtol(a, NULL, 0);
+        if (l <= POST_MAX_SIZE) {	//Post size is ok
 
-	    res.data = malloc(l);
-	    res.len = buffer_read(sock, res.data, l, read_b);
-	}
+            res.data = malloc(l);
+            res.len = buffer_read(sock, res.data, l, read_b);
+        }
     }
     return res;
 }
@@ -1010,16 +995,15 @@ It will use virtualhost settings to return this string and if no virtualhost is 
 the default basedir.
 Those string must
 */
-char *get_basedir(char *http_param)
-{
+char *get_basedir(char *http_param) {
     if (virtual_host == false)
-	return basedir;
+        return basedir;
 
     char *result;
     char *h = strstr(http_param, "\r\nHost: ");
 
     if (h == NULL)
-	return basedir;
+        return basedir;
 
     h += 8;			//Removing "Host:" string
     char *end = strstr(h, "\r");
@@ -1028,7 +1012,7 @@ char *get_basedir(char *http_param)
     end[0] = '\r';
 
     if (result == NULL)
-	return basedir;		//Reqeusted host doesn't exist
+        return basedir;		//Reqeusted host doesn't exist
 
     return result;
 }
@@ -1046,30 +1030,29 @@ Timestamp is the timestamp for the content. Set to -1 to use the current timesta
 */
 int
 send_http_header_full(int sock, int code, unsigned int size, char *headers,
-		      bool content, time_t timestamp,
-		      connection_t * connection_prop)
-{
+                      bool content, time_t timestamp,
+                      connection_t * connection_prop) {
     int len_head, wrote;
     char *head = malloc(HEADBUF);
     char *h_ptr = head;
     int left_head = HEADBUF;
 
     if (head == NULL)
-	return ERR_NOMEM;
+        return ERR_NOMEM;
     if (headers == NULL)
-	headers = "";
+        headers = "";
     if (connection_prop->protocol_version != HTTP_1_1
-	&& connection_prop->keep_alive == true) {
-	//Putting explicit keep-alive header, since client is not 1.1 but is using keep alive
-	len_head =
-	    snprintf(head, HEADBUF,
-		     "HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\nConnection: Keep-Alive\r\n",
-		     code);
+            && connection_prop->keep_alive == true) {
+        //Putting explicit keep-alive header, since client is not 1.1 but is using keep alive
+        len_head =
+            snprintf(head, HEADBUF,
+                     "HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\nConnection: Keep-Alive\r\n",
+                     code);
     } else {
-	len_head =
-	    snprintf(head, HEADBUF,
-		     "HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\n",
-		     code);
+        len_head =
+            snprintf(head, HEADBUF,
+                     "HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\n",
+                     code);
     }
     //This stuff moves the pointer to the buffer forward, and reduces the left space in the buffer itself
     //Next snprintf will append their strings to the buffer, without overwriting.
@@ -1078,35 +1061,35 @@ send_http_header_full(int sock, int code, unsigned int size, char *headers,
 
     //Creating ETag and date from timestamp
     if (timestamp == -1) {	//Etag with actual timestamp
-	timestamp = time(NULL);
+        timestamp = time(NULL);
     }
     //Sends ETag
     len_head =
-	snprintf(head, left_head, "ETag: \"%d\"\r\n", (int) timestamp);
+        snprintf(head, left_head, "ETag: \"%d\"\r\n", (int) timestamp);
     head += len_head;
     left_head -= len_head;
 
 #ifdef SEND_DATE_HEADER
     {				//Sends Date
-	struct tm ts;
-	localtime_r((time_t) & timestamp, &ts);
-	len_head =
-	    strftime(head, left_head,
-		     "Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n", &ts);
-	head += len_head;
-	left_head -= len_head;
+        struct tm ts;
+        localtime_r((time_t) & timestamp, &ts);
+        len_head =
+            strftime(head, left_head,
+                     "Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n", &ts);
+        head += len_head;
+        left_head -= len_head;
     }
 #endif
 
     //Content length (or entity lenght) and extra headers
     if (content) {
-	len_head =
-	    snprintf(head, left_head, "Content-Length: %u\r\n%s\r\n", size,
-		     headers);
+        len_head =
+            snprintf(head, left_head, "Content-Length: %u\r\n%s\r\n", size,
+                     headers);
     } else {
-	len_head =
-	    snprintf(head, left_head, "entity-length: %u\r\n%s\r\n", size,
-		     headers);
+        len_head =
+            snprintf(head, left_head, "entity-length: %u\r\n%s\r\n", size,
+                     headers);
     }
     head += len_head;
     left_head -= len_head;
@@ -1114,6 +1097,6 @@ send_http_header_full(int sock, int code, unsigned int size, char *headers,
     wrote = write(sock, h_ptr, HEADBUF - left_head);
     free(h_ptr);
     if (wrote != HEADBUF - left_head)
-	return ERR_BRKPIPE;
+        return ERR_BRKPIPE;
     return 0;
 }

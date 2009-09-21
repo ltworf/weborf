@@ -28,15 +28,14 @@ Terminates with a \0 the buffer, so string functions can be used on the result.
 Doesn't change the encoded string.
 result's length must be at least: (strlen(encoded) /4 *3 )+1
 */
-void decode64(char *result, char *encoded)
-{
+void decode64(char *result, char *encoded) {
     char *res = result;
 
     while (encoded[0] != 0) {
-	decode4_64(res, encoded);
-	encoded += 4;
-	res += 3;
-	res[3] = 0;
+        decode4_64(res, encoded);
+        encoded += 4;
+        res += 3;
+        res[3] = 0;
 
     }
 }
@@ -46,8 +45,7 @@ void decode64(char *result, char *encoded)
 Decodes a group of 4 characters and put 3 resulting chars in res
 res buffer must be able to contain 3 bytes.
 */
-void decode4_64(char *res, char *group)
-{
+void decode4_64(char *res, char *group) {
 
     ///////CALCULATE CHAR 0
     res[0] = getCode(group[0]) << 2;
@@ -76,27 +74,26 @@ void decode4_64(char *res, char *group)
 /**
 Returns the base64 (6bit) code of a char
 */
-char getCode(char c)
-{
+char getCode(char c) {
     static char encodingTable[64] = {
-	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-	    'N', 'O',
-	'P',
-	'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c',
-	    'd', 'e',
-	'f',
-	'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
-	    't', 'u',
-	'v',
-	'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8',
-	    '9', '+',
-	'/'
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+        'N', 'O',
+        'P',
+        'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c',
+        'd', 'e',
+        'f',
+        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
+        't', 'u',
+        'v',
+        'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8',
+        '9', '+',
+        '/'
     };
 
     int i;
     for (i = 0; i < 64; i++) {
-	if (encodingTable[i] == c)
-	    return i;
+        if (encodingTable[i] == c)
+            return i;
     }
     return 0;
 }

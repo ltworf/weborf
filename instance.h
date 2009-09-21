@@ -93,31 +93,31 @@ typedef struct {
 
 
 int write_dir(int sock, char *real_basedir,
-	      connection_t * connection_prop);
+              connection_t * connection_prop);
 void *instance(void *);
 int send_page(int sock, buffered_read_t * read_b,
-	      connection_t * connection_prop);
+              connection_t * connection_prop);
 int write_file(int sock, connection_t * connection_prop);
 #ifdef __COMPRESSION
 int write_compressed_file(int sock, unsigned int size, time_t timestamp,
-			  connection_t * connection_prop);
+                          connection_t * connection_prop);
 #endif
 int exec_page(int sock, char *executor, string_t * post_param,
-	      char *real_basedir, connection_t * connection_prop);
+              char *real_basedir, connection_t * connection_prop);
 int send_err(int sock, int err, char *descr, char *ip_addr);
 int send_http_header_scode(int sock, char *code, unsigned int size,
-			   char *headers);
+                           char *headers);
 void piperr();
 void modURL(char *url);
 int request_auth(int sock, char *descr);
 int check_auth(int sock, connection_t * connection_prop);
 string_t read_post_data(int sock, connection_t * connection_prop,
-			buffered_read_t * read_b);
+                        buffered_read_t * read_b);
 char *get_basedir(char *http_param);
 void handle_requests(int sock, char *buf, buffered_read_t * read_b,
-		     int *bufFull, connection_t * connection_prop,
-		     long int id);
+                     int *bufFull, connection_t * connection_prop,
+                     long int id);
 int send_http_header_full(int sock, int code, unsigned int size,
-			  char *headers, bool content, time_t timestamp,
-			  connection_t * connection_prop);
+                          char *headers, bool content, time_t timestamp,
+                          connection_t * connection_prop);
 #endif
