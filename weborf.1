@@ -1,79 +1,72 @@
-.TH Weborf 1 "Sep 13, 2009"
-
+.TH Weborf 1 "Sep 13, 2009" "Minimal webserver"
 .SH NAME
-.B weborf
+weborf
 \- Minimal webserver
 
 .SH SYNOPSIS
-.B "weborf "
-[
-.B options
-]
+weborf [options]
 
 .SH DESCRIPTION
-\fBWeborf\fP  is a minimal webserver, can serve only GET and POST requests.
-
+Weborf  is a minimal webserver, can serve only GET and POST requests.
+.BR
 This manual page documents \fBWeborf\fP's command-line parameters.
-
+.BR
 \fBWeborf\fP is released under the GNU General Public License version 3.
-.PP
 
-.SH GENERAL COMMAND LINE USAGE
-
-Short command-line switches begin with a "-", and verbose switches begin with a "--".
-
- The parameter must be separated by the switch using a space.
-
-.SH COMMAND LINE OPTIONS
+.SH OPTIONS
+.SS
+.SS Options:
 
 .TP
-\fB\-b\fR, \fB\-\-basedir\fR
+.B \-b, \-\-basedir
 Must be followed by a valid directory. Weborf will use this directory as root directory, and won't send files located in parent dirs. But it is still possible for server-side scripts to read contents located anywhere on the filesystem. Links are also a workaround to exit from the base directory.
 
 .TP
-\fB\-a\fR, \fB\-\-auth\fR
+.B \-a, \-\-auth
 Must be followed by a unix socket listened by a program who will handle authentication.
 
 .TP
-\fB\-x\fR, \fB\-\-noexec\fR
+.B \-x, \-\-noexec
 When used, weborf will send scripts as if they were normal files instead of executing them and sending their output.
 
 .TP
-\fB\-i\fR, \fB\-\-ip\fR
+.B \-i, \-\-ip
 Must be followed by a valid IP address (v6 or v4, depending on how weborf was compiled. Run weborf -h to know it), and weborf will accept only connections directed to that specific IP.
 If the IP address provided isn't used by a network device on the host, weborf will terminate.
 By default weborf listens to all IP addresses on the local host.
 
 .TP
-\fB\-p\fR, \fB\-\-port\fR
+.B \-p, \-\-port
 Must be followed by a valid port number (between 1 and 65535), and weborf will listen to incoming connection on the specified port.
 If the port is already used weborf will terminate.
-To use low port numbers (less than 1024) it is necessary to execute the process as root. Thus it isn't a good idea to run a webserver with root privileges, so it is possible to specify another user.
+To use low port numbers (less than 1024) it is necessary to execute the process as root.
+Thus it isn't a good idea to run a webserver with root privileges, so it is possible to specify another user.
 
 .TP
-\fB\-V\fR, \fB\-\-virtual\fR
+.B \-V, \-\-virtual
 Enables weborf to use virtualhosts. The basedir supplied with -b will be the default one (will be used if the requested host is unknown).
 Every virtualhost must be in the form host[:port]=basedir. The port must be specified if the port used is different than 80. And the basedir must end with a /. To separate many virtualhosts, use a comma, and avoid spaces.
 To make weborf use different virtualhosts on different ports, it will be necessary to launch many weborf's processes.
 
 .TP
-\fB\-I\fR, \fB\-\-index\fR
+.B \-I, \-\-index
 Must be followed by a list (separated with commas and without spaces) of index files.
 Weborf will try to load an index file following the order they're listed, and if none is found it will list the content of the directory.
 In /etc/weborf.conf there is an 'indexes' directive, corresponding to this option. It is used when launching weborf as SystemV daemon.
 
 .TP
-\fB\-u\fR
+.B \-u
 Must be followed by a valid uid, different from 0. Weborf will use this user to do his work, but will bind to the network port with the previous user. This mechanism is meant to let users execute it as root and use port 80, and then let it run without root privileges.
 
 .TP
-\fB\-d\fR
+.B \-d
 Runs weborf as a daemon. It will not terminate when it's father process terminates, and it will leave the shell free to receive commands.
+.SS
 
 .SH SCRIPTING
 Weborf is able to send dinamically generated pages using php-cgi (if installed).
 When a filename ends with ".php", weborf will use php to execute this file before sending it to the client.
-
+.BR
 It is also possible to create scritps or binaries in other languages, just read rfc3875 to know how to handle parameters.
 
 .SH RETURN VALUE
@@ -81,7 +74,6 @@ It is also possible to create scritps or binaries in other languages, just read 
 .B 0
 Normal termination occured after a signal, a daemonization or a print version and exit or so on...
 .TP
-
 .B 1
 Basedir is not a directory
 .TP
@@ -116,16 +108,18 @@ Unable to change UID
 
 .B 19
 Invalid parameters on command line
-.TP
+.SS
 
 .SH "SEE ALSO"
 .BR weborf.conf(5), php (1)
 
 .SH VERSION
-\fBWeborf\fP 0.11
+.BR Weborf 0.11
 
 .SH WEB
-http://galileo.dmi.unict.it/wiki/weborf/
+.BR http://galileo.dmi.unict.it/wiki/weborf/
 
 .SH AUTHORS
+.nf
 Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
+.br
