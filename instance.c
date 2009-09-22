@@ -105,7 +105,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
             {
                 char a[12];//Gets the value
                 //Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
-                bool connection=get_param_value(connection_prop->http_param,"Connection", a,12);
+                bool connection=get_param_value(connection_prop->http_param,"Connection", a,12,10);//12 is the buffer size and 10 is strlen("connection")
 
                 //Setting the connection type, using protocol version
                 if (connection_prop->http_param[7]=='1' && connection_prop->http_param[5]=='1') {//Keep alive by default (protocol 1.1)
@@ -638,7 +638,7 @@ int write_file(int sock,connection_t* connection_prop) {
     char a[RBUFFER]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
     //If the file has the same date, there is no need of sending it again
-    if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER)) {//Find if it is a range request
+    if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER,13)) {//Find if it is a range request, 13 is strlen of "if-none-match"
         time_t etag=(time_t)strtol(a+1,NULL,0);
         if (connection_prop->strfile_stat.st_mtime==etag) {//Browser has the item in its cache, sending 304
             send_http_header_full(sock,304,0,NULL,true,etag,connection_prop);
@@ -673,7 +673,7 @@ int write_file(int sock,connection_t* connection_prop) {
     off_t count=connection_prop->strfile_stat.st_size;//Bytes to send to the client
 
 #ifdef __RANGE
-    if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER)) {//Find if it is a range request
+    if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER,5)) {//Find if it is a range request 5 is strlen of "range"
         int from,to;
 
         {//Locating from and to
@@ -903,7 +903,7 @@ string_t read_post_data(int sock,connection_t* connection_prop,buffered_read_t* 
     //Buffer for field's value
     char a[NBUFFER];
     //Gets the value
-    bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER);
+    bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,14);//14 is content-lenght's len
 
     //If there is a value and method is POST
     if (r!=false && connection_prop->method_id==POST) {
