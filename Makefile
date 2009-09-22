@@ -45,18 +45,13 @@ debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader
 	$(CC) -ggdb3 $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 clean: 
-	debian/rules debclean || echo
 	rm *.o weborf debug *.orig *~ || echo 
 	rm -f *~ *.orig || echo
-	cd debian; rm -rf tmp files debhelper.log substvars 
 purge: uninstall
 	rm -f $(CONFDIR)/weborf.conf || echo ok
 
 source: clean style
 	cd ..; tar cvzf weborf-`date +\%F | tr -d -`.tar.gz weborf/
-debsource:
-	debscript/gencontrol.sh>debian/control
-	debscript/debsource.sh
 style:
 	astyle --style=kr *c *h
 install: uninstall
