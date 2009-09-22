@@ -261,8 +261,8 @@ http_param is a string containing parameters of the HTTP request
 */
 int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     modURL(connection_prop->page);//Operations on the url string
-    split_get_params(connection_prop);//Pointer to the GET parameters 
-    
+    split_get_params(connection_prop);//Pointer to the GET parameters
+
 #ifdef SENDINGDBG
     syslog (LOG_DEBUG,"URL changed into %s",connection_prop->page);
 #endif
@@ -460,7 +460,7 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
 
             //file and params were the same string.
             //Joining them again temporarily
-            int delim=connection_prop->get_params-connection_prop->page-1;
+            int delim=connection_prop->page_len;
             connection_prop->page[delim]='?';
             setenv("REQUEST_URI",connection_prop->page,true);
             connection_prop->page[delim]='\0';
@@ -561,7 +561,9 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
     Determines if has to show the link to parent dir or not.
     If page is the basedir, it won't show the link to ..
     */
+    int pagelen;
     bool parent=true;
+
     {
         size_t basedir_len=strlen(real_basedir);
         if (connection_prop->strfile_len-1==basedir_len || connection_prop->strfile_len==basedir_len) parent=false;
@@ -572,11 +574,10 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
         return ERR_NOMEM;
     }
 
-    if (list_dir (connection_prop->strfile,html,MAXSCRIPTOUT,parent)<0) { //Creates the page
+    if ((pagelen=list_dir (connection_prop->strfile,html,MAXSCRIPTOUT,parent))<0) { //Creates the page
         free(html);//Frees the memory used for the page
         return ERR_FILENOTFOUND;
     } else { //If there are no errors sends the page
-        int pagelen=strlen(html);
         send_http_header_full(sock,200,pagelen,NULL,true,-1,connection_prop);
         write(sock,html,pagelen);
     }

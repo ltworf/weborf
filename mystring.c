@@ -36,7 +36,7 @@ This function splits the page name from the GET params.
 void split_get_params(connection_t* connection_prop) {
     int i=0;
     connection_prop->get_params=NULL;
-    while (connection_prop->page[i]!=0){
+    while (connection_prop->page[i]!=0) {
         if (connection_prop->page[i]=='?') {
             connection_prop->page[i]=0;
             connection_prop->get_params=&connection_prop->page[i+1];
