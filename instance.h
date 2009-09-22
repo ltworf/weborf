@@ -84,6 +84,7 @@ typedef struct {
     char *method;		//String version of the http method used
     char *http_param;		//Param string
     char *page;			//Requested URI
+    ssize_t page_len; //Lengh of the page string
     char *get_params;		//Params in the URI, after the ? char
     char *strfile;		//File on filesystem
     ssize_t strfile_len;	//Length of string strfile

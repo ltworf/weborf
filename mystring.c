@@ -31,18 +31,22 @@ void strToUpper(char *str) {
 }
 
 /**
- * This function finds the first ? character and replaces it with a \0 to terminate the string removing GET param from it.
- * Returns the pointer to the params,
- * Returns NULL if no ? was found
- * */
-char *nullParams(char *string) {
-    char *p = strstr(string, "?");
-    if (p == NULL) {
-        return NULL;
+This function splits the page name from the GET params.
+*/
+void split_get_params(connection_t* connection_prop) {
+    int i=0;
+    connection_prop->get_params=NULL;
+    while (connection_prop->page[i]!=0){
+        if (connection_prop->page[i]=='?') {
+            connection_prop->page[i]=0;
+            connection_prop->get_params=&connection_prop->page[i+1];
+            break;
+        }
+        i++;
     }
-    p[0] = '\0';
-    return &p[1];
+    connection_prop->page_len=i;
 }
+
 
 /**
 Replaces escape sequences in the form %HEXCODE with the correct char
@@ -135,10 +139,8 @@ str String to compare
 end second string. If str ends with end, true is returned
 false otherwise
 */
-bool endsWith(char *str, char *end) {
+bool endsWith(char *str, char *end,ssize_t len_str,ssize_t len_end) {
     int i;
-    int len_end = strlen(end);
-    int len_str = strlen(str);
 
     for (i = 1; i <= len_end; i++) {
         if (end[len_end - i] != str[len_str - i])
