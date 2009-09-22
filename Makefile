@@ -54,7 +54,12 @@ source: clean style
 	cd ..; tar cvzf weborf-`date +\%F | tr -d -`.tar.gz weborf/
 style:
 	astyle --style=kr *c *h
-install: uninstall
+install: 
+	#Make install for debian
+	if ! test -z $(DESTDIR); then mkdir -p $(DESTDIR)/usr/bin; cp weborf $(DESTDIR)/usr/bin; chmod 755 $(DESTDIR)/usr/bin/weborf ; exit 0; fi
+	
+	#Normal make install
+	make uninstall
 	mkdir -p $(MANDIR)/man1/ || echo Creating directories
 	mkdir -p $(MANDIR)/man5/ || echo Creating directories
 	gzip -c weborf.1 > $(MANDIR)/man1/weborf.1.gz || echo Manfile already present
