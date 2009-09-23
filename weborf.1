@@ -19,7 +19,7 @@ This manual page documents \fBWeborf\fP's command-line parameters.
 
 .TP
 .B \-b, \-\-basedir
-Must be followed by a valid directory. Weborf will use this directory as root directory, and won't send files located in parent dirs. But it is still possible for server-side scripts to read contents located anywhere on the filesystem. Links are also a workaround to exit from the base directory.
+Must be followed by a valid directory. Weborf will use this directory as root directory, and won't send files located in parent dirs. But it is still possible for server\-side scripts to read contents located anywhere on the filesystem. Links are also a workaround to exit from the base directory.
 
 .TP
 .B \-a, \-\-auth
@@ -31,7 +31,7 @@ When used, weborf will send scripts as if they were normal files instead of exec
 
 .TP
 .B \-i, \-\-ip
-Must be followed by a valid IP address (v6 or v4, depending on how weborf was compiled. Run weborf -h to know it), and weborf will accept only connections directed to that specific IP.
+Must be followed by a valid IP address (v6 or v4, depending on how weborf was compiled. Run weborf \-h to know it), and weborf will accept only connections directed to that specific IP.
 If the IP address provided isn't used by a network device on the host, weborf will terminate.
 By default weborf listens to all IP addresses on the local host.
 
@@ -44,7 +44,7 @@ Thus it isn't a good idea to run a webserver with root privileges, so it is poss
 
 .TP
 .B \-V, \-\-virtual
-Enables weborf to use virtualhosts. The basedir supplied with -b will be the default one (will be used if the requested host is unknown).
+Enables weborf to use virtualhosts. The basedir supplied with \-b will be the default one (will be used if the requested host is unknown).
 Every virtualhost must be in the form host[:port]=basedir. The port must be specified if the port used is different than 80. And the basedir must end with a /. To separate many virtualhosts, use a comma, and avoid spaces.
 To make weborf use different virtualhosts on different ports, it will be necessary to launch many weborf's processes.
 
@@ -95,7 +95,7 @@ Authbin is not an executable
 .TP
 
 .B 6
-Too much indexes provided as parameter to -I. Increasing MAXINDEXCOUNT in the file options.h and recompiling can solve the problem. But providing a reasanable amount of index file names would be a better solution.
+Too much indexes provided as parameter to \-I. Increasing MAXINDEXCOUNT in the file options.h and recompiling can solve the problem. But providing a reasanable amount of index file names would be a better solution.
 .TP
 
 .B 7
