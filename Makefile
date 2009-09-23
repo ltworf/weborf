@@ -48,7 +48,7 @@ clean:
 	rm *.o weborf debug *.orig *~ || echo 
 	rm -f *~ *.orig || echo
 purge: uninstall
-	rm -f $(CONFDIR)/weborf.conf || echo ok
+	rm -f $(CONFDIR)/weborf.conf || echo
 
 source: clean style
 	cd ..; tar cvzf weborf-`date +\%F | tr -d -`.tar.gz weborf/
@@ -73,10 +73,10 @@ install:
 	if  ! test -e $(CONFDIR)/weborf.conf; then cp weborf.conf $(CONFDIR)/; fi
 
 uninstall:
-	rm -f $(MANDIR)/man5/weborf.conf.5.gz || echo ok
-	rm -f $(MANDIR)/man1/weborf.1.gz || echo ok
-	rm -f $(BINDIR)/weborf || echo ok
-	rm -f $(DAEMONDIR)/weborf || echo ok
+	rm -f $(MANDIR)/man5/weborf.conf.5.gz || echo
+	rm -f $(MANDIR)/man1/weborf.1.gz || echo
+	rm -f $(BINDIR)/weborf || echo
+	rm -f $(DAEMONDIR)/weborf || echo
 
 memcheck: debug
 	valgrind --track-origins=yes --tool=memcheck --leak-check=yes --leak-resolution=high --show-reachable=yes --num-callers=20 --track-fds=yes ./debug || echo "Valgrind doesn't appear to be installed on this system"
