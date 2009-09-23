@@ -231,10 +231,9 @@ void setEnvVars(char *http_param) { //Sets Enviroment vars
                 break;
             }
         }
-        hparam[5] = '\0';
         strToUpper(param);	//Converts to upper case
         strReplace(param, "-", '_');
-        strncat(hparam, param,200);
+        snprintf(hparam+5,195,param);
         setenv(hparam, value, true);
     }
 }

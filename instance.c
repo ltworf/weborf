@@ -90,8 +90,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         if (connection_prop->method_id!=INVALID ) {
             connection_prop->method=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
             connection_prop->page=strtok_r(NULL," ",&lasts);
-            //connection_prop->http_param=strtok_r(NULL," ",&lasts);
-            connection_prop->http_param=lasts; //Might cause instability
+            connection_prop->http_param=lasts;
 
 #ifdef REQUESTDBG
             syslog(LOG_INFO,"%s: %s %s\n",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
@@ -101,7 +100,6 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
             syslog(LOG_INFO,"Requested page: %s to Thread %ld",connection_prop->page,id);
 #endif
             //Stores the parameters of the request
-            //param=(char *)(page+strlen(page)+1);
             {
                 char a[12];//Gets the value
                 //Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
@@ -645,7 +643,6 @@ int write_file(int sock,connection_t* connection_prop) {
             send_http_header_full(sock,304,0,NULL,true,etag,connection_prop);
             return 0;
         }
-
     }
 #ifdef __COMPRESSION
     if (connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN && connection_prop->strfile_stat.st_size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
