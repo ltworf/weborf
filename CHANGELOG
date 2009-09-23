@@ -15,6 +15,7 @@
 - Reduced system calls number
 - Resumed code deleted by Salvo Rinaldi
 - Reduced number of strlen and strstr
+- Fixed warnings in manpages
 
 0.10
 - Pipe with scripts are now closed
