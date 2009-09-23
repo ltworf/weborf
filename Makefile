@@ -23,8 +23,8 @@ LDFLAGS=-lpthread
 #ARCHFLAGS=-m64
 
 
-MANDIR=/usr/local/man/
-BINDIR=/usr/local/bin/
+MANDIR=/usr/share/man/
+BINDIR=/usr/bin/
 DAEMONDIR=/etc/init.d/
 CONFDIR=/etc/
 
@@ -33,50 +33,47 @@ all: weborf
 weborf: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.c
 	$(CC) $(LDFLAGS) $(ARCHFLAGS) $(OFLAGS) $+ -o $@
 
-queue.c: queue.h
-instance.c: instance.h
-buffered_reader.c: buffered_reader.h
-listener.c: listener.h
-mystring.c: mystring.h
-utils.c: utils.h
-base64.c: base64.h
+%.c: %.h
 
 debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o
 	$(CC) -ggdb3 $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 clean: 
-	rm *.o weborf debug *.orig *~ || echo 
-	rm -f *~ *.orig || echo
+	rm -f *.o weborf debug *.orig *~ 
+	rm -f *~ *.orig
+
 purge: uninstall
-	rm -f $(CONFDIR)/weborf.conf || echo
+	rm -f $(CONFDIR)/weborf.conf
 
 source: clean style
 	cd ..; tar cvzf weborf-`date +\%F | tr -d -`.tar.gz weborf/
+
 style:
 	astyle --style=kr *c *h
-install: 
-	#Make install for debian
-	if ! test -z $(DESTDIR); then mkdir -p $(DESTDIR)/usr/bin; cp weborf $(DESTDIR)/usr/bin; chmod 755 $(DESTDIR)/usr/bin/weborf ; exit 0; fi
-	
-	#Normal make install
-	make uninstall
-	mkdir -p $(MANDIR)/man1/ || echo Creating directories
-	mkdir -p $(MANDIR)/man5/ || echo Creating directories
-	gzip -c weborf.1 > $(MANDIR)/man1/weborf.1.gz || echo Manfile already present
-	gzip -c weborf.conf.5 > $(MANDIR)/man5/weborf.conf.5.gz || echo Manfile already present
-	
-	cp weborf.pywrap.py $(BINDIR)
-	cp weborf $(BINDIR)
-	cp weborf.daemon $(DAEMONDIR)/weborf
-	chmod u+x $(DAEMONDIR)/weborf
-	chmod a+x $(BINDIR)/weborf*
-	if  ! test -e $(CONFDIR)/weborf.conf; then cp weborf.conf $(CONFDIR)/; fi
+
+installdirs:
+	install -d $(DESTDIR)/$(BINDIR)/
+	install -d $(DESTDIR)/$(MANDIR)/man1
+	install -d $(DESTDIR)/$(MANDIR)/man5
+
+install: uninstall installdirs
+	# Gzip the manpages
+	gzip -9 -c weborf.1 > weborf.1.gz
+	gzip -9 -c weborf.conf.5 > weborf.conf.5.gz
+
+	# Install everything
+	install -m 644 weborf.1.gz $(DESTDIR)/$(MANDIR)/man1/
+	install -m 644 weborf.conf.5.gz $(DESTDIR)/$(MANDIR)/man5/
+	install -m 755 weborf.pywrap.py weborf $(DESTDIR)/$(BINDIR)/
+	install -m 755 weborf.daemon $(DESTDIR)/$(DAEMONDIR)/weborf
+
+	if  ! test -e $(DESTDIR)/(CONFDIR)/weborf.conf; then install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/; fi
 
 uninstall:
-	rm -f $(MANDIR)/man5/weborf.conf.5.gz || echo
-	rm -f $(MANDIR)/man1/weborf.1.gz || echo
-	rm -f $(BINDIR)/weborf || echo
-	rm -f $(DAEMONDIR)/weborf || echo
+	rm -f $(DESTDIR)/$(MANDIR)/man5/weborf.conf.5.gz
+	rm -f $(DESTDIR)/$(MANDIR)/man1/weborf.1.gz
+	rm -f $(DESTDIR)/$(BINDIR)/weborf
+	rm -f $(DESTDIR)/$(DAEMONDIR)/weborf
 
 memcheck: debug
 	valgrind --track-origins=yes --tool=memcheck --leak-check=yes --leak-resolution=high --show-reachable=yes --num-callers=20 --track-fds=yes ./debug || echo "Valgrind doesn't appear to be installed on this system"
