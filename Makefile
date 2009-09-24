@@ -39,8 +39,7 @@ debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader
 	$(CC) -ggdb3 $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 clean: 
-	rm -f *.o weborf debug *.orig *~ 
-	rm -f *~ *.orig
+	rm -f *.o weborf debug *.orig *~ *.gz
 
 purge: uninstall
 	rm -f $(CONFDIR)/weborf.conf
@@ -55,6 +54,7 @@ installdirs:
 	install -d $(DESTDIR)/$(BINDIR)/
 	install -d $(DESTDIR)/$(MANDIR)/man1
 	install -d $(DESTDIR)/$(MANDIR)/man5
+	install -d $(DESTDIR)/$(DAEMONDIR)
 
 install: uninstall installdirs
 	# Gzip the manpages
@@ -64,7 +64,7 @@ install: uninstall installdirs
 	# Install everything
 	install -m 644 weborf.1.gz $(DESTDIR)/$(MANDIR)/man1/
 	install -m 644 weborf.conf.5.gz $(DESTDIR)/$(MANDIR)/man5/
-	install -m 755 weborf.pywrap.py weborf $(DESTDIR)/$(BINDIR)/
+	install -m 755 weborf $(DESTDIR)/$(BINDIR)/
 	install -m 755 weborf.daemon $(DESTDIR)/$(DAEMONDIR)/weborf
 
 	if  ! test -e $(DESTDIR)/$(CONFDIR)/weborf.conf; then install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/; fi
