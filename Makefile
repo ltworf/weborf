@@ -36,7 +36,7 @@ weborf: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reade
 %.c: %.h
 
 debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o
-	$(CC) -ggdb3 $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
+	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 clean: 
 	rm -f *.o weborf debug *.orig *~ *.gz
