@@ -16,8 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
-
- */
+*/
 
 #ifndef WEBORF_UTILS_H
 #define WEBORF_UTILS_H

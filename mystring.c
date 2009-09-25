@@ -101,7 +101,7 @@ In case deleting of more chars than the string's len itself, the string will be 
 This function is in-place, doesn't create copies but changes the original string.
 */
 void delChar(char *string, int pos, int n) {
-    if (strlen(string) < n + pos) {	//String is long enough
+    if (strlen(string) < n + pos) { //String is long enough
         return;
     }
 
@@ -155,7 +155,7 @@ Removes cr lf chars from the beginning of the string
 
 This function is in-place, doesn't create copies but changes the original string.
 */
-int removeCrLf(char *buf) {				//Removing initial \n or \r
+int removeCrLf(char *buf) { //Removing initial \n or \r
     int count = 0;
     while (buf[count] == 10 || buf[count] == 13)
         count++;

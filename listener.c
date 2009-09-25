@@ -27,27 +27,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utils.h"
 #define _GNU_SOURCE
 
-syn_queue_t queue;		//Queue for opened sockets
+syn_queue_t queue;              //Queue for opened sockets
 
 
-pthread_mutex_t m_free;		//Mutex to modify t_free
-unsigned int t_free = 0;	//Free threads
+pthread_mutex_t m_free;         //Mutex to modify t_free
+unsigned int t_free = 0;        //Free threads
 
-pthread_mutex_t m_thread_c;	//Mutex to modify thread_c
-unsigned int thread_c = 0;	//Number of threads
+pthread_mutex_t m_thread_c;     //Mutex to modify thread_c
+unsigned int thread_c = 0;      //Number of threads
 
-char *basedir = BASEDIR;	//Base directory
-char *authbin;			//Executable that will authenticate
-bool exec_script = true;	//Execute scripts if true, sends the file if false
+char *basedir = BASEDIR;        //Base directory
+char *authbin;                  //Executable that will authenticate
+bool exec_script = true;        //Execute scripts if true, sends the file if false
 
-uid_t uid = ROOTUID;		//Uid to use after bind
+uid_t uid = ROOTUID;            //Uid to use after bind
 
-pthread_attr_t t_attr;		//thread's attributes
+pthread_attr_t t_attr;          //thread's attributes
 
-char *indexes[MAXINDEXCOUNT];	//List of pointers to index files
-int indexes_l = 1;		//Count of the list
+char *indexes[MAXINDEXCOUNT];   //List of pointers to index files
+int indexes_l = 1;              //Count of the list
 
-bool virtual_host = false;	//True if must check for virtual hosts
+bool virtual_host = false;      //True if must check for virtual hosts
 
 /**
 Increases or decreases the number of current active thread.
@@ -79,7 +79,7 @@ void init_threads(unsigned int count) {
     //t_free=MAXTHREAD;
     int i;
 
-    pthread_t t_id;		//Unused var, thread's system id
+    pthread_t t_id;//Unused var, thread's system id
 
     pthread_mutex_lock(&m_free);
 
@@ -87,7 +87,7 @@ void init_threads(unsigned int count) {
         pthread_create(&t_id, &t_attr, instance, (void *) (id++));
 
     }
-    chn_thread_count(count);	//Increases the counter of active threads
+    chn_thread_count(count);//Increases the counter of active threads
     t_free += count;
 #ifdef THREADDBG
     syslog(LOG_DEBUG, "There are %d free threads", t_free);
@@ -108,12 +108,12 @@ void init_logger() {
 
 int main(int argc, char *argv[]) {
 
-    init_logger();		//Inits the logger
+    init_logger();      //Inits the logger
 
-    int s, s1;			//Socket
+    int s, s1;          //Socket
 
-    char *ip = NULL;		//IP addr with default value
-    char *port = PORT;		//port with default value
+    char *ip = NULL;    //IP addr with default value
+    char *port = PORT;  //port with default value
 
 #ifdef IPV6
     struct sockaddr_in6 locAddr, farAddr;	//Local and remote address
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
     //default index file
     indexes[0] = INDEX;
 
-    while (1) {			//Block to read command line
+    while (1) { //Block to read command line
 
         //Declares options
         static struct option long_options[] = {
@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
             {"noexec", no_argument, 0, 'x'},
             {0, 0, 0, 0}
         };
-        static int c;		//Identify the readed option
+        static int c; //Identify the readed option
         int option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
@@ -156,15 +156,15 @@ int main(int argc, char *argv[]) {
             break;
 
         switch (c) {
-        case 'V': {			//Setting virtual hosts
+        case 'V': { //Setting virtual hosts
             virtual_host = true;
 
             int i = 0;
-            char *virtual = optarg;	//1st one points to begin of param
+            char *virtual = optarg; //1st one points to begin of param
 
-            while (optarg[i++] != 0) {	//Reads the string
+            while (optarg[i++] != 0) { //Reads the string
                 if (optarg[i] == ',') {
-                    optarg[i++] = 0;	//Nulling the comma
+                    optarg[i++] = 0; //Nulling the comma
                     putenv(virtual);
                     virtual = &optarg[i];
 
@@ -173,15 +173,16 @@ int main(int argc, char *argv[]) {
             putenv(virtual);
         }
         break;
-        case 'I': {			//Setting list of indexes
+        case 'I': { //Setting list of indexes
             int i = 0;
-            indexes_l = 1;	//count of indexes
-            indexes[0] = optarg;	//1st one points to begin of param
-            while (optarg[i++] != 0) {	//Reads the string
+            indexes_l = 1; //count of indexes
+            indexes[0] = optarg; //1st one points to begin of param
+            while (optarg[i++] != 0) { //Reads the string
 
                 if (optarg[i] == ',') {
-                    optarg[i++] = 0;	//Nulling the comma
-                    indexes[indexes_l++] = &optarg[i];	//Increasing counter and making next item point to char after the comma
+                    optarg[i++] = 0; //Nulling the comma
+                    //Increasing counter and making next item point to char after the comma
+                    indexes[indexes_l++] = &optarg[i];
                     if (indexes_l == MAXINDEXCOUNT) {
                         perror
                         ("Too much indexes, change MAXINDEXCOUNT in options.h to allow more");
@@ -193,37 +194,37 @@ int main(int argc, char *argv[]) {
         }
         break;
 
-        case 'b':		//Basedirectory
+        case 'b':   //Basedirectory
             setBasedir(optarg);
             break;
-        case 'x':		//Noexec scripts
+        case 'x':   //Noexec scripts
             exec_script = false;
             break;
-        case 'v':		//Show version and exit
+        case 'v':   //Show version and exit
             version();
             break;
-        case 'h':		//Show help and exit
+        case 'h':   //Show help and exit
             help();
             break;
-        case 'p':		//Set port
+        case 'p':   //Set port
             port = optarg;
             break;
-        case 'i':		//Set ip address
+        case 'i':   //Set ip address
             ip = optarg;
             break;
-        case 'u':		//Set uid
+        case 'u':   //Set uid
             uid = strtol(optarg, NULL, 0);
             break;
-        case 'd':		//Daemonize
+        case 'd':   //Daemonize
             if (fork() == 0)
                 signal(SIGHUP, SIG_IGN);
             else
                 exit(0);
             break;
-        case 'a':		//Set authentication script
+        case 'a':   //Set authentication script
             setAuthbin(optarg);
             break;
-        case 'm':		//Supercow!
+        case 'm':   //Supercow!
             moo();
             break;
         default:
@@ -235,10 +236,8 @@ int main(int argc, char *argv[]) {
 
     printf("Weborf\n");
     printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
-    printf
-    ("This is free software, and you are welcome to redistribute it\n");
-    printf
-    ("under certain conditions.\nFor details see the GPLv3 Licese.\n");
+    printf("This is free software, and you are welcome to redistribute it\n");
+    printf("under certain conditions.\nFor details see the GPLv3 Licese.\n");
     printf("Run %s --help to see the options\n", argv[0]);
 
     setenv("SERVER_PORT", port, true);
@@ -254,8 +253,7 @@ int main(int argc, char *argv[]) {
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0) {
         perror("ruseaddr(any)");
 #ifdef IPV6
-        char *suggestion =
-            "If you don't have any IPv6 address, try recompiling weborf, removing the line '#define IPV6' from options.h\n";
+        char *suggestion = "If you don't have any IPv6 address, try recompiling weborf, removing the line '#define IPV6' from options.h\n";
         write(2, suggestion, strlen(suggestion));
 #endif
         return 1;
@@ -266,9 +264,9 @@ int main(int argc, char *argv[]) {
     memset(&locAddr, 0, sizeof(locAddr));
     locAddr.sin6_family = AF_INET6;
     locAddr.sin6_port = htons(strtol(port, NULL, 0));
-    if (ip == NULL) {		//Default ip, listens to all the interfaces
+    if (ip == NULL) { //Default ip, listens to all the interfaces
         locAddr.sin6_addr = in6addr_any;
-    } else {			//Custom ip
+    } else { //Custom ip
         if (inet_pton(AF_INET6, ip, &locAddr.sin6_addr) == 0) {
             printf("Invalid IP address: %s\n", ip);
             exit(2);
@@ -288,7 +286,7 @@ int main(int argc, char *argv[]) {
     //Prepares socket's address
     locAddr.sin_family = AF_INET;	//Internet socket
 
-    {				//Check the validity of port param and uses it
+    { //Check the validity of port param and uses it
         unsigned int p = strtol(port, NULL, 0);
         if (p < 1 || p > 65535) {
             printf("Invalid port number: %d\n", p);
@@ -298,8 +296,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (ip == NULL)
-        ip = "0.0.0.0";		//Default ip address
-    if (inet_aton(ip, &locAddr.sin_addr) == 0) {	//Converts ip to listen in binary format
+        ip = "0.0.0.0"; //Default ip address
+    if (inet_aton(ip, &locAddr.sin_addr) == 0) { //Converts ip to listen in binary format
         printf("Invalid IP address: %s\n", ip);
         exit(2);
     }
@@ -332,8 +330,8 @@ int main(int argc, char *argv[]) {
     init_thread_attr();
     init_threads(INITIALTHREAD);
 
-    {				//Starts the monitoring thread, to close unused threads
-        pthread_t t_id;		//Unused var
+    { //Starts the monitoring thread, to close unused threads
+        pthread_t t_id; //Unused var
         pthread_create(&t_id, NULL, t_shape, (void *) NULL);
     }
 
@@ -342,22 +340,18 @@ int main(int argc, char *argv[]) {
     signal(SIGTERM, quit);
 
 
-    listen(s, MAXQ);		//Listen to the socket
-
-    //int loc_free=t_free;//Local t_free, used to avoid deadlock
+    listen(s, MAXQ); //Listen to the socket
 
     //Infinite cycle, accept connections
 #ifdef IPV6
     while ((s1 = accept(s, (struct sockaddr *) &farAddr, &farAddrL)) != -1) {
 #else
-    while ((s1 =
-                accept(s, (struct sockaddr *) &farAddr,
-                       (socklen_t *) & farAddrL)) != -1) {
+    while ((s1 = accept(s, (struct sockaddr *) &farAddr, (socklen_t *) & farAddrL)) != -1) {
 #endif
 
-        if (s1 >= 0 && t_free > 0) {	//Adds s1 to the queue
+        if (s1 >= 0 && t_free > 0) { //Adds s1 to the queue
             q_put(&queue, s1, farAddr);
-        } else {		//Closes the socket if there aren't enough free threads.
+        } else { //Closes the socket if there aren't enough free threads.
 #ifdef REQUESTDBG
             syslog(LOG_ERR,
                    "Not enough resources, dropping connection...");
@@ -366,10 +360,10 @@ int main(int argc, char *argv[]) {
         }
 
         //Start new thread if needed
-        if (t_free <= LOWTHREAD) {	//Need to start new thread
-            if (thread_c + INITIALTHREAD < MAXTHREAD) {	//Starts a group of threads
+        if (t_free <= LOWTHREAD) { //Need to start new thread
+            if (thread_c + INITIALTHREAD < MAXTHREAD) { //Starts a group of threads
                 init_threads(INITIALTHREAD);
-            } else {		//Can't start a group because the limit is close, starting less than a whole group
+            } else { //Can't start a group because the limit is close, starting less than a whole group
                 init_threads(MAXTHREAD - thread_c);
             }
         }
@@ -413,7 +407,7 @@ void setAuthbin(char *bin) {
     int l = strlen(bin);
     char command[l + 10];
     sprintf(command, "test -x %s", bin);
-    if (system(command) != 0) {	//Doesn't exist or it isn't executable
+    if (system(command) != 0) { //Doesn't exist or it isn't executable
         printf("%s doesn't exist or it is not executable\n", bin);
         exit(5);
     }
@@ -457,5 +451,5 @@ void *t_shape(void *nulla) {
             chn_thread_count(-1);	//Decreases the number of free total threads
         }
     }
-    return NULL;		//make gcc happy
+    return NULL; //make gcc happy
 }

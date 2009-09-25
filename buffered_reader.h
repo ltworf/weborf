@@ -22,10 +22,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <unistd.h>
 typedef struct {
-    char *buffer;		//Buffer where the reader stores the read data
-    char *start;		//Pointer to non-consumed data
-    char *end;			//Pointer to 1st byte after end of the data. A read must continue after end.
-    int size;			//Size of the buffer
+    char *buffer;   //Buffer where the reader stores the read data
+    char *start;    //Pointer to non-consumed data
+    char *end;      //Pointer to 1st byte after end of the data. A read must continue after end.
+    int size;       //Size of the buffer
 } buffered_read_t;
 
 int buffer_init(buffered_read_t * buf, int size);

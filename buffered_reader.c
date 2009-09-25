@@ -56,7 +56,7 @@ On some special cases, the read data could be less than the requested one. For e
 end of file is reached and it is impossible to do further reads.
 */
 ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
-    ssize_t wrote = 0;		//Count of written bytes
+    ssize_t wrote = 0; //Count of written bytes
     ssize_t available, needed;
     ssize_t r;
 
@@ -64,11 +64,11 @@ ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
         available = buf->end - buf->start;
         needed = count - wrote;
 
-        if (needed <= available) {	//More data in buffer than needed
+        if (needed <= available) { //More data in buffer than needed
             memcpy(b, buf->start, needed);
             buf->start += needed;
             return wrote + needed;
-        } else {		//Requesting more data than available
+        } else { //Requesting more data than available
             if (available > 0) {
                 memcpy(b, buf->start, available);
                 b += available;
@@ -77,10 +77,10 @@ ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
             //Filing the buffer again
             buf->start = buf->buffer;
 
-            {			//Timeout implementation
+            { //Timeout implementation
                 struct pollfd monitor[1];
-                monitor[0].fd = fd;	//File descriptor to monitor
-                monitor[0].events = POLLIN;	//Monitor on input events
+                monitor[0].fd = fd; //File descriptor to monitor
+                monitor[0].events = POLLIN; //Monitor on input events
 
                 //Waits the timeout or reads the data.
                 //If timeout is reached and no input is available
@@ -92,14 +92,14 @@ ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
                 }
             }
 
-            if (r <= 0) {	//End of the stream
+            if (r <= 0) { //End of the stream
                 buf->end = buf->start;
                 return wrote;
             }
             buf->end = buf->start + r;
         }
 
-    }				/*while */
+    } /*while */
     return wrote;
 }
 

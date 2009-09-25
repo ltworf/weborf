@@ -46,13 +46,13 @@ int list_dir(char *dir, char *html, unsigned int bufsize, bool parent) {
     struct dirent *ep; //File's property
     DIR *dp = opendir(dir); //Open dir
     bool print;
-    
+
     char *color; //Depending on row count chooses a background color
     char measure[4]; //contains measure unit for file's size (B, KiB, MiB)
     unsigned int counter = 0; //Used to determine if row is odd or even
-    
+
     char path[INBUFFER]; //Buffer to contain element's absolute path
-    
+
     if (dp == NULL) { //Open not succesfull
         return -1;
     }
@@ -60,16 +60,16 @@ int list_dir(char *dir, char *html, unsigned int bufsize, bool parent) {
     //Specific header table)
     pagesize=printf_s=snprintf(html+pagesize,maxsize,"%s<table><tr><td></td><td>Name</td><td>Size</td></tr>",HTMLHEAD);
     maxsize-=printf_s;
-    
-    while ((ep = readdir(dp))) {	//Cycles trough dir's elements
-        counter++;		//Increases counter, to know if the row is odd or even
+
+    while ((ep = readdir(dp))) { //Cycles trough dir's elements
+        counter++; //Increases counter, to know if the row is odd or even
         sprintf(path, "%s/%s", dir, ep->d_name);
 
-        struct stat f_prop;	//File's property
+        struct stat f_prop; //File's property
         stat(path, &f_prop);
-        int f_mode = f_prop.st_mode;	//Get's file's mode
+        int f_mode = f_prop.st_mode; //Get's file's mode
 
-        if (S_ISREG(f_mode)) {	//Regular file
+        if (S_ISREG(f_mode)) { //Regular file
 
             //Table row for the file
 
@@ -231,7 +231,7 @@ void setEnvVars(char *http_param) { //Sets Enviroment vars
                 break;
             }
         }
-        strToUpper(param);	//Converts to upper case
+        strToUpper(param); //Converts to upper case
         strReplace(param, "-", '_');
         snprintf(hparam+5,195,param);
         setenv(hparam, value, true);
@@ -249,7 +249,7 @@ param_len =lenght of the parameter
 Returns false if the parameter isn't found, or true otherwise
 */
 bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,ssize_t param_len) {
-    char *val = strstr(http_param, parameter);	//Locates the requested parameter information
+    char *val = strstr(http_param, parameter); //Locates the requested parameter information
 
     if (val == NULL) { //No such field
         return false;

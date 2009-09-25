@@ -53,8 +53,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         from=0;
 
         while ((end=strstr(buf+from,"\r\n\r"))==NULL) { //Determines if there is a \r\n\r which is an ending sequence
-            //r=read(sock, buf+bufFull,1);//Reads 1 char and adds to the buffer
-            r=buffer_read(sock, buf+*bufFull,2,read_b);//Reads 1 char and adds to the buffer
+            r=buffer_read(sock, buf+*bufFull,2,read_b);//Reads 2 char and adds to the buffer
 
             if (r<=0) { //Connection closed or error
                 return;

@@ -32,18 +32,14 @@ int q_init(syn_queue_t * q, int size) {
     q->size = size;
 
 #ifdef IPV6
-    q->data =
-        (int *) malloc(sizeof(int) * size +
-                       sizeof(struct sockaddr_in) * size);
+    q->data = (int *) malloc(sizeof(int) * size + sizeof(struct sockaddr_in) * size);
     q->addr = (struct sockaddr_in6 *) q->data + sizeof(int) * size;
 #else
-    q->data =
-        (int *) malloc(sizeof(int) * size +
-                       sizeof(struct sockaddr_in) * size);
+    q->data = (int *) malloc(sizeof(int) * size + sizeof(struct sockaddr_in) * size);
     q->addr = (struct sockaddr_in *) q->data + sizeof(int) * size;
 #endif
 
-    if (q->data == NULL) {	//Error, unable to allocate memory
+    if (q->data == NULL) { //Error, unable to allocate memory
         return 1;
     }
 
@@ -79,9 +75,10 @@ int q_get(syn_queue_t * q, int *val, struct sockaddr_in *addr_) {
     if ((q->num-- == q->size) && (q->n_wait_sp > 0)) {
         q->n_wait_sp--;
         pthread_cond_signal(&q->for_space);
-    }				// unlock also needed after signal
-    pthread_mutex_unlock(&q->mutex);	//   or threads blocked on wait
-    return 0;			//   will not proceed
+    } // unlock also needed after signal
+
+    pthread_mutex_unlock(&q->mutex); //   or threads blocked on wait
+    return 0; //   will not proceed
 }
 
 
@@ -103,7 +100,7 @@ int q_put(syn_queue_t * q, int val, struct sockaddr_in addr_) {
     if ((q->num++ == 0) && (q->n_wait_dt > 0)) {
         q->n_wait_dt--;
         pthread_cond_signal(&q->for_data);
-    }				// unlock also needed after signal
-    pthread_mutex_unlock(&q->mutex);	//   or threads blocked on wait
-    return 0;			//   will not proceed
+    } // unlock also needed after signal
+    pthread_mutex_unlock(&q->mutex); // or threads blocked on wait
+    return 0; // will not proceed
 }
