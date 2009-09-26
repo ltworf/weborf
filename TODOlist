@@ -3,3 +3,5 @@
 - implement PUT
 - implement PROPFIND
 - Create a Doxyfile to use doxygen
+- Put -g when compiling in debug mode
+- Array of pointers to various headers
