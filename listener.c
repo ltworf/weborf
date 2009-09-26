@@ -85,8 +85,8 @@ void init_threads(unsigned int count) {
 
     for (i = 1; i <= count; i++) {
         pthread_create(&t_id, &t_attr, instance, (void *) (id++));
-
     }
+
     chn_thread_count(count);//Increases the counter of active threads
     t_free += count;
 #ifdef THREADDBG
@@ -442,12 +442,16 @@ It works polling the number of free threads and writing an order of termination 
 Policies of this function (polling frequence and limit for free threads) are defined in options.h
  */
 void *t_shape(void *nulla) {
-
+#ifdef IPV6
+    struct sockaddr_in6 addr_;
+#else
+    struct sockaddr_in addr_;
+#endif
     for (;;) {
         sleep(THREADCONTROL);
 
         if (t_free > MAXFREETHREAD) {	//Too much free threads, terminates one of them
-            //TODO q_put(&queue,-1,NULL,NULL);//Write the termination order to the queue, the thread who will read it, will terminate
+            q_put(&queue,-1,addr_);//Write the termination order to the queue, the thread who will read it, will terminate
             chn_thread_count(-1);	//Decreases the number of free total threads
         }
     }

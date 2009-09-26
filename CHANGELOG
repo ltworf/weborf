@@ -1,4 +1,5 @@
 0.12
+- Fixed bug: now threads are closed again (Rev 305)
 
 0.11
 - Support for ETag header
