@@ -482,7 +482,7 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
     } else { //Father: reads from pipe and sends
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
-        
+
         //Large buffer, must contain the output of the script
         char* header_buf=malloc(MAXSCRIPTOUT+HEADBUF);
 
@@ -493,7 +493,7 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
             waitpid (wpid,&state,0); //Removes zombie process
             return ERR_NOMEM;//Returns if buffer was not allocated
         }
-        
+
         if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
             //Send post data to script's stdin
             write(ipipe[1],post_param->data,post_param->len);
@@ -520,8 +520,8 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         } else {//Something went wrong, ignoring the output (it's missing the headers)
             e_reads=0;
         }
-        
-        
+
+
 
         if (e_reads>0) {//There is output from script
             char* status; //Standard status
@@ -533,33 +533,33 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
                     status="200"; //Standard status
                 }
             }
-            
+
             /* There could be other data, which didn't fit in the buffer,
             so we set reads to -1 (this will make connection non-keep-alive)
             and we continue reading and writing to the socket */
-            if(e_reads==MAXSCRIPTOUT+HEADBUF) {
+            if (e_reads==MAXSCRIPTOUT+HEADBUF) {
                 reads=-1;
                 connection_prop->keep_alive=false;
             }
-            
+
             send_http_header_scode(sock,status,reads,header_buf);
 
             if (reads!=0) {//Sends the page if there is something to send
                 write (sock,scrpt_buf,reads);
             }
-            
+
             if (reads==-1) {//Reading until the pipe is empty, if it wasn't fully read before
                 e_reads=MAXSCRIPTOUT+HEADBUF;
-                while (e_reads==MAXSCRIPTOUT+HEADBUF){
+                while (e_reads==MAXSCRIPTOUT+HEADBUF) {
                     e_reads=read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF);
                     write (sock,header_buf,e_reads);
                 }
             }
-            
+
             //Closing pipe
             close (wpipe[0]);
-            
-            
+
+
         } else {//No output from script, maybe terminated...
             send_err(sock,500,"Internal server error",connection_prop->ip_addr);
         }
@@ -992,16 +992,17 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
     left_head-=len_head;
 
     //Creating ETag and date from timestamp
-    if (timestamp==-1) {//Etag with actual timestamp
+    if (timestamp!=-1) {
+        //Sends ETag, if a timestamp is set
+        len_head = snprintf(head,left_head,"ETag: \"%d\"\r\n",(int)timestamp);
+        head+=len_head;
+        left_head-=len_head;
+    }
+#ifdef SEND_DATE_HEADER
+    else {//timestamp with now, to be eventually used by Last-Modified
         timestamp=time(NULL);
     }
 
-    //Sends ETag
-    len_head = snprintf(head,left_head,"ETag: \"%d\"\r\n",(int)timestamp);
-    head+=len_head;
-    left_head-=len_head;
-
-#ifdef SEND_DATE_HEADER
     { //Sends Date
         struct tm  ts;
         localtime_r((time_t)&timestamp,&ts);
