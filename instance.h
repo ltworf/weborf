@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _GNU_SOURCE
 
 
-#ifndef O_LARGEFILE		//Needed to compile on Mac, where this doesn't exist
+#ifndef O_LARGEFILE //Needed to compile on Mac, where this doesn't exist
 #define O_LARGEFILE 0
 #endif
 
@@ -36,8 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
-#include <syslog.h>		//To use syslog
-#include "options.h"
+#include <syslog.h> //To use syslog
 #include <string.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -51,6 +50,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 
 #include "buffered_reader.h"
+#include "options.h"
 
 //Request
 #define INVALID -1
