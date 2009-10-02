@@ -102,7 +102,7 @@ int write_compressed_file(int sock, unsigned int size, time_t timestamp, connect
 #endif
 int exec_page(int sock, char *executor, string_t * post_param, char *real_basedir, connection_t * connection_prop);
 int send_err(int sock, int err, char *descr, char *ip_addr);
-int send_http_header_scode(int sock, char *code, unsigned int size, char *headers);
+int send_http_header_scode(int sock, char *code, int size, char *headers);
 void piperr();
 void modURL(char *url);
 int request_auth(int sock, char *descr);

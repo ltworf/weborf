@@ -480,16 +480,9 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         exit(1);
 
     } else { //Father: reads from pipe and sends
-        if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
-            //Send post data to script's stdin
-            write(ipipe[1],post_param->data,post_param->len);
-            close (ipipe[0]); //Closes unused end of the pipe
-            close (ipipe[1]); //Closes the pipe
-        }
-
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
-
+        
         //Large buffer, must contain the output of the script
         char* header_buf=malloc(MAXSCRIPTOUT+HEADBUF);
 
@@ -499,6 +492,13 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
             kill(wpid,SIGKILL); //Kills cgi process
             waitpid (wpid,&state,0); //Removes zombie process
             return ERR_NOMEM;//Returns if buffer was not allocated
+        }
+        
+        if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
+            //Send post data to script's stdin
+            write(ipipe[1],post_param->data,post_param->len);
+            close (ipipe[0]); //Closes unused end of the pipe
+            close (ipipe[1]); //Closes the pipe
         }
 
         {
@@ -520,9 +520,8 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         } else {//Something went wrong, ignoring the output (it's missing the headers)
             e_reads=0;
         }
-
-        //Closing pipe
-        close (wpipe[0]);
+        
+        
 
         if (e_reads>0) {//There is output from script
             char* status; //Standard status
@@ -534,11 +533,33 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
                     status="200"; //Standard status
                 }
             }
+            
+            /* There could be other data, which didn't fit in the buffer,
+            so we set reads to -1 (this will make connection non-keep-alive)
+            and we continue reading and writing to the socket */
+            if(e_reads==MAXSCRIPTOUT+HEADBUF) {
+                reads=-1;
+                connection_prop->keep_alive=false;
+            }
+            
             send_http_header_scode(sock,status,reads,header_buf);
 
-            if (reads>0) {//Sends the page if there is something to send
+            if (reads!=0) {//Sends the page if there is something to send
                 write (sock,scrpt_buf,reads);
             }
+            
+            if (reads==-1) {//Reading until the pipe is empty, if it wasn't fully read before
+                e_reads=MAXSCRIPTOUT+HEADBUF;
+                while (e_reads==MAXSCRIPTOUT+HEADBUF){
+                    e_reads=read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF);
+                    write (sock,header_buf,e_reads);
+                }
+            }
+            
+            //Closing pipe
+            close (wpipe[0]);
+            
+            
         } else {//No output from script, maybe terminated...
             send_err(sock,500,"Internal server error",connection_prop->ip_addr);
         }
@@ -799,17 +820,18 @@ separated by \r\n and must have an \r\n at the end.
 Code is a string, no need to terminate it with a \0 because only the 1st 2nd and 3rd chars of it
 will be used in each case. A shorter string will produce unpredictable behaviour
 */
-int send_http_header_scode(int sock,char* code, unsigned int size,char* headers) {
+int send_http_header_scode(int sock,char* code, int size,char* headers) {
 
     char *head=malloc(HEADBUF);
     if (head==NULL)return ERR_NOMEM;
 
     int len_head;
-    if (headers==NULL) {
-        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %c%c%c OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n\r\n",code[0],code[1],code[2], size);
-    } else {
+    if (size>=0) {
         len_head=snprintf(head,HEADBUF,"HTTP/1.1 %c%c%c OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n",code[0],code[1],code[2], size,headers);
+    } else {
+        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %c%c%c OK Server: Weborf (GNU/Linux)\r\nConnection: close\r\n%s\r\n",code[0],code[1],code[2],headers);
     }
+
     int wrote=write (sock,head,len_head);
     free(head);
     if (wrote!=len_head) return ERR_BRKPIPE;
