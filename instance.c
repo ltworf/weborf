@@ -84,55 +84,45 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         //Finds out request's kind
         if (strncmp(buf,"GET",3)==0) connection_prop->method_id=GET;
         else if (strncmp(buf,"POST",4)==0) connection_prop->method_id=POST;
-        else connection_prop->method_id=INVALID;
-
-        if (connection_prop->method_id!=INVALID ) {
-            connection_prop->method=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
-            connection_prop->page=strtok_r(NULL," ",&lasts);
-            connection_prop->http_param=lasts;
-
-#ifdef REQUESTDBG
-            syslog(LOG_INFO,"%s: %s %s\n",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
-#endif
-
-#ifdef THREADDBG
-            syslog(LOG_INFO,"Requested page: %s to Thread %ld",connection_prop->page,id);
-#endif
-            //Stores the parameters of the request
-            {
-                char a[12];//Gets the value
-                //Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
-                bool connection=get_param_value(connection_prop->http_param,"Connection", a,12,10);//12 is the buffer size and 10 is strlen("connection")
-
-                //Setting the connection type, using protocol version
-                if (connection_prop->http_param[7]=='1' && connection_prop->http_param[5]=='1') {//Keep alive by default (protocol 1.1)
-                    connection_prop->protocol_version=HTTP_1_1;
-                    connection_prop->keep_alive=true;
-
-                    if (connection && strncmp (a,"close",5)==0) //Connection close header
-                        connection_prop->keep_alive=false;
-                } else {//Not http1.1
-                    if (connection_prop->http_param[7]=='9') {//version 0.9
-                        connection_prop->protocol_version=HTTP_0_9;
-                    } else { //version 1.0
-                        connection_prop->protocol_version=HTTP_1_0;
-                    }
-
-                    connection_prop->keep_alive=false;
-                    if (connection && strncmp(a,"Keep",4)==0)
-                        connection_prop->keep_alive=true;
-                }
-            }
-            if (send_page(sock,read_b, connection_prop)<0) {
-                break;//Unable to send an error
-            }
-            if (connection_prop->keep_alive==false) {//No pipelining
-                return;
-            }
-        } else { //Non supported request
+        else {
             send_err(sock,400,"Bad request",connection_prop->ip_addr);
             return;
         }
+
+        connection_prop->method=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
+        connection_prop->page=strtok_r(NULL," ",&lasts);
+        connection_prop->http_param=lasts;
+
+#ifdef REQUESTDBG
+        syslog(LOG_INFO,"%s: %s %s\n",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
+#endif
+
+#ifdef THREADDBG
+        syslog(LOG_INFO,"Requested page: %s to Thread %ld",connection_prop->page,id);
+#endif
+        //Stores the parameters of the request
+        {
+            char a[12];//Gets the value
+            //Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
+            bool connection=get_param_value(connection_prop->http_param,"Connection", a,12,10);//12 is the buffer size and 10 is strlen("connection")
+
+            //Setting the connection type, using protocol version
+            if (connection_prop->http_param[7]=='1' && connection_prop->http_param[5]=='1') {//Keep alive by default (protocol 1.1)
+                connection_prop->protocol_version=HTTP_1_1;
+                connection_prop->keep_alive=(connection && strncmp(a,"close",5)==0)?false:true;
+            } else {//Not http1.1
+                //Constants are set to make this line work
+                connection_prop->protocol_version=connection_prop->http_param[7];
+                connection_prop->keep_alive=(connection && strncmp(a,"Keep",4)==0)?true:false;
+            }
+        }
+        if (send_page(sock,read_b, connection_prop)<0) {
+            return;//Unable to send an error
+        }
+
+        //Non pipelined
+        if (connection_prop->keep_alive==false) return;
+
     }
 }
 

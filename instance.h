@@ -46,7 +46,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <stdbool.h>		//Adds boolean type
+#include <stdbool.h> //Adds boolean type
 #include <string.h>
 
 #include "buffered_reader.h"
@@ -66,8 +66,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define ERR_BRKPIPE -1
 
 //Protocol version
-#define HTTP_0_9 0
-#define HTTP_1_0 1
+#define HTTP_0_9 57
+#define HTTP_1_0 48
 #define HTTP_1_1 2
 
 
