@@ -33,10 +33,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mystring.h"
 
 /**
-This function reads the directory dir, putting inside the html string an html page with links to all the files within the directory.
+This function reads the directory dir, putting inside the html string an html
+page with links to all the files within the directory.
 
 Buffer for html must be allocated by the calling function.
 bufsize is the size of the buffer allocated for html. To avoid buffer overflows.
+parent is true when no link to parent directory has to be generated
 */
 int list_dir(char *dir, char *html, unsigned int bufsize, bool parent) {
     int pagesize=0; //Written bytes on the page

@@ -58,24 +58,18 @@ additional buffer will be needed.
 This function is in-place, doesn't create copies but changes the original string.
 */
 void replaceEscape(char *string) {
-    int i = 0;
     char e_seq[3];
     e_seq[2] = 0;
 
     //Parses the string
-    while (string[i] != 0) {
-        //Search for escape char %
-        if (string[i] == '%') {
-            //Puts hex value in the buffer
-            e_seq[0] = string[i + 1];
-            e_seq[1] = string[i + 2];
+    while ((string=strstr(string,"%"))!=NULL) {
+        e_seq[0] = string[1];
+        e_seq[1] = string[2];
+        
+        delChar(string, 0, 2);  //Deletes 2 chars from the url
 
-            delChar(string, i, 2);	//Deletes 2 chars from the url
-
-            //Replaces the 3rd character with the char corresponding to the escape
-            string[i] = strtol(e_seq, NULL, 16);
-        }
-        i++;
+        //Replaces the 3rd character with the char corresponding to the escape
+        string[0] = strtol(e_seq, NULL, 16);
     }
 }
 
@@ -101,7 +95,7 @@ In case deleting of more chars than the string's len itself, the string will be 
 This function is in-place, doesn't create copies but changes the original string.
 */
 void delChar(char *string, int pos, int n) {
-    if (strlen(string) < n + pos) { //String is long enough
+    if (strlen(string+pos) < n) { //String is long enough
         return;
     }
 
