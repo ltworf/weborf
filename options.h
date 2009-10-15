@@ -86,6 +86,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SCRPT_TIMEOUT 15
 #define PY_WRAPPER "weborf.pywrap.py"
 #define CGI_PHP "/usr/lib/cgi-bin/php5"
+#define CGI_PY "weborf.cgi.py"
 //Hides all the errors.
 #define HIDE_CGI_ERRORS
 

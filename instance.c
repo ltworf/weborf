@@ -324,6 +324,8 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         if (exec_script) { //Scripts enabled
             if (endsWith(connection_prop->page,".php",connection_prop->page_len,4)) { //Script php
                 retval=exec_page(sock,CGI_PHP,&post_param,real_basedir,connection_prop);
+            } else if (endsWith(connection_prop->page,".py",connection_prop->page_len,3)) {
+                retval=exec_page(sock,CGI_PY,&post_param,real_basedir,connection_prop);
             } else { //Normal file
                 retval= write_file(sock,connection_prop);
             }
