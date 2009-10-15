@@ -85,7 +85,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //Timeout for the scripts, in seconds
 #define SCRPT_TIMEOUT 15
 #define CGI_PHP "/usr/lib/cgi-bin/php5"
-#define CGI_PY "weborf.cgi.py"
+#define CGI_PY "/usr/lib/cgi-bin/py_weborf"
 //Hides all the errors.
 #define HIDE_CGI_ERRORS
 

@@ -27,6 +27,7 @@ MANDIR=/usr/share/man/
 BINDIR=/usr/bin/
 DAEMONDIR=/etc/init.d/
 CONFDIR=/etc/
+CGIDIR=/usr/lib/cgi-bin/
 
 all: weborf
 
@@ -55,6 +56,7 @@ installdirs:
 	install -d $(DESTDIR)/$(MANDIR)/man1
 	install -d $(DESTDIR)/$(MANDIR)/man5
 	install -d $(DESTDIR)/$(DAEMONDIR)
+	install -d $(DESTDIR)/$(CGIDIR)
 
 install: uninstall installdirs
 	# Gzip the manpages
@@ -66,6 +68,7 @@ install: uninstall installdirs
 	install -m 644 weborf.conf.5.gz $(DESTDIR)/$(MANDIR)/man5/
 	install -m 755 weborf $(DESTDIR)/$(BINDIR)/
 	install -m 755 weborf.daemon $(DESTDIR)/$(DAEMONDIR)/weborf
+	install -m 755 py_weborf $(DESTDIR)/$(CGIDIR)/py_weborf"
 
 	if  ! test -e $(DESTDIR)/$(CONFDIR)/weborf.conf; then install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/; fi
 
@@ -74,6 +77,7 @@ uninstall:
 	rm -f $(DESTDIR)/$(MANDIR)/man1/weborf.1.gz
 	rm -f $(DESTDIR)/$(BINDIR)/weborf
 	rm -f $(DESTDIR)/$(DAEMONDIR)/weborf
+	rm -f $(DESTDIR)/$(CGIDIR)/py_weborf
 
 memcheck: debug
 	valgrind --track-origins=yes --tool=memcheck --leak-check=yes --leak-resolution=high --show-reachable=yes --num-callers=20 --track-fds=yes ./debug || echo "Valgrind doesn't appear to be installed on this system"
