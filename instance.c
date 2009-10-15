@@ -322,13 +322,28 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         }
     } else {//Requested an existing file
         if (exec_script) { //Scripts enabled
+            
+            #ifdef CGI_PHP
             if (endsWith(connection_prop->page,".php",connection_prop->page_len,4)) { //Script php
                 retval=exec_page(sock,CGI_PHP,&post_param,real_basedir,connection_prop);
-            } else if (endsWith(connection_prop->page,".py",connection_prop->page_len,3)) {
+            }
+            #endif
+            
+            #if defined(CGI_PHP) && defined(CGI_PY)
+            else 
+            #endif
+                
+            #ifdef CGI_PY
+            if (endsWith(connection_prop->page,".py",connection_prop->page_len,3)) {
                 retval=exec_page(sock,CGI_PY,&post_param,real_basedir,connection_prop);
-            } else { //Normal file
+            }
+            #endif
+            
+            #if defined(CGI_PHP) || defined(CGI_PY)
+            else { //Normal file
                 retval= write_file(sock,connection_prop);
             }
+            #endif
         } else { //Scripts disabled
             retval= write_file(sock,connection_prop);
         }
@@ -990,7 +1005,7 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
         head+=len_head;
         left_head-=len_head;
     }
-#ifdef SEND_DATE_HEADER
+#ifdef SEND_LAST_MODIFIED_HEADER
     else {//timestamp with now, to be eventually used by Last-Modified
         timestamp=time(NULL);
     }

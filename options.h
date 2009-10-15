@@ -84,7 +84,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //-------------SCRIPTS
 //Timeout for the scripts, in seconds
 #define SCRPT_TIMEOUT 15
-#define PY_WRAPPER "weborf.pywrap.py"
 #define CGI_PHP "/usr/lib/cgi-bin/php5"
 #define CGI_PY "weborf.cgi.py"
 //Hides all the errors.
@@ -99,7 +98,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 //The following header can be disabled to increase a little the speed
-//#define SEND_DATE_HEADER
+//#define SEND_LAST_MODIFIED_HEADER
 
 //-------------RANGE
 #define __RANGE

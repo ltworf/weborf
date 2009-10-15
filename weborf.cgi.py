@@ -42,8 +42,49 @@ def post_escape(val):
             val=val.replace("%"+s,chr(int(s,16)),1)
 
         i=val.find("%",i+1)
-
     return val
+    
+def read_post():
+    '''Reads POST data'''
+    #Reading POST Data
+    if 'CONTENT_LENGTH' not in os.environ:
+        return None
+                
+    _RAW=sys.stdin.read(int(os.getenv('CONTENT_LENGTH')))
+    if os.getenv('CONTENT_TYPE')=='application/x-www-form-urlencoded':
+        for i in _RAW.split("&"):
+            v=i.split("=")
+            _POST[post_escape(v[0])]=post_escape(v[1])
+    elif os.getenv('CONTENT_TYPE').startswith('multipart/form-data'):
+        #Finding boundary
+        for i in os.getenv('CONTENT_TYPE').split("; "):
+            if i.strip().startswith("boundary"):
+                boundary=i.split("=")[1]
+        files=_RAW.split(boundary)
+    
+        for i in files:
+            j=i.split("\r\n\r\n")
+            if len(j)==1:
+                continue
+
+            dic={}
+            dic['content']=j[1]
+        
+            fields=j[0].split("\r\n")
+            for k in fields:
+                a=k.split(": ",1)
+                if len(a)==2:
+                    dic[a[0]]=a[1]
+                elif len(a[0])!=0:
+                    dic[a[0]]=None
+            for k in dic['Content-Disposition'].split("; "):
+                d=k.split("=",1)
+                if len(d)>1:
+                    dic[d[0]]=d[1].replace("\"","")
+                else:
+                    dic[d[0]]=None
+            _FILES.append(dic)
+    return _RAW
 
 def redirect(location):
     '''Sends to the client the request to redirect to another page.
@@ -70,7 +111,7 @@ def savesession():
 
 def session_start():
     '''Inits the session vars'''
-    if 'PHPSESSID' not in _COOKIE==None or _COOKIE['PHPSESSID']==None: #No session, creating a new one
+    if 'PHPSESSID' not in _COOKIE or _COOKIE['PHPSESSID']==None: #No session, creating a new one
         import random
         import md5
 
@@ -142,16 +183,8 @@ _COOKIE=get_array('; ',os.getenv("HTTP_COOKIE"))
 _GET=get_array('&',os.getenv("QUERY_STRING"))
 _SESSION={}
 _POST={}
-_RAW=None
-
-#Reading POST Data
-if 'CONTENT_LENGTH' in os.environ:
-    _RAW=sys.stdin.read(int(os.getenv('CONTENT_LENGTH')))
-    if os.getenv('HTTP_CONTENT_TYPE')=='application/x-www-form-urlencoded':
-        for i in _RAW.split("&"):
-            v=i.split("=")
-            _POST[post_escape(v[0])]=post_escape(v[1])
-
+_FILES=[]
+_RAW=read_post()
 
 #Executes file
 execfile(os.getenv("SCRIPT_FILENAME"))
@@ -159,4 +192,3 @@ execfile(os.getenv("SCRIPT_FILENAME"))
 savesession()
 
 sys.exit(0)
-
