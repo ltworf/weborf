@@ -172,6 +172,25 @@ def get_array(sep,query):
             dic[i[0]]=None
     return dic
 
+def chdir_to_file(f):
+    '''Changes chdir to the same one where the file is stored'''
+    try:
+        os.chdir(f[:f.rfind(os.sep):])        
+    except:
+        pass
+
+def auth_fields():
+    '''If there is authentication, gets username and password'''
+    #Deconding auth field
+    v=os.getenv("HTTP_AUTHORIZATION")
+    if v!=None:
+        q=v.split(" ")
+        os.environ['AUTH_TYPE']=q[0]
+        auth=base64.b64decode(q[1]).split(":",1)
+        os.environ['AUTH_USER']=auth[0]
+        os.environ['AUTH_PW']=auth[1]
+
+
 #Loading configuration from file or setting default
 try:
     execfile("/etc/weborf/pywrapper.conf")
@@ -179,12 +198,18 @@ except:
     TMPDIR="/tmp"
     SESSIONEXPIRE=600
 
+chdir_to_file(os.getenv("SCRIPT_FILENAME"))
+auth_fields()
+
+
+#Changing the order of those lines can be dangerous
 _COOKIE=get_array('; ',os.getenv("HTTP_COOKIE"))
 _GET=get_array('&',os.getenv("QUERY_STRING"))
 _SESSION={}
 _POST={}
 _FILES=[]
 _RAW=read_post()
+_SERVER=os.environ
 
 #Executes file
 execfile(os.getenv("SCRIPT_FILENAME"))
