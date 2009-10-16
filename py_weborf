@@ -20,11 +20,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 '''
 
-import time
 import sys
 import py_compile
 import os
-import base64
+
+def pyinfo():
+    '''Shows information page'''
+    print "<h1>Weborf Python CGI Wrapper</h1>"
+    print "<p>Version 0.1</p>"
+    print "<p>Written by Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it></p>"    
+    
+    
+    i_vars=("_GET","_POST","_SERVER","_SESSION","_COOKIE","_FILES")
+    for var in i_vars:
+        v=eval(var)
+        if isinstance(v,list):
+            l=True
+        else: #Dict
+            l=False
+        
+        print "<H2>%s</H2>" % var        
+        print "<table border=1>"
+        for j in v:        
+            if l:
+                print "<tr><td>%s</td></tr>" % (j)
+            else:            
+                print "<tr><td>%s</td><td><code>%s</code></td></tr>" % (j,v[j])
+        print "</table>"
+    print "<p><h2>Weborf</h2></p><p>This program comes with ABSOLUTELY NO WARRANTY.<br>This is free software, and you are welcome to redistribute it<br>under certain conditions.<br>For details see the GPLv3 Licese.</p>"
 
 def post_escape(val):
     '''Post fields use certains escapes. This function returns the original string'''
@@ -68,7 +91,7 @@ def read_post():
                 continue
 
             dic={}
-            dic['content']=j[1]
+            dic['content']=j[1][:-2]
         
             fields=j[0].split("\r\n")
             for k in fields:
@@ -126,6 +149,7 @@ def session_start():
         setcookie('PHPSESSID',s_id)
         _COOKIE['PHPSESSID']=s_id
     else:#Session exists, loading data
+        import time
         try:
             #If session expired after inactivity
             if (os.stat(TMPDIR+"/"+_COOKIE['PHPSESSID'])[7] + SESSIONEXPIRE) < time.time():
@@ -175,7 +199,7 @@ def get_array(sep,query):
 def chdir_to_file(f):
     '''Changes chdir to the same one where the file is stored'''
     try:
-        os.chdir(f[:f.rfind(os.sep):])        
+        os.chdir(os.path.dirname(f))
     except:
         pass
 
@@ -184,6 +208,7 @@ def auth_fields():
     #Deconding auth field
     v=os.getenv("HTTP_AUTHORIZATION")
     if v!=None:
+        import base64
         q=v.split(" ")
         os.environ['AUTH_TYPE']=q[0]
         auth=base64.b64decode(q[1]).split(":",1)
