@@ -34,6 +34,10 @@ Default base directory used by the webserver. The default means that this will b
 Can be true or false. If false weborf will handle all files as normal files. Otherwise it will use the CGI protocol to execute some files.
 
 .TP
+.B cgi
+List of extensions to consider as dynamic pages and binaries to execute them
+
+.TP
 .B user
 Username of the user that will run the webserver. On debian this is usually www-data.
 
@@ -45,7 +49,7 @@ virtual#port#domain1=basedir1,domain2=basedir2
 .SS
 
 .SH EXAMPLE
-Example file can be found in /usr/share/doc/weborf
+Example file can be found in /usr/share/doc/weborf/examples/weborf.conf
 
 .SH "SEE ALSO"
 .BR weborf (1)

@@ -26,19 +26,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "base64.h"
 #include <string.h>
 
-extern syn_queue_t queue; //Queue for open sockets
+extern syn_queue_t queue;                   //Queue for open sockets
 
-extern pthread_mutex_t m_free;//Mutex to modify t_free
-extern unsigned int t_free;//free threads
+extern pthread_mutex_t m_free;              //Mutex to modify t_free
+extern unsigned int t_free;                 //free threads
 
-extern char* basedir;//Basedir
-extern char* authbin;//Executable that will authenticate
-extern bool exec_script; //Execute scripts if true, sends the file if false
+extern char* basedir;                       //Basedir
+extern char* authbin;                       //Executable that will authenticate
+extern bool exec_script;                    //Execute scripts if true, sends the file if false
 
-extern char* indexes[MAXINDEXCOUNT];
-extern int indexes_l;
-extern bool virtual_host; //True if must check for virtual hosts
-extern char ** environ; //To reset environ vars
+extern char* indexes[MAXINDEXCOUNT];        //Array containing index files
+extern int indexes_l;                       //Length of array
+extern bool virtual_host;                   //True if must check for virtual hosts
+extern char ** environ;                     //To reset environ vars
+
+extern char* cgi_paths[];                   //Array containing extensions and cgi wrappers
+extern short int cgi_paths_l;               //Integer containing size of cgi_paths
 
 void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
     int from;
@@ -322,28 +325,18 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         }
     } else {//Requested an existing file
         if (exec_script) { //Scripts enabled
-            
-            #ifdef CGI_PHP
-            if (endsWith(connection_prop->page,".php",connection_prop->page_len,4)) { //Script php
-                retval=exec_page(sock,CGI_PHP,&post_param,real_basedir,connection_prop);
+
+            int q_;
+            for (q_=0;q_<cgi_paths_l;q_+=2) { //Check if it is a CGI script
+                if (endsWith(connection_prop->page,cgi_paths[q_],connection_prop->page_len,strlen(cgi_paths[q_]))) {
+                    retval=exec_page(sock,cgi_paths[++q_],&post_param,real_basedir,connection_prop);
+                    break;
+                }
             }
-            #endif
             
-            #if defined(CGI_PHP) && defined(CGI_PY)
-            else 
-            #endif
-                
-            #ifdef CGI_PY
-            if (endsWith(connection_prop->page,".py",connection_prop->page_len,3)) {
-                retval=exec_page(sock,CGI_PY,&post_param,real_basedir,connection_prop);
-            }
-            #endif
-            
-            #if defined(CGI_PHP) || defined(CGI_PY)
-            else { //Normal file
+            if (q_%2==0) { //Normal file
                 retval= write_file(sock,connection_prop);
             }
-            #endif
         } else { //Scripts disabled
             retval= write_file(sock,connection_prop);
         }

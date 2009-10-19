@@ -6,6 +6,7 @@
 - ETag headers are now sent only if the resource is static (Rev 308)
 - "Moved permanently" code is returned instead of "see other" when client requests directory without ending / (Rev 209)
 - Added wrapper for CGI python, which replaces the previous one
+- Support for custom CGI formats
 
 0.11
 - Support for ETag header

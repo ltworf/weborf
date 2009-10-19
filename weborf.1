@@ -26,6 +26,13 @@ Must be followed by a valid directory. Weborf will use this directory as root di
 Must be followed by a unix socket listened by a program who will handle authentication.
 
 .TP
+.B \-c, \-\-cgi
+Must be followed by a list (separated with commas and without spaces) of cgi formats and the binary to execute that format.
+For example: .php,/usr/bin/php-cgi,.sh,/usr/bin/sh-cgi
+In /etc/weborf.conf there is a 'cgi' directive, corresponding to this option. It is used when launching weborf as SystemV daemon.
+
+
+.TP
 .B \-x, \-\-noexec
 When used, weborf will send scripts as if they were normal files instead of executing them and sending their output.
 
@@ -95,7 +102,7 @@ Authbin is not an executable
 .TP
 
 .B 6
-Too much indexes provided as parameter to \-I. Increasing MAXINDEXCOUNT in the file options.h and recompiling can solve the problem. But providing a reasanable amount of index file names would be a better solution.
+Too much indexes provided as parameter to \-I or to \-c. Increasing MAXINDEXCOUNT in the file options.h and recompiling can solve the problem. But providing a reasanable amount of index file names would be a better solution.
 .TP
 
 .B 7

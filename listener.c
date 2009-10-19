@@ -49,6 +49,11 @@ int indexes_l = 1;              //Count of the list
 
 bool virtual_host = false;      //True if must check for virtual hosts
 
+
+short int cgi_paths_l=4;        //Integer containing size of cgi_paths
+char* cgi_paths[MAXINDEXCOUNT]= //Array containing extensions and cgi wrappers
+{".php",CGI_PHP,".py",CGI_PY};
+
 /**
 Increases or decreases the number of current active thread.
 This function is thread safe.
@@ -125,7 +130,7 @@ int main(int argc, char *argv[]) {
 
     //default index file
     indexes[0] = INDEX;
-
+    
     while (1) { //Block to read command line
 
         //Declares options
@@ -142,13 +147,14 @@ int main(int argc, char *argv[]) {
             {"virtual", required_argument, 0, 'V'},
             {"moo", no_argument, 0, 'm'},
             {"noexec", no_argument, 0, 'x'},
+            {"cgi", required_argument, 0, 'c'},
             {0, 0, 0, 0}
         };
         static int c; //Identify the readed option
         int option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long(argc, argv, "mvhp:i:I:u:dxb:a:V:", long_options,
+        c = getopt_long(argc, argv, "mvhp:i:I:u:dxb:a:V:c:", long_options,
                         &option_index);
 
         //If there are no options it continues
@@ -156,6 +162,24 @@ int main(int argc, char *argv[]) {
             break;
 
         switch (c) {
+        case 'c': { //Setting list of cgi
+            int i = 0;
+            cgi_paths_l = 1; //count of indexes
+            cgi_paths[0] = optarg; //1st one points to begin of param
+            while (optarg[i++] != 0) { //Reads the string
+                if (optarg[i] == ',') {
+                    optarg[i++] = 0; //Nulling the comma
+                    //Increasing counter and making next item point to char after the comma
+                    cgi_paths[cgi_paths_l++] = &optarg[i];
+                    if (cgi_paths_l == MAXINDEXCOUNT) {
+                        perror("Too much cgis, change MAXINDEXCOUNT in options.h to allow more");
+                        exit(6);
+                    }
+                }
+            }
+
+        }
+        break;
         case 'V': { //Setting virtual hosts
             virtual_host = true;
 
@@ -184,8 +208,7 @@ int main(int argc, char *argv[]) {
                     //Increasing counter and making next item point to char after the comma
                     indexes[indexes_l++] = &optarg[i];
                     if (indexes_l == MAXINDEXCOUNT) {
-                        perror
-                        ("Too much indexes, change MAXINDEXCOUNT in options.h to allow more");
+                        perror("Too much indexes, change MAXINDEXCOUNT in options.h to allow more");
                         exit(6);
                     }
                 }

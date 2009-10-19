@@ -68,7 +68,7 @@ install: uninstall installdirs
 	install -m 644 weborf.conf.5.gz $(DESTDIR)/$(MANDIR)/man5/
 	install -m 755 weborf $(DESTDIR)/$(BINDIR)/
 	install -m 755 weborf.daemon $(DESTDIR)/$(DAEMONDIR)/weborf
-	install -m 755 py_weborf $(DESTDIR)/$(CGIDIR)/py_weborf"
+	install -m 755 py_weborf $(DESTDIR)/$(CGIDIR)/py_weborf
 
 	if  ! test -e $(DESTDIR)/$(CONFDIR)/weborf.conf; then install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/; fi
 
