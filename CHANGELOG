@@ -7,6 +7,7 @@
 - "Moved permanently" code is returned instead of "see other" when client requests directory without ending / (Rev 209)
 - Added wrapper for CGI python, which replaces the previous one
 - Support for custom CGI formats
+- LSB tags added to the init script (Rev 323)
 
 0.11
 - Support for ETag header

@@ -67,11 +67,11 @@ install: uninstall installdirs
 	install -m 644 weborf.1.gz $(DESTDIR)/$(MANDIR)/man1/
 	install -m 644 weborf.conf.5.gz $(DESTDIR)/$(MANDIR)/man5/
 	install -m 755 weborf $(DESTDIR)/$(BINDIR)/
-	install -m 755 py_weborf $(DESTDIR)/$(CGIDIR)/py_weborf
+	install -m 755 cgi_py_weborf.py $(DESTDIR)/$(CGIDIR)/cgi_py_weborf.py
 	install -m 755 weborf.daemon $(DESTDIR)/$(DAEMONDIR)/weborf
 
 	#Use in case of debian package makefile
-        #install -m 755 weborf.daemon debian/weborf-daemon.weborf.init
+	#install -m 755 weborf.daemon debian/weborf-daemon.init
 
 	#Comment the following line in case of debian package
 	if  ! test -e $(DESTDIR)/$(CONFDIR)/weborf.conf; then install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/; fi
