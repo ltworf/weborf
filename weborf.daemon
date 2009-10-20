@@ -16,31 +16,54 @@
 #
 # author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 
-#This function will start all the needed processes for weborf
+
+### BEGIN INIT INFO
+# Provides:          weborf-daemon
+# Required-Start:    $network $local_fs
+# Required-Stop:
+# Should-Start:      $named
+# Should-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Fast and small webserver
+# Description:       Weborf is a configurationless webeserver mainly meant to allow users
+#                    to easily share their directories over the web.
+#                    It also supports php5-cgi.
+### END INIT INFO
+
+function status {
+    if ! test -e $PIDFILE
+        then
+            echo "Weborf doesn't appear to be running"
+        else
+            echo "Weborf appears to be running"
+    fi
+}
 
 function stopWeborf {
     #Stops all the running weborf servers (the ones started with init)
 
-    if ! test -e /var/run/weborf.pid
+    if ! test -e $PIDFILE
     then
         echo "Weborf is not running or it was not started by init"
         exit 2
     fi
 
     echo -n "Stopping weborf "    
-    for i in `cat /var/run/weborf.pid`
+    for i in `cat $PIDFILE`
     do
         echo -n ..
         kill $i
     done
     echo "done"
-    rm -f /var/run/weborf.pid
+    rm -f $PIDFILE
 }
 
 function startWeborf {
-    if test -e /var/run/weborf.pid
+    #This function will start all the needed processes for weborf
+    if test -e $PIDFILE
     then
-        echo "Weborf already running, if you're sure it is not running, delete /var/run/weborf.pid"
+        echo "Weborf already running, if you're sure it is not running, delete $PIDFILE"
         exit 2
     fi
 
@@ -48,8 +71,8 @@ function startWeborf {
     if test -z "$virtuals"
     then
         echo "Starting weborf"
-        nohup weborf $CGI $CGI_BIN -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
-        echo ${!} >> /var/run/weborf.pid # Writes PID so weborf can be terminated
+        nohup $DAEMON $CGI $CGI_BIN -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
+        echo ${!} >> $PIDFILE # Writes PID so weborf can be terminated
     else #Virtual hosts
     
         for i in $virtuals
@@ -57,13 +80,47 @@ function startWeborf {
                 PORT=`echo $i | cut -d# -f2`
                 CMDLINE=`echo $i | cut -d# -f3`
                 echo "Starting weborf on port $PORT"
-                nohup weborf $CGI $CGI_BIN -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
-                echo $! >> /var/run/weborf.pid # Writes PID so weborf can be terminated
+                nohup $DAEMON $CGI $CGI_BIN -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
+                echo $! >> $PIDFILE # Writes PID so weborf can be terminated
             done
     fi
 }
 
-export PATH=$PATH:/usr/local/bin
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/bin/weborf                    # Introduce the server's location here
+NAME=weborf                               # Introduce the short server's name here
+PIDFILE=/var/run/$NAME.pid
+
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+# Default options, these can be overriden by the information
+# at /etc/default/$NAME
+DAEMON_OPTS=""          # Additional options given to the server
+
+DIETIME=3               # Time to wait for the server to die, in seconds
+                        # If this value is set too low you might not
+                        # let some servers to die gracefully and
+                        # 'restart' will not work
+
+#STARTTIME=2             # Time to wait for the server to start, in seconds
+                        # If this value is set each time the server is
+                        # started (on start or restart) the script will
+                        # stall to try to determine if it is running
+                        # If it is not set and the server takes time
+                        # to setup a pid file the log message might
+                        # be a false positive (says it did not start
+                        # when it actually did)
+
+LOGFILE=$LOGDIR/$NAME.log  # Server logfile
+
+# Include defaults if available
+if [ -f /etc/default/$NAME ] ; then
+    . /etc/default/$NAME
+fi
+
 USERNAME=`cat /etc/weborf.conf | fgrep "user=" | cut -d= -f2`
 BASEDIR=`cat /etc/weborf.conf | fgrep "basedir=" | cut -d= -f2`
 USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
@@ -99,6 +156,8 @@ case $1 in
     force-reload)
         stopWeborf
         startWeborf;;
+    status)
+        status;;
     * )
-        echo "Usage: $0 {start|stop|restart}";;
+        echo "Usage: $0 {start|stop|restart|force-reload|status}";;
 esac
