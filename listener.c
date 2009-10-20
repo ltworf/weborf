@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "queue.h"
 #include "options.h"
 #include "utils.h"
+#include "mystring.h"
 #define _GNU_SOURCE
 
 syn_queue_t queue;              //Queue for opened sockets
@@ -49,10 +50,8 @@ int indexes_l = 1;              //Count of the list
 
 bool virtual_host = false;      //True if must check for virtual hosts
 
+array_ll cgi_paths;             //Paths to cgi binaries
 
-short int cgi_paths_l=4;        //Integer containing size of cgi_paths
-char* cgi_paths[MAXINDEXCOUNT]= //Array containing extensions and cgi wrappers
-{".php",CGI_PHP,".py",CGI_PY};
 
 /**
 Increases or decreases the number of current active thread.
@@ -131,6 +130,17 @@ int main(int argc, char *argv[]) {
     //default index file
     indexes[0] = INDEX;
     
+    //default cgi
+    cgi_paths.len=4;
+    cgi_paths.data[0]=".php";
+    cgi_paths.data[1]=CGI_PHP;
+    cgi_paths.data[2]=".py";
+    cgi_paths.data[3]=CGI_PY;
+    cgi_paths.data_l[0]=4;
+    cgi_paths.data_l[1]=strlen(CGI_PHP);
+    cgi_paths.data_l[2]=3;
+    cgi_paths.data_l[3]=strlen(CGI_PY);
+    
     while (1) { //Block to read command line
 
         //Declares options
@@ -164,18 +174,22 @@ int main(int argc, char *argv[]) {
         switch (c) {
         case 'c': { //Setting list of cgi
             int i = 0;
-            cgi_paths_l = 1; //count of indexes
-            cgi_paths[0] = optarg; //1st one points to begin of param
+            cgi_paths.len = 1; //count of indexes
+            cgi_paths.data[0] = optarg; //1st one points to begin of param
             while (optarg[i++] != 0) { //Reads the string
                 if (optarg[i] == ',') {
                     optarg[i++] = 0; //Nulling the comma
                     //Increasing counter and making next item point to char after the comma
-                    cgi_paths[cgi_paths_l++] = &optarg[i];
-                    if (cgi_paths_l == MAXINDEXCOUNT) {
+                    cgi_paths.data[cgi_paths.len++] = &optarg[i];
+                    if (cgi_paths.len == MAXINDEXCOUNT) {
                         perror("Too much cgis, change MAXINDEXCOUNT in options.h to allow more");
                         exit(6);
                     }
                 }
+            }
+            
+            for (i=0;i<cgi_paths.len;i++){
+                cgi_paths.data_l[i]=strlen(cgi_paths.data[i]);
             }
 
         }

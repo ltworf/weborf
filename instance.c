@@ -39,9 +39,7 @@ extern char* indexes[MAXINDEXCOUNT];        //Array containing index files
 extern int indexes_l;                       //Length of array
 extern bool virtual_host;                   //True if must check for virtual hosts
 extern char ** environ;                     //To reset environ vars
-
-extern char* cgi_paths[];                   //Array containing extensions and cgi wrappers
-extern short int cgi_paths_l;               //Integer containing size of cgi_paths
+extern array_ll cgi_paths;                  //Paths to cgi binaries
 
 void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
     int from;
@@ -327,9 +325,11 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         if (exec_script) { //Scripts enabled
 
             int q_;
-            for (q_=0;q_<cgi_paths_l;q_+=2) { //Check if it is a CGI script
-                if (endsWith(connection_prop->page,cgi_paths[q_],connection_prop->page_len,strlen(cgi_paths[q_]))) {
-                    retval=exec_page(sock,cgi_paths[++q_],&post_param,real_basedir,connection_prop);
+            int f_len;
+            for (q_=0;q_<cgi_paths.len;q_+=2) { //Check if it is a CGI script
+                f_len=cgi_paths.data_l[q_];
+                if (endsWith(connection_prop->page+connection_prop->page_len-f_len,cgi_paths.data[q_],f_len,f_len)) {
+                    retval=exec_page(sock,cgi_paths.data[++q_],&post_param,real_basedir,connection_prop);
                     break;
                 }
             }

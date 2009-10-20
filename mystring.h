@@ -28,6 +28,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "instance.h"
 
+typedef struct {
+    ssize_t len;                //length of the array
+    char *data[MAXINDEXCOUNT];  //Array containing pointers
+    int data_l[MAXINDEXCOUNT];  //Array containing len of strings
+} array_ll;
+
 void split_get_params(connection_t* connection_prop);
 int splitParams(char *string);
 bool endsWith(char *str, char *end,ssize_t len_str,ssize_t len_end);
