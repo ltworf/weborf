@@ -56,8 +56,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define INVALID -1
 #define GET 0
 #define POST 1
+#define PUT 2
 
 //Errors
+#define ERR_NODATA -7
 #define ERR_NOTHTTP -6
 #define ERR_NONAUTH -5
 #define ERR_SOCKWRITE -4

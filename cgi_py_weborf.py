@@ -21,8 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
 import sys
-import py_compile
 import os
+#import py_compile
+
 
 def pyinfo():
     '''Shows information page'''
@@ -235,6 +236,10 @@ _POST={}
 _FILES=[]
 _RAW=read_post()
 _SERVER=os.environ
+
+
+#Compiles file
+#py_compile.compile(os.getenv("SCRIPT_FILENAME"))
 
 #Executes file
 execfile(os.getenv("SCRIPT_FILENAME"))

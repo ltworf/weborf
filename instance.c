@@ -85,6 +85,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         //Finds out request's kind
         if (strncmp(buf,"GET",3)==0) connection_prop->method_id=GET;
         else if (strncmp(buf,"POST",4)==0) connection_prop->method_id=POST;
+        else if (strncmp(buf,"PUT",3)==0) connection_prop->method_id=PUT;
         else {
             send_err(sock,400,"Bad request",connection_prop->ip_addr);
             return;
@@ -243,11 +244,66 @@ void modURL(char* url) {
     //TODO AbsoluteURI: Check if the url uses absolute url, and in that case remove the 1st part
 }
 
+int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b){
+    
+    //TODO return error if auth is disabled
+    
+    
+    char a[NBUFFER]; //Buffer for field's value
+    //Gets the value
+    bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,14);//14 is content-lenght's len
+    int content_l;  //Length of the put data
+
+    //If there is a value and method is POST
+    if (r!=false) {
+        content_l=strtol( a , NULL, 0 );
+    } else {//No data
+        return ERR_NODATA;
+    }
+    
+    int retval=0;
+    int fd=open(connection_prop->strfile,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR);
+    if (fd<0) {
+        return ERR_FILENOTFOUND;
+    }
+    
+    char* buf=malloc(FILEBUF);//Buffer to read from file
+    if (buf==NULL) {
+        return ERR_NOMEM;
+    }
+    
+    int read_,write_;
+    int tot_read=0;
+    int to_read;
+    
+    while ((to_read=(content_l-tot_read)>FILEBUF?FILEBUF:content_l-tot_read)>0) {
+        read_=buffer_read(sock,buf,to_read,read_b);
+        write_=write(fd,buf,read_);
+        
+        if (write_!=read_) {
+            retval= ERR_BRKPIPE;
+            break;
+        }
+        
+        tot_read+=read_;
+    }
+    
+    free(buf);
+    close(fd);
+    return retval;
+    
+}
+
 /**
 This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
 int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
+    
+    int retval=0;//Return value after sending the page
+    char* real_basedir; //Basedir, might be different than basedir due to virtual hosts
+    string_t post_param; //Contains POST data
+    
     modURL(connection_prop->page);//Operations on the url string
     split_get_params(connection_prop);//Pointer to the GET parameters
 
@@ -255,7 +311,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     syslog (LOG_DEBUG,"URL changed into %s",connection_prop->page);
 #endif
 
-    char* real_basedir;
+    
     if (virtual_host) { //Using virtual hosts
         real_basedir=get_basedir(connection_prop->http_param);
         if (real_basedir==NULL) real_basedir=basedir;
@@ -266,16 +322,26 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     if (authbin!=NULL && check_auth(sock,connection_prop)!=0) { //If auth is required
         return ERR_NONAUTH;
     }
-
-    string_t post_param=read_post_data(sock,connection_prop,read_b);
-
+    
     connection_prop->strfile=malloc(URI_LEN);//buffer for filename
     if (connection_prop->strfile==NULL) {
-        free(post_param.data);
         return ERR_NOMEM;//If no memory is available
     }
     connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",real_basedir,connection_prop->page);//Prepares the string
-    int retval=0;//Return value after sending the page
+    
+    
+    //If it is a PUT request
+    if (connection_prop->method_id==PUT) {
+        retval=read_file(sock,connection_prop,read_b);
+        post_param.data=NULL;
+        goto escape;
+    }
+
+    post_param=read_post_data(sock,connection_prop,read_b);
+    
+    
+    
+    
 
     //Opening file and doing stat
     if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY | O_LARGEFILE))<0) {
@@ -360,6 +426,8 @@ escape:
         return send_err(sock,404,"Page not found",connection_prop->ip_addr);
     case ERR_NOMEM:
         return send_err(sock,503,"Service Unavailable",connection_prop->ip_addr);
+    case ERR_NODATA:
+        return send_err(sock,400,"Bad request",connection_prop->ip_addr);
     }
     return 0; //Make gcc happy
 }
