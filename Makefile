@@ -27,6 +27,7 @@ BINDIR=/usr/bin/
 DAEMONDIR=/etc/init.d/
 CONFDIR=/etc/
 CGIDIR=/usr/lib/cgi-bin/
+PYDIR=/usr/lib/python2.5/cgi_weborf
 
 all: weborf cgi
 
@@ -60,6 +61,7 @@ installdirs:
 	install -d $(DESTDIR)/$(MANDIR)/man5
 	install -d $(DESTDIR)/$(DAEMONDIR)
 	install -d $(DESTDIR)/$(CGIDIR)
+	install -d $(DESTDIR)/$(PYDIR)
 
 install: uninstall installdirs
 	# Gzip the manpages
@@ -71,8 +73,12 @@ install: uninstall installdirs
 	install -m 644 weborf.conf.5.gz $(DESTDIR)/$(MANDIR)/man5/
 	install -m 755 weborf $(DESTDIR)/$(BINDIR)/
 	#install -m 755 cgi_py_weborf.py $(DESTDIR)/$(CGIDIR)/cgi_py_weborf.py
+
+	#cgi
 	install -m 755 cgi_wrapper/weborf_cgi_wrapper $(DESTDIR)/$(CGIDIR)/weborf_cgi_wrapper
 	install -m 755 cgi_wrapper/weborf_py_wrapper $(DESTDIR)/$(CGIDIR)/weborf_py_wrapper
+	install -m 644 python_cgi_weborf/__init__.py $(DESTDIR)/$(PYDIR)
+	install -m 644 python_cgi_weborf/cgi.py $(DESTDIR)/$(PYDIR)
 
 	#Use in case of debian package makefile
 	#install -m 755 weborf.daemon debian/weborf-daemon.init
