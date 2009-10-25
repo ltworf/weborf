@@ -28,8 +28,8 @@ import os
 
 def pyinfo():
     '''Shows information page'''
-    print "<h1>Weborf Python CGI Wrapper</h1>"
-    print "<p>Version 0.1</p>"
+    print "<h1>Weborf Python CGI Module</h1>"
+    print "<p>Version 0.2</p>"
     print "<p>Written by Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it></p>"    
     
     
