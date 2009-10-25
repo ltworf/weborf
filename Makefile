@@ -22,25 +22,28 @@ CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat
 LDFLAGS=-lpthread
 #ARCHFLAGS=-m64
 
-
 MANDIR=/usr/share/man/
 BINDIR=/usr/bin/
 DAEMONDIR=/etc/init.d/
 CONFDIR=/etc/
 CGIDIR=/usr/lib/cgi-bin/
 
-all: weborf
+all: weborf cgi
 
 weborf: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.c
 	$(CC) $(LDFLAGS) $(ARCHFLAGS) $(OFLAGS) $+ -o $@
 
 %.c: %.h
 
+cgi:
+	cd cgi_wrapper; make
+
 debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o
 	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 clean: 
 	rm -f *.o weborf debug *.orig *~ *.gz
+	cd cgi_wrapper; make clean	
 
 purge: uninstall
 	rm -f $(CONFDIR)/weborf.conf
@@ -67,11 +70,13 @@ install: uninstall installdirs
 	install -m 644 weborf.1.gz $(DESTDIR)/$(MANDIR)/man1/
 	install -m 644 weborf.conf.5.gz $(DESTDIR)/$(MANDIR)/man5/
 	install -m 755 weborf $(DESTDIR)/$(BINDIR)/
-	install -m 755 cgi_py_weborf.py $(DESTDIR)/$(CGIDIR)/cgi_py_weborf.py
-	install -m 755 weborf.daemon $(DESTDIR)/$(DAEMONDIR)/weborf
+	#install -m 755 cgi_py_weborf.py $(DESTDIR)/$(CGIDIR)/cgi_py_weborf.py
+	install -m 755 cgi_wrapper/weborf_cgi_wrapper $(DESTDIR)/$(CGIDIR)/weborf_cgi_wrapper
+	install -m 755 cgi_wrapper/weborf_py_wrapper $(DESTDIR)/$(CGIDIR)/weborf_py_wrapper
 
 	#Use in case of debian package makefile
 	#install -m 755 weborf.daemon debian/weborf-daemon.init
+	install -m 755 weborf.daemon $(DESTDIR)/$(DAEMONDIR)/weborf
 
 	#Comment the following line in case of debian package
 	if  ! test -e $(DESTDIR)/$(CONFDIR)/weborf.conf; then install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/; fi
@@ -81,7 +86,10 @@ uninstall:
 	rm -f $(DESTDIR)/$(MANDIR)/man1/weborf.1.gz
 	rm -f $(DESTDIR)/$(BINDIR)/weborf
 	rm -f $(DESTDIR)/$(DAEMONDIR)/weborf
-	rm -f $(DESTDIR)/$(CGIDIR)/py_weborf
+	#rm -f $(DESTDIR)/$(CGIDIR)/py_weborf
+	rm -f $(DESTDIR)/$(CGIDIR)/weborf_cgi_wrapper
+	rm -f $(DESTDIR)/$(CGIDIR)/weborf_py_wrapper
+
 
 memcheck: debug
 	valgrind --track-origins=yes --tool=memcheck --leak-check=yes --leak-resolution=high --show-reachable=yes --num-callers=20 --track-fds=yes ./debug || echo "Valgrind doesn't appear to be installed on this system"
