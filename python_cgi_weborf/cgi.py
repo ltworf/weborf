@@ -18,12 +18,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
+
+
+This package provides useful functions for cgi scripts
 '''
 
 import sys
 import os
-#import py_compile
-
 
 def pyinfo():
     '''Shows information page'''
@@ -32,7 +33,7 @@ def pyinfo():
     print "<p>Written by Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it></p>"    
     
     
-    i_vars=("_GET","_POST","_SERVER","_SESSION","_COOKIE","_FILES")
+    i_vars=("GET","POST","SERVER","SESSION","COOKIE","FILES")
     for var in i_vars:
         v=eval(var)
         if isinstance(v,list):
@@ -50,8 +51,9 @@ def pyinfo():
         print "</table>"
     print "<p><h2>Weborf</h2></p><p>This program comes with ABSOLUTELY NO WARRANTY.<br>This is free software, and you are welcome to redistribute it<br>under certain conditions.<br>For details see the GPLv3 Licese.</p>"
 
-def post_escape(val):
-    '''Post fields use certains escapes. This function returns the original string'''
+def __post_escape(val):
+    '''Post fields use certains escapes. This function returns the original string.
+    This function is for internal use, not meant for use by others'''
     val=val.replace("+"," ") #Replaces all + with a space
 
     i=val.find("%") #% is the char for an exadecimal escape
@@ -68,23 +70,24 @@ def post_escape(val):
         i=val.find("%",i+1)
     return val
     
-def read_post():
-    '''Reads POST data'''
+def __read_post():
+    '''Reads POST data.
+    This function is for internal use.'''
     #Reading POST Data
     if 'CONTENT_LENGTH' not in os.environ:
         return None
                 
-    _RAW=sys.stdin.read(int(os.getenv('CONTENT_LENGTH')))
+    RAW=sys.stdin.read(int(os.getenv('CONTENT_LENGTH')))
     if os.getenv('CONTENT_TYPE')=='application/x-www-form-urlencoded':
-        for i in _RAW.split("&"):
+        for i in RAW.split("&"):
             v=i.split("=")
-            _POST[post_escape(v[0])]=post_escape(v[1])
+            POST[__post_escape(v[0])]=__post_escape(v[1])
     elif os.getenv('CONTENT_TYPE').startswith('multipart/form-data'):
         #Finding boundary
         for i in os.getenv('CONTENT_TYPE').split("; "):
             if i.strip().startswith("boundary"):
                 boundary=i.split("=")[1]
-        files=_RAW.split(boundary)
+        files=RAW.split(boundary)
     
         for i in files:
             j=i.split("\r\n\r\n")
@@ -107,35 +110,37 @@ def read_post():
                     dic[d[0]]=d[1].replace("\"","")
                 else:
                     dic[d[0]]=None
-            _FILES.append(dic)
-    return _RAW
+            FILES.append(dic)
+    return RAW
 
 def redirect(location):
     '''Sends to the client the request to redirect to another page.
-    Unless php, here this can be used even after output'''
+    It will work only if headers aren't sent yet'''
     os.write(1,"Status: 303\r\nLocation: "+location+"\r\n\r\n") #Writes location header
     sys.exit(0) #Redirects
 
 def savesession():
-    '''Saves the session to the file'''
+    '''Saves the session to the file.
+    Before terminating the script, this function has to be executed to ensure that the session is saved
+    '''
     import csv
-    if 'PHPSESSID' not in _COOKIE==None:
+    if 'PHPSESSID' not in COOKIE==None:
         return #No session to save
     #Opens the file with the session
 
-    fp=file(TMPDIR+"/"+_COOKIE['PHPSESSID'],"w")
+    fp=file(TMPDIR+"/"+COOKIE['PHPSESSID'],"w")
     writer=csv.writer(fp)
 
     #Converting dictionary into 2 level array for csv module
     a=[]
-    for i in _SESSION:
-        a.append((i,_SESSION[i]))
+    for i in SESSION:
+        a.append((i,SESSION[i]))
     writer.writerows(a)
     fp.close()
 
 def session_start():
     '''Inits the session vars'''
-    if 'PHPSESSID' not in _COOKIE or _COOKIE['PHPSESSID']==None: #No session, creating a new one
+    if 'PHPSESSID' not in COOKIE or COOKIE['PHPSESSID']==None: #No session, creating a new one
         import random
         import md5
 
@@ -148,27 +153,27 @@ def session_start():
 
         s_id= "weborf-%s-%s" % (str(os.getpid()), a)
         setcookie('PHPSESSID',s_id)
-        _COOKIE['PHPSESSID']=s_id
+        COOKIE['PHPSESSID']=s_id
     else:#Session exists, loading data
         import time
         try:
             #If session expired after inactivity
-            if (os.stat(TMPDIR+"/"+_COOKIE['PHPSESSID'])[7] + SESSIONEXPIRE) < time.time():
+            if (os.stat(TMPDIR+"/"+COOKIE['PHPSESSID'])[7] + SESSIONEXPIRE) < time.time():
                 #Deletes old session file, just to try to avoid to fill the disk
-                os.unlink(TMPDIR+"/"+_COOKIE['PHPSESSID'])
+                os.unlink(TMPDIR+"/"+COOKIE['PHPSESSID'])
                 #Creating an empty session
-                _COOKIE['PHPSESSID']=None
+                COOKIE['PHPSESSID']=None
 
                 session_start()
                 return
             import csv
-            fp=file(TMPDIR+"/"+_COOKIE['PHPSESSID'])
+            fp=file(TMPDIR+"/"+COOKIE['PHPSESSID'])
             reader=csv.reader(fp) #Creating a csv reader
             for i in reader.__iter__(): #Iterating rows
-                _SESSION[i[0]]=i[1]
+                SESSION[i[0]]=i[1]
         except:
             #Start sessions with a new session id
-            _COOKIE['PHPSESSID']=None
+            COOKIE['PHPSESSID']=None
             session_start()
 
 def setcookie(name,value,expires=None):
@@ -179,12 +184,13 @@ def setcookie(name,value,expires=None):
     else:
         s= "Set-Cookie: %s=%s\r\n" % (str(name),str(value))
     sys.stdout.write(s)
-    _COOKIE[str(name)]=str(value)
+    COOKIE[str(name)]=str(value)
 
 def finalize_headers(content="text/html"):
+    '''This function finalizes headers. After calling this function the script can output its data'''
     sys.stdout.write("Content-Type: %s\r\n\r\n"%content)
 
-def get_array(sep,query):
+def __get_array(sep,query):
     '''Returns dictionary containing all the data passed via GET'''
     dic={}
     if query==None:
@@ -204,7 +210,7 @@ def chdir_to_file(f):
     except:
         pass
 
-def auth_fields():
+def __auth_fields():
     '''If there is authentication, gets username and password'''
     #Deconding auth field
     v=os.getenv("HTTP_AUTHORIZATION")
@@ -224,26 +230,26 @@ except:
     TMPDIR="/tmp"
     SESSIONEXPIRE=600
 
-chdir_to_file(os.getenv("SCRIPT_FILENAME"))
-auth_fields()
+#chdir_to_file(os.getenv("SCRIPT_FILENAME"))
+__auth_fields()
 
 
 #Changing the order of those lines can be dangerous
-_COOKIE=get_array('; ',os.getenv("HTTP_COOKIE"))
-_GET=get_array('&',os.getenv("QUERY_STRING"))
-_SESSION={}
-_POST={}
-_FILES=[]
-_RAW=read_post()
-_SERVER=os.environ
+COOKIE=__get_array('; ',os.getenv("HTTP_COOKIE"))
+GET=__get_array('&',os.getenv("QUERY_STRING"))
+SESSION={}
+POST={}
+FILES=[]
+RAW=__read_post()
+SERVER=os.environ
 
 
 #Compiles file
 #py_compile.compile(os.getenv("SCRIPT_FILENAME"))
 
 #Executes file
-execfile(os.getenv("SCRIPT_FILENAME"))
+#execfile(os.getenv("SCRIPT_FILENAME"))
 
-savesession()
+#savesession()
 
-sys.exit(0)
+#sys.exit(0)
