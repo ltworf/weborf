@@ -22,12 +22,17 @@ CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat
 LDFLAGS=-lpthread
 #ARCHFLAGS=-m64
 
+
+#Uncomment for debian package
+PYVERSION=2.5
+#PYVERSION=VERSION
+
 MANDIR=/usr/share/man/
 BINDIR=/usr/bin/
 DAEMONDIR=/etc/init.d/
 CONFDIR=/etc/
 CGIDIR=/usr/lib/cgi-bin/
-PYDIR=/usr/lib/python2.5/cgi_weborf
+PYDIR=/usr/lib/python$(PYVERSION)/cgi_weborf
 
 all: weborf cgi
 
