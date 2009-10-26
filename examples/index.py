@@ -8,11 +8,12 @@ It adds a "." to a session variable on every refresh, shows the informations and
 
 import os
 import sys
-from cgi_weborf import *
+from cgi_weborf import * #imports module cgi
 
-cgi.session_start()
+cgi.session_start() 
 cgi.setcookie("id","33")
-cgi.finalize_headers()
+
+cgi.finalize_headers() #will output the final \r\n\r\n and the content-type header
 
 if 'nome' in cgi.SESSION:
         cgi.SESSION['nome']+="."

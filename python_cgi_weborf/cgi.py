@@ -115,7 +115,8 @@ def __read_post():
 
 def redirect(location):
     '''Sends to the client the request to redirect to another page.
-    It will work only if headers aren't sent yet'''
+    It will work only if headers aren't sent yet.
+    It will make the script terminate immediately and redirect.'''
     os.write(1,"Status: 303\r\nLocation: "+location+"\r\n\r\n") #Writes location header
     sys.exit(0) #Redirects
 
@@ -187,7 +188,8 @@ def setcookie(name,value,expires=None):
     COOKIE[str(name)]=str(value)
 
 def finalize_headers(content="text/html"):
-    '''This function finalizes headers. After calling this function the script can output its data'''
+    '''This function finalizes headers. After calling this function the script can output its data.
+    If Content-Type of the page is not text/html, it must be specified as parameter here.'''
     sys.stdout.write("Content-Type: %s\r\n\r\n"%content)
 
 def __get_array(sep,query):
@@ -203,8 +205,11 @@ def __get_array(sep,query):
             dic[i[0]]=None
     return dic
 
-def chdir_to_file(f):
-    '''Changes chdir to the same one where the file is stored'''
+def chdir_to_file(f=None):
+    '''Changes chdir to the same one where the file is stored.
+    By default chdirs to the same directory where the script is located.'''
+    if f==None:
+        f=os.environ['SCRIPT_FILENAME']
     try:
         os.chdir(os.path.dirname(f))
     except:
@@ -243,13 +248,7 @@ FILES=[]
 RAW=__read_post()
 SERVER=os.environ
 
-
-#Compiles file
-#py_compile.compile(os.getenv("SCRIPT_FILENAME"))
-
 #Executes file
 #execfile(os.getenv("SCRIPT_FILENAME"))
 
 #savesession()
-
-#sys.exit(0)
