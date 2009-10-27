@@ -9,6 +9,7 @@
 - Support for custom CGI formats
 - LSB tags added to the init script (Rev 323)
 - Support to PUT method
+- Fixed bug: some file descriptors caused thread's termination (Rev 341)
 
 0.11
 - Support for ETag header

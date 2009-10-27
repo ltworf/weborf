@@ -204,7 +204,7 @@ void * instance(void * nulla) {
 
         unfree_thread(id);//Sets this thread as busy
 
-        if (sock<=0) { //Was not a socket but a termination order
+        if (sock<0) { //Was not a socket but a termination order
             free(connection_prop.ip_addr);//Free the space used to store ip address
             buffer_free(&read_b);
 #ifdef THREADDBG
@@ -264,7 +264,7 @@ int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
     //Checking if there is any unsupported Content-* header. In this case return 501 (Not implemented)
     {
         char*header=connection_prop->http_param;
-        
+
         while ((header=strstr(header,"Content-"))!=NULL) {
             if (strncmp(header,"Content-Length",14)!=0) {
                 return ERR_NOTIMPLEMENTED;
@@ -272,12 +272,12 @@ int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
             header++;
         }
     }
-    
+
     char a[NBUFFER]; //Buffer for field's value
     //Gets the value of content-length header
     bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,14);//14 is content-lenght's len
     int content_l;  //Length of the put data
-    
+
     //Checks if file already exists or not (needed for response code)
     bool preexistent=file_exists(connection_prop->strfile);
 
@@ -289,13 +289,13 @@ int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
     }
 
     int retval;
-    
+
     if (preexistent) {//Resource already existed (No content)
         retval=OK_NOCONTENT;
     } else {//Resource was created (Created)
         retval=OK_CREATED;
     }
-    
+
     int fd=open(connection_prop->strfile,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR);
     if (fd<0) {
         return ERR_FILENOTFOUND;
@@ -324,7 +324,7 @@ int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
 
     free(buf);
     close(fd);
-    
+
     return retval;
 }
 
