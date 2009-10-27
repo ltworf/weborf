@@ -36,7 +36,7 @@ PYDIR=/usr/lib/python$(PYVERSION)/cgi_weborf
 
 all: weborf cgi
 
-weborf: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.c
+weborf: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o
 	$(CC) $(LDFLAGS) $(ARCHFLAGS) $(OFLAGS) $+ -o $@
 
 %.c: %.h
@@ -44,7 +44,7 @@ weborf: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reade
 cgi:
 	cd cgi_wrapper; make
 
-debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o
+debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o
 	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
 
 clean: 

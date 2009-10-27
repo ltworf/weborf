@@ -30,7 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #include <sys/un.h>
-
 #include <time.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -49,8 +48,39 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdbool.h> //Adds boolean type
 #include <string.h>
 
+typedef struct {
+    char *ip_addr;              //Pointer to ip address
+    bool keep_alive;            //True if we are using pipelining
+    short int protocol_version; //See defines like HTTP_something
+    int method_id;              //Index of the http method used (GET, POST)
+    char *method;               //String version of the http method used
+    char *http_param;           //Param string
+    char *page;                 //Requested URI
+    ssize_t page_len;           //Lengh of the page string
+    char *get_params;           //Params in the URI, after the ? char
+    char *strfile;              //File on filesystem
+    ssize_t strfile_len;        //Length of string strfile
+    struct stat strfile_stat;   //Stat of strfile
+    int strfile_fd;             //File descriptor for strfile
+} connection_t;
+
+typedef struct {
+    ssize_t len;                //length of the string
+    char *data;                 //Pointer to string
+} string_t;
+
+
 #include "buffered_reader.h"
 #include "options.h"
+#include "utils.h"
+#include "queue.h"
+#include "mystring.h"
+#include "base64.h"
+
+
+#ifdef WEBDAV
+#include "webdav.h"
+#endif
 
 //Request
 #define INVALID -1
@@ -58,6 +88,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define POST 1
 #define PUT 2
 #define DELETE 3
+
+#ifdef WEBDAV
+#define PROPFIND 4
+#define COPY 5
+#define MOVE 6
+#define MKCOL 7
+#endif
 
 //Errors
 #define ERR_FORBIDDEN -9
@@ -78,29 +115,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HTTP_0_9 57
 #define HTTP_1_0 48
 #define HTTP_1_1 2
-
-
-typedef struct {
-    ssize_t len;                //length of the string
-    char *data;                 //Pointer to string
-} string_t;
-
-typedef struct {
-    char *ip_addr;              //Pointer to ip address
-    bool keep_alive;            //True if we are using pipelining
-    short int protocol_version; //See defines like HTTP_something
-    int method_id;              //Index of the http method used (GET, POST)
-    char *method;               //String version of the http method used
-    char *http_param;           //Param string
-    char *page;                 //Requested URI
-    ssize_t page_len;           //Lengh of the page string
-    char *get_params;           //Params in the URI, after the ? char
-    char *strfile;              //File on filesystem
-    ssize_t strfile_len;        //Length of string strfile
-    struct stat strfile_stat;   //Stat of strfile
-    int strfile_fd;             //File descriptor for strfile
-} connection_t;
-
 
 int write_dir(int sock, char *real_basedir, connection_t * connection_prop);
 void *instance(void *);

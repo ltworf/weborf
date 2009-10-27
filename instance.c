@@ -19,12 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo Rinaldi <salvin@anche.no>
  */
 #include "instance.h"
-#include "queue.h"
-#include "options.h"
-#include "mystring.h"
-#include "utils.h"
-#include "base64.h"
-#include <string.h>
 
 extern syn_queue_t queue;                   //Queue for open sockets
 
@@ -87,6 +81,9 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         else if (strncmp(buf,"POST",4)==0) connection_prop->method_id=POST;
         else if (strncmp(buf,"PUT",3)==0) connection_prop->method_id=PUT;
         else if (strncmp(buf,"DELETE",6)==0) connection_prop->method_id=DELETE;
+        #ifdef WEBDAV
+        else if (strncmp(buf,"PROPFIND",8)==0) connection_prop->method_id=PROPFIND;
+        #endif
         else {
             send_err(sock,400,"Bad request",connection_prop->ip_addr);
             return;
@@ -361,6 +358,8 @@ int delete_file(int sock,connection_t* connection_prop) {
     return OK_NOCONTENT;
 }
 
+
+
 /**
 This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
@@ -397,6 +396,8 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",real_basedir,connection_prop->page);//Prepares the string
 
     if (connection_prop->method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
+        post_param.data=NULL;
+        
         switch (connection_prop->method_id) {
         case PUT:
             retval=read_file(sock,connection_prop,read_b);
@@ -404,9 +405,14 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         case DELETE:
             retval=delete_file(sock,connection_prop);
             break;
+        #ifdef WEBDAV
+        case PROPFIND:
+            //Propfind has data, not strictly post but read_post_data will work
+            post_param=read_post_data(sock,connection_prop,read_b);
+            retval=propfind(sock,connection_prop,&post_param);
+        #endif
         }
 
-        post_param.data=NULL;
         goto escape;
     }
 
@@ -1070,8 +1076,8 @@ string_t read_post_data(int sock,connection_t* connection_prop,buffered_read_t* 
     bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,14);//14 is content-lenght's len
 
     //If there is a value and method is POST
-    if (r!=false && connection_prop->method_id==POST) {
-        int l=strtol( a , NULL, 0 );
+    if (r!=false) { //&& connection_prop->method_id==POST) {
+        long int l=strtol( a , NULL, 0 );
         if (l<=POST_MAX_SIZE) {//Post size is ok
 
             res.data=malloc(l);

@@ -103,6 +103,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //-------------RANGE
 #define __RANGE
 
+//Enables WEBDAV
+#define WEBDAV
+
 //-------------Logging options
 //#define THREADDBG
 //#define SOCKETDBG
