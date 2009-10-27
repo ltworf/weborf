@@ -244,15 +244,42 @@ void modURL(char* url) {
     //TODO AbsoluteURI: Check if the url uses absolute url, and in that case remove the 1st part
 }
 
-int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b){
-    
-    //TODO return error if auth is disabled
-    
+
+/**
+This function handles a PUT request.
+
+It requires the socket, connection_t struct and buffered_read_t to read from
+the socket, since the reading is internally buffered.
+
+PUT size has no hardcoded limits.
+Auth provider has to check for the file's size and refuse it if it is the case.
+This function will not work if there is no auth provider.
+*/
+int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
+
+    if (authbin==NULL) {
+        return ERR_FORBIDDEN;
+    }
+
+    //Checking if there is any unsupported Content-* header. In this case return 501 (Not implemented)
+    {
+        char*header=connection_prop->http_param;
+        
+        while ((header=strstr(header,"Content-"))!=NULL) {
+            if (strncmp(header,"Content-Length",14)!=0) {
+                return ERR_NOTIMPLEMENTED;
+            }
+            header++;
+        }
+    }
     
     char a[NBUFFER]; //Buffer for field's value
-    //Gets the value
+    //Gets the value of content-length header
     bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,14);//14 is content-lenght's len
     int content_l;  //Length of the put data
+    
+    //Checks if file already exists or not (needed for response code)
+    bool preexistent=file_exists(connection_prop->strfile);
 
     //If there is a value and method is POST
     if (r!=false) {
@@ -260,38 +287,45 @@ int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b){
     } else {//No data
         return ERR_NODATA;
     }
+
+    int retval;
     
-    int retval=0;
+    if (preexistent) {//Resource already existed (No content)
+        retval=OK_NOCONTENT;
+    } else {//Resource was created (Created)
+        retval=OK_CREATED;
+    }
+    
     int fd=open(connection_prop->strfile,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR);
     if (fd<0) {
         return ERR_FILENOTFOUND;
     }
-    
+
     char* buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
         return ERR_NOMEM;
     }
-    
+
     int read_,write_;
     int tot_read=0;
     int to_read;
-    
+
     while ((to_read=(content_l-tot_read)>FILEBUF?FILEBUF:content_l-tot_read)>0) {
         read_=buffer_read(sock,buf,to_read,read_b);
         write_=write(fd,buf,read_);
-        
+
         if (write_!=read_) {
             retval= ERR_BRKPIPE;
             break;
         }
-        
+
         tot_read+=read_;
     }
-    
+
     free(buf);
     close(fd);
-    return retval;
     
+    return retval;
 }
 
 /**
@@ -299,19 +333,19 @@ This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
 int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
-    
+
     int retval=0;//Return value after sending the page
     char* real_basedir; //Basedir, might be different than basedir due to virtual hosts
     string_t post_param; //Contains POST data
-    
+
     modURL(connection_prop->page);//Operations on the url string
-    split_get_params(connection_prop);//Pointer to the GET parameters
+    split_get_params(connection_prop);//Splits URI into page and parameters
 
 #ifdef SENDINGDBG
     syslog (LOG_DEBUG,"URL changed into %s",connection_prop->page);
 #endif
 
-    
+
     if (virtual_host) { //Using virtual hosts
         real_basedir=get_basedir(connection_prop->http_param);
         if (real_basedir==NULL) real_basedir=basedir;
@@ -322,14 +356,14 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     if (authbin!=NULL && check_auth(sock,connection_prop)!=0) { //If auth is required
         return ERR_NONAUTH;
     }
-    
+
     connection_prop->strfile=malloc(URI_LEN);//buffer for filename
     if (connection_prop->strfile==NULL) {
         return ERR_NOMEM;//If no memory is available
     }
     connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",real_basedir,connection_prop->page);//Prepares the string
-    
-    
+
+
     //If it is a PUT request
     if (connection_prop->method_id==PUT) {
         retval=read_file(sock,connection_prop,read_b);
@@ -338,10 +372,6 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     }
 
     post_param=read_post_data(sock,connection_prop,read_b);
-    
-    
-    
-    
 
     //Opening file and doing stat
     if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY | O_LARGEFILE))<0) {
@@ -392,14 +422,14 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
             int q_;
             int f_len;
-            for (q_=0;q_<cgi_paths.len;q_+=2) { //Check if it is a CGI script
+            for (q_=0; q_<cgi_paths.len; q_+=2) { //Check if it is a CGI script
                 f_len=cgi_paths.data_l[q_];
                 if (endsWith(connection_prop->page+connection_prop->page_len-f_len,cgi_paths.data[q_],f_len,f_len)) {
                     retval=exec_page(sock,cgi_paths.data[++q_],&post_param,real_basedir,connection_prop);
                     break;
                 }
             }
-            
+
             if (q_%2==0) { //Normal file
                 retval= write_file(sock,connection_prop);
             }
@@ -428,6 +458,14 @@ escape:
         return send_err(sock,503,"Service Unavailable",connection_prop->ip_addr);
     case ERR_NODATA:
         return send_err(sock,400,"Bad request",connection_prop->ip_addr);
+    case ERR_FORBIDDEN:
+        return send_err(sock,403,"Forbidden",connection_prop->ip_addr);
+    case ERR_NOTIMPLEMENTED:
+        return send_err(sock,501,"Not implemented",connection_prop->ip_addr);
+    case OK_NOCONTENT:
+        return send_http_header_full(sock,204,0,NULL,true,-1,connection_prop);
+    case OK_CREATED:
+        return send_http_header_full(sock,201,0,NULL,true,-1,connection_prop);
     }
     return 0; //Make gcc happy
 }

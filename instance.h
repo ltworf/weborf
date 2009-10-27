@@ -59,6 +59,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define PUT 2
 
 //Errors
+#define ERR_FORBIDDEN -9
+#define ERR_NOTIMPLEMENTED -8
 #define ERR_NODATA -7
 #define ERR_NOTHTTP -6
 #define ERR_NONAUTH -5
@@ -66,6 +68,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define ERR_NOMEM -3
 #define ERR_FILENOTFOUND -2
 #define ERR_BRKPIPE -1
+
+//Ok
+#define OK_CREATED 1
+#define OK_NOCONTENT 2
 
 //Protocol version
 #define HTTP_0_9 57
