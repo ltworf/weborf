@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
 
     //default index file
     indexes[0] = INDEX;
-    
+
     //default cgi
     cgi_paths.len=4;
     cgi_paths.data[0]=".php";
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     cgi_paths.data_l[1]=strlen(CGI_PHP);
     cgi_paths.data_l[2]=3;
     cgi_paths.data_l[3]=strlen(CGI_PY);
-    
+
     while (1) { //Block to read command line
 
         //Declares options
@@ -187,8 +187,8 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
-            
-            for (i=0;i<cgi_paths.len;i++){
+
+            for (i=0; i<cgi_paths.len; i++) {
                 cgi_paths.data_l[i]=strlen(cgi_paths.data[i]);
             }
 

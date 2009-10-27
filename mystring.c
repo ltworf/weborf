@@ -65,7 +65,7 @@ void replaceEscape(char *string) {
     while ((string=strstr(string,"%"))!=NULL) {
         e_seq[0] = string[1];
         e_seq[1] = string[2];
-        
+
         delChar(string, 0, 2);  //Deletes 2 chars from the url
 
         //Replaces the 3rd character with the char corresponding to the escape
