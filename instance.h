@@ -57,6 +57,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define GET 0
 #define POST 1
 #define PUT 2
+#define DELETE 3
 
 //Errors
 #define ERR_FORBIDDEN -9
@@ -119,4 +120,6 @@ string_t read_post_data(int sock, connection_t * connection_prop, buffered_read_
 char *get_basedir(char *http_param);
 void handle_requests(int sock, char *buf, buffered_read_t * read_b, int *bufFull, connection_t * connection_prop, long int id);
 int send_http_header_full(int sock, int code, unsigned int size, char *headers, bool content, time_t timestamp, connection_t * connection_prop);
+int delete_file(int sock,connection_t* connection_prop);
+int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b);
 #endif

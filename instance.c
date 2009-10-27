@@ -86,6 +86,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         if (strncmp(buf,"GET",3)==0) connection_prop->method_id=GET;
         else if (strncmp(buf,"POST",4)==0) connection_prop->method_id=POST;
         else if (strncmp(buf,"PUT",3)==0) connection_prop->method_id=PUT;
+        else if (strncmp(buf,"DELETE",6)==0) connection_prop->method_id=DELETE;
         else {
             send_err(sock,400,"Bad request",connection_prop->ip_addr);
             return;
@@ -281,8 +282,7 @@ int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
     //Checks if file already exists or not (needed for response code)
     bool preexistent=file_exists(connection_prop->strfile);
 
-    //If there is a value and method is POST
-    if (r!=false) {
+    if (r!=false) {//If there is no content-lenght returns error
         content_l=strtol( a , NULL, 0 );
     } else {//No data
         return ERR_NODATA;
@@ -329,6 +329,39 @@ int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
 }
 
 /**
+This function handles a DELETE request.
+
+It requires the socket, connection_t struct
+
+Auth provider has to check if it is allowed to delete the file or not.
+This function will not work if there is no auth provider.
+*/
+int delete_file(int sock,connection_t* connection_prop) {
+    int retval;
+
+    if (authbin==NULL) {
+        return ERR_FORBIDDEN;
+    }
+
+    //connection_prop->strfile
+    struct stat stat_d;
+    if (stat(connection_prop->strfile,&stat_d)<0) {
+        return ERR_FILENOTFOUND;
+    }
+
+    if (S_ISDIR(stat_d.st_mode)) {
+        retval=rmdir(connection_prop->strfile);
+    } else {
+        retval=unlink(connection_prop->strfile);
+    }
+
+    if (retval!=0) {//Returns a generic error
+        return ERR_FORBIDDEN;
+    }
+    return OK_NOCONTENT;
+}
+
+/**
 This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
@@ -367,6 +400,10 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     //If it is a PUT request
     if (connection_prop->method_id==PUT) {
         retval=read_file(sock,connection_prop,read_b);
+        post_param.data=NULL;
+        goto escape;
+    } else if (connection_prop->method_id==DELETE) {
+        retval=delete_file(sock,connection_prop);
         post_param.data=NULL;
         goto escape;
     }
