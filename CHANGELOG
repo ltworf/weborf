@@ -13,6 +13,7 @@
 - Support to DELETE method
 - Added wrapper for executables CGIs
 - Added python module for cgi
+- Stub for webdav
 
 0.11
 - Support for ETag header

@@ -105,6 +105,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //Enables WEBDAV
 #define WEBDAV
+#ifdef WEBDAV
+#define MAXPROPCOUNT 40
+#endif
 
 //-------------Logging options
 //#define THREADDBG
