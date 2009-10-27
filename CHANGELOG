@@ -11,6 +11,8 @@
 - Support to PUT method
 - Fixed bug: some file descriptors caused thread's termination (Rev 341)
 - Support to DELETE method
+- Added wrapper for executables CGIs
+- Added python module for cgi
 
 0.11
 - Support for ETag header

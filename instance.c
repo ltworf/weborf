@@ -396,14 +396,16 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     }
     connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",real_basedir,connection_prop->page);//Prepares the string
 
+    if (connection_prop->method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
+        switch (connection_prop->method_id) {
+        case PUT:
+            retval=read_file(sock,connection_prop,read_b);
+            break;
+        case DELETE:
+            retval=delete_file(sock,connection_prop);
+            break;
+        }
 
-    //If it is a PUT request
-    if (connection_prop->method_id==PUT) {
-        retval=read_file(sock,connection_prop,read_b);
-        post_param.data=NULL;
-        goto escape;
-    } else if (connection_prop->method_id==DELETE) {
-        retval=delete_file(sock,connection_prop);
         post_param.data=NULL;
         goto escape;
     }
