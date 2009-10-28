@@ -1163,12 +1163,15 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
     }
 #endif
 
+    if (size>0 || (connection_prop->keep_alive==true && size==0)) {
     //Content length (or entity lenght) and extra headers
     if (content) {
         len_head=snprintf(head,left_head,"Content-Length: %u\r\n%s\r\n",size,headers);
     } else {
         len_head=snprintf(head,left_head,"entity-length: %u\r\n%s\r\n",size,headers);
     }
+    }
+    
     head+=len_head;
     left_head-=len_head;
 

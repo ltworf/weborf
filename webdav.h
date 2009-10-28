@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #include "instance.h"
 
