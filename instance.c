@@ -81,9 +81,9 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         else if (strncmp(buf,"POST",4)==0) connection_prop->method_id=POST;
         else if (strncmp(buf,"PUT",3)==0) connection_prop->method_id=PUT;
         else if (strncmp(buf,"DELETE",6)==0) connection_prop->method_id=DELETE;
-        #ifdef WEBDAV
+#ifdef WEBDAV
         else if (strncmp(buf,"PROPFIND",8)==0) connection_prop->method_id=PROPFIND;
-        #endif
+#endif
         else {
             send_err(sock,400,"Bad request",connection_prop->ip_addr);
             return;
@@ -397,7 +397,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
     if (connection_prop->method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
         post_param.data=NULL;
-        
+
         switch (connection_prop->method_id) {
         case PUT:
             retval=read_file(sock,connection_prop,read_b);
@@ -405,12 +405,12 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         case DELETE:
             retval=delete_file(sock,connection_prop);
             break;
-        #ifdef WEBDAV
+#ifdef WEBDAV
         case PROPFIND:
             //Propfind has data, not strictly post but read_post_data will work
             post_param=read_post_data(sock,connection_prop,read_b);
             retval=propfind(sock,connection_prop,&post_param);
-        #endif
+#endif
         }
 
         goto escape;
@@ -1164,16 +1164,21 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
 #endif
 
     if (size>0 || (connection_prop->keep_alive==true && size==0)) {
-    //Content length (or entity lenght) and extra headers
-    if (content) {
-        len_head=snprintf(head,left_head,"Content-Length: %u\r\n%s\r\n",size,headers);
-    } else {
-        len_head=snprintf(head,left_head,"entity-length: %u\r\n%s\r\n",size,headers);
+        //Content length (or entity lenght) and extra headers
+        if (content) {
+            len_head=snprintf(head,left_head,"Content-Length: %u\r\n",size);
+        } else {
+            len_head=snprintf(head,left_head,"entity-length: %u\r\n",size);
+        }
+
+        head+=len_head;
+        left_head-=len_head;
     }
-    }
-    
+
+    len_head=snprintf(head,left_head,"%s\r\n",headers);
     head+=len_head;
     left_head-=len_head;
+
 
     wrote=write (sock,h_ptr,HEADBUF-left_head);
     free(h_ptr);
