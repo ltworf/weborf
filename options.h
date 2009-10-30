@@ -107,6 +107,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WEBDAV
 #ifdef WEBDAV
 #define MAXPROPCOUNT 40
+#define HIDE_HIDDEN_FILES
 #endif
 
 //-------------Logging options
