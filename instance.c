@@ -434,11 +434,9 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         bool index_found=false;
 
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
-            char* head=malloc(URI_LEN+12);//12 is the size for the location header
+            char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
             send_http_header_full(sock,301,0,head,true,-1,connection_prop);
-
-            free(head);
         } else {//Requested directory with /. Search for index files or list directory
 
             char* index_name=&connection_prop->strfile[connection_prop->strfile_len];//Pointer to where to write the filename

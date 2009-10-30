@@ -4,6 +4,21 @@
 
 #ifdef WEBDAV
 
+extern char* authbin;
+
+/**
+This function will split the required props into a char* array.
+
+Properties are in the form <D:prop><prop1/><prop2/></D:prop>
+If something unexpected happens during the xml parsing, ERR_NODATA
+will be returned.
+
+RFC-1518 requires that the xml must be validated and an error MUST
+be returned to the client if the xml is not valid. This is not the case
+in this funcion. It will accept many forms of invalid xml.
+
+The original string post_param->data will be modified.
+*/
 int get_props(string_t* post_param,char * props[]) {
     char*data=strstr(post_param->data,"<D:prop ");
     if (data==NULL)
@@ -34,17 +49,20 @@ int get_props(string_t* post_param,char * props[]) {
     return 0;
 }
 
+/**
+This function sends a xml property to the client.
+It can be called only by funcions aware of this xml, because it sends only partial xml.
+*/
 int printprops(int sock,connection_t* connection_prop,char*props[],char* file,char*filename,bool parent) {
-    write(sock,"<D:response>\n\n",14);
-
     int i,p_len;
     struct stat stat_s;
-
-    stat(file, &stat_s);
-
     char buffer[URI_LEN];
     bool props_invalid[MAXPROPCOUNT]; //Used to keep trace of invalid props
+    
 
+    stat(file, &stat_s);
+    write(sock,"<D:response>\n",13);
+    
     /*           struct stat {
                dev_t     st_dev;     / ID of device containing file
                ino_t     st_ino;     / inode number
@@ -69,12 +87,6 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
             p_len=snprintf(buffer,URI_LEN,"<D:href>%s%s</D:href>",connection_prop->page,filename);
         }
         
-        /*
-        if (S_ISDIR(stat_s.st_mode)) {//If is a directory, needs the ending /
-            p_len=snprintf(buffer,URI_LEN,"<D:href>/%s/</D:href>",filename);
-        } else {
-            p_len=snprintf(buffer,URI_LEN,"<D:href>/%s</D:href>",filename);
-        }*/
         write (sock,buffer,p_len);
     }
 
@@ -82,7 +94,6 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     {//Writing properties
         char prop_buffer[URI_LEN];
         for (i=0; props[i]!=NULL; i++) {
-            //printf("%s\n",props[i]);
             props_invalid[i]=false;
 
             prop_buffer[0]=0;
@@ -110,7 +121,7 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
             } else {
                 props_invalid[i]=true;
             }
-end_comp:
+end_comp: //goto pointing here are optimization. It would work also without
             /*
             if (strncmp(props[i],"D:getetag",p_len)==0) {
                 p_len=snprintf(prop_buffer,URI_LEN,"%d",stat_s.st_mtime);
@@ -149,9 +160,18 @@ end_comp:
     return 0;
 }
 
+/**
+This function serves a PROPFIND request.
+
+Can serve both depth and non-depth requests. This funcion works only if
+authentication is enabled.
+
+
+*/
 int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
-    //TODO must not work without authentication
-    //TODO if it is dir redirect to ending / version
+    if (authbin==NULL) {
+        return ERR_FORBIDDEN;
+    }
     
     {
         struct stat stat_s;
@@ -166,17 +186,14 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
             send_http_header_full(sock,301,0,head,true,-1,connection_prop);
             return 0;
-        }
-               
+        }               
     }
 
-    char *props[MAXPROPCOUNT];   //List of pointers to index files
-    int retval;
+    char *props[MAXPROPCOUNT];   //List of pointers to properties
     bool deep=false;
 
-    printf("%s %s %s\n\n",connection_prop->method,connection_prop->page,connection_prop->http_param);
-    //Determining if it is deep or not
-    {
+    
+    { //Determining if it is deep or not
         char a[4]; //Buffer for field's value
         //Gets the value of content-length header
         bool r=get_param_value(connection_prop->http_param,"Depth", a,4,5);//14 is content-lenght's len
@@ -186,20 +203,25 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
         }
     }
 
+    int retval;
     retval=get_props(post_param,props);//splitting props
     if (retval!=0) {
         return retval;
     }
 
+    //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
     connection_prop->keep_alive=false;
     send_http_header_full(sock,207,0,"Connection: close\r\nContent-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
 
+    //Sends header of xml response
     write(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>",39);
     write(sock,"<D:multistatus xmlns:D=\"DAV:\">",30);
-//sock=1;        
+    
+    //sock=1;
+    
+    //sends props about the requested file
     printprops(sock,connection_prop,props,connection_prop->strfile,connection_prop->page,true);
-    //TODO check if it really is a directory
-    if (deep) {//Send files within the dir
+    if (deep) {//Send children files
         
         struct dirent *ep; //File's property
         DIR *dp = opendir(connection_prop->strfile); //Open dir
@@ -210,20 +232,26 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
             return 0;
         }
         while ((ep = readdir(dp))) { //Cycles trough dir's elements
+
 #ifdef HIDE_HIDDEN_FILES
-            if (ep->d_name[0]=='.')
+            if (ep->d_name[0]=='.') //doesn't list hidden files
                 continue;
 #else
-            //Avoids dir . and ..
+            //Avoids dir . and .. but not all hidden files
             if (ep->d_name[0]=='.' && (ep->d_name[1]==0 || (ep->d_name[1]=='.' && ep->d_name[2]==0)))
                 continue;
 #endif
 
             snprintf(file,URI_LEN,"%s%s", connection_prop->strfile, ep->d_name);
+            
+            //Sends details about a file
             printprops(sock,connection_prop,props,file,ep->d_name,false);
         }
+        
+        closedir(dp);
     }
 
+    //ends multistatus
     write(sock,"</D:multistatus>",16);
 
     return 0;
