@@ -34,7 +34,7 @@ int get_props(string_t* post_param,char * props[]) {
     return 0;
 }
 
-int printprops(int sock,connection_t* connection_prop,char*props[],char* file,char*filename) {
+int printprops(int sock,connection_t* connection_prop,char*props[],char* file,char*filename,bool parent) {
     write(sock,"<D:response>\n\n",14);
 
     int i,p_len;
@@ -62,19 +62,19 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
            };
     */
 
-    {//Sends href of the resource
-        char host[URI_LEN];
-
-        if (!get_param_value(connection_prop->http_param,"Host", host, URI_LEN,4)) {
-            return ERR_NOTHTTP; //Invalid request
-        }
-
-        //TODO protocol will have to be https when it will be implemented
-        if (S_ISDIR(stat_s.st_mode)) {//If is a directory, needs the ending /
-            p_len=snprintf(buffer,URI_LEN,"<D:href>http://%s/%s/</D:href>",host,filename);
+    {//Sends href of the resource        
+        if (parent){
+            p_len=snprintf(buffer,URI_LEN,"<D:href>%s</D:href>",filename);
         } else {
-            p_len=snprintf(buffer,URI_LEN,"<D:href>http://%s/%s</D:href>",host,filename);
+            p_len=snprintf(buffer,URI_LEN,"<D:href>%s%s</D:href>",connection_prop->page,filename);
         }
+        
+        /*
+        if (S_ISDIR(stat_s.st_mode)) {//If is a directory, needs the ending /
+            p_len=snprintf(buffer,URI_LEN,"<D:href>/%s/</D:href>",filename);
+        } else {
+            p_len=snprintf(buffer,URI_LEN,"<D:href>/%s</D:href>",filename);
+        }*/
         write (sock,buffer,p_len);
     }
 
@@ -118,7 +118,6 @@ end_comp:
             */
 
             /*
-
             D:displayname
             D:source
             D:getcontentlanguage
@@ -129,18 +128,14 @@ end_comp:
             D:resourcetype
             */
             if (prop_buffer[0]!=0) {
-                //printf("%s\t:\t%s\n",props[i],prop_buffer);
-
                 p_len=snprintf(buffer,URI_LEN,"<%s>%s</%s>\n",props[i],prop_buffer,props[i]);
                 write (sock,buffer,p_len);
-                //props[i][0]=' ';
             }
 
         }
     }
     write(sock,"</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>",58);
 
-    //TODO write invalid props
     write(sock,"<D:propstat><prop>",18);
     for (i=0; props[i]!=NULL; i++) {
         if (props_invalid[i]==true) {
@@ -149,21 +144,37 @@ end_comp:
         }
     }
     write(sock,"</prop><D:status>HTTP/1.1 404 Not Found</D:status></D:propstat>",63);
-
     write(sock,"</D:response>",13);
 
-    return 0; //Make gcc happy
+    return 0;
 }
 
 int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
     //TODO must not work without authentication
     //TODO if it is dir redirect to ending / version
+    
+    {
+        struct stat stat_s;
+        int stat_r=stat(connection_prop->strfile, &stat_s);
+        
+        if (stat_r!=0) {
+            return ERR_FILENOTFOUND;
+        }
+        
+        if (S_ISDIR(stat_s.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
+            char head[URI_LEN+12];//12 is the size for the location header
+            snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
+            send_http_header_full(sock,301,0,head,true,-1,connection_prop);
+            return 0;
+        }
+               
+    }
 
     char *props[MAXPROPCOUNT];   //List of pointers to index files
     int retval;
     bool deep=false;
 
-    printf("%s %s\n\n",connection_prop->page,connection_prop->http_param);
+    printf("%s %s %s\n\n",connection_prop->method,connection_prop->page,connection_prop->http_param);
     //Determining if it is deep or not
     {
         char a[4]; //Buffer for field's value
@@ -185,29 +196,31 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
 
     write(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>",39);
     write(sock,"<D:multistatus xmlns:D=\"DAV:\">",30);
-
-    printprops(sock,connection_prop,props,connection_prop->strfile,connection_prop->page);
+//sock=1;        
+    printprops(sock,connection_prop,props,connection_prop->strfile,connection_prop->page,true);
     //TODO check if it really is a directory
     if (deep) {//Send files within the dir
-        //sock=1;
+        
         struct dirent *ep; //File's property
         DIR *dp = opendir(connection_prop->strfile); //Open dir
         char file[URI_LEN];
 
-        //TODO if (dp == NULL) FAIL
+        if (dp == NULL) {//Error, unable to send because header was already sent
+            close(sock);
+            return 0;
+        }
         while ((ep = readdir(dp))) { //Cycles trough dir's elements
 #ifdef HIDE_HIDDEN_FILES
             if (ep->d_name[0]=='.')
                 continue;
 #else
-
             //Avoids dir . and ..
             if (ep->d_name[0]=='.' && (ep->d_name[1]==0 || (ep->d_name[1]=='.' && ep->d_name[2]==0)))
                 continue;
 #endif
 
             snprintf(file,URI_LEN,"%s%s", connection_prop->strfile, ep->d_name);
-            printprops(sock,connection_prop,props,file,ep->d_name);
+            printprops(sock,connection_prop,props,file,ep->d_name,false);
         }
     }
 

@@ -410,6 +410,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
             //Propfind has data, not strictly post but read_post_data will work
             post_param=read_post_data(sock,connection_prop,read_b);
             retval=propfind(sock,connection_prop,&post_param);
+            break;
 #endif
         }
 
