@@ -15,6 +15,7 @@
 - Added python module for cgi
 - Stub for webdav
 - Implemented MKCOL method
+- Bug: socket were closed randomly on non GET/POST methods
 
 0.11
 - Support for ETag header

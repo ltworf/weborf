@@ -348,8 +348,7 @@ int delete_file(int sock,connection_t* connection_prop) {
     }
 
     if (S_ISDIR(stat_d.st_mode)) {
-        //TODO should perform rm -rf
-        retval=rmdir(connection_prop->strfile);
+        retval=deep_rmdir(connection_prop->strfile);
     } else {
         retval=unlink(connection_prop->strfile);
     }
@@ -415,6 +414,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
             break;
         case MKCOL:
             retval=mkcol(sock,connection_prop);
+            break;
 #endif
         }
 
@@ -491,7 +491,7 @@ escape:
     free(connection_prop->strfile);
 
     //Closing local file previously opened
-    if (connection_prop->strfile_fd>=0) {
+    if ((connection_prop->method_id==GET || connection_prop->method_id==POST) && connection_prop->strfile_fd>=0) {
         close(connection_prop->strfile_fd);
     }
 

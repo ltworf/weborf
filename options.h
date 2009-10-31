@@ -70,6 +70,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //Buffer for text date
 #define DATEBUFFER 50
 #define URI_LEN 256
+#define PATH_LEN 1024
 
 //Number of index pages allowed to search
 #define MAXINDEXCOUNT 10

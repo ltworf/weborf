@@ -261,30 +261,34 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
 This funcion should be named mkdir. But standards writers are weird people.
 */
 int mkcol(int sock,connection_t* connection_prop) {
+    if (authbin==NULL) {
+        return ERR_FORBIDDEN;
+    }
+
     int res=mkdir(connection_prop->strfile,S_IRWXU | S_IRWXG | S_IRWXO);
-    
+
     if (res==0) {//Directory created
         return OK_CREATED;
     }
-    
+
     //Error
     switch (errno) {
-        case EACCES:
-        case EFAULT:
-        case ELOOP:
-        case ENAMETOOLONG:
-            return ERR_FORBIDDEN;
-        case ENOMEM:
-            return ERR_SERVICE_UNAVAILABLE;
-        case ENOENT:
-            return ERR_CONFLICT;
-        case EEXIST:
-        case ENOTDIR:
-              return ERR_NOT_ALLOWED;
-        case ENOSPC:
-        case EROFS:
-        case EPERM:
-            return ERR_INSUFFICIENT_STORAGE;
+    case EACCES:
+    case EFAULT:
+    case ELOOP:
+    case ENAMETOOLONG:
+        return ERR_FORBIDDEN;
+    case ENOMEM:
+        return ERR_SERVICE_UNAVAILABLE;
+    case ENOENT:
+        return ERR_CONFLICT;
+    case EEXIST:
+    case ENOTDIR:
+        return ERR_NOT_ALLOWED;
+    case ENOSPC:
+    case EROFS:
+    case EPERM:
+        return ERR_INSUFFICIENT_STORAGE;
     }
 }
 
