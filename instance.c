@@ -84,6 +84,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
 #ifdef WEBDAV
         else if (strncmp(buf,"PROPFIND",8)==0) connection_prop->method_id=PROPFIND;
         else if (strncmp(buf,"MKCOL",5)==0) connection_prop->method_id=MKCOL;
+        else if (strncmp(buf,"COPY",4)==0) connection_prop->method_id=COPY;
 #endif
         else {
             send_err(sock,400,"Bad request",connection_prop->ip_addr);
@@ -386,8 +387,12 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         real_basedir=basedir;
     }
 
-    if (authbin!=NULL && check_auth(sock,connection_prop)!=0) { //If auth is required
-        return ERR_NONAUTH;
+    if ((authbin!=NULL) && check_auth(sock,connection_prop)!=0) { //If auth is required
+        retval = ERR_NOAUTH;
+        post_param.data=NULL;
+        connection_prop->strfile=NULL;
+        
+        goto escape;
     }
 
     connection_prop->strfile=malloc(URI_LEN);//buffer for filename
@@ -398,6 +403,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
     if (connection_prop->method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
         post_param.data=NULL;
+        post_param.len=0;
 
         switch (connection_prop->method_id) {
         case PUT:
@@ -414,6 +420,9 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
             break;
         case MKCOL:
             retval=mkcol(sock,connection_prop);
+            break;
+        case COPY:
+            retval=copy(sock,connection_prop);
             break;
 #endif
         }
@@ -518,6 +527,8 @@ escape:
         return send_err(sock,507,"Insufficient Storage",connection_prop->ip_addr);
     case ERR_NOT_ALLOWED:
         return send_err(sock,405,"Method Not Allowed",connection_prop->ip_addr);
+    case ERR_NOAUTH:
+        return request_auth(sock,connection_prop->page);//Sends a request for authentication
     case OK_NOCONTENT:
         return send_http_header_full(sock,204,0,NULL,true,-1,connection_prop);
     case OK_CREATED:
@@ -1033,14 +1044,8 @@ int check_auth(int sock, connection_t* connection_prop) {
         password++;//make password point to the beginning of the password
     }
 
-    //snprintf(auths,INBUFFER+(2*PWDLIMIT),"%s %s \"%s\" %s \"%s\" \"%s\"",
-    //method,username,password);
-    //int sock, char* http_param, char * method, char * page, char * ip_addr
-    //int result=system(auths);
     short int result=-1;
     {
-#define SOCK_PATH "/var/run/acpid.socket"
-
         int s,len;
         struct sockaddr_un remote;
         s=socket(AF_UNIX,SOCK_STREAM,0);
@@ -1055,17 +1060,15 @@ int check_auth(int sock, connection_t* connection_prop) {
         if (auth_str==NULL) {
             return -1;
         }
+        
         int auth_str_l=snprintf(auth_str,HEADBUF+PWDLIMIT*2,"%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",connection_prop->page,connection_prop->ip_addr,connection_prop->method,username,password,connection_prop->http_param);
         write(s,auth_str,auth_str_l);
         if (read(s,auth_str,1)==0) {//No output, ok
             result=0;
         }
+        
         close(s);
-        free(auth_str);
-    }
-
-    if (result!=0) { //Failed
-        request_auth(sock,connection_prop->page);//Sends a request for authentication
+        free(auth_str);        
     }
 
     return result;

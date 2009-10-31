@@ -105,7 +105,7 @@ typedef struct {
 #define ERR_NOTIMPLEMENTED -8
 #define ERR_NODATA -7
 #define ERR_NOTHTTP -6
-#define ERR_NONAUTH -5
+#define ERR_NOAUTH -5
 #define ERR_SOCKWRITE -4
 #define ERR_NOMEM -3
 #define ERR_FILENOTFOUND -2

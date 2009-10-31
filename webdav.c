@@ -20,6 +20,9 @@ in this funcion. It will accept many forms of invalid xml.
 The original string post_param->data will be modified.
 */
 int get_props(string_t* post_param,char * props[]) {
+    if (post_param->len==0){
+        return ERR_NODATA;
+    }
     char*data=strstr(post_param->data,"<D:prop ");
     if (data==NULL)
         data=strstr(post_param->data,"<D:prop>");
@@ -165,13 +168,12 @@ This function serves a PROPFIND request.
 
 Can serve both depth and non-depth requests. This funcion works only if
 authentication is enabled.
-
-
 */
 int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
     if (authbin==NULL) {
         return ERR_FORBIDDEN;
     }
+    
 
     {
         struct stat stat_s;
@@ -290,6 +292,12 @@ int mkcol(int sock,connection_t* connection_prop) {
     case EPERM:
         return ERR_INSUFFICIENT_STORAGE;
     }
+    
+    return ERR_SERVICE_UNAVAILABLE; //Make gcc happy
+}
+
+int copy(int sock,connection_t* connection_prop) {
+    bool deep=true;
 }
 
 #endif
