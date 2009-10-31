@@ -273,9 +273,13 @@ bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,
 /**
 Deletes a directory and its content.
 This function is something like rm -rf
+
+dir is the directory to delete
+file is a buffer. Allocated outside because it
+will be reused by every recoursive call.
+It's size is file_s
 */
 int deep_rmdir(char * dir) {
-
     /*
     If it is a file, removes it
     Otherwise list the directory's content,
@@ -287,22 +291,22 @@ int deep_rmdir(char * dir) {
 
     struct dirent *ep; //File's property
     DIR *dp = opendir(dir); //Open dir
-    char*file=malloc(PATH_LEN);//Buffer for path
-    if (file==NULL)
-        return 1;
 
-    if (dp == NULL) {//Error, unable to send because header was already sent
+    if (dp == NULL) {
         return 1;
     }
 
+    char*file=malloc(PATH_LEN);//Buffer for path
+    if (file==NULL)
+        return ERR_NOMEM;
+
     while ((ep = readdir(dp))) { //Cycles trough dir's elements
 
-        //Avoids dir . and .. but not all hidden files
+        //skips dir . and .. but not all hidden files
         if (ep->d_name[0]=='.' && (ep->d_name[1]==0 || (ep->d_name[1]=='.' && ep->d_name[2]==0)))
             continue;
 
         snprintf(file,PATH_LEN,"%s/%s",dir, ep->d_name);
-
         deep_rmdir(file);
     }
 
