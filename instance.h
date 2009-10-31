@@ -97,6 +97,10 @@ typedef struct {
 #endif
 
 //Errors
+#define ERR_NOT_ALLOWED -13
+#define ERR_INSUFFICIENT_STORAGE -12
+#define ERR_CONFLICT -11
+#define ERR_SERVICE_UNAVAILABLE -10
 #define ERR_FORBIDDEN -9
 #define ERR_NOTIMPLEMENTED -8
 #define ERR_NODATA -7

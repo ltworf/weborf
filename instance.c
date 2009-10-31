@@ -83,6 +83,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         else if (strncmp(buf,"DELETE",6)==0) connection_prop->method_id=DELETE;
 #ifdef WEBDAV
         else if (strncmp(buf,"PROPFIND",8)==0) connection_prop->method_id=PROPFIND;
+        else if (strncmp(buf,"MKCOL",5)==0) connection_prop->method_id=MKCOL;
 #endif
         else {
             send_err(sock,400,"Bad request",connection_prop->ip_addr);
@@ -347,6 +348,7 @@ int delete_file(int sock,connection_t* connection_prop) {
     }
 
     if (S_ISDIR(stat_d.st_mode)) {
+        //TODO should perform rm -rf
         retval=rmdir(connection_prop->strfile);
     } else {
         retval=unlink(connection_prop->strfile);
@@ -411,6 +413,8 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
             post_param=read_post_data(sock,connection_prop,read_b);
             retval=propfind(sock,connection_prop,&post_param);
             break;
+        case MKCOL:
+            retval=mkcol(sock,connection_prop);
 #endif
         }
 
@@ -506,6 +510,14 @@ escape:
         return send_err(sock,403,"Forbidden",connection_prop->ip_addr);
     case ERR_NOTIMPLEMENTED:
         return send_err(sock,501,"Not implemented",connection_prop->ip_addr);
+    case ERR_SERVICE_UNAVAILABLE:
+        return send_err(sock,503,"Service Unavailable",connection_prop->ip_addr);
+    case ERR_CONFLICT:
+        return send_err(sock,409,"Conflict",connection_prop->ip_addr);
+    case ERR_INSUFFICIENT_STORAGE:
+        return send_err(sock,507,"Insufficient Storage",connection_prop->ip_addr);
+    case ERR_NOT_ALLOWED:
+        return send_err(sock,405,"Method Not Allowed",connection_prop->ip_addr);
     case OK_NOCONTENT:
         return send_http_header_full(sock,204,0,NULL,true,-1,connection_prop);
     case OK_CREATED:

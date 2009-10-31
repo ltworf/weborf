@@ -58,11 +58,11 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     struct stat stat_s;
     char buffer[URI_LEN];
     bool props_invalid[MAXPROPCOUNT]; //Used to keep trace of invalid props
-    
+
 
     stat(file, &stat_s);
     write(sock,"<D:response>\n",13);
-    
+
     /*           struct stat {
                dev_t     st_dev;     / ID of device containing file
                ino_t     st_ino;     / inode number
@@ -80,13 +80,13 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
            };
     */
 
-    {//Sends href of the resource        
-        if (parent){
+    {//Sends href of the resource
+        if (parent) {
             p_len=snprintf(buffer,URI_LEN,"<D:href>%s</D:href>",filename);
         } else {
             p_len=snprintf(buffer,URI_LEN,"<D:href>%s%s</D:href>",connection_prop->page,filename);
         }
-        
+
         write (sock,buffer,p_len);
     }
 
@@ -172,27 +172,27 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
     if (authbin==NULL) {
         return ERR_FORBIDDEN;
     }
-    
+
     {
         struct stat stat_s;
         int stat_r=stat(connection_prop->strfile, &stat_s);
-        
+
         if (stat_r!=0) {
             return ERR_FILENOTFOUND;
         }
-        
+
         if (S_ISDIR(stat_s.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
             send_http_header_full(sock,301,0,head,true,-1,connection_prop);
             return 0;
-        }               
+        }
     }
 
     char *props[MAXPROPCOUNT];   //List of pointers to properties
     bool deep=false;
 
-    
+
     { //Determining if it is deep or not
         char a[4]; //Buffer for field's value
         //Gets the value of content-length header
@@ -216,13 +216,13 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
     //Sends header of xml response
     write(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>",39);
     write(sock,"<D:multistatus xmlns:D=\"DAV:\">",30);
-    
+
     //sock=1;
-    
+
     //sends props about the requested file
     printprops(sock,connection_prop,props,connection_prop->strfile,connection_prop->page,true);
     if (deep) {//Send children files
-        
+
         struct dirent *ep; //File's property
         DIR *dp = opendir(connection_prop->strfile); //Open dir
         char file[URI_LEN];
@@ -243,11 +243,11 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
 #endif
 
             snprintf(file,URI_LEN,"%s%s", connection_prop->strfile, ep->d_name);
-            
+
             //Sends details about a file
             printprops(sock,connection_prop,props,file,ep->d_name,false);
         }
-        
+
         closedir(dp);
     }
 
@@ -255,6 +255,37 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
     write(sock,"</D:multistatus>",16);
 
     return 0;
+}
+
+/**
+This funcion should be named mkdir. But standards writers are weird people.
+*/
+int mkcol(int sock,connection_t* connection_prop) {
+    int res=mkdir(connection_prop->strfile,S_IRWXU | S_IRWXG | S_IRWXO);
+    
+    if (res==0) {//Directory created
+        return OK_CREATED;
+    }
+    
+    //Error
+    switch (errno) {
+        case EACCES:
+        case EFAULT:
+        case ELOOP:
+        case ENAMETOOLONG:
+            return ERR_FORBIDDEN;
+        case ENOMEM:
+            return ERR_SERVICE_UNAVAILABLE;
+        case ENOENT:
+            return ERR_CONFLICT;
+        case EEXIST:
+        case ENOTDIR:
+              return ERR_NOT_ALLOWED;
+        case ENOSPC:
+        case EROFS:
+        case EPERM:
+            return ERR_INSUFFICIENT_STORAGE;
+    }
 }
 
 #endif

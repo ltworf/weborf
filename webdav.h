@@ -11,11 +11,11 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <errno.h>
 
 #include "instance.h"
 
 
 int propfind(int sock,connection_t* connection_prop,string_t *post_param);
-
+int mkcol(int sock,connection_t* connection_prop);
 #endif
