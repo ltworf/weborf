@@ -28,6 +28,7 @@ typedef struct {
     int size;       //Size of the buffer
 } buffered_read_t;
 
+void buffer_reset (buffered_read_t * buf, int size);
 int buffer_init(buffered_read_t * buf, int size);
 void buffer_free(buffered_read_t * buf);
 ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf);

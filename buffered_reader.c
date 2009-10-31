@@ -31,11 +31,19 @@ It will return 0 on success and 1 on fail.
 */
 int buffer_init(buffered_read_t * buf, int size) {
     buf->buffer = malloc(sizeof(char *) * size);
+    buffer_reset(buf,size);
+
+    return (buf->buffer == NULL) ? 1 : 0;
+}
+
+/**
+Resets the pointers, so the buffer is ready for new reads on new
+file descriptor
+*/
+void buffer_reset (buffered_read_t * buf, int size) {
     buf->start = buf->buffer;
     buf->end = buf->buffer;
     buf->size = size;
-
-    return (buf->buffer == NULL) ? 1 : 0;
 }
 
 /**

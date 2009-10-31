@@ -187,7 +187,9 @@ void * instance(void * nulla) {
     buffer_init(&read_b,BUFFERED_READER_SIZE);
 
     while (true) {
+        buffer_reset (&read_b,BUFFERED_READER_SIZE);
         q_get(&queue, &sock,&addr);//Gets a socket from the queue
+        
 
         //Converting address to string
 #ifdef IPV6

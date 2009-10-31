@@ -27,14 +27,16 @@ int get_props(string_t* post_param,char * props[]) {
     if (data==NULL)
         data=strstr(post_param->data,"<D:prop>");
 
-    if (data==NULL)
+    if (data==NULL) {
         return ERR_NODATA;
+    }
     data+=8; //Eliminates the 1st useless tag
 
     {
         char*end=strstr(data,"</D:prop>");
-        if (end==NULL)
+        if (end==NULL) {
             return ERR_NODATA;
+        }
         end[0]=0;
     }
 
