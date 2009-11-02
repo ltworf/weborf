@@ -85,6 +85,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         else if (strncmp(buf,"PROPFIND",8)==0) connection_prop->method_id=PROPFIND;
         else if (strncmp(buf,"MKCOL",5)==0) connection_prop->method_id=MKCOL;
         else if (strncmp(buf,"COPY",4)==0) connection_prop->method_id=COPY;
+        else if (strncmp(buf,"MOVE",4)==0) connection_prop->method_id=MOVE;
 #endif
         else {
             send_err(sock,400,"Bad request",connection_prop->ip_addr);
@@ -424,7 +425,10 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
             retval=mkcol(sock,connection_prop);
             break;
         case COPY:
-            retval=copy(sock,connection_prop);
+            retval=copy_move(sock,connection_prop);
+            break;
+        case MOVE:
+            retval=copy_move(sock,connection_prop);
             break;
 #endif
         }
@@ -523,6 +527,8 @@ escape:
         return send_err(sock,501,"Not implemented",connection_prop->ip_addr);
     case ERR_SERVICE_UNAVAILABLE:
         return send_err(sock,503,"Service Unavailable",connection_prop->ip_addr);
+    case ERR_PRECONDITION_FAILED:
+        return send_err(sock,412,"Precondition Failed",connection_prop->ip_addr);
     case ERR_CONFLICT:
         return send_err(sock,409,"Conflict",connection_prop->ip_addr);
     case ERR_INSUFFICIENT_STORAGE:

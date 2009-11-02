@@ -17,6 +17,7 @@
 - Implemented MKCOL method
 - Bug: socket were closed randomly on non GET/POST methods
 - Bug: tamed buffers do not affect subsequent connections on the same thread
+- Deep delete, to delete directories and their content
 
 0.11
 - Support for ETag header

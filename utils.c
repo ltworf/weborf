@@ -314,3 +314,64 @@ int deep_rmdir(char * dir) {
     free(file);
     return rmdir(dir);
 }
+
+/**
+Moves a file. If it is on the same partition it will create a new link and delete the previous link.
+Otherwise it will create a new copy and delete the old one
+*/
+int file_move(char* source, char* dest) {
+    int retval=link(source,dest);
+    
+    //Could link, file was on the same partition
+    if (retval==0)
+        goto escape;
+    
+    //Couldn't link, doing a copy
+    retval=file_copy(source,dest);
+escape:
+    unlink(source);
+    return retval;
+}
+
+/**
+Copies a file into another file
+*/
+int file_copy(char* source, char* dest) {
+    int fd_from=-1;
+    int fd_to=-1;
+    ssize_t read_,write_;
+    int retval=0;
+    char* buf=NULL;
+    
+    //Open destination file
+    if ((fd_to=open(dest,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR))<0) {
+        retval=ERR_FORBIDDEN;
+        goto escape;
+    }
+        
+    if ((fd_from=open(source,O_RDONLY | O_LARGEFILE))<0) {
+        retval = ERR_FILENOTFOUND;
+        goto escape;
+    }
+    
+    buf=malloc(FILEBUF);//Buffer to read from file
+    if (buf==NULL) {
+        retval= ERR_NOMEM;
+        goto escape;
+    }
+       
+    while ((read_=read(fd_from,buf,FILEBUF))>0) {
+        write_=write(fd_to,buf,read_);
+
+        if (write_!=read_) {
+            retval= ERR_BRKPIPE;
+            break;
+        }
+    }
+
+escape:
+    free(buf);
+    if (fd_from>=0) close(fd_from);
+    if (fd_to>=0) close(fd_to);
+    return retval;
+}

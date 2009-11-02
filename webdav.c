@@ -1,10 +1,30 @@
+/*
+Weborf
+Copyright (C) 2009  Salvo "LtWorf" Tomaselli
 
+Weborf is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+@author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
+*/
 
 #include "webdav.h"
 
 #ifdef WEBDAV
 
 extern char* authbin;
+extern char* basedir;
+extern bool virtual_host;
 
 /**
 This function will split the required props into a char* array.
@@ -298,8 +318,93 @@ int mkcol(int sock,connection_t* connection_prop) {
     return ERR_SERVICE_UNAVAILABLE; //Make gcc happy
 }
 
-int copy(int sock,connection_t* connection_prop) {
+/**
+Webdav method copy.
+*/
+int copy_move(int sock,connection_t* connection_prop) {
+    
+    //TODO implement directory copy
+    
     bool deep=true;
+    bool check_exists=false;
+    int retval=0;
+    char* real_basedir;
+    bool exists;
+    
+    char* host=malloc(3*PATH_LEN+12);
+    if (host==NULL) {
+        return ERR_NOMEM;
+    }
+    char* dest=host+PATH_LEN;
+    char* depth=dest+PATH_LEN;
+    char* overwrite=depth+10;
+    char* destination=overwrite+2;
+    
+    //If the file has the same date, there is no need of sending it again
+    bool host_b=get_param_value(connection_prop->http_param,"Host",host,RBUFFER,4);
+    bool dest_b=get_param_value(connection_prop->http_param,"Destination",dest,RBUFFER,11);
+    bool depth_b=get_param_value(connection_prop->http_param,"Depth",depth,RBUFFER,5);
+    bool overwrite_b=get_param_value(connection_prop->http_param,"Overwrite",overwrite,RBUFFER,9);
+    
+    if (host_b && dest_b == false) { //Some important header is missing
+        retval=ERR_NOTHTTP;
+        goto escape;
+    }
+    
+    /*Sets if there is overwrite or not.
+    ovewrite header is a boolean where F is false.
+    */
+    if (overwrite_b) { 
+        check_exists=overwrite[0]!='F';
+    }
+    
+    //Set the depth of the copy (valid just in case of directory
+    if (depth_b) {
+        deep=depth[0]=='0'?false:true;
+    }
+    
+    dest=strstr(dest,host);
+    if (dest==NULL) {//Something is wrong here
+        retval=ERR_NOTHTTP;
+        goto escape;
+    }
+    dest+=strlen(host);
+    
+    if (virtual_host) { //Using virtual hosts
+        real_basedir=get_basedir(connection_prop->http_param);
+        if (real_basedir==NULL) real_basedir=basedir;
+    } else {//No virtual Host
+        real_basedir=basedir;
+    }
+    
+    //Local path for destination file
+    snprintf(destination,PATH_LEN,"%s%s",real_basedir,dest);
+    
+    if (strcmp(connection_prop->strfile,destination)==0) {//same
+        retval=ERR_FORBIDDEN;
+        goto escape;
+    }
+    exists=file_exists(destination);
+    
+    //Checks if the file already exists
+    if (check_exists && exists) {
+        retval=ERR_PRECONDITION_FAILED;
+        goto escape;
+    }
+    
+    if (connection_prop->method_id==COPY){
+        retval=file_copy(connection_prop->strfile,destination);
+    } else {
+        retval=file_move(connection_prop->strfile,destination);
+    }
+    
+    
+    if (retval==0) {
+        retval=exists?OK_NOCONTENT:OK_CREATED;
+    }
+escape:
+    free(host);
+    return retval;
 }
 
 #endif
