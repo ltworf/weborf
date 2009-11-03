@@ -425,8 +425,6 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
             retval=mkcol(sock,connection_prop);
             break;
         case COPY:
-            retval=copy_move(sock,connection_prop);
-            break;
         case MOVE:
             retval=copy_move(sock,connection_prop);
             break;
