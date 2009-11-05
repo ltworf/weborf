@@ -321,11 +321,11 @@ Otherwise it will create a new copy and delete the old one
 */
 int file_move(char* source, char* dest) {
     int retval=link(source,dest);
-    
+
     //Could link, file was on the same partition
     if (retval==0)
         goto escape;
-    
+
     //Couldn't link, doing a copy
     retval=file_copy(source,dest);
 escape:
@@ -342,24 +342,24 @@ int file_copy(char* source, char* dest) {
     ssize_t read_,write_;
     int retval=0;
     char* buf=NULL;
-    
+
     //Open destination file
     if ((fd_to=open(dest,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR))<0) {
         retval=ERR_FORBIDDEN;
         goto escape;
     }
-        
+
     if ((fd_from=open(source,O_RDONLY | O_LARGEFILE))<0) {
         retval = ERR_FILENOTFOUND;
         goto escape;
     }
-    
+
     buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
         retval= ERR_NOMEM;
         goto escape;
     }
-       
+
     while ((read_=read(fd_from,buf,FILEBUF))>0) {
         write_=write(fd_to,buf,read_);
 
@@ -396,19 +396,20 @@ int dir_move(char* source, char* dest) {
 
 int dir_move_copy (char* source, char* dest,int method) {
     struct stat f_prop; //File's property
-    
+    int retval;
+
     if (mkdir(dest,S_IRWXU | S_IRWXG | S_IRWXO)!=0) {//Attemps to create destination directory
-        return 1;
+        return ERR_FORBIDDEN;
     }
-    
+
     struct dirent *ep; //File's property
     DIR *dp = opendir(source); //Open dir
 
     if (dp == NULL) {
-        return 1;
+        return ERR_FILENOTFOUND;
     }
 
-    char*src_file=malloc(PATH_LEN*2);//Buffer for path   
+    char*src_file=malloc(PATH_LEN*2);//Buffer for path
     if (src_file==NULL)
         return ERR_NOMEM;
     char* dest_file=src_file+PATH_LEN;
@@ -421,25 +422,29 @@ int dir_move_copy (char* source, char* dest,int method) {
 
         snprintf(src_file,PATH_LEN,"%s/%s",source, ep->d_name);
         snprintf(dest_file,PATH_LEN,"%s/%s",dest, ep->d_name);
-                
+
         stat(src_file, &f_prop);
         if (S_ISDIR(f_prop.st_mode)) {//Directory
-            dir_move_copy(src_file,dest_file,method);
+            retval=dir_move_copy(src_file,dest_file,method);
         } else {//File
-            if (method==MOVE){
-            file_move(src_file,dest_file);
+            if (method==MOVE) {
+                retval=file_move(src_file,dest_file);
             } else {
-            file_copy(src_file,dest_file);
+                retval=file_copy(src_file,dest_file);
             }
         }
+
+        if (retval!=0)
+            goto escape;
     }
 
+escape:
     closedir(dp);
     free(src_file);
 
-    //Removing directory after that its content has been moved    
-    if (method==MOVE){
-    return rmdir(source);
+    //Removing directory after that its content has been moved
+    if (retval==0 && method==MOVE) {
+        return rmdir(source);
     }
-    return 0;
+    return retval;
 }

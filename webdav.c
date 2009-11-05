@@ -40,7 +40,7 @@ in this funcion. It will accept many forms of invalid xml.
 The original string post_param->data will be modified.
 */
 int get_props(string_t* post_param,char * props[]) {
-    if (post_param->len==0){
+    if (post_param->len==0) {
         return ERR_NODATA;
     }
     char*data=strstr(post_param->data,"<D:prop ");
@@ -195,7 +195,7 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
     if (authbin==NULL) {
         return ERR_FORBIDDEN;
     }
-    
+
 
     {
         struct stat stat_s;
@@ -314,7 +314,7 @@ int mkcol(int sock,connection_t* connection_prop) {
     case EPERM:
         return ERR_INSUFFICIENT_STORAGE;
     }
-    
+
     return ERR_SERVICE_UNAVAILABLE; //Make gcc happy
 }
 
@@ -323,14 +323,14 @@ Webdav method copy.
 */
 int copy_move(int sock,connection_t* connection_prop) {
     //TODO implement directory copy
-    
+
     struct stat f_prop; //File's property
     bool deep=true;
     bool check_exists=false;
     int retval=0;
     char* real_basedir;
     bool exists;
-    
+
     char* host=malloc(3*PATH_LEN+12);
     if (host==NULL) {
         return ERR_NOMEM;
@@ -339,75 +339,75 @@ int copy_move(int sock,connection_t* connection_prop) {
     char* depth=dest+PATH_LEN;
     char* overwrite=depth+10;
     char* destination=overwrite+2;
-    
+
     //If the file has the same date, there is no need of sending it again
     bool host_b=get_param_value(connection_prop->http_param,"Host",host,RBUFFER,4);
     bool dest_b=get_param_value(connection_prop->http_param,"Destination",dest,RBUFFER,11);
     bool depth_b=get_param_value(connection_prop->http_param,"Depth",depth,RBUFFER,5);
     bool overwrite_b=get_param_value(connection_prop->http_param,"Overwrite",overwrite,RBUFFER,9);
-    
+
     if (host_b && dest_b == false) { //Some important header is missing
         retval=ERR_NOTHTTP;
         goto escape;
     }
-    
+
     /*Sets if there is overwrite or not.
     ovewrite header is a boolean where F is false.
     */
-    if (overwrite_b) { 
+    if (overwrite_b) {
         check_exists=overwrite[0]!='F';
     }
-    
+
     //Set the depth of the copy (valid just in case of directory
     if (depth_b) {
         deep=depth[0]=='0'?false:true;
     }
-    
+
     dest=strstr(dest,host);
     if (dest==NULL) {//Something is wrong here
         retval=ERR_NOTHTTP;
         goto escape;
     }
     dest+=strlen(host);
-    
+
     if (virtual_host) { //Using virtual hosts
         real_basedir=get_basedir(connection_prop->http_param);
         if (real_basedir==NULL) real_basedir=basedir;
     } else {//No virtual Host
         real_basedir=basedir;
     }
-    
+
     //Local path for destination file
     snprintf(destination,PATH_LEN,"%s%s",real_basedir,dest);
-    
+
     if (strcmp(connection_prop->strfile,destination)==0) {//same
         retval=ERR_FORBIDDEN;
         goto escape;
     }
     exists=file_exists(destination);
-    
+
     //Checks if the file already exists
     if (check_exists && exists) {
         retval=ERR_PRECONDITION_FAILED;
         goto escape;
     }
-    
+
     stat(connection_prop->strfile, &f_prop);
     if (S_ISDIR(f_prop.st_mode)) { //Directory
-        if (connection_prop->method_id==COPY){
+        if (connection_prop->method_id==COPY) {
             retval=dir_copy(connection_prop->strfile,destination);
         } else {//Move
-            retval=dir_move(connection_prop->strfile,destination); 
+            retval=dir_move(connection_prop->strfile,destination);
         }
-    } else { //Normal file    
-        if (connection_prop->method_id==COPY){
+    } else { //Normal file
+        if (connection_prop->method_id==COPY) {
             retval=file_copy(connection_prop->strfile,destination);
         } else {//Move
-            retval=file_move(connection_prop->strfile,destination); 
+            retval=file_move(connection_prop->strfile,destination);
         }
     }
-    
-    
+
+
     if (retval==0) {
         retval=exists?OK_NOCONTENT:OK_CREATED;
     }

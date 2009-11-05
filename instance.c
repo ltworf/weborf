@@ -190,7 +190,7 @@ void * instance(void * nulla) {
     while (true) {
         buffer_reset (&read_b,BUFFERED_READER_SIZE);
         q_get(&queue, &sock,&addr);//Gets a socket from the queue
-        
+
 
         //Converting address to string
 #ifdef IPV6
@@ -394,7 +394,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         retval = ERR_NOAUTH;
         post_param.data=NULL;
         connection_prop->strfile=NULL;
-        
+
         goto escape;
     }
 
@@ -1066,15 +1066,15 @@ int check_auth(int sock, connection_t* connection_prop) {
         if (auth_str==NULL) {
             return -1;
         }
-        
+
         int auth_str_l=snprintf(auth_str,HEADBUF+PWDLIMIT*2,"%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",connection_prop->page,connection_prop->ip_addr,connection_prop->method,username,password,connection_prop->http_param);
         write(s,auth_str,auth_str_l);
         if (read(s,auth_str,1)==0) {//No output, ok
             result=0;
         }
-        
+
         close(s);
-        free(auth_str);        
+        free(auth_str);
     }
 
     return result;
