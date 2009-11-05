@@ -41,7 +41,7 @@ The original string post_param->data will be modified.
 */
 int get_props(string_t* post_param,char * props[]) {
     if (post_param->len==0) {
-        return ERR_NODATA;
+        goto default_prop;
     }
     char*data=strstr(post_param->data,"<D:prop ");
     if (data==NULL)
@@ -72,6 +72,15 @@ int get_props(string_t* post_param,char * props[]) {
         temp[0]=0;
     }
     return 0;
+default_prop:
+    //Sets the array to some default props
+    props[0]="D:getetag";
+    props[1]="D:getcontentlength";
+    props[2]="D:resourcetype";
+    props[3]="D:getlastmodified";
+    props[4]=NULL;
+
+    return 0;
 }
 
 /**
@@ -84,26 +93,8 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     char buffer[URI_LEN];
     bool props_invalid[MAXPROPCOUNT]; //Used to keep trace of invalid props
 
-
     stat(file, &stat_s);
     write(sock,"<D:response>\n",13);
-
-    /*           struct stat {
-               dev_t     st_dev;     / ID of device containing file
-               ino_t     st_ino;     / inode number
-               mode_t    st_mode;    / protection
-               nlink_t   st_nlink;   / number of hard links *
-               uid_t     st_uid;     / user ID of owner *
-               gid_t     st_gid;     / group ID of owner *
-               dev_t     st_rdev;    / device ID (if special file) *
-               off_t     st_size;    / total size, in bytes *
-               blksize_t st_blksize; / blocksize for file system I/O *
-               blkcnt_t  st_blocks;  / number of 512B blocks allocated *
-               time_t    st_atime;   / time of last access *
-               time_t    st_mtime;   / time of last modification *
-               time_t    st_ctime;   / time of last status change *
-           };
-    */
 
     {//Sends href of the resource
         if (parent) {
@@ -322,8 +313,6 @@ int mkcol(int sock,connection_t* connection_prop) {
 Webdav method copy.
 */
 int copy_move(int sock,connection_t* connection_prop) {
-    //TODO implement directory copy
-
     struct stat f_prop; //File's property
     bool deep=true;
     bool check_exists=false;

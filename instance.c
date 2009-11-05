@@ -81,6 +81,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         else if (strncmp(buf,"POST",4)==0) connection_prop->method_id=POST;
         else if (strncmp(buf,"PUT",3)==0) connection_prop->method_id=PUT;
         else if (strncmp(buf,"DELETE",6)==0) connection_prop->method_id=DELETE;
+        else if (strncmp(buf,"OPTIONS",7)==0) connection_prop->method_id=GET; //I should be ashamed for that, but looks like apache does the same
 #ifdef WEBDAV
         else if (strncmp(buf,"PROPFIND",8)==0) connection_prop->method_id=PROPFIND;
         else if (strncmp(buf,"MKCOL",5)==0) connection_prop->method_id=MKCOL;
