@@ -20,6 +20,7 @@
 - Deep delete, to delete directories and their content
 - Implemented COPY method on files
 - Implemented MOVE method on files
+- Implemented COPY and MOVE methods on directories (Rev 358)
 
 0.11
 - Support for ETag header

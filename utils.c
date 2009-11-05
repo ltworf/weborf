@@ -375,3 +375,71 @@ escape:
     if (fd_to>=0) close(fd_to);
     return retval;
 }
+
+/**This function copies a directory.
+The destination directory will be created and
+will be filled with the same content of the source directory
+*/
+int dir_copy (char* source, char* dest) {
+    return dir_move_copy(source,dest,COPY);
+}
+
+/**This function moves a directory.
+The destination directory will be created and
+will be filled with the same content of the source directory.
+Then, the source directory will be deleted.
+*/
+int dir_move(char* source, char* dest) {
+    return dir_move_copy(source,dest,MOVE);
+}
+
+
+int dir_move_copy (char* source, char* dest,int method) {
+    struct stat f_prop; //File's property
+    
+    if (mkdir(dest,S_IRWXU | S_IRWXG | S_IRWXO)!=0) {//Attemps to create destination directory
+        return 1;
+    }
+    
+    struct dirent *ep; //File's property
+    DIR *dp = opendir(source); //Open dir
+
+    if (dp == NULL) {
+        return 1;
+    }
+
+    char*src_file=malloc(PATH_LEN*2);//Buffer for path   
+    if (src_file==NULL)
+        return ERR_NOMEM;
+    char* dest_file=src_file+PATH_LEN;
+
+    while ((ep = readdir(dp))) { //Cycles trough dir's elements
+
+        //skips dir . and .. but not all hidden files
+        if (ep->d_name[0]=='.' && (ep->d_name[1]==0 || (ep->d_name[1]=='.' && ep->d_name[2]==0)))
+            continue;
+
+        snprintf(src_file,PATH_LEN,"%s/%s",source, ep->d_name);
+        snprintf(dest_file,PATH_LEN,"%s/%s",dest, ep->d_name);
+                
+        stat(src_file, &f_prop);
+        if (S_ISDIR(f_prop.st_mode)) {//Directory
+            dir_move_copy(src_file,dest_file,method);
+        } else {//File
+            if (method==MOVE){
+            file_move(src_file,dest_file);
+            } else {
+            file_copy(src_file,dest_file);
+            }
+        }
+    }
+
+    closedir(dp);
+    free(src_file);
+
+    //Removing directory after that its content has been moved    
+    if (method==MOVE){
+    return rmdir(source);
+    }
+    return 0;
+}

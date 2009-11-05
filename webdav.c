@@ -322,9 +322,9 @@ int mkcol(int sock,connection_t* connection_prop) {
 Webdav method copy.
 */
 int copy_move(int sock,connection_t* connection_prop) {
-    
     //TODO implement directory copy
     
+    struct stat f_prop; //File's property
     bool deep=true;
     bool check_exists=false;
     int retval=0;
@@ -392,10 +392,19 @@ int copy_move(int sock,connection_t* connection_prop) {
         goto escape;
     }
     
-    if (connection_prop->method_id==COPY){
-        retval=file_copy(connection_prop->strfile,destination);
-    } else {
-        retval=file_move(connection_prop->strfile,destination);
+    stat(connection_prop->strfile, &f_prop);
+    if (S_ISDIR(f_prop.st_mode)) { //Directory
+        if (connection_prop->method_id==COPY){
+            retval=dir_copy(connection_prop->strfile,destination);
+        } else {//Move
+            retval=dir_move(connection_prop->strfile,destination); 
+        }
+    } else { //Normal file    
+        if (connection_prop->method_id==COPY){
+            retval=file_copy(connection_prop->strfile,destination);
+        } else {//Move
+            retval=file_move(connection_prop->strfile,destination); 
+        }
     }
     
     

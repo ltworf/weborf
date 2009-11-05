@@ -29,8 +29,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
+
 
 #include "mystring.h"
 
@@ -44,5 +45,7 @@ bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,
 int deep_rmdir(char * dir);
 int file_copy(char* source, char* dest);
 int file_move(char* source, char* dest);
+int dir_move (char* source, char* dest);
+int dir_copy (char* source, char* dest);
 
 #endif
