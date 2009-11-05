@@ -30,7 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 syn_queue_t queue;              //Queue for opened sockets
 
-
 pthread_mutex_t m_free;         //Mutex to modify t_free
 unsigned int t_free = 0;        //Free threads
 

@@ -55,7 +55,7 @@ function stopWeborf {
         echo -n ..
         kill $i
     done
-    echo "done"
+    echo " done"
     rm -f $PIDFILE
 }
 
@@ -66,12 +66,19 @@ function startWeborf {
         echo "Weborf already running, if you're sure it is not running, delete $PIDFILE"
         exit 2
     fi
+    
+    if test -n "$AUTH_BIN"
+    then
+        echo "Starting authentication server for weborf"
+        nohup $AUTH_BIN > /dev/null 2> /dev/null &
+        echo ${!} >> $PIDFILE # Writes PID so it will be terminated
+    fi
 
     virtuals=`cat /etc/weborf.conf | egrep ^virtual`
     if test -z "$virtuals"
     then
         echo "Starting weborf"
-        nohup $DAEMON $CGI $CGI_BIN -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
+        nohup $DAEMON $AUTH_SOCKET $CGI $CGI_BIN -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
         echo ${!} >> $PIDFILE # Writes PID so weborf can be terminated
     else #Virtual hosts
     
@@ -80,7 +87,7 @@ function startWeborf {
                 PORT=`echo $i | cut -d# -f2`
                 CMDLINE=`echo $i | cut -d# -f3`
                 echo "Starting weborf on port $PORT"
-                nohup $DAEMON $CGI $CGI_BIN -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
+                nohup $DAEMON $AUTH_SOCKET $CGI $CGI_BIN -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
                 echo $! >> $PIDFILE # Writes PID so weborf can be terminated
             done
     fi
@@ -127,6 +134,15 @@ USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
 INDEXES=`cat /etc/weborf.conf | fgrep "indexes=" | cut -d= -f2`
 USE_CGI=`cat /etc/weborf.conf | fgrep "use-cgi=" | cut -d= -f2`
 CGI_BIN=`cat /etc/weborf.conf | fgrep "cgi=" | cut -d= -f2`
+
+# Authentication
+AUTH_BIN=`cat /etc/weborf.conf | grep "^auth-bin=" | cut -d= -f2`
+AUTH_SOCKET=`cat /etc/weborf.conf | grep "^auth-socket=" | cut -d= -f2`
+
+if test -n "$AUTH_SOCKET"
+then
+        AUTH_SOCKET="-a $AUTH_SOCKET"
+fi
 
 if test -n "$CGI_BIN"
 then

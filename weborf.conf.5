@@ -38,6 +38,14 @@ Can be true or false. If false weborf will handle all files as normal files. Oth
 List of extensions to consider as dynamic pages and binaries to execute them
 
 .TP
+.B auth-bin
+Path of the binary that provides authentication to weborf
+
+.TP
+.B auth-socket
+Path of the unix socket that weborf will use to connect to the authentication server
+
+.TP
 .B user
 Username of the user that will run the webserver. On debian this is usually www-data.
 
