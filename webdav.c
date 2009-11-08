@@ -144,16 +144,6 @@ end_comp: //goto pointing here are optimization. It would work also without
             }
             */
 
-            /*
-            D:displayname
-            D:source
-            D:getcontentlanguage
-            D:getcontenttype
-            D:executable
-            D:supportedlock
-            D:lockdiscovery
-            D:resourcetype
-            */
             if (prop_buffer[0]!=0) {
                 p_len=snprintf(buffer,URI_LEN,"<%s>%s</%s>\n",props[i],prop_buffer,props[i]);
                 write (sock,buffer,p_len);
@@ -188,7 +178,7 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
     }
 
 
-    {
+    { //This redirects directory without ending / to directory with the ending /
         struct stat stat_s;
         int stat_r=stat(connection_prop->strfile, &stat_s);
 
@@ -202,7 +192,7 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
             send_http_header_full(sock,301,0,head,true,-1,connection_prop);
             return 0;
         }
-    }
+    } // End redirection
 
     char *props[MAXPROPCOUNT];   //List of pointers to properties
     bool deep=false;

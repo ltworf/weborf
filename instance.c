@@ -81,7 +81,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         else if (strncmp(buf,"POST",4)==0) connection_prop->method_id=POST;
         else if (strncmp(buf,"PUT",3)==0) connection_prop->method_id=PUT;
         else if (strncmp(buf,"DELETE",6)==0) connection_prop->method_id=DELETE;
-        else if (strncmp(buf,"OPTIONS",7)==0) connection_prop->method_id=GET; //I should be ashamed for that, but looks like apache does the same
+        else if (strncmp(buf,"OPTIONS",7)==0) connection_prop->method_id=OPTIONS;
 #ifdef WEBDAV
         else if (strncmp(buf,"PROPFIND",8)==0) connection_prop->method_id=PROPFIND;
         else if (strncmp(buf,"MKCOL",5)==0) connection_prop->method_id=MKCOL;
@@ -364,7 +364,22 @@ int delete_file(int sock,connection_t* connection_prop) {
     return OK_NOCONTENT;
 }
 
+/**
+Returns the list of supported methods. In theory this list should be
+different depending on the URI requested. But this method will return
+the same list for everything.
+*/
+int options (int sock, connection_t* connection_prop) {
 
+#ifdef WEBDAV
+#define ALLOWED "Allow: GET,POST,PUT,DELETE,OPTIONS,PROPFIND,MKCOL,COPY,MOVE\r\nDAV: 1,2\r\nDAV: <http://apache.org/dav/propset/fs/1>\r\nMS-Author-Via: DAV\r\n"
+#else
+#define ALLOWED "Allow: GET,POST,PUT,DELETE,OPTIONS\r\n"
+#endif
+
+    send_http_header_full(sock,200,0,ALLOWED,true,-1,connection_prop);
+    return 0;
+}
 
 /**
 This function determines the requested page and sends it
@@ -415,6 +430,9 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
             break;
         case DELETE:
             retval=delete_file(sock,connection_prop);
+            break;
+        case OPTIONS:
+            retval=options(sock,connection_prop);
             break;
 #ifdef WEBDAV
         case PROPFIND:

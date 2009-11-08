@@ -283,7 +283,7 @@ int deep_rmdir(char * dir) {
     /*
     If it is a file, removes it
     Otherwise list the directory's content,
-    then do a recoursive call and then do
+    then do a recoursive call and do
     rmdir on self
     */
     if (unlink(dir)==0)
@@ -393,7 +393,9 @@ int dir_move(char* source, char* dest) {
     return dir_move_copy(source,dest,MOVE);
 }
 
-
+/**
+Moves or copies a directory, depending on the method used
+*/
 int dir_move_copy (char* source, char* dest,int method) {
     struct stat f_prop; //File's property
     int retval;

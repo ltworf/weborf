@@ -89,12 +89,15 @@ typedef struct {
 #define PUT 2
 #define DELETE 3
 
+
 #ifdef WEBDAV
 #define PROPFIND 4
 #define COPY 5
 #define MOVE 6
 #define MKCOL 7
 #endif
+
+#define OPTIONS 8
 
 //Errors
 #define ERR_PRECONDITION_FAILED -14
@@ -141,4 +144,5 @@ void handle_requests(int sock, char *buf, buffered_read_t * read_b, int *bufFull
 int send_http_header_full(int sock, int code, unsigned int size, char *headers, bool content, time_t timestamp, connection_t * connection_prop);
 int delete_file(int sock,connection_t* connection_prop);
 int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b);
+int options (int sock, connection_t* connection_prop);
 #endif
