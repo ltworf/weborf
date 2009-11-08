@@ -46,7 +46,11 @@ int get_props(string_t* post_param,char * props[]) {
     char*data=strstr(post_param->data,"<D:prop ");
     if (data==NULL)
         data=strstr(post_param->data,"<D:prop>");
-
+    if (data==NULL)
+        data=strstr(post_param->data,"<prop ");
+    if (data==NULL)
+        data=strstr(post_param->data,"<prop>");
+    
     if (data==NULL) {
         return ERR_NODATA;
     }
@@ -54,6 +58,9 @@ int get_props(string_t* post_param,char * props[]) {
 
     {
         char*end=strstr(data,"</D:prop>");
+        if (end==NULL)
+            end=strstr(data,"</prop>");
+        
         if (end==NULL) {
             return ERR_NODATA;
         }
@@ -67,17 +74,27 @@ int get_props(string_t* post_param,char * props[]) {
             props[i]=NULL;
             break;
         }
-        props[i]+=1; //Removes the <D: stuff
-        temp=strstr(props[i],"/>");
+        props[i]+=1; //Removes the < stuff
+        
+        //Removing if there are parameters to the node
+        temp=strstr(props[i]," ");
+        if (temp!=NULL) {
+            temp[0]=0;
+            temp++;
+        } else {
+            temp=props[i];
+        }
+        
+        temp=strstr(temp,"/>");
         temp[0]=0;
     }
     return 0;
 default_prop:
     //Sets the array to some default props
-    props[0]="D:getetag";
-    props[1]="D:getcontentlength";
-    props[2]="D:resourcetype";
-    props[3]="D:getlastmodified";
+    props[0]="getetag";
+    props[1]="getcontentlength";
+    props[2]="resourcetype";
+    props[3]="getlastmodified";
     props[4]=NULL;
 
     return 0;
@@ -115,13 +132,13 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
             prop_buffer[0]=0;
             p_len-=2;
 
-            if (strncmp(props[i],"D:getetag",9)==0) {
+            if (strstr(props[i],"getetag")!=NULL) {
                 p_len=snprintf(prop_buffer,URI_LEN,"%d",stat_s.st_mtime);
                 goto end_comp;
-            } else if (strncmp(props[i],"D:getcontentlength",18)==0) {
+            } else if (strstr(props[i],"getcontentlength")!=NULL) {
                 p_len=snprintf(prop_buffer,URI_LEN,"%lld",(long long)stat_s.st_size);
                 goto end_comp;
-            } else if (strncmp(props[i],"D:resourcetype",14)==0) {
+            } else if (strstr(props[i],"resourcetype")!=NULL) {
                 if (S_ISDIR(stat_s.st_mode)) {
                     snprintf(prop_buffer,URI_LEN,"<D:collection/>");
                 } else {
@@ -129,7 +146,7 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
                     prop_buffer[1]=0;
                 }
                 goto end_comp;
-            } else if (strncmp(props[i],"D:getlastmodified",17)==0) { //Sends Date
+            } else if (strstr(props[i],"getlastmodified")!=NULL) { //Sends Date
                 struct tm ts;
                 localtime_r((time_t)&stat_s.st_mtime,&ts);
                 strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
