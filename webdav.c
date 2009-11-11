@@ -51,7 +51,7 @@ int get_props(string_t* post_param,char * props[]) {
         data=strstr(post_param->data,"<prop ");
     if (data==NULL)
         data=strstr(post_param->data,"<prop>");
-    
+
     if (data==NULL) {
         return ERR_NODATA;
     }
@@ -61,7 +61,7 @@ int get_props(string_t* post_param,char * props[]) {
         char*end=strstr(data,"</D:prop>");
         if (end==NULL)
             end=strstr(data,"</prop>");
-        
+
         if (end==NULL) {
             return ERR_NODATA;
         }
@@ -79,7 +79,7 @@ int get_props(string_t* post_param,char * props[]) {
         //Removes the />
         temp=strstr(props[i],"/>");
         temp[0]=0;
-        
+
         //Removing if there are parameters to the node
         p_temp=strstr(props[i]," ");
         if (p_temp!=NULL) {
@@ -107,6 +107,7 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     struct stat stat_s;
     char buffer[URI_LEN];
     bool props_invalid[MAXPROPCOUNT]; //Used to keep trace of invalid props
+    bool invalid_props=false; //Used to avoid sending the invalid props if there isn't any
 
     stat(file, &stat_s);
     write(sock,"<D:response>\n",13);
@@ -150,6 +151,7 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
                 strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
                 goto end_comp;
             } else {
+                invalid_props=true;
                 props_invalid[i]=true;
             }
 end_comp: //goto pointing here are optimization. It would work also without
@@ -168,14 +170,16 @@ end_comp: //goto pointing here are optimization. It would work also without
     }
     write(sock,"</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>",58);
 
-    write(sock,"<D:propstat><prop>",18);
-    for (i=0; props[i]!=NULL; i++) {
-        if (props_invalid[i]==true) {
-            p_len=snprintf(buffer,URI_LEN,"<%s/>\n",props[i]);
-            write (sock,buffer,p_len);
+    if (invalid_props) {
+        write(sock,"<D:propstat><prop>",18);
+        for (i=0; props[i]!=NULL; i++) {
+            if (props_invalid[i]==true) {
+                p_len=snprintf(buffer,URI_LEN,"<%s/>\n",props[i]);
+                write (sock,buffer,p_len);
+            }
         }
+        write(sock,"</prop><D:status>HTTP/1.1 404 Not Found</D:status></D:propstat>",63);
     }
-    write(sock,"</prop><D:status>HTTP/1.1 404 Not Found</D:status></D:propstat>",63);
     write(sock,"</D:response>",13);
 
     return 0;
