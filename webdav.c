@@ -43,6 +43,7 @@ int get_props(string_t* post_param,char * props[]) {
     if (post_param->len==0) {
         goto default_prop;
     }
+
     char*data=strstr(post_param->data,"<D:prop ");
     if (data==NULL)
         data=strstr(post_param->data,"<D:prop>");
@@ -54,7 +55,7 @@ int get_props(string_t* post_param,char * props[]) {
     if (data==NULL) {
         return ERR_NODATA;
     }
-    data+=8; //Eliminates the 1st useless tag
+    data+=6; //Eliminates the 1st useless tag
 
     {
         char*end=strstr(data,"</D:prop>");
@@ -66,27 +67,24 @@ int get_props(string_t* post_param,char * props[]) {
         }
         end[0]=0;
     }
-
     int i;
-    char* temp;
+    char *temp, *p_temp;
     for (i=0; (props[i]=strstr(data,"<"))!=NULL; i++,data=temp+1) {
         if (i==MAXPROPCOUNT-1) {//Reached limit
             props[i]=NULL;
             break;
         }
         props[i]+=1; //Removes the < stuff
+
+        //Removes the />
+        temp=strstr(props[i],"/>");
+        temp[0]=0;
         
         //Removing if there are parameters to the node
-        temp=strstr(props[i]," ");
-        if (temp!=NULL) {
-            temp[0]=0;
-            temp++;
-        } else {
-            temp=props[i];
+        p_temp=strstr(props[i]," ");
+        if (p_temp!=NULL) {
+            p_temp[0]=0;
         }
-        
-        temp=strstr(temp,"/>");
-        temp[0]=0;
     }
     return 0;
 default_prop:
