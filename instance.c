@@ -1087,8 +1087,7 @@ int check_auth(int sock, connection_t* connection_prop) {
         }
 
         int auth_str_l=snprintf(auth_str,HEADBUF+PWDLIMIT*2,"%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",connection_prop->page,connection_prop->ip_addr,connection_prop->method,username,password,connection_prop->http_param);
-        write(s,auth_str,auth_str_l);
-        if (read(s,auth_str,1)==0) {//No output, ok
+        if (write(s,auth_str,auth_str_l)==auth_str_l && read(s,auth_str,1)==0) {//All data written and no output, ok
             result=0;
         }
 
