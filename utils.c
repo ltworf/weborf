@@ -270,6 +270,7 @@ bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,
     return true;
 }
 
+
 /**
 Deletes a directory and its content.
 This function is something like rm -rf
@@ -315,6 +316,7 @@ int deep_rmdir(char * dir) {
     return rmdir(dir);
 }
 
+#ifdef WEBDAV
 /**
 Moves a file. If it is on the same partition it will create a new link and delete the previous link.
 Otherwise it will create a new copy and delete the old one
@@ -450,3 +452,4 @@ escape:
     }
     return retval;
 }
+#endif

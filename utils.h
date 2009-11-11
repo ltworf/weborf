@@ -44,9 +44,12 @@ void moo();
 void setEnvVars(char *http_param);
 bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,ssize_t param_len);
 int deep_rmdir(char * dir);
+
+#ifdef WEBDAV
 int file_copy(char* source, char* dest);
 int file_move(char* source, char* dest);
 int dir_move (char* source, char* dest);
 int dir_copy (char* source, char* dest);
+#endif
 
 #endif
