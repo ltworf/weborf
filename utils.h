@@ -46,6 +46,7 @@ bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,
 int deep_rmdir(char * dir);
 
 #ifdef WEBDAV
+int dir_move_copy (char* source, char* dest,int method);
 int file_copy(char* source, char* dest);
 int file_move(char* source, char* dest);
 int dir_move (char* source, char* dest);
