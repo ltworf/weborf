@@ -189,7 +189,7 @@ void * instance(void * nulla) {
     buffer_init(&read_b,BUFFERED_READER_SIZE);
 
     while (true) {
-        buffer_reset (&read_b,BUFFERED_READER_SIZE);
+        buffer_reset (&read_b);
         q_get(&queue, &sock,&addr);//Gets a socket from the queue
 
 

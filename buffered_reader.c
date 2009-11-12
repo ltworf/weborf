@@ -29,10 +29,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 This funcion inits the struct allocating a buffer of the specified size.
 It will return 0 on success and 1 on fail.
 */
-int buffer_init(buffered_read_t * buf, int size) {
+int buffer_init(buffered_read_t * buf, ssize_t size) {
     buf->buffer = malloc(sizeof(char *) * size);
-    buffer_reset(buf,size);
-
+    buf->size = size;
+    buffer_reset(buf);
     return (buf->buffer == NULL) ? 1 : 0;
 }
 
@@ -40,10 +40,9 @@ int buffer_init(buffered_read_t * buf, int size) {
 Resets the pointers, so the buffer is ready for new reads on new
 file descriptor
 */
-void buffer_reset (buffered_read_t * buf, int size) {
+void buffer_reset (buffered_read_t * buf) {
     buf->start = buf->buffer;
     buf->end = buf->buffer;
-    buf->size = size;
 }
 
 /**
@@ -64,8 +63,8 @@ On some special cases, the read data could be less than the requested one. For e
 end of file is reached and it is impossible to do further reads.
 */
 ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
-    ssize_t wrote = 0; //Count of written bytes
-    ssize_t available, needed;
+    ssize_t wrote = 0;              //Count of written bytes
+    ssize_t available, needed;      //Available bytes in buffer, and requested bytes remaining
     ssize_t r;
 
     while (wrote < count) {
