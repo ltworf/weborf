@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "webdav.h"
 
 #ifdef WEBDAV
-
 extern char* authbin;
 extern char* basedir;
 extern bool virtual_host;
@@ -40,10 +39,11 @@ in this funcion. It will accept many forms of invalid xml.
 The original string post_param->data will be modified.
 */
 int get_props(string_t* post_param,char * props[]) {
-    if (post_param->len==0) {
+    if (post_param->len==0) {//No specific prop request, sending everything
         goto default_prop;
     }
 
+//Locates the starting prop tag
     char*data=strstr(post_param->data,"<D:prop ");
     if (data==NULL)
         data=strstr(post_param->data,"<D:prop>");
@@ -57,7 +57,7 @@ int get_props(string_t* post_param,char * props[]) {
     }
     data+=6; //Eliminates the 1st useless tag
 
-    {
+    { //Locates the ending prop tag
         char*end=strstr(data,"</D:prop>");
         if (end==NULL)
             end=strstr(data,"</prop>");
@@ -132,7 +132,8 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
             p_len-=2;
 
             if (strstr(props[i],"getetag")!=NULL) {
-                p_len=snprintf(prop_buffer,URI_LEN,"%d",stat_s.st_mtime);
+                //The casting might be wrong on some architectures
+                p_len=snprintf(prop_buffer,URI_LEN,"%d",(unsigned int)stat_s.st_mtime);
                 goto end_comp;
             } else if (strstr(props[i],"getcontentlength")!=NULL) {
                 p_len=snprintf(prop_buffer,URI_LEN,"%lld",(long long)stat_s.st_size);
@@ -147,7 +148,7 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
                 goto end_comp;
             } else if (strstr(props[i],"getlastmodified")!=NULL) { //Sends Date
                 struct tm ts;
-                localtime_r((time_t)&stat_s.st_mtime,&ts);
+                localtime_r(&stat_s.st_mtime,&ts);
                 strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
                 goto end_comp;
             } else {
