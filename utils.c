@@ -161,6 +161,10 @@ void help() {
     printf("\tCompiled for IPv4\n\n");
 #endif
 
+#ifdef WEBDAV
+    printf("\tHas webdav support\n\n");
+#endif
+
     printf("  -p, --port	followed by port number to listen\n");
     printf("  -i, --ip	followed by IP address to listen (dotted format)\n");
     printf("  -b, --basedir	followed by absolute path of basedir\n");

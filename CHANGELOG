@@ -23,6 +23,7 @@
 - Implemented COPY and MOVE methods on directories (Rev 358)
 - Daemon is able to start authentication server too, reading about it from weborf.conf (Rev 359)
 - Implemented OPTIONS method (Rev 362)
+- Better and more resistant xml parsing of PROPFIND requests (Rev 363)
 
 0.11
 - Support for ETag header
