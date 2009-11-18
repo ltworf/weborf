@@ -85,6 +85,7 @@ void strReplace(char *string, char *substr, char with) {
     while ((pointer = strstr(string, substr)) != NULL) {
         delChar(pointer, 0, substrlen - 1);
         pointer[0] = with;
+        string=pointer;
     }
 }
 
@@ -95,6 +96,10 @@ In case deleting of more chars than the string's len itself, the string will be 
 This function is in-place, doesn't create copies but changes the original string.
 */
 void delChar(char *string, int pos, int n) {
+    /*
+    This isn't using strcpy because here the strings overlap.    
+    memmove isn't good too because 
+    */
     if (strlen(string+pos) < n) { //String is long enough
         return;
     }

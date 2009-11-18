@@ -179,7 +179,7 @@ void * instance(void * nulla) {
 #ifdef IPV6
     connection_prop.ip_addr=malloc(INET6_ADDRSTRLEN);
     struct sockaddr_in6 addr;//Local and remote address
-    socklen_t addr_l=sizeof(struct sockaddr_in);
+    socklen_t addr_l=sizeof(struct sockaddr_in6);
 #else
     connection_prop.ip_addr=malloc(INET_ADDRSTRLEN);
     struct sockaddr_in addr;
@@ -617,12 +617,12 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
 #ifdef IPV6
             char loc_addr[INET6_ADDRSTRLEN];
             struct sockaddr_in6 addr;//Local and remote address
-            socklen_t addr_l=sizeof(struct sockaddr_in);
+            socklen_t addr_l=sizeof(struct sockaddr_in6);
 
             getsockname(sock, (struct sockaddr *)&addr, &addr_l);
             inet_ntop(AF_INET6, &addr.sin6_addr,(char*)&loc_addr, INET6_ADDRSTRLEN);
 #else
-            char loc_addr[INET6_ADDRSTRLEN];
+            char loc_addr[INET_ADDRSTRLEN];
             struct sockaddr_in addr;
             int addr_l=sizeof(struct sockaddr_in);
 
