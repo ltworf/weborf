@@ -669,7 +669,14 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
             }
         }
 
+        {//chdir to the directory
+            char* last_slash=rindex(connection_prop->strfile,'/');            
+            last_slash[0]=0;
+            chdir(connection_prop->strfile);
+        }
+
         alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
+
         execl(executor,executor,(char *)0);
 #ifdef SENDINGDBG
         syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
