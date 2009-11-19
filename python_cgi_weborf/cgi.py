@@ -205,16 +205,6 @@ def __get_array(sep,query):
             dic[i[0]]=None
     return dic
 
-def chdir_to_file(f=None):
-    '''Changes chdir to the same one where the file is stored.
-    By default chdirs to the same directory where the script is located.'''
-    if f==None:
-        f=os.environ['SCRIPT_FILENAME']
-    try:
-        os.chdir(os.path.dirname(f))
-    except:
-        pass
-
 def __auth_fields():
     '''If there is authentication, gets username and password'''
     #Deconding auth field
