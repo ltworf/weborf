@@ -240,7 +240,7 @@ void setEnvVars(char *http_param) { //Sets Enviroment vars
         }
         strToUpper(param); //Converts to upper case
         strReplace(param, "-", '_');
-        snprintf(hparam+5,195,param);
+        memccpy(hparam+5,param,'\0',195);
         setenv(hparam, value, true);
     }
 }
