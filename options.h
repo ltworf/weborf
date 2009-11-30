@@ -101,5 +101,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define SOCKETDBG
 //#define SERVERDBG
 //#define SENDINGDBG
-//#define REQUESTDBG
+#define REQUESTDBG
 #endif

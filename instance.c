@@ -98,7 +98,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         connection_prop->http_param=lasts;
 
 #ifdef REQUESTDBG
-        syslog(LOG_INFO,"%s: %s %s\n",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
+        syslog(LOG_INFO,"%s - %s %s\n",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
 #endif
 
 #ifdef THREADDBG
@@ -191,7 +191,17 @@ void * instance(void * nulla) {
     while (true) {
         buffer_reset (&read_b);
         q_get(&queue, &sock,&addr);//Gets a socket from the queue
-
+        unfree_thread(id);//Sets this thread as busy
+        
+        if (sock<0) { //Was not a socket but a termination order
+            free(connection_prop.ip_addr);//Free the space used to store ip address
+            buffer_free(&read_b);
+#ifdef THREADDBG
+            syslog(LOG_DEBUG,"Terminating thread %ld",id);
+#endif
+            free(buf);
+            pthread_exit(0);
+        }
 
         //Converting address to string
 #ifdef IPV6
@@ -205,18 +215,6 @@ void * instance(void * nulla) {
             inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr, INET_ADDRSTRLEN);
         }
 #endif
-
-        unfree_thread(id);//Sets this thread as busy
-
-        if (sock<0) { //Was not a socket but a termination order
-            free(connection_prop.ip_addr);//Free the space used to store ip address
-            buffer_free(&read_b);
-#ifdef THREADDBG
-            syslog(LOG_DEBUG,"Terminating thread %ld",id);
-#endif
-            free(buf);
-            pthread_exit(0);
-        }
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",id);
@@ -670,7 +668,7 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         }
 
         {//chdir to the directory
-            char* last_slash=rindex(connection_prop->strfile,'/');            
+            char* last_slash=rindex(connection_prop->strfile,'/');
             last_slash[0]=0;
             chdir(connection_prop->strfile);
         }
@@ -1009,9 +1007,6 @@ int send_err(int sock,int err,char* descr,char* ip_addr) {
         free(head);
         return ERR_SOCKWRITE;
     }
-#ifdef REQUESTDBG
-    syslog(LOG_ERR,"%s: Error %d: %s",ip_addr,err,descr);
-#endif
 
     free(head);
     return 0;

@@ -97,8 +97,8 @@ This function is in-place, doesn't create copies but changes the original string
 */
 void delChar(char *string, int pos, int n) {
     /*
-    This isn't using strcpy because here the strings overlap.    
-    memmove isn't good too because 
+    This isn't using strcpy because here the strings overlap.
+    memmove isn't good too because
     */
     if (strlen(string+pos) < n) { //String is long enough
         return;
