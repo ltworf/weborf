@@ -24,7 +24,7 @@ LDFLAGS=-lpthread
 
 
 #Uncomment for debian package
-PYVERSION=2.5
+#PYVERSION=2.5
 #PYVERSION=VERSION
 
 MANDIR=/usr/share/man/
@@ -32,7 +32,7 @@ BINDIR=/usr/bin/
 DAEMONDIR=/etc/init.d/
 CONFDIR=/etc/
 CGIDIR=/usr/lib/cgi-bin/
-PYDIR=/usr/lib/python$(PYVERSION)/cgi_weborf
+#PYDIR=/usr/lib/python$(PYVERSION)/cgi_weborf
 
 all: weborf cgi
 
@@ -66,7 +66,7 @@ installdirs:
 	install -d $(DESTDIR)/$(MANDIR)/man5
 	install -d $(DESTDIR)/$(DAEMONDIR)
 	install -d $(DESTDIR)/$(CGIDIR)
-	install -d $(DESTDIR)/$(PYDIR)
+	#install -d $(DESTDIR)/$(PYDIR)
 
 install: uninstall installdirs
 	# Gzip the manpages
@@ -82,8 +82,8 @@ install: uninstall installdirs
 	#cgi
 	install -m 755 cgi_wrapper/weborf_cgi_wrapper $(DESTDIR)/$(CGIDIR)/weborf_cgi_wrapper
 	install -m 755 cgi_wrapper/weborf_py_wrapper $(DESTDIR)/$(CGIDIR)/weborf_py_wrapper
-	install -m 644 python_cgi_weborf/__init__.py $(DESTDIR)/$(PYDIR)
-	install -m 644 python_cgi_weborf/cgi.py $(DESTDIR)/$(PYDIR)
+	#install -m 644 python_cgi_weborf/__init__.py $(DESTDIR)/$(PYDIR)
+	#install -m 644 python_cgi_weborf/cgi.py $(DESTDIR)/$(PYDIR)
 
 	#Use in case of debian package makefile
 	#install -m 755 weborf.daemon debian/weborf-daemon.init
@@ -98,8 +98,8 @@ uninstall:
 	rm -f $(DESTDIR)/$(BINDIR)/weborf
 	rm -f $(DESTDIR)/$(DAEMONDIR)/weborf
 	#rm -f $(DESTDIR)/$(CGIDIR)/py_weborf
-	rm -f $(DESTDIR)/$(CGIDIR)/weborf_cgi_wrapper
-	rm -f $(DESTDIR)/$(CGIDIR)/weborf_py_wrapper
+	#rm -f $(DESTDIR)/$(CGIDIR)/weborf_cgi_wrapper
+	#rm -f $(DESTDIR)/$(CGIDIR)/weborf_py_wrapper
 
 
 memcheck: debug

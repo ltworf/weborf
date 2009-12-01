@@ -192,7 +192,7 @@ void * instance(void * nulla) {
         buffer_reset (&read_b);
         q_get(&queue, &sock,&addr);//Gets a socket from the queue
         unfree_thread(id);//Sets this thread as busy
-        
+
         if (sock<0) { //Was not a socket but a termination order
             free(connection_prop.ip_addr);//Free the space used to store ip address
             buffer_free(&read_b);
