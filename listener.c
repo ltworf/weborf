@@ -37,7 +37,7 @@ pthread_mutex_t m_thread_c;     //Mutex to modify thread_c
 unsigned int thread_c = 0;      //Number of threads
 
 char *basedir = BASEDIR;        //Base directory
-char *authbin;                  //Executable that will authenticate
+char *authsock;                  //Executable that will authenticate
 bool exec_script = true;        //Execute scripts if true, sends the file if false
 
 uid_t uid = ROOTUID;            //Uid to use after bind
@@ -59,7 +59,6 @@ This function is thread safe.
 Notice that this will not start or stop threads, just change the value of thread_c.
 */
 void chn_thread_count(int val) {
-
     pthread_mutex_lock(&m_thread_c);
     thread_c += val;
     pthread_mutex_unlock(&m_thread_c);
@@ -105,7 +104,7 @@ Will use syslogd
 void init_logger() {
     openlog("weborf", LOG_ODELAY, LOG_DAEMON);
 #ifdef SERVERDBG
-    syslog(LOG_INFO, "Startig server...");
+    syslog(LOG_INFO, "Starting server...");
 #endif
 }
 
@@ -258,7 +257,7 @@ int main(int argc, char *argv[]) {
                 exit(0);
             break;
         case 'a':   //Set authentication script
-            setAuthbin(optarg);
+            set_authsocket(optarg);
             break;
         case 'm':   //Supercow!
             moo();
@@ -396,7 +395,7 @@ int main(int argc, char *argv[]) {
         }
 
         //Start new thread if needed
-        if (t_free <= LOWTHREAD) { //Need to start new thread
+        if (t_free <= LOWTHREAD && t_free<MAXTHREAD) { //Need to start new thread
             if (thread_c + INITIALTHREAD < MAXTHREAD) { //Starts a group of threads
                 init_threads(INITIALTHREAD);
             } else { //Can't start a group because the limit is close, starting less than a whole group
@@ -437,17 +436,28 @@ void setBasedir(char * bd) {
 }
 
 /**
-Checks that the authentication executable exists and is executable
+Checks that the authentication socket exists and is a unix socket
 */
-void setAuthbin(char *bin) {
-    int l = strlen(bin);
-    char command[l + 10];
-    sprintf(command, "test -x %s", bin);
-    if (system(command) != 0) { //Doesn't exist or it isn't executable
-        printf("%s doesn't exist or it is not executable\n", bin);
+void set_authsocket(char *u_socket) {
+    struct stat sb;
+    if (stat(u_socket, &sb) == -1) {
+        perror("Existing unix socket expected");
+#ifdef SERVERDBG
+        syslog(LOG_ERR, "%s doesn't exist", u_socket);
+#endif
         exit(5);
     }
-    authbin = bin;
+
+    if ((sb.st_mode & S_IFMT) != S_IFSOCK) {
+#ifdef SERVERDBG
+        syslog(LOG_ERR, "%s is not a socket", u_socket);
+#endif
+        write(2,"Socket expected\n",16);
+        exit(5);
+    }
+
+
+    authsock = u_socket;
 }
 
 void set_new_uid(int uid) {

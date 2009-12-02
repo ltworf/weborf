@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "webdav.h"
 
 #ifdef WEBDAV
-extern char* authbin;
+extern char* authsock;
 extern char* basedir;
 extern bool virtual_host;
 
@@ -193,10 +193,9 @@ Can serve both depth and non-depth requests. This funcion works only if
 authentication is enabled.
 */
 int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
-    if (authbin==NULL) {
+    if (authsock==NULL) {
         return ERR_FORBIDDEN;
     }
-
 
     { //This redirects directory without ending / to directory with the ending /
         struct stat stat_s;
@@ -242,8 +241,6 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
     write(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>",39);
     write(sock,"<D:multistatus xmlns:D=\"DAV:\">",30);
 
-    //sock=1;
-
     //sends props about the requested file
     printprops(sock,connection_prop,props,connection_prop->strfile,connection_prop->page,true);
     if (deep) {//Send children files
@@ -286,7 +283,7 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
 This funcion should be named mkdir. But standards writers are weird people.
 */
 int mkcol(int sock,connection_t* connection_prop) {
-    if (authbin==NULL) {
+    if (authsock==NULL) {
         return ERR_FORBIDDEN;
     }
 

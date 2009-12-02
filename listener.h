@@ -47,7 +47,7 @@ void init_threads(unsigned int count);
 void quit();
 void setBasedir(char *bd);
 void *t_shape(void *nulla);
-void setAuthbin(char *bin);
+void set_authsocket(char *);
 void chn_thread_count(int val);
 void set_new_uid(int uid);
 

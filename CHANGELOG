@@ -26,6 +26,8 @@
 - Better and more resistant xml parsing of PROPFIND requests (Rev 363)
 - Bug: addresses are properly converted into strings (Rev 373)
 - CGI does chdir into script's directory (Rev 374)
+- Enables logging
+- Doesn't delete source file on failed move
 
 0.11
 - Support for ETag header

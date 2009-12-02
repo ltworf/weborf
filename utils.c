@@ -126,10 +126,9 @@ bool file_exists(char *file) {
     int fp = open(file, O_RDONLY);
     if (fp >= 0) { // exists
         close(fp);
-    } else { //doesn't exists
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }
 
 /**
@@ -285,6 +284,8 @@ dir is the directory to delete
 file is a buffer. Allocated outside because it
 will be reused by every recoursive call.
 It's size is file_s
+
+Returns 0 on success
 */
 int deep_rmdir(char * dir) {
     /*
@@ -325,7 +326,9 @@ int deep_rmdir(char * dir) {
 #ifdef WEBDAV
 /**
 Moves a file. If it is on the same partition it will create a new link and delete the previous link.
-Otherwise it will create a new copy and delete the old one
+Otherwise it will create a new copy and delete the old one.
+
+Returns 0 on success.
 */
 int file_move(char* source, char* dest) {
     int retval=link(source,dest);
@@ -337,12 +340,16 @@ int file_move(char* source, char* dest) {
     //Couldn't link, doing a copy
     retval=file_copy(source,dest);
 escape:
-    unlink(source);
+    if (retval==0) {
+        unlink(source);
+    }
     return retval;
 }
 
 /**
 Copies a file into another file
+
+Returns 0 on success
 */
 int file_copy(char* source, char* dest) {
     int fd_from=-1;
@@ -387,6 +394,8 @@ escape:
 /**This function copies a directory.
 The destination directory will be created and
 will be filled with the same content of the source directory
+
+Returns 0 on success
 */
 int dir_copy (char* source, char* dest) {
     return dir_move_copy(source,dest,COPY);
@@ -396,6 +405,8 @@ int dir_copy (char* source, char* dest) {
 The destination directory will be created and
 will be filled with the same content of the source directory.
 Then, the source directory will be deleted.
+
+Returns 0 on success
 */
 int dir_move(char* source, char* dest) {
     return dir_move_copy(source,dest,MOVE);
@@ -403,6 +414,8 @@ int dir_move(char* source, char* dest) {
 
 /**
 Moves or copies a directory, depending on the method used
+
+Returns 0 on success
 */
 int dir_move_copy (char* source, char* dest,int method) {
     struct stat f_prop; //File's property

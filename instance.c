@@ -26,7 +26,7 @@ extern pthread_mutex_t m_free;              //Mutex to modify t_free
 extern unsigned int t_free;                 //free threads
 
 extern char* basedir;                       //Basedir
-extern char* authbin;                       //Executable that will authenticate
+extern char* authsock;                       //Executable that will authenticate
 extern bool exec_script;                    //Execute scripts if true, sends the file if false
 
 extern char* indexes[MAXINDEXCOUNT];        //Array containing index files
@@ -259,7 +259,7 @@ This function will not work if there is no auth provider.
 */
 int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
 
-    if (authbin==NULL) {
+    if (authsock==NULL) {
         return ERR_FORBIDDEN;
     }
 
@@ -340,7 +340,7 @@ This function will not work if there is no auth provider.
 int delete_file(int sock,connection_t* connection_prop) {
     int retval;
 
-    if (authbin==NULL) {
+    if (authsock==NULL) {
         return ERR_FORBIDDEN;
     }
 
@@ -404,7 +404,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         real_basedir=basedir;
     }
 
-    if ((authbin!=NULL) && check_auth(sock,connection_prop)!=0) { //If auth is required
+    if ((authsock!=NULL) && check_auth(sock,connection_prop)!=0) { //If auth is required
         retval = ERR_NOAUTH;
         post_param.data=NULL;
         connection_prop->strfile=NULL;
@@ -1078,7 +1078,7 @@ int check_auth(int sock, connection_t* connection_prop) {
         s=socket(AF_UNIX,SOCK_STREAM,0);
 
         remote.sun_family = AF_UNIX;
-        strcpy(remote.sun_path, authbin);
+        strcpy(remote.sun_path, authsock);
         len = strlen(remote.sun_path) + sizeof(remote.sun_family);
         if (connect(s, (struct sockaddr *)&remote, len) == -1) {//Unable to connect
             return -1;
