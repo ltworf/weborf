@@ -28,6 +28,7 @@
 - CGI does chdir into script's directory (Rev 374)
 - Enables logging
 - Doesn't delete source file on failed move
+- Uses reentrant version of readdir (Rev 381)
 
 0.11
 - Support for ETag header

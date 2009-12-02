@@ -45,8 +45,12 @@ int list_dir(char *dir, char *html, unsigned int bufsize, bool parent) {
     int maxsize = bufsize - 1; //String's max size
     int printf_s;
 
-    struct dirent *ep; //File's property
     DIR *dp = opendir(dir); //Open dir
+    struct dirent entry;
+    struct dirent *result;
+    int return_code;
+
+
     bool print;
 
     char *color; //Depending on row count chooses a background color
@@ -63,9 +67,10 @@ int list_dir(char *dir, char *html, unsigned int bufsize, bool parent) {
     pagesize=printf_s=snprintf(html+pagesize,maxsize,"%s<table><tr><td></td><td>Name</td><td>Size</td></tr>",HTMLHEAD);
     maxsize-=printf_s;
 
-    while ((ep = readdir(dp))) { //Cycles trough dir's elements
+    for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
+
         counter++; //Increases counter, to know if the row is odd or even
-        sprintf(path, "%s/%s", dir, ep->d_name);
+        sprintf(path, "%s/%s", dir, entry.d_name);
 
         struct stat f_prop; //File's property
         stat(path, &f_prop);
@@ -92,7 +97,7 @@ int list_dir(char *dir, char *html, unsigned int bufsize, bool parent) {
                 color = "#EAEAEA";
 
             printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%u%s</td></tr>\n",
-                              color, ep->d_name, ep->d_name, (int)size, measure);
+                              color, entry.d_name, entry.d_name, (int)size, measure);
             maxsize-=printf_s;
             pagesize+=printf_s;
 
@@ -100,8 +105,8 @@ int list_dir(char *dir, char *html, unsigned int bufsize, bool parent) {
             print=true;
             //Printed only if it is not "." and if ".." and we aren't in the root directory
             //Table row for the dir
-            if ((!parent && (ep->d_name[0] == '.' && ep->d_name[1] == '.' && ep->d_name[2] == '\0')) ||  (!(ep->d_name[0] == '.' && ep->d_name[1] == '\0'))) {
-                printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"%s/\">%s/</a></td><td>-</td></tr>\n",ep->d_name, ep->d_name);
+            if ((!parent && (entry.d_name[0] == '.' && entry.d_name[1] == '.' && entry.d_name[2] == '\0')) ||  (!(entry.d_name[0] == '.' && entry.d_name[1] == '\0'))) {
+                printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"%s/\">%s/</a></td><td>-</td></tr>\n",entry.d_name, entry.d_name);
                 maxsize-=printf_s;
                 pagesize+=printf_s;
             }
@@ -297,8 +302,11 @@ int deep_rmdir(char * dir) {
     if (unlink(dir)==0)
         return 0;
 
-    struct dirent *ep; //File's property
     DIR *dp = opendir(dir); //Open dir
+    struct dirent entry;
+    struct dirent *result;
+    int return_code;
+
 
     if (dp == NULL) {
         return 1;
@@ -308,13 +316,14 @@ int deep_rmdir(char * dir) {
     if (file==NULL)
         return ERR_NOMEM;
 
-    while ((ep = readdir(dp))) { //Cycles trough dir's elements
+    //Cycles trough dir's elements
+    for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
 
         //skips dir . and .. but not all hidden files
-        if (ep->d_name[0]=='.' && (ep->d_name[1]==0 || (ep->d_name[1]=='.' && ep->d_name[2]==0)))
+        if (entry.d_name[0]=='.' && (entry.d_name[1]==0 || (entry.d_name[1]=='.' && entry.d_name[2]==0)))
             continue;
 
-        snprintf(file,PATH_LEN,"%s/%s",dir, ep->d_name);
+        snprintf(file,PATH_LEN,"%s/%s",dir, entry.d_name);
         deep_rmdir(file);
     }
 
@@ -425,8 +434,11 @@ int dir_move_copy (char* source, char* dest,int method) {
         return ERR_FORBIDDEN;
     }
 
-    struct dirent *ep; //File's property
     DIR *dp = opendir(source); //Open dir
+    struct dirent entry;
+    struct dirent *result;
+    int return_code;
+
 
     if (dp == NULL) {
         return ERR_FILENOTFOUND;
@@ -437,14 +449,15 @@ int dir_move_copy (char* source, char* dest,int method) {
         return ERR_NOMEM;
     char* dest_file=src_file+PATH_LEN;
 
-    while ((ep = readdir(dp))) { //Cycles trough dir's elements
+
+    for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
 
         //skips dir . and .. but not all hidden files
-        if (ep->d_name[0]=='.' && (ep->d_name[1]==0 || (ep->d_name[1]=='.' && ep->d_name[2]==0)))
+        if (entry.d_name[0]=='.' && (entry.d_name[1]==0 || (entry.d_name[1]=='.' && entry.d_name[2]==0)))
             continue;
 
-        snprintf(src_file,PATH_LEN,"%s/%s",source, ep->d_name);
-        snprintf(dest_file,PATH_LEN,"%s/%s",dest, ep->d_name);
+        snprintf(src_file,PATH_LEN,"%s/%s",source, entry.d_name);
+        snprintf(dest_file,PATH_LEN,"%s/%s",dest, entry.d_name);
 
         stat(src_file, &f_prop);
         if (S_ISDIR(f_prop.st_mode)) {//Directory
