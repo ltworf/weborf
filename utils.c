@@ -40,16 +40,15 @@ Buffer for html must be allocated by the calling function.
 bufsize is the size of the buffer allocated for html. To avoid buffer overflows.
 parent is true when no link to parent directory has to be generated
 */
-int list_dir(char *dir, char *html, unsigned int bufsize, bool parent) {
+int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bool parent) {
     int pagesize=0; //Written bytes on the page
     int maxsize = bufsize - 1; //String's max size
     int printf_s;
 
-    DIR *dp = opendir(dir); //Open dir
+    DIR *dp = fdopendir(connection_prop->strfile_fd); //Open dir
     struct dirent entry;
     struct dirent *result;
     int return_code;
-
 
     bool print;
 
@@ -67,10 +66,11 @@ int list_dir(char *dir, char *html, unsigned int bufsize, bool parent) {
     pagesize=printf_s=snprintf(html+pagesize,maxsize,"%s<table><tr><td></td><td>Name</td><td>Size</td></tr>",HTMLHEAD);
     maxsize-=printf_s;
 
-    for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
+    //Cycles trough dir's elements
+    for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) {
 
         counter++; //Increases counter, to know if the row is odd or even
-        sprintf(path, "%s/%s", dir, entry.d_name);
+        sprintf(path, "%s/%s", connection_prop->strfile, entry.d_name);
 
         struct stat f_prop; //File's property
         stat(path, &f_prop);
@@ -449,8 +449,8 @@ int dir_move_copy (char* source, char* dest,int method) {
         return ERR_NOMEM;
     char* dest_file=src_file+PATH_LEN;
 
-
-    for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
+    //Cycles trough dir's elements
+    for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) {
 
         //skips dir . and .. but not all hidden files
         if (entry.d_name[0]=='.' && (entry.d_name[1]==0 || (entry.d_name[1]=='.' && entry.d_name[2]==0)))

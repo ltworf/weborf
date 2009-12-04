@@ -399,7 +399,6 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
     if (virtual_host) { //Using virtual hosts
         real_basedir=get_basedir(connection_prop->http_param);
-        if (real_basedir==NULL) real_basedir=basedir;
     } else {//No virtual Host
         real_basedir=basedir;
     }
@@ -606,7 +605,7 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         }
 
         {//Clears all the env var, saving only SERVER_PORT
-            char*port=getenv("SERVER_PORT");
+            char *port=getenv("SERVER_PORT");
             environ=NULL;
             setenv("SERVER_PORT",port,true);
         }
@@ -636,12 +635,12 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         setenv("SERVER_SOFTWARE",SIGNATURE,true);
         setenv("GATEWAY_INTERFACE","CGI/1.1",true);
         setenv("REQUEST_METHOD",connection_prop->method,true); //POST GET
-        setenv("SERVER_NAME", getenv("HTTP_HOST"),true);
+        setenv("SERVER_NAME", getenv("HTTP_HOST"),true); //TODO for older http version this header might not exist
         setenv("REDIRECT_STATUS","Ciao",true); // Mah.. i'll never understand php, this env var is needed
         setenv("SCRIPT_FILENAME",connection_prop->strfile,true); //This var is needed as well or php say no input file...
         setenv("DOCUMENT_ROOT",real_basedir,true);
 
-        setenv("REMOTE_ADDR",connection_prop->ip_addr,true); //#Client's address
+        setenv("REMOTE_ADDR",connection_prop->ip_addr,true); //Client's address
         setenv("SCRIPT_NAME",connection_prop->page,true); //Name of the script without complete path
 
         //Request URI with or without a query
@@ -676,8 +675,8 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
 
         execl(executor,executor,(char *)0);
-#ifdef SENDINGDBG
-        syslog(LOG_ERR,"Execution of the %s interpreter failed",executor);
+#ifdef SERVERDBG
+        syslog(LOG_ERR,"Execution of %s failed",executor);
         perror("Execution of the page failed");
 #endif
         exit(1);
@@ -723,8 +722,6 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         } else {//Something went wrong, ignoring the output (it's missing the headers)
             e_reads=0;
         }
-
-
 
         if (e_reads>0) {//There is output from script
             char* status; //Standard status
@@ -787,7 +784,8 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
 
     {
         size_t basedir_len=strlen(real_basedir);
-        if (connection_prop->strfile_len-1==basedir_len || connection_prop->strfile_len==basedir_len) parent=false;
+        if (connection_prop->strfile_len-1==basedir_len || connection_prop->strfile_len==basedir_len)
+            parent=false;
     }
 
     char* html=malloc(MAXSCRIPTOUT);//Memory for the html page
@@ -795,7 +793,7 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
         return ERR_NOMEM;
     }
 
-    if ((pagelen=list_dir (connection_prop->strfile,html,MAXSCRIPTOUT,parent))<0) { //Creates the page
+    if ((pagelen=list_dir (connection_prop,html,MAXSCRIPTOUT,parent))<0) { //Creates the page
         free(html);//Frees the memory used for the page
         return ERR_FILENOTFOUND;
     } else { //If there are no errors sends the page

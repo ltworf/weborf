@@ -37,7 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mystring.h"
 
 bool file_exists(char *file);
-int list_dir(char *dir, char *html, unsigned int bufsize, bool parent);
+int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bool parent);
 void help();
 void version();
 void moo();
