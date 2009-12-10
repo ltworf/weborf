@@ -283,16 +283,32 @@ int main(int argc, char *argv[]) {
     s = socket(PF_INET, SOCK_STREAM, 0);
 #endif
 
-    int val = 1;
-    //Makes port reusable immediately after termination.
-    if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0) {
-        perror("ruseaddr(any)");
+    {
+        /*
+        This futile system call is here just because a debian mantainer decided
+        that the default behavior must be to listen only to IPv6 connections
+        excluding IPv4 ones.
+        So this restores the logic and normal behavior of accepting connections
+        without being racist about the client's address.
+        */
+        int val = 0;
 #ifdef IPV6
-        char *suggestion = "If you don't have any IPv6 address, try recompiling weborf, removing the line '#define IPV6' from options.h\n";
-        write(2, suggestion, strlen(suggestion));
+        setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&val, sizeof(val));
 #endif
-        return 1;
+
+        val = 1;
+        //Makes port reusable immediately after termination.
+        if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0) {
+            perror("ruseaddr(any)");
+#ifdef IPV6
+            char *suggestion = "If you don't have IPv6 support in kernel, try recompiling weborf, removing the line '#define IPV6' from options.h\n";
+            write(2, suggestion, strlen(suggestion));
+#endif
+            return 1;
+        }
     }
+
+
 #ifdef IPV6
     ipAddrL = farAddrL = sizeof(struct sockaddr_in);
     //Bind

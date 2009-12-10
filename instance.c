@@ -830,7 +830,7 @@ int write_compressed_file(int sock,unsigned int size,time_t timestamp,connection
 #endif
         execlp("gzip","gzip","-c",connection_prop->strfile,(char *)0);
 
-    } else if (pid>0) { //Father, reading and sending
+    } else if (pid>0) { //Father, does nothing
         int status;
         waitpid(pid,&status,0);
     } else { //Error
