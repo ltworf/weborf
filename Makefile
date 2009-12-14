@@ -103,7 +103,7 @@ uninstall:
 
 
 memcheck: debug
-	valgrind --track-origins=yes --tool=memcheck --leak-check=yes --leak-resolution=high --show-reachable=yes --num-callers=20 --track-fds=yes ./debug || echo "Valgrind doesn't appear to be installed on this system"
+	valgrind -v --track-origins=yes --tool=memcheck --leak-check=yes --leak-resolution=high --show-reachable=yes --num-callers=20 --track-fds=yes ./debug || echo "Valgrind doesn't appear to be installed on this system"
 
 moo:
 	echo Questo Makefile ha i poteri della supermucca

@@ -30,8 +30,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //----------Network
 #define MAXQ 40                 //Queue for connect requests
 #define PORT "8080"             //Default port
+
+
+#ifdef _POSIX_IPV6              //Enables ipv6 if supported
 //Delete the following line to use IPv4 instead.
 #define IPV6
+#endif
 
 //-----------Threads
 #define MAXTHREAD 200           //Max threads

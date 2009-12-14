@@ -45,7 +45,12 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     int maxsize = bufsize - 1; //String's max size
     int printf_s;
 
+#if fdopendir       /*OsX doesn't implement fdopendir :-( */
     DIR *dp = fdopendir(connection_prop->strfile_fd); //Open dir
+#else
+    DIR *dp = opendir(connection_prop->strfile); //Open dir
+#endif
+
     struct dirent entry;
     struct dirent *result;
     int return_code;
@@ -114,7 +119,12 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
         }
     }
 
+#if fdopendir
+    //Free the allocated memory without closing the file descriptor (it isn't opened here and it won't be closed here)
+    free(dp);
+#else
     closedir(dp);
+#endif
 
     printf_s=snprintf(html+pagesize,maxsize,"</table>%s",HTMLFOOT);
     pagesize+=printf_s;
