@@ -19,7 +19,7 @@
 
 ### BEGIN INIT INFO
 # Provides:          weborf-daemon
-# Required-Start:    $network $local_fs
+# Required-Start:    $network $local_fs $syslog
 # Required-Stop:
 # Should-Start:      $named
 # Should-Stop:
@@ -78,7 +78,7 @@ function startWeborf {
     if test -z "$virtuals"
     then
         echo "Starting weborf"
-        nohup $DAEMON $AUTH_SOCKET $CGI $CGI_BIN -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
+        nohup $DAEMON $DAEMON_OPTS $AUTH_SOCKET $CGI $CGI_BIN -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
         echo ${!} >> $PIDFILE # Writes PID so weborf can be terminated
     else #Virtual hosts
     
@@ -87,7 +87,7 @@ function startWeborf {
                 PORT=`echo $i | cut -d# -f2`
                 CMDLINE=`echo $i | cut -d# -f3`
                 echo "Starting weborf on port $PORT"
-                nohup $DAEMON $AUTH_SOCKET $CGI $CGI_BIN -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
+                nohup $DAEMON $DAEMON_OPTS $AUTH_SOCKET $CGI $CGI_BIN -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
                 echo $! >> $PIDFILE # Writes PID so weborf can be terminated
             done
     fi

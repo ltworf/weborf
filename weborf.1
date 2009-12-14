@@ -7,7 +7,7 @@ weborf
 weborf [options]
 
 .SH DESCRIPTION
-Weborf  is a minimal webserver. Also has a limited support for webdav.
+Weborf is a minimal webserver. Also has a limited support for webdav.
 .BR
 This manual page documents \fBWeborf\fP's command-line parameters.
 .BR
@@ -72,7 +72,7 @@ Runs weborf as a daemon. It will not terminate when it's father process terminat
 
 .SH SCRIPTING
 Weborf is able to send dynamically generated pages using php-cgi (if installed).
-When a filename ends with ".php", weborf will use php to execute this file before sending it to the client.
+When a filename ends with ".php", weborf will use php to execute this file before sending it to the client. The \-c switch will override the default behavior.
 .BR
 It is also possible to create scritps or binaries in other languages, just read rfc3875 to know how to handle parameters.
 
