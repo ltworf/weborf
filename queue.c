@@ -32,7 +32,7 @@ int q_init(syn_queue_t * q, int size) {
     q->size = size;
 
 #ifdef IPV6
-    q->data = (int *) malloc(sizeof(int) * size + sizeof(struct sockaddr_in) * size);
+    q->data = (int *) malloc(sizeof(int) * size + sizeof(struct sockaddr_in6) * size);
     q->addr = (struct sockaddr_in6 *) q->data + sizeof(int) * size;
 #else
     q->data = (int *) malloc(sizeof(int) * size + sizeof(struct sockaddr_in) * size);

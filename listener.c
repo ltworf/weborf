@@ -513,7 +513,8 @@ void *t_shape(void *nulla) {
         sleep(THREADCONTROL);
 
         if (t_free > MAXFREETHREAD) {	//Too much free threads, terminates one of them
-            q_put(&queue,-1,addr_);//Write the termination order to the queue, the thread who will read it, will terminate
+            //Write the termination order to the queue, the thread who will read it, will terminate
+            q_put(&queue,-1,addr_);
             chn_thread_count(-1);	//Decreases the number of free total threads
         }
     }

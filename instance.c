@@ -161,20 +161,38 @@ Doesn't do busy waiting
 */
 void * instance(void * nulla) {
     //General init of the thread
-    signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
     long int id=(long int)nulla;//Set thread's id
 #ifdef THREADDBG
     syslog(LOG_DEBUG,"Starting thread %ld",id);
 #endif
 
     //Vars
-    int bufFull=0;//Amount of buf used
-    char * buf=malloc(INBUFFER+1);//Buffer to contain the HTTP request
-    memset(buf,0,INBUFFER+1);//Sets to 0 the buffer
-    connection_t connection_prop; //Struct to contain properties of the connection
+    int bufFull=0;                                  //Amount of buf used
+    connection_t connection_prop;                   //Struct to contain properties of the connection
+    buffered_read_t read_b;                         //Buffer for buffered reader
+    int sock=0;                                     //Socket with the client
+    char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
 
-    buffered_read_t read_b; //Buffer for buffered reader
-    int sock=0;//Socket with the client
+    if (buf==NULL) { //Unable to allocate the buffer
+        unfree_thread(id);//Sets this thread as busy
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
+#endif
+        pthread_exit(0);
+    }
+
+    if (buffer_init(&read_b,BUFFERED_READER_SIZE)!=0) { //Unable to allocate the buffered reader
+        free(buf);
+        unfree_thread(id);//Sets this thread as busy
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
+#endif
+        pthread_exit(0);
+    }
+
+
+    signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
+
 
 #ifdef IPV6
     connection_prop.ip_addr=malloc(INET6_ADDRSTRLEN);
@@ -186,20 +204,28 @@ void * instance(void * nulla) {
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    buffer_init(&read_b,BUFFERED_READER_SIZE);
+    if (connection_prop.ip_addr==NULL) {
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
+#endif
+        unfree_thread(id);//Sets this thread as busy
+        free(buf);
+        buffer_free(&read_b);
+        pthread_exit(0);
+    }
+
 
     while (true) {
-        buffer_reset (&read_b);
         q_get(&queue, &sock,&addr);//Gets a socket from the queue
         unfree_thread(id);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order
             free(connection_prop.ip_addr);//Free the space used to store ip address
-            buffer_free(&read_b);
 #ifdef THREADDBG
             syslog(LOG_DEBUG,"Terminating thread %ld",id);
 #endif
             free(buf);
+            buffer_free(&read_b);
             pthread_exit(0);
         }
 
@@ -227,6 +253,7 @@ void * instance(void * nulla) {
 
         close(sock);//Closing the socket
         memset(buf,0,bufFull+1);//Sets to 0 the buffer, only the part used for the previous
+        buffer_reset (&read_b);
         free_thread(id);//Settin this thread as free
     }
 
@@ -304,6 +331,9 @@ int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
 
     char* buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
+#endif
         return ERR_NOMEM;
     }
 
@@ -413,6 +443,9 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
     connection_prop->strfile=malloc(URI_LEN);//buffer for filename
     if (connection_prop->strfile==NULL) {
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
+#endif
         return ERR_NOMEM;//If no memory is available
     }
     connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",real_basedir,connection_prop->page);//Prepares the string
@@ -479,11 +512,10 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
             for (i=0; i<indexes_l; i++) {
                 snprintf(index_name,INDEXMAXLEN,"%s",indexes[i]);//Add INDEX to the url
                 if (file_exists(connection_prop->strfile)) { //If index exists, redirect to it
-                    char* head=malloc(URI_LEN+12);//12 is the size for the location header
-                    snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,indexes[i]);
-                    send_http_header_full(sock,303,0,head,true,-1,connection_prop);
+                    char head[URI_LEN+12];//12 is the size for the location header
+                    snprintf(&head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,indexes[i]);
+                    send_http_header_full(sock,303,0,&head,true,-1,connection_prop);
 
-                    free(head);
                     index_found=true;
                     break;
                 }
@@ -690,6 +722,9 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
 
         if (header_buf==NULL) { //Was unable to allocate the buffer
             int state;
+#ifdef SERVERDBG
+            syslog(LOG_CRIT,"Not enough memory to allocate buffers for CGI");
+#endif
             close (wpipe[0]);
             kill(wpid,SIGKILL); //Kills cgi process
             waitpid (wpid,&state,0); //Removes zombie process
@@ -790,6 +825,9 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
 
     char* html=malloc(MAXSCRIPTOUT);//Memory for the html page
     if (html==NULL) { //No memory
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers to list directory");
+#endif
         return ERR_NOMEM;
     }
 
@@ -886,6 +924,9 @@ int write_file(int sock,connection_t* connection_prop) {
 
     char* buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
+#endif
         return ERR_NOMEM;//If no memory is available
     }
 
@@ -949,7 +990,12 @@ int request_auth(int sock,char * descr) {
 
     //Buffer for both header and page
     char * head=malloc(MAXSCRIPTOUT+HEADBUF);
-    if (head==NULL) return ERR_NOMEM;
+    if (head==NULL) {
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
+#endif
+        return ERR_NOMEM;
+    }
 
     char * page=head+HEADBUF;
 
@@ -984,7 +1030,12 @@ int send_err(int sock,int err,char* descr,char* ip_addr) {
     //Buffer for both header and page
     char * head=malloc(MAXSCRIPTOUT+HEADBUF);
 
-    if (head==NULL) return ERR_NOMEM;
+    if (head==NULL) {
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
+#endif
+        return ERR_NOMEM;
+    }
 
     char * page=head+HEADBUF;
 
@@ -1021,7 +1072,12 @@ will be used in each case. A shorter string will produce unpredictable behaviour
 int send_http_header_scode(int sock,char* code, int size,char* headers) {
 
     char *head=malloc(HEADBUF);
-    if (head==NULL)return ERR_NOMEM;
+    if (head==NULL) {
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
+#endif
+        return ERR_NOMEM;
+    }
 
     int len_head;
     if (size>=0) {
@@ -1083,6 +1139,9 @@ int check_auth(int sock, connection_t* connection_prop) {
         }
         char* auth_str=malloc(HEADBUF+PWDLIMIT*2);
         if (auth_str==NULL) {
+#ifdef SERVERDBG
+            syslog(LOG_CRIT,"Not enough memory to allocate buffers");
+#endif
             return -1;
         }
 
@@ -1117,7 +1176,6 @@ string_t read_post_data(int sock,connection_t* connection_prop,buffered_read_t* 
     if (r!=false) { //&& connection_prop->method_id==POST) {
         long int l=strtol( a , NULL, 0 );
         if (l<=POST_MAX_SIZE) {//Post size is ok
-
             res.data=malloc(l);
             res.len=buffer_read(sock,res.data,l,read_b);
         }
@@ -1167,7 +1225,12 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
     char* h_ptr=head;
     int left_head=HEADBUF;
 
-    if (head==NULL)return ERR_NOMEM;
+    if (head==NULL) {
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
+#endif
+        return ERR_NOMEM;
+    }
     if (headers==NULL) headers="";
     if (connection_prop->protocol_version!=HTTP_1_1 && connection_prop->keep_alive==true) {
         //Putting explicit keep-alive header, since client is not 1.1 but is using keep alive

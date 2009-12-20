@@ -29,6 +29,10 @@
 - Enables logging
 - Doesn't delete source file on failed move
 - Uses reentrant version of readdir (Rev 381)
+- Uses fdopendir on systems supporting that, to save syscalls and file descriptors
+- Added more controls on memory allocation
+- Bug: buffer size corrected in queue.c
+- Logs insufficient memory
 
 0.11
 - Support for ETag header
