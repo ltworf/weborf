@@ -220,10 +220,10 @@ void * instance(void * nulla) {
         unfree_thread(id);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order
-            free(connection_prop.ip_addr);//Free the space used to store ip address
 #ifdef THREADDBG
             syslog(LOG_DEBUG,"Terminating thread %ld",id);
 #endif
+            free(connection_prop.ip_addr);//Free the space used to store ip address
             free(buf);
             buffer_free(&read_b);
             pthread_exit(0);
@@ -231,15 +231,11 @@ void * instance(void * nulla) {
 
         //Converting address to string
 #ifdef IPV6
-        if (connection_prop.ip_addr!=NULL) { //Buffer for IP Address, to give to the thread
             getpeername(sock, (struct sockaddr *)&addr, &addr_l);
             inet_ntop(AF_INET6, &addr.sin6_addr, connection_prop.ip_addr, INET6_ADDRSTRLEN);
-        }
 #else
-        if (connection_prop.ip_addr!=NULL) { //Buffer for ascii IP addr, will be freed by the thread
             getpeername(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
             inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr, INET_ADDRSTRLEN);
-        }
 #endif
 
 #ifdef THREADDBG
@@ -513,8 +509,8 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
                 snprintf(index_name,INDEXMAXLEN,"%s",indexes[i]);//Add INDEX to the url
                 if (file_exists(connection_prop->strfile)) { //If index exists, redirect to it
                     char head[URI_LEN+12];//12 is the size for the location header
-                    snprintf(&head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,indexes[i]);
-                    send_http_header_full(sock,303,0,&head,true,-1,connection_prop);
+                    snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,indexes[i]);
+                    send_http_header_full(sock,303,0,head,true,-1,connection_prop);
 
                     index_found=true;
                     break;
@@ -1175,8 +1171,7 @@ string_t read_post_data(int sock,connection_t* connection_prop,buffered_read_t* 
     //If there is a value and method is POST
     if (r!=false) { //&& connection_prop->method_id==POST) {
         long int l=strtol( a , NULL, 0 );
-        if (l<=POST_MAX_SIZE) {//Post size is ok
-            res.data=malloc(l);
+        if (l<=POST_MAX_SIZE && (res.data=malloc(l))!=NULL) {//Post size is ok and buffer is allocated            
             res.len=buffer_read(sock,res.data,l,read_b);
         }
     }

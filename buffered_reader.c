@@ -30,7 +30,7 @@ This funcion inits the struct allocating a buffer of the specified size.
 It will return 0 on success and 1 on fail.
 */
 short int buffer_init(buffered_read_t * buf, ssize_t size) {
-    buf->buffer = malloc(sizeof(char *) * size);
+    buf->buffer = malloc(sizeof(char) * size);
     buf->size = size;
     buffer_reset(buf);
     return (buf->buffer == NULL) ? 1 : 0;
@@ -75,7 +75,7 @@ ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
             buf->start += needed;
             return wrote + needed;
         } else { //Requesting more data than available
-            if (available > 0) {
+            if (available > 0) {//Empty the remaining data in the buffer
                 memcpy(b, buf->start, available);
                 b += available;
                 wrote += available;
