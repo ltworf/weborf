@@ -43,28 +43,30 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
     char* end;//Pointer to header's end
 
     while (true) { //Infinite cycle to handle all pipelined requests
-        memset(buf,0,*bufFull+1);//Sets to 0 the buffer, only the part used for the previous request in the same connection
-        *bufFull=0;//bufFull-(end-buf+4);
+        if ((*bufFull)!=0) {
+            memset(buf,0,(*bufFull));//Sets to 0 the buffer, only the part used for the previous request in the same connection
+            (*bufFull)=0;//bufFull-(end-buf+4);
+        }
         from=0;
 
         while ((end=strstr(buf+from,"\r\n\r"))==NULL) { //Determines if there is a \r\n\r which is an ending sequence
-            r=buffer_read(sock, buf+*bufFull,2,read_b);//Reads 2 char and adds to the buffer
+            r=buffer_read(sock, buf+(*bufFull),2,read_b);//Reads 2 char and adds to the buffer
 
             if (r<=0) { //Connection closed or error
                 return;
             }
 
             if (!(buf[*bufFull]==10 || buf[*bufFull]==13)) {//Optimization to make strstr parse only the ending part of the string
-                from=*bufFull;
+                from=(*bufFull);
             }
 
-            if (*bufFull!=0) { //Removes Cr Lf from beginning
-                *bufFull+=r;//Sets the end of the user buffer (may contain more than one header)
+            if ((*bufFull)!=0) { //Removes Cr Lf from beginning
+                (*bufFull)+=r;//Sets the end of the user buffer (may contain more than one header)
             } else if (buf[*bufFull]!='\n' && buf[*bufFull]!='\r') {
-                *bufFull+=r;
+                (*bufFull)+=r;
             }
 
-            if (*bufFull>=INBUFFER) { //Buffer full and still no valid http header
+            if ((*bufFull)>=INBUFFER) { //Buffer full and still no valid http header
                 send_err(sock,400,"Bad request",connection_prop->ip_addr);
                 return;
             }
@@ -127,7 +129,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         //Non pipelined
         if (connection_prop->keep_alive==false) return;
 
-    }
+    } /* while */
 }
 
 /**
@@ -190,7 +192,6 @@ void * instance(void * nulla) {
         pthread_exit(0);
     }
 
-
     signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
 
 
@@ -248,7 +249,7 @@ void * instance(void * nulla) {
 #endif
 
         close(sock);//Closing the socket
-        memset(buf,0,bufFull+1);//Sets to 0 the buffer, only the part used for the previous
+        //memset(buf,0,bufFull);//Sets to 0 the buffer, only the part used for the previous
         buffer_reset (&read_b);
         free_thread(id);//Settin this thread as free
     }
@@ -489,10 +490,8 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     }
 
     fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
-    int f_mode=connection_prop->strfile_stat.st_mode;//Get file's mode
 
-
-    if (S_ISDIR(f_mode)) {//Requested a directory without ending /
+    if (S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Requested a directory without ending /
         bool index_found=false;
 
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
