@@ -46,7 +46,7 @@ function stopWeborf {
     if ! test -e $PIDFILE
     then
         echo "Weborf is not running or it was not started by init"
-        exit 2
+        exit 0
     fi
 
     echo -n "Stopping weborf "    
