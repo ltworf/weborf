@@ -25,3 +25,4 @@ int main() {
     execl(getenv("SCRIPT_FILENAME"),getenv("SCRIPT_FILENAME"),NULL);
     exit(1); //Unable to exec the wanted stuff
 }
+

@@ -25,3 +25,4 @@ int main() {
     execl("/usr/bin/python","python",getenv("SCRIPT_FILENAME"),NULL);
     exit(1); //Unable to exec the wanted stuff
 }
+

@@ -29,7 +29,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define O_LARGEFILE 0
 #endif
 
-#include <sys/un.h>
 #include <time.h>
 #include <netinet/in.h>
 #include <stdio.h>
@@ -37,6 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <signal.h>
 #include <syslog.h> //To use syslog
 #include <string.h>
+#include <strings.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -46,7 +46,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <pthread.h>
 #include <stdbool.h> //Adds boolean type
-#include <string.h>
+#include <sys/un.h>
 
 typedef struct {
     char *ip_addr;              //Pointer to ip address

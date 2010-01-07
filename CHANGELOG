@@ -29,10 +29,12 @@
 - Enables logging
 - Doesn't delete source file on failed move
 - Uses reentrant version of readdir (Rev 381)
-- Uses fdopendir on systems supporting that, to save syscalls and file descriptors
+- Uses fdopendir on systems supporting that (POSIX 2008.1 compliant), to save syscalls and file descriptors
 - Added more controls on memory allocation
 - Bug: buffer size corrected in queue.c
 - Logs insufficient memory
+- Can compile on OpenSolaris (manual edit of Makefile is needed)
+- Edited instance.h to workarond OpenSolaris bug #6775831
 
 0.11
 - Support for ETag header

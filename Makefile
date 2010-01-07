@@ -20,6 +20,10 @@ OFLAGS=-O3
 #-pedantic -Wextra
 CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat
 LDFLAGS=-lpthread
+
+#Opensolaris flags
+#CFLAGS=-D_POSIX_PTHREAD_SEMANTICS  -Wall $(DEFS) $(ARCHFLAGS)  -Wformat
+#LDFLAGS=-lpthread -lsocket -lnsl 
 #ARCHFLAGS=-m64
 
 
