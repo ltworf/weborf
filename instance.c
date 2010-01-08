@@ -232,11 +232,11 @@ void * instance(void * nulla) {
 
         //Converting address to string
 #ifdef IPV6
-            getpeername(sock, (struct sockaddr *)&addr, &addr_l);
-            inet_ntop(AF_INET6, &addr.sin6_addr, connection_prop.ip_addr, INET6_ADDRSTRLEN);
+        getpeername(sock, (struct sockaddr *)&addr, &addr_l);
+        inet_ntop(AF_INET6, &addr.sin6_addr, connection_prop.ip_addr, INET6_ADDRSTRLEN);
 #else
-            getpeername(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
-            inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr, INET_ADDRSTRLEN);
+        getpeername(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
+        inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr, INET_ADDRSTRLEN);
 #endif
 
 #ifdef THREADDBG
@@ -586,7 +586,17 @@ escape:
     return 0; //Make gcc happy
 }
 /**
-Executes a script with a given interpreter and sends the resulting output
+Executes a CGI script with a given interpreter and sends the resulting output
+sock is the socket with the client
+executor is the path to the binary which will execute the page
+post_param contains the post data sent to the page (if present). This can't be null, but the string pointer inside the struct can be null.
+real_basedir is the basedir (according to the virtualhost)
+connection_prop is the struct containing all the data of the request
+
+exec_page will fork and create pipes with the child.
+The child will clean all the envvars and then set new ones as needed by CGI.
+Then the child will call alarm to set the timeout to its execution, and then will exec the script.
+
 */
 int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,connection_t* connection_prop) {
 #ifdef SENDINGDBG
@@ -721,6 +731,10 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
             syslog(LOG_CRIT,"Not enough memory to allocate buffers for CGI");
 #endif
             close (wpipe[0]);
+            if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
+            close (ipipe[0]); //Closes unused end of the pipe
+            close (ipipe[1]); //Closes the pipe
+            }
             kill(wpid,SIGKILL); //Kills cgi process
             waitpid (wpid,&state,0); //Removes zombie process
             return ERR_NOMEM;//Returns if buffer was not allocated
@@ -1170,7 +1184,7 @@ string_t read_post_data(int sock,connection_t* connection_prop,buffered_read_t* 
     //If there is a value and method is POST
     if (r!=false) { //&& connection_prop->method_id==POST) {
         long int l=strtol( a , NULL, 0 );
-        if (l<=POST_MAX_SIZE && (res.data=malloc(l))!=NULL) {//Post size is ok and buffer is allocated            
+        if (l<=POST_MAX_SIZE && (res.data=malloc(l))!=NULL) {//Post size is ok and buffer is allocated
             res.len=buffer_read(sock,res.data,l,read_b);
         }
     }
