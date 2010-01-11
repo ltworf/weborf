@@ -175,25 +175,7 @@ void * instance(void * nulla) {
     int sock=0;                                     //Socket with the client
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
 
-    if (buf==NULL) { //Unable to allocate the buffer
-        unfree_thread(id);//Sets this thread as busy
-#ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
-#endif
-        pthread_exit(0);
-    }
-
-    if (buffer_init(&read_b,BUFFERED_READER_SIZE)!=0) { //Unable to allocate the buffered reader
-        free(buf);
-        unfree_thread(id);//Sets this thread as busy
-#ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
-#endif
-        pthread_exit(0);
-    }
-
     signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
-
 
 #ifdef IPV6
     connection_prop.ip_addr=malloc(INET6_ADDRSTRLEN);
@@ -205,16 +187,17 @@ void * instance(void * nulla) {
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    if (connection_prop.ip_addr==NULL) {
+    if (buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.ip_addr==NULL) { //Unable to allocate the buffer
+        unfree_thread(id);                //Sets this thread as busy
+        buffer_free(&read_b);             //Frees buffered reader if it was allocated or does nothing
+        free(buf);                        //Frees buf if it was allocated or does nothing
+        free(connection_prop.ip_addr);    //Same as above
+
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
 #endif
-        unfree_thread(id);//Sets this thread as busy
-        free(buf);
-        buffer_free(&read_b);
         pthread_exit(0);
     }
-
 
     while (true) {
         q_get(&queue, &sock,&addr);//Gets a socket from the queue
@@ -732,8 +715,8 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
 #endif
             close (wpipe[0]);
             if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
-            close (ipipe[0]); //Closes unused end of the pipe
-            close (ipipe[1]); //Closes the pipe
+                close (ipipe[0]); //Closes unused end of the pipe
+                close (ipipe[1]); //Closes the pipe
             }
             kill(wpid,SIGKILL); //Kills cgi process
             waitpid (wpid,&state,0); //Removes zombie process
