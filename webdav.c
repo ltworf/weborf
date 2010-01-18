@@ -18,9 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
-#include "webdav.h"
+#include "options.h"
+
 
 #ifdef WEBDAV
+
+#include "webdav.h"
+
 extern char* authsock;
 extern char* basedir;
 extern bool virtual_host;
