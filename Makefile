@@ -18,7 +18,7 @@ CC=gcc
 #DEFS=-Ddebug
 OFLAGS=-O3
 #-pedantic -Wextra
-CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat
+CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat -g
 LDFLAGS=-lpthread
 
 #Opensolaris flags
@@ -42,6 +42,7 @@ all: weborf cgi
 
 weborf: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o
 	$(CC) $(LDFLAGS) $(ARCHFLAGS) $(OFLAGS) $+ -o $@
+	strip weborf
 
 %.c: %.h
 
