@@ -389,6 +389,9 @@ int main(int argc, char *argv[]) {
     //Handle SIGINT and SIGTERM
     signal(SIGINT, quit);
     signal(SIGTERM, quit);
+    
+    //Prints queue status with this signal
+    signal(SIGUSR1, print_queue_status);
 
 
     listen(s, MAXQ); //Listen to the socket
@@ -519,4 +522,12 @@ void *t_shape(void *nulla) {
         }
     }
     return NULL; //make gcc happy
+}
+
+/**
+Will print the internal status of the queue.
+This function is triggered by SIGUSR1 signal.
+*/
+void print_queue_status() {
+    printf("=== Queue ===\ncount:      %d\nsize:       %d\nhead:       %d\ntail:       %d\n=== Threads ===\nMaximum:    %d\nStarted:    %d\nFree:       %d\nBusy:       %d\n",queue.num,queue.size,queue.head,queue.tail,MAXTHREAD,thread_c,t_free,thread_c-t_free);
 }
