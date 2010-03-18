@@ -24,14 +24,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 This function converts a string to upper case
 */
 void strToUpper(char *str) {
-    int i = 0;
-    while (str[i++] != 0) {
+    int i = -1;
+    while (str[++i]) {
         str[i] = toupper(str[i]);
     }
 }
 
 /**
 This function splits the page name from the GET params.
+It also sets the value for the page_len field
 */
 void split_get_params(connection_t* connection_prop) {
     int i=0;
