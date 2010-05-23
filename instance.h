@@ -45,40 +45,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <stdbool.h> //Adds boolean type
 #include <sys/un.h>
 
-typedef struct {
-#ifdef IPV6
-    char ip_addr[INET6_ADDRSTRLEN];              //ip address in string format
-#else
-    char ip_addr[INET_ADDRSTRLEN];
-#endif
-    
-    bool keep_alive;            //True if we are using pipelining
-    short int protocol_version; //See defines like HTTP_something
-    int method_id;              //Index of the http method used (GET, POST)
-    char *method;               //String version of the http method used
-    char *http_param;           //Param string
-    char *page;                 //Requested URI
-    ssize_t page_len;           //Lengh of the page string
-    char *get_params;           //Params in the URI, after the ? char
-    char *strfile;              //File on filesystem
-    ssize_t strfile_len;        //Length of string strfile
-    struct stat strfile_stat;   //Stat of strfile
-    int strfile_fd;             //File descriptor for strfile
-} connection_t;
 
-typedef struct {
-    ssize_t len;                //length of the string
-    char *data;                 //Pointer to string
-} string_t;
-
-typedef struct {
-    pthread_mutex_t mutex;          //Mutex to access this struct
-    unsigned int free;              //Free threads
-    unsigned int count;             //thread count
-} t_thread_info;
 
 
 #include "buffered_reader.h"
@@ -87,6 +56,7 @@ typedef struct {
 #include "queue.h"
 #include "mystring.h"
 #include "base64.h"
+#include "types.h"
 
 
 #ifdef WEBDAV

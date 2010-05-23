@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "options.h"
 #include "utils.h"
 #include "mystring.h"
+#include "types.h"
 #define _GNU_SOURCE
 
 syn_queue_t queue;              //Queue for opened sockets

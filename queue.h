@@ -24,28 +24,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h>
 #include <pthread.h>
-#include "options.h"
-
 #include <netinet/in.h>
 
-
-
-
-typedef struct {
-    int num, size;                //Filled positions in the queue, and its maximum size
-    int head, tail;               //pointers to head and tail of the round queue
-    int *data;                    //Socket with client
-
-#ifdef IPV6
-    struct sockaddr_in6 *addr;    //Local and remote address
-#else
-    struct sockaddr_in *addr;
-#endif
-
-    pthread_mutex_t mutex;        //mutex to modify the queue
-    pthread_cond_t for_space, for_data;
-    int n_wait_sp, n_wait_dt;
-} syn_queue_t;
+#include "options.h"
+#include "types.h"
 
 int q_init(syn_queue_t * q, int size);
 
