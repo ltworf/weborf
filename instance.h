@@ -49,7 +49,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/un.h>
 
 typedef struct {
-    char *ip_addr;              //Pointer to ip address
+
+#ifdef IPV6
+    char ip_addr[INET6_ADDRSTRLEN];              //ip address in string format
+#else
+    char ip_addr[INET_ADDRSTRLEN];
+#endif
+    
     bool keep_alive;            //True if we are using pipelining
     short int protocol_version; //See defines like HTTP_something
     int method_id;              //Index of the http method used (GET, POST)

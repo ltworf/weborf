@@ -100,6 +100,7 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         connection_prop->http_param=lasts;
 
 #ifdef REQUESTDBG
+        //TODO for some strange reason sometimes there is a strange char after the ip addr, investigate why
         syslog(LOG_INFO,"%s - %s %s\n",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
 #endif
 
@@ -178,20 +179,17 @@ void * instance(void * nulla) {
     signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
 
 #ifdef IPV6
-    connection_prop.ip_addr=malloc(INET6_ADDRSTRLEN);
     struct sockaddr_in6 addr;//Local and remote address
     socklen_t addr_l=sizeof(struct sockaddr_in6);
 #else
-    connection_prop.ip_addr=malloc(INET_ADDRSTRLEN);
     struct sockaddr_in addr;
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    if (buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.ip_addr==NULL) { //Unable to allocate the buffer
+    if (buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL) { //Unable to allocate the buffer
         unfree_thread(id);                //Sets this thread as busy
         buffer_free(&read_b);             //Frees buffered reader if it was allocated or does nothing
         free(buf);                        //Frees buf if it was allocated or does nothing
-        free(connection_prop.ip_addr);    //Same as above
 
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
@@ -207,7 +205,6 @@ void * instance(void * nulla) {
 #ifdef THREADDBG
             syslog(LOG_DEBUG,"Terminating thread %ld",id);
 #endif
-            free(connection_prop.ip_addr);//Free the space used to store ip address
             free(buf);
             buffer_free(&read_b);
             pthread_exit(0);
@@ -600,7 +597,7 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
 
     if ((wpid=fork())<0) { //Error, returns a no memory error
 #ifdef SENDINGDBG
-        syslog(LOG_ERR,"Unable to fork to execute the file %s",connection_prop->strfile);
+        syslog(LOG_CRIT,"Unable to fork to execute the file %s",connection_prop->strfile);
 #endif
         if (post_param->data!=NULL) {
             close(ipipe[0]);

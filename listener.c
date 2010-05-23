@@ -51,7 +51,6 @@ bool virtual_host = false;      //True if must check for virtual hosts
 
 array_ll cgi_paths;             //Paths to cgi binaries
 
-
 /**
 Increases or decreases the number of current active thread.
 This function is thread safe.
