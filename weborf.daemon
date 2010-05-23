@@ -24,7 +24,7 @@
 # Should-Start:      $named
 # Should-Stop:
 # Default-Start:     2 3 4 5
-# Default-Stop:      
+# Default-Stop:      1
 # Short-Description: Fast and small webserver
 # Description:       Weborf is a configurationless webeserver mainly meant to allow users
 #                    to easily share their directories over the web.
