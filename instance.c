@@ -22,8 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 extern syn_queue_t queue;                   //Queue for open sockets
 
-extern pthread_mutex_t m_free;              //Mutex to modify t_free
-extern unsigned int t_free;                 //free threads
+extern t_thread_info thread_info;
 
 extern char* basedir;                       //Basedir
 extern char* authsock;                       //Executable that will authenticate
@@ -137,24 +136,24 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
 Set thread with id as non-free
 */
 void unfree_thread(long int id) {
-    pthread_mutex_lock(&m_free);
-    t_free--;
+    pthread_mutex_lock(&thread_info.mutex);
+    thread_info.free--;
 #ifdef THREADDBG
-    syslog(LOG_DEBUG,"There are %d free threads",t_free);
+    syslog(LOG_DEBUG,"There are %d free threads",thread_info.free);
 #endif
-    pthread_mutex_unlock(&m_free);
+    pthread_mutex_unlock(&thread_info.mutex);
 }
 
 /**
 Set thread with id as free
 */
 void free_thread(long int id) {
-    pthread_mutex_lock(&m_free);
-    t_free++;
+        pthread_mutex_lock(&thread_info.mutex);
+    thread_info.free++;
 #ifdef THREADDBG
-    syslog(LOG_DEBUG,"There are %d free threads",t_free);
+    syslog(LOG_DEBUG,"There are %d free threads",thread_info.free);
 #endif
-    pthread_mutex_unlock(&m_free);
+    pthread_mutex_unlock(&thread_info.mutex);
 }
 
 /**

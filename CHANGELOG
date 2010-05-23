@@ -36,6 +36,8 @@
 - Can compile on OpenSolaris (manual edit of Makefile is needed)
 - Edited instance.h to workarond OpenSolaris bug #6775831
 - Can use SIGUSR1 to print internal status
+- Edited daemon script to pass the new lintian's test
+- Attempt to resolve race-condition by refactoring
 
 0.11
 - Support for ETag header

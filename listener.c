@@ -30,11 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 syn_queue_t queue;              //Queue for opened sockets
 
-pthread_mutex_t m_free;         //Mutex to modify t_free
-unsigned int t_free = 0;        //Free threads
-
-pthread_mutex_t m_thread_c;     //Mutex to modify thread_c
-unsigned int thread_c = 0;      //Number of threads
+t_thread_info thread_info;
 
 char *basedir = BASEDIR;        //Base directory
 char *authsock;                  //Executable that will authenticate
@@ -52,18 +48,6 @@ bool virtual_host = false;      //True if must check for virtual hosts
 array_ll cgi_paths;             //Paths to cgi binaries
 
 /**
-Increases or decreases the number of current active thread.
-This function is thread safe.
-
-Notice that this will not start or stop threads, just change the value of thread_c.
-*/
-void chn_thread_count(int val) {
-    pthread_mutex_lock(&m_thread_c);
-    thread_c += val;
-    pthread_mutex_unlock(&m_thread_c);
-}
-
-/**
 Sets t_attr to make detached threads
 */
 void init_thread_attr() {
@@ -78,22 +62,34 @@ Specify how many threads start.
 void init_threads(unsigned int count) {
     static long int id = 1;
     //t_free=MAXTHREAD;
-    int i;
+    int effective=0,i;
 
     pthread_t t_id;//Unused var, thread's system id
 
-    pthread_mutex_lock(&m_free);
-
-    for (i = 1; i <= count; i++) {
-        pthread_create(&t_id, &t_attr, instance, (void *) (id++));
-    }
-
-    chn_thread_count(count);//Increases the counter of active threads
-    t_free += count;
+    pthread_mutex_lock(&thread_info.mutex);
+    
+    //Check condition within the lock
+    if (thread_info.count + count < MAXTHREAD) {
+        
+        //Start
+        for (i = 1; i <= count; i++) 
+            if (pthread_create(&t_id, &t_attr, instance, (void *) (id++))==0) effective++;
+    
+    thread_info.count+= effective;
+    thread_info.free += effective;
+    
 #ifdef THREADDBG
     syslog(LOG_DEBUG, "There are %d free threads", t_free);
 #endif
-    pthread_mutex_unlock(&m_free);
+
+#ifdef SERVERDBG
+        if (effective!=count)
+            syslog(LOG_CRIT,"Unable to launch the required threads");
+#endif
+
+
+    }
+    pthread_mutex_unlock(&thread_info.mutex);
 }
 
 /**
@@ -108,13 +104,18 @@ void init_logger() {
 }
 
 int main(int argc, char *argv[]) {
-
-    init_logger();      //Inits the logger
-
     int s, s1;          //Socket
 
     char *ip = NULL;    //IP addr with default value
     char *port = PORT;  //port with default value
+    
+    //Init thread_info
+    pthread_mutex_init(&thread_info.mutex, NULL);
+    thread_info.count=0;
+    thread_info.free=0;
+    
+    init_logger();      //Inits the logger
+    
 
 #ifdef IPV6
     struct sockaddr_in6 locAddr, farAddr;	//Local and remote address
@@ -402,22 +403,22 @@ int main(int argc, char *argv[]) {
     while ((s1 = accept(s, (struct sockaddr *) &farAddr, (socklen_t *) & farAddrL)) != -1) {
 #endif
 
-        if (s1 >= 0 && t_free > 0) { //Adds s1 to the queue
+        if (s1 >= 0) { //Adds s1 to the queue
+        //TODO review this if (s1 >= 0 && thread_info.free > 0) { //Adds s1 to the queue
             q_put(&queue, s1, farAddr);
         } else { //Closes the socket if there aren't enough free threads.
 #ifdef REQUESTDBG
-            syslog(LOG_ERR,
-                   "Not enough resources, dropping connection...");
+            syslog(LOG_ERR,"Not enough resources, dropping connection...");
 #endif
             close(s1);
         }
 
         //Start new thread if needed
-        if (t_free <= LOWTHREAD && t_free<MAXTHREAD) { //Need to start new thread
-            if (thread_c + INITIALTHREAD < MAXTHREAD) { //Starts a group of threads
+        if (thread_info.free <= LOWTHREAD && thread_info.free<MAXTHREAD) { //Need to start new thread
+            if (thread_info.count + INITIALTHREAD < MAXTHREAD) { //Starts a group of threads
                 init_threads(INITIALTHREAD);
             } else { //Can't start a group because the limit is close, starting less than a whole group
-                init_threads(MAXTHREAD - thread_c);
+                init_threads(MAXTHREAD - thread_info.count);
             }
         }
 
@@ -511,14 +512,18 @@ void *t_shape(void *nulla) {
 #else
     struct sockaddr_in addr_;
 #endif
+
+
     for (;;) {
         sleep(THREADCONTROL);
 
-        if (t_free > MAXFREETHREAD) {	//Too much free threads, terminates one of them
+        pthread_mutex_lock(&thread_info.mutex);
+        if (thread_info.free > MAXFREETHREAD) {	//Too much free threads, terminates one of them
             //Write the termination order to the queue, the thread who will read it, will terminate
             q_put(&queue,-1,addr_);
-            chn_thread_count(-1);	//Decreases the number of free total threads
+            thread_info.count--;
         }
+        pthread_mutex_unlock(&thread_info.mutex);
     }
     return NULL; //make gcc happy
 }
@@ -528,5 +533,9 @@ Will print the internal status of the queue.
 This function is triggered by SIGUSR1 signal.
 */
 void print_queue_status() {
-    printf("=== Queue ===\ncount:      %d\nsize:       %d\nhead:       %d\ntail:       %d\n=== Threads ===\nMaximum:    %d\nStarted:    %d\nFree:       %d\nBusy:       %d\n",queue.num,queue.size,queue.head,queue.tail,MAXTHREAD,thread_c,t_free,thread_c-t_free);
+    
+    //Lock because the values are read many times and it's needed that they have the same value all the times
+    pthread_mutex_lock(&thread_info.mutex);
+    printf("=== Queue ===\ncount:      %d\nsize:       %d\nhead:       %d\ntail:       %d\n=== Threads ===\nMaximum:    %d\nStarted:    %d\nFree:       %d\nBusy:       %d\n",queue.num,queue.size,queue.head,queue.tail,MAXTHREAD,thread_info.count,thread_info.free,thread_info.count-thread_info.free);
+    pthread_mutex_unlock(&thread_info.mutex);
 }

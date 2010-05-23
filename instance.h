@@ -49,7 +49,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/un.h>
 
 typedef struct {
-
 #ifdef IPV6
     char ip_addr[INET6_ADDRSTRLEN];              //ip address in string format
 #else
@@ -74,6 +73,12 @@ typedef struct {
     ssize_t len;                //length of the string
     char *data;                 //Pointer to string
 } string_t;
+
+typedef struct {
+    pthread_mutex_t mutex;          //Mutex to access this struct
+    unsigned int free;              //Free threads
+    unsigned int count;             //thread count
+} t_thread_info;
 
 
 #include "buffered_reader.h"
