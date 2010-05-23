@@ -61,7 +61,8 @@ int get_props(string_t* post_param,char * props[]) {
     }
     data+=6; //Eliminates the 1st useless tag
 
-    { //Locates the ending prop tag
+    {
+        //Locates the ending prop tag
         char*end=strstr(data,"</D:prop>");
         if (end==NULL)
             end=strstr(data,"</prop>");
@@ -116,7 +117,8 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     stat(file, &stat_s);
     write(sock,"<D:response>\n",13);
 
-    {//Sends href of the resource
+    {
+        //Sends href of the resource
         if (parent) {
             p_len=snprintf(buffer,URI_LEN,"<D:href>%s</D:href>",filename);
         } else {
@@ -127,7 +129,8 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     }
 
     write(sock,"<D:propstat><D:prop>",20);
-    {//Writing properties
+    {
+        //Writing properties
         char prop_buffer[URI_LEN];
         for (i=0; props[i]!=NULL; i++) {
             props_invalid[i]=false;
@@ -201,7 +204,8 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
         return ERR_FORBIDDEN;
     }
 
-    { //This redirects directory without ending / to directory with the ending /
+    {
+        //This redirects directory without ending / to directory with the ending /
         struct stat stat_s;
         int stat_r=stat(connection_prop->strfile, &stat_s);
 
@@ -221,7 +225,8 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
     bool deep=false;
 
 
-    { //Determining if it is deep or not
+    {
+        //Determining if it is deep or not
         char a[4]; //Buffer for field's value
         //Gets the value of content-length header
         bool r=get_param_value(connection_prop->http_param,"Depth", a,4,5);//14 is content-lenght's len

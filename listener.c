@@ -68,19 +68,19 @@ void init_threads(unsigned int count) {
     pthread_t t_id;//Unused var, thread's system id
 
     pthread_mutex_lock(&thread_info.mutex);
-    
+
     //Check condition within the lock
     if (thread_info.count + count < MAXTHREAD) {
-        
+
         //Start
-        for (i = 1; i <= count; i++) 
+        for (i = 1; i <= count; i++)
             if (pthread_create(&t_id, &t_attr, instance, (void *) (id++))==0) effective++;
-    
-    thread_info.count+= effective;
-    thread_info.free += effective;
-    
+
+        thread_info.count+= effective;
+        thread_info.free += effective;
+
 #ifdef THREADDBG
-    syslog(LOG_DEBUG, "There are %d free threads", t_free);
+        syslog(LOG_DEBUG, "There are %d free threads", t_free);
 #endif
 
 #ifdef SERVERDBG
@@ -109,14 +109,14 @@ int main(int argc, char *argv[]) {
 
     char *ip = NULL;    //IP addr with default value
     char *port = PORT;  //port with default value
-    
+
     //Init thread_info
     pthread_mutex_init(&thread_info.mutex, NULL);
     thread_info.count=0;
     thread_info.free=0;
-    
+
     init_logger();      //Inits the logger
-    
+
 
 #ifdef IPV6
     struct sockaddr_in6 locAddr, farAddr;	//Local and remote address
@@ -338,7 +338,8 @@ int main(int argc, char *argv[]) {
     //Prepares socket's address
     locAddr.sin_family = AF_INET;	//Internet socket
 
-    { //Check the validity of port param and uses it
+    {
+        //Check the validity of port param and uses it
         unsigned int p = strtol(port, NULL, 0);
         if (p < 1 || p > 65535) {
             printf("Invalid port number: %d\n", p);
@@ -382,7 +383,8 @@ int main(int argc, char *argv[]) {
     init_thread_attr();
     init_threads(INITIALTHREAD);
 
-    { //Starts the monitoring thread, to close unused threads
+    {
+        //Starts the monitoring thread, to close unused threads
         pthread_t t_id; //Unused var
         pthread_create(&t_id, NULL, t_shape, (void *) NULL);
     }
@@ -390,7 +392,7 @@ int main(int argc, char *argv[]) {
     //Handle SIGINT and SIGTERM
     signal(SIGINT, quit);
     signal(SIGTERM, quit);
-    
+
     //Prints queue status with this signal
     signal(SIGUSR1, print_queue_status);
 
@@ -405,7 +407,7 @@ int main(int argc, char *argv[]) {
 #endif
 
         if (s1 >= 0) { //Adds s1 to the queue
-        //TODO review this if (s1 >= 0 && thread_info.free > 0) { //Adds s1 to the queue
+            //TODO review this if (s1 >= 0 && thread_info.free > 0) { //Adds s1 to the queue
             q_put(&queue, s1, farAddr);
         } else { //Closes the socket if there aren't enough free threads.
 #ifdef REQUESTDBG
@@ -534,7 +536,7 @@ Will print the internal status of the queue.
 This function is triggered by SIGUSR1 signal.
 */
 void print_queue_status() {
-    
+
     //Lock because the values are read many times and it's needed that they have the same value all the times
     pthread_mutex_lock(&thread_info.mutex);
     printf("=== Queue ===\ncount:      %d\nsize:       %d\nhead:       %d\ntail:       %d\n=== Threads ===\nMaximum:    %d\nStarted:    %d\nFree:       %d\nBusy:       %d\n",queue.num,queue.size,queue.head,queue.tail,MAXTHREAD,thread_info.count,thread_info.free,thread_info.count-thread_info.free);

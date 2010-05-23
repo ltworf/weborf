@@ -620,13 +620,15 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
             dup(ipipe[0]);
         }
 
-        {//Clears all the env var, saving only SERVER_PORT
+        {
+            //Clears all the env var, saving only SERVER_PORT
             char *port=getenv("SERVER_PORT");
             environ=NULL;
             setenv("SERVER_PORT",port,true);
         }
         setEnvVars(connection_prop->http_param); //Sets env var starting with HTTP
-        {//Sets SERVER_ADDR var
+        {
+            //Sets SERVER_ADDR var
 #ifdef IPV6
             char loc_addr[INET6_ADDRSTRLEN];
             struct sockaddr_in6 addr;//Local and remote address
@@ -674,7 +676,8 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
             connection_prop->page[delim]='\0';
         }
 
-        {//If Content-Length field exists
+        {
+            //If Content-Length field exists
             char *content_l=getenv("HTTP_CONTENT_LENGTH");
             if (content_l!=NULL) {
                 setenv("CONTENT_LENGTH",content_l,true);
@@ -682,7 +685,8 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
             }
         }
 
-        {//chdir to the directory
+        {
+            //chdir to the directory
             char* last_slash=rindex(connection_prop->strfile,'/');
             last_slash[0]=0;
             chdir(connection_prop->strfile);
@@ -748,7 +752,8 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
 
         if (e_reads>0) {//There is output from script
             char* status; //Standard status
-            {//Reading if there is another status
+            {
+                //Reading if there is another status
                 char*s=strstr(header_buf,"Status: ");
                 if (s!=NULL) {
                     status=s+8; //Replacing status
@@ -924,7 +929,8 @@ int write_file(int sock,connection_t* connection_prop) {
     if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER,5)) {//Find if it is a range request 5 is strlen of "range"
         int from,to;
 
-        {//Locating from and to
+        {
+            //Locating from and to
             //Range: bytes=12323-123401
             char* eq=strstr(a,"=");
             char* sep=strstr(eq,"-");
@@ -1242,7 +1248,8 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
         timestamp=time(NULL);
     }
 
-    { //Sends Date
+    {
+        //Sends Date
         struct tm  ts;
         localtime_r((time_t)&timestamp,&ts);
         len_head = strftime(head,left_head, "Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n", &ts);

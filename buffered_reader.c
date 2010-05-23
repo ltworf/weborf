@@ -83,7 +83,8 @@ ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
             //Filing the buffer again
             buf->start = buf->buffer;
 
-            { //Timeout implementation
+            {
+                //Timeout implementation
                 struct pollfd monitor[1];
                 monitor[0].fd = fd; //File descriptor to monitor
                 monitor[0].events = POLLIN; //Monitor on input events
