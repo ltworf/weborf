@@ -68,7 +68,7 @@ void init_threads(unsigned int count) {
     pthread_t t_id;//Unused var, thread's system id
 
     pthread_mutex_lock(&thread_info.mutex);
-
+    thread_info.line=71;
     //Check condition within the lock
     if (thread_info.count + count < MAXTHREAD) {
 
@@ -521,9 +521,10 @@ void *t_shape(void *nulla) {
         sleep(THREADCONTROL);
 
         pthread_mutex_lock(&thread_info.mutex);
+        thread_info.line=524;
         if (thread_info.free > MAXFREETHREAD) {	//Too much free threads, terminates one of them
             //Write the termination order to the queue, the thread who will read it, will terminate
-            q_put(&queue,-1,addr_);
+            q_put(&queue,-1,addr_); //TODO causes deadlock
             thread_info.count--;
         }
         pthread_mutex_unlock(&thread_info.mutex);
@@ -538,7 +539,9 @@ This function is triggered by SIGUSR1 signal.
 void print_queue_status() {
 
     //Lock because the values are read many times and it's needed that they have the same value all the times
+    printf("Line %d\n",thread_info.line);
     pthread_mutex_lock(&thread_info.mutex);
+    thread_info.line=543;
     printf("=== Queue ===\ncount:      %d\nsize:       %d\nhead:       %d\ntail:       %d\n=== Threads ===\nMaximum:    %d\nStarted:    %d\nFree:       %d\nBusy:       %d\n",queue.num,queue.size,queue.head,queue.tail,MAXTHREAD,thread_info.count,thread_info.free,thread_info.count-thread_info.free);
     pthread_mutex_unlock(&thread_info.mutex);
 }

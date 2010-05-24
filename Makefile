@@ -63,7 +63,8 @@ source: clean style
 	cd ..; tar cvzf weborf-`date +\%F | tr -d -`.tar.gz weborf/
 
 style:
-	astyle --indent=spaces=4 -a *c *h
+	#‑‑align‑pointer=name To use when will really work
+	astyle --indent=spaces=4 -a *c *h       
 
 installdirs:
 	install -d $(DESTDIR)/$(BINDIR)/

@@ -137,6 +137,7 @@ Set thread with id as non-free
 */
 void unfree_thread(long int id) {
     pthread_mutex_lock(&thread_info.mutex);
+    thread_info.line=-140;
     thread_info.free--;
 #ifdef THREADDBG
     syslog(LOG_DEBUG,"There are %d free threads",thread_info.free);
@@ -149,6 +150,7 @@ Set thread with id as free
 */
 void free_thread(long int id) {
     pthread_mutex_lock(&thread_info.mutex);
+    thread_info.line=-153;
     thread_info.free++;
 #ifdef THREADDBG
     syslog(LOG_DEBUG,"There are %d free threads",thread_info.free);

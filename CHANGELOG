@@ -38,6 +38,7 @@
 - Can use SIGUSR1 to print internal status
 - Edited daemon script to pass the new lintian's test
 - Attempt to resolve race-condition by refactoring
+- Changed astyle parameters to use the new version
 
 0.11
 - Support for ETag header
