@@ -199,7 +199,7 @@ void * instance(void * nulla) {
     }
 
     while (true) {
-        q_get(&queue, &sock,&addr);//Gets a socket from the queue
+        q_get(&queue, &sock);//Gets a socket from the queue
         unfree_thread(id);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order

@@ -31,13 +31,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int q_init(syn_queue_t * q, int size);
 
-#ifdef IPV6
-int q_put(syn_queue_t * q, int val, struct sockaddr_in6 addr_);
-int q_get(syn_queue_t * q, int *val, struct sockaddr_in6 *addr_);
-#else
-int q_put(syn_queue_t * q, int val, struct sockaddr_in addr_);
-int q_get(syn_queue_t * q, int *val, struct sockaddr_in *addr_);
-#endif
+int q_put(syn_queue_t * q, int val);
+int q_get(syn_queue_t * q, int *val);
 
 void q_free(syn_queue_t * q);
 

@@ -406,10 +406,7 @@ int main(int argc, char *argv[]) {
     while ((s1 = accept(s, (struct sockaddr *) &farAddr, (socklen_t *) & farAddrL)) != -1) {
 #endif
 
-        if (s1 >= 0) { //Adds s1 to the queue
-            //TODO review this if (s1 >= 0 && thread_info.free > 0) { //Adds s1 to the queue
-            q_put(&queue, s1, farAddr);
-        } else { //Closes the socket if there aren't enough free threads.
+        if (s1 >= 0 && q_put(&queue, s1)!=0) { //Adds s1 to the queue
 #ifdef REQUESTDBG
             syslog(LOG_ERR,"Not enough resources, dropping connection...");
 #endif
@@ -510,12 +507,6 @@ It works polling the number of free threads and writing an order of termination 
 Policies of this function (polling frequence and limit for free threads) are defined in options.h
  */
 void *t_shape(void *nulla) {
-#ifdef IPV6
-    struct sockaddr_in6 addr_;
-#else
-    struct sockaddr_in addr_;
-#endif
-
 
     for (;;) {
         sleep(THREADCONTROL);
@@ -524,8 +515,8 @@ void *t_shape(void *nulla) {
         thread_info.line=524;
         if (thread_info.free > MAXFREETHREAD) {	//Too much free threads, terminates one of them
             //Write the termination order to the queue, the thread who will read it, will terminate
-            q_put(&queue,-1,addr_); //TODO causes deadlock
-            thread_info.count--;
+            if (q_put(&queue,-1)==0)
+                thread_info.count--;
         }
         pthread_mutex_unlock(&thread_info.mutex);
     }
