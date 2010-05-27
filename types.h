@@ -81,7 +81,6 @@ typedef struct {
     pthread_mutex_t mutex;          //Mutex to access this struct
     unsigned int free;              //Free threads
     unsigned int count;             //thread count
-    int line;
 } t_thread_info;
 
 #endif

@@ -68,7 +68,6 @@ void init_threads(unsigned int count) {
     pthread_t t_id;//Unused var, thread's system id
 
     pthread_mutex_lock(&thread_info.mutex);
-    thread_info.line=71;
     //Check condition within the lock
     if (thread_info.count + count < MAXTHREAD) {
 
@@ -509,13 +508,12 @@ void *t_shape(void *nulla) {
     for (;;) {
         sleep(THREADCONTROL);
 
-        pthread_mutex_lock(&thread_info.mutex);
-        thread_info.line=524;
+        //pthread_mutex_lock(&thread_info.mutex);
         if (thread_info.free > MAXFREETHREAD) {	//Too much free threads, terminates one of them
             //Write the termination order to the queue, the thread who will read it, will terminate
             q_put(&queue,-1);
         }
-        pthread_mutex_unlock(&thread_info.mutex);
+        //pthread_mutex_unlock(&thread_info.mutex);
     }
     return NULL; //make gcc happy
 }
@@ -543,10 +541,7 @@ void print_queue_status() {
         printf("thread_info is locked\n");
     }
 
-    
-    printf("Line %d\n",thread_info.line);
     pthread_mutex_lock(&thread_info.mutex);
-    thread_info.line=543;
     printf("=== Queue ===\ncount:      %d\tsize:       %d\nhead:       %d\ttail:       %d\nwait_data:  %d\twait_space: %d\n=== Threads ===\nMaximum:    %d\nStarted:    %d\nFree:       %d\nBusy:       %d\n",queue.num,queue.size,queue.head,queue.tail,queue.n_wait_dt,queue.n_wait_sp,MAXTHREAD,thread_info.count,thread_info.free,thread_info.count-thread_info.free);
     pthread_mutex_unlock(&thread_info.mutex);
 }

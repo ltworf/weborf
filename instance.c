@@ -137,7 +137,6 @@ Set thread with id as free
 */
 void change_free_thread(long int id,int free_d, int count_d) {
     pthread_mutex_lock(&thread_info.mutex);
-    thread_info.line=-140;
     
     thread_info.free+=free_d;
     thread_info.count+=count_d;
