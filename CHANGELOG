@@ -8,26 +8,18 @@
 - Added wrapper for CGI python, which replaces the previous one (Rev 312)
 - Support for custom CGI formats
 - LSB tags added to the init script (Rev 323)
-- Support to PUT method
+- Support to PUT,DELETE,OPTIONS methods
 - Fixed bug: some file descriptors caused thread's termination (Rev 341)
-- Support to DELETE method
 - Added wrapper for executables CGIs
-- Added python module for cgi
 - Stub for webdav
-- Implemented MKCOL method
+- Implemented MKCOL, COPY, MOVE methods
 - Bug: socket were closed randomly on non GET/POST methods
 - Bug: tamed buffers do not affect subsequent connections on the same thread
-- Deep delete, to delete directories and their content
-- Implemented COPY method on files
-- Implemented MOVE method on files
-- Implemented COPY and MOVE methods on directories (Rev 358)
 - Daemon is able to start authentication server too, reading about it from weborf.conf (Rev 359)
-- Implemented OPTIONS method (Rev 362)
 - Better and more resistant xml parsing of PROPFIND requests (Rev 363)
 - Bug: addresses are properly converted into strings (Rev 373)
 - CGI does chdir into script's directory (Rev 374)
 - Enables logging
-- Doesn't delete source file on failed move
 - Uses reentrant version of readdir (Rev 381)
 - Uses fdopendir on systems supporting that (POSIX 2008.1 compliant), to save syscalls and file descriptors
 - Added more controls on memory allocation
@@ -35,7 +27,7 @@
 - Logs insufficient memory
 - Can compile on OpenSolaris (manual edit of Makefile is needed)
 - Edited instance.h to workarond OpenSolaris bug #6775831
-- Can use SIGUSR1 to print internal status
+- Can use SIGUSR1 to print internal status on stdout
 - Edited daemon script to pass the new lintian's test
 - Attempt to resolve race-condition by refactoring
 - Changed astyle parameters to use the new version

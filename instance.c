@@ -137,10 +137,10 @@ Set thread with id as free
 */
 void change_free_thread(long int id,int free_d, int count_d) {
     pthread_mutex_lock(&thread_info.mutex);
-    
+
     thread_info.free+=free_d;
     thread_info.count+=count_d;
-    
+
 #ifdef THREADDBG
     syslog(LOG_DEBUG,"There are %d free threads",thread_info.free);
 #endif
@@ -189,7 +189,7 @@ void * instance(void * nulla) {
 
     //Start accepting sockets
     change_free_thread(id,1,0);
-    
+
     while (true) {
         q_get(&queue, &sock);//Gets a socket from the queue
         change_free_thread(id,-1,0);//Sets this thread as busy
@@ -225,8 +225,8 @@ void * instance(void * nulla) {
         close(sock);//Closing the socket
         //memset(buf,0,bufFull);//Sets to 0 the buffer, only the part used for the previous
         buffer_reset (&read_b);
-        
-        
+
+
         change_free_thread(id,1,0);//Sets this thread as free
     }
 

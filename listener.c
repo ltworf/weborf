@@ -74,8 +74,8 @@ void init_threads(unsigned int count) {
         //Start
         for (i = 1; i <= count; i++)
             if (pthread_create(&t_id, &t_attr, instance, (void *) (id++))==0) effective++;
-            
-    thread_info.count+=effective; // increases the count of started threads
+
+        thread_info.count+=effective; // increases the count of started threads
 #ifdef THREADDBG
         syslog(LOG_DEBUG, "There are %d free threads", t_free);
 #endif
@@ -525,15 +525,15 @@ This function is triggered by SIGUSR1 signal.
 void print_queue_status() {
 
     //Lock because the values are read many times and it's needed that they have the same value all the times
-    
+
     if ( pthread_mutex_trylock(&queue.mutex)==0) {
         printf("Queue is unlocked\n");
         pthread_mutex_unlock(&queue.mutex);
     } else {
         printf("Queue is locked\n");
     }
-    
-    
+
+
     if ( pthread_mutex_trylock(&thread_info.mutex)==0) {
         printf("thread_info is unlocked\n");
         pthread_mutex_unlock(&thread_info.mutex);

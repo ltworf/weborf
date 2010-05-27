@@ -62,7 +62,7 @@ int q_get(syn_queue_t * q, int *val) {
 
     q->head = (q->head + 1) % q->size; //Moves the head
     q->num--; //Reduces count of the queue
-    
+
     /*if ((q->num == q->size) && (q->n_wait_sp > 0)) {
         q->n_wait_sp--;
         pthread_cond_signal(&q->for_space);
@@ -81,12 +81,12 @@ int q_put(syn_queue_t * q, int val) {
         q->n_wait_dt--;
         pthread_cond_signal(&q->for_data);
     } // unlock also needed after signal
-    
+
     //Fails if queue is full
     if (q->num == q->size) {
         pthread_mutex_unlock(&q->mutex); // or threads blocked on wait
         return 1; // will not proceed
-    //while (q->num == q->size) {
+        //while (q->num == q->size) {
         //q->n_wait_sp++;
         //pthread_cond_wait(&q->for_space, &q->mutex);
     }
@@ -95,7 +95,7 @@ int q_put(syn_queue_t * q, int val) {
     q->tail = (q->tail + 1) % q->size; //Moves the tail
 
     q->num++; //Increases count of filled positions
-    
+
     pthread_mutex_unlock(&q->mutex); // or threads blocked on wait
     return 0; // will not proceed
 }
