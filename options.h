@@ -42,7 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define INITIALTHREAD 12        //Thread started when free threads are low and when starting
 #define LOWTHREAD 3             //Minimum number of free threads, before starting new ones
 #define MAXFREETHREAD 12        //Maximum number of free threads, before starting to slowly close them
-#define THREADCONTROL 1        //Polling frequence in seconds
+#define THREADCONTROL 10        //Polling frequence in seconds
 
 //------------Server
 #define INDEX "index.html"      //Default index file that weborf will search

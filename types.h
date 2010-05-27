@@ -25,9 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <netinet/in.h>
 
 
 #include "options.h"
+
 
 typedef struct {
     ssize_t len;                //length of the array

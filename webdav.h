@@ -33,7 +33,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "instance.h"
 
-
 int propfind(int sock,connection_t* connection_prop,string_t *post_param);
 int mkcol(int sock,connection_t* connection_prop);
 int copy_move(int sock,connection_t* connection_prop);
