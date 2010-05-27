@@ -75,10 +75,8 @@ void init_threads(unsigned int count) {
         //Start
         for (i = 1; i <= count; i++)
             if (pthread_create(&t_id, &t_attr, instance, (void *) (id++))==0) effective++;
-
-        thread_info.count+= effective;
-        thread_info.free += effective;
-
+            
+    thread_info.count+=effective; // increases the count of started threads
 #ifdef THREADDBG
         syslog(LOG_DEBUG, "There are %d free threads", t_free);
 #endif
@@ -515,8 +513,7 @@ void *t_shape(void *nulla) {
         thread_info.line=524;
         if (thread_info.free > MAXFREETHREAD) {	//Too much free threads, terminates one of them
             //Write the termination order to the queue, the thread who will read it, will terminate
-            if (q_put(&queue,-1)==0)
-                thread_info.count--;
+            q_put(&queue,-1);
         }
         pthread_mutex_unlock(&thread_info.mutex);
     }
@@ -530,9 +527,26 @@ This function is triggered by SIGUSR1 signal.
 void print_queue_status() {
 
     //Lock because the values are read many times and it's needed that they have the same value all the times
+    
+    if ( pthread_mutex_trylock(&queue.mutex)==0) {
+        printf("Queue is unlocked\n");
+        pthread_mutex_unlock(&queue.mutex);
+    } else {
+        printf("Queue is locked\n");
+    }
+    
+    
+    if ( pthread_mutex_trylock(&thread_info.mutex)==0) {
+        printf("thread_info is unlocked\n");
+        pthread_mutex_unlock(&thread_info.mutex);
+    } else {
+        printf("thread_info is locked\n");
+    }
+
+    
     printf("Line %d\n",thread_info.line);
     pthread_mutex_lock(&thread_info.mutex);
     thread_info.line=543;
-    printf("=== Queue ===\ncount:      %d\nsize:       %d\nhead:       %d\ntail:       %d\n=== Threads ===\nMaximum:    %d\nStarted:    %d\nFree:       %d\nBusy:       %d\n",queue.num,queue.size,queue.head,queue.tail,MAXTHREAD,thread_info.count,thread_info.free,thread_info.count-thread_info.free);
+    printf("=== Queue ===\ncount:      %d\tsize:       %d\nhead:       %d\ttail:       %d\nwait_data:  %d\twait_space: %d\n=== Threads ===\nMaximum:    %d\nStarted:    %d\nFree:       %d\nBusy:       %d\n",queue.num,queue.size,queue.head,queue.tail,queue.n_wait_dt,queue.n_wait_sp,MAXTHREAD,thread_info.count,thread_info.free,thread_info.count-thread_info.free);
     pthread_mutex_unlock(&thread_info.mutex);
 }

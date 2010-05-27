@@ -133,25 +133,15 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
 }
 
 /**
-Set thread with id as non-free
-*/
-void unfree_thread(long int id) {
-    pthread_mutex_lock(&thread_info.mutex);
-    thread_info.line=-140;
-    thread_info.free--;
-#ifdef THREADDBG
-    syslog(LOG_DEBUG,"There are %d free threads",thread_info.free);
-#endif
-    pthread_mutex_unlock(&thread_info.mutex);
-}
-
-/**
 Set thread with id as free
 */
-void free_thread(long int id) {
+void change_free_thread(long int id,int free_d, int count_d) {
     pthread_mutex_lock(&thread_info.mutex);
-    thread_info.line=-153;
-    thread_info.free++;
+    thread_info.line=-140;
+    
+    thread_info.free+=free_d;
+    thread_info.count+=count_d;
+    
 #ifdef THREADDBG
     syslog(LOG_DEBUG,"There are %d free threads",thread_info.free);
 #endif
@@ -188,19 +178,22 @@ void * instance(void * nulla) {
 #endif
 
     if (buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL) { //Unable to allocate the buffer
-        unfree_thread(id);                //Sets this thread as busy
         buffer_free(&read_b);             //Frees buffered reader if it was allocated or does nothing
         free(buf);                        //Frees buf if it was allocated or does nothing
 
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
 #endif
+        change_free_thread(id,0,-1);
         pthread_exit(0);
     }
 
+    //Start accepting sockets
+    change_free_thread(id,1,0);
+    
     while (true) {
         q_get(&queue, &sock);//Gets a socket from the queue
-        unfree_thread(id);//Sets this thread as busy
+        change_free_thread(id,-1,0);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order
 #ifdef THREADDBG
@@ -208,6 +201,7 @@ void * instance(void * nulla) {
 #endif
             free(buf);
             buffer_free(&read_b);
+            change_free_thread(id,0,-1);//Reduces count of threads
             pthread_exit(0);
         }
 
@@ -232,7 +226,9 @@ void * instance(void * nulla) {
         close(sock);//Closing the socket
         //memset(buf,0,bufFull);//Sets to 0 the buffer, only the part used for the previous
         buffer_reset (&read_b);
-        free_thread(id);//Settin this thread as free
+        
+        
+        change_free_thread(id,1,0);//Sets this thread as free
     }
 
     return NULL;//Never reached
