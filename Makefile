@@ -95,8 +95,7 @@ install: uninstall installdirs
 	#install -m 755 weborf.daemon debian/weborf-daemon.init
 	install -m 755 weborf.daemon $(DESTDIR)/$(DAEMONDIR)/weborf
 
-	#Comment the following line in case of debian package
-	if  ! test -e $(DESTDIR)/$(CONFDIR)/weborf.conf; then install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/; fi
+	install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/; fi
 
 uninstall:
 	rm -f $(DESTDIR)/$(MANDIR)/man5/weborf.conf.5.gz
