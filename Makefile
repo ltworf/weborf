@@ -26,11 +26,6 @@ LDFLAGS=-lpthread
 #LDFLAGS=-lpthread -lsocket -lnsl 
 #ARCHFLAGS=-m64
 
-
-#Uncomment for debian package
-#PYVERSION=2.5
-#PYVERSION=VERSION
-
 MANDIR=/usr/share/man/
 BINDIR=/usr/bin/
 DAEMONDIR=/etc/init.d/
@@ -54,7 +49,11 @@ debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader
 
 clean: 
 	rm -f *.o weborf debug *.orig *~ *.gz
-	cd cgi_wrapper; make clean	
+	cd cgi_wrapper; make clean
+
+cleanall: clean
+	rm -rf `find | fgrep .svn`
+	rm -rf `find | fgrep ~`
 
 purge: uninstall
 	rm -f $(CONFDIR)/weborf.conf
