@@ -59,11 +59,15 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     }
 
     //Specific header table)
-    pagesize=printf_s=snprintf(html+pagesize,maxsize,"%s<table><tr><td></td><td>Name</td><td>Size</td></tr>",HTMLHEAD);
+    pagesize=printf_s=snprintf(html+pagesize,maxsize,"%s<table><tr><td></td><td>Name</td><td>Size</td><td>Last Modified</td></tr>",HTMLHEAD);
     maxsize-=printf_s;
 
     //Cycles trough dir's elements
     int i;
+    struct tm ts;
+    struct stat f_prop; //File's property
+    char last_modified[URI_LEN];
+    
     for (i=0; i<counter; i++) {
         //Skipping hidden files, except for .. link
         if (namelist[i]->d_name[0] == '.' && (!(parent==true && namelist[i]->d_name[1] == '.' && namelist[i]->d_name[2] == '\0'))) {
@@ -74,9 +78,13 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
         snprintf(path, INBUFFER,"%s/%s", connection_prop->strfile, namelist[i]->d_name);
 
         //Stat on the entry
-        struct stat f_prop; //File's property
+        
         stat(path, &f_prop);
         int f_mode = f_prop.st_mode; //Get's file's mode
+        
+        //get last modified
+        localtime_r(&f_prop.st_mtime,&ts);
+        strftime(last_modified,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
 
         if (S_ISREG(f_mode)) { //Regular file
 
@@ -99,16 +107,16 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
                 color = "#EAEAEA";
 
             printf_s=snprintf(html+pagesize,maxsize,
-                              "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%u%s</td></tr>\n",
-                              color, namelist[i]->d_name, namelist[i]->d_name, (int)size, measure);
+                              "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%u%s</td><td>%s</td></tr>\n",
+                              color, namelist[i]->d_name, namelist[i]->d_name, (int)size, measure,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
 
         } else if (S_ISDIR(f_mode)) { //Directory entry
             //Table row for the dir
             printf_s=snprintf(html+pagesize,maxsize,
-                              "<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"%s/\">%s/</a></td><td>-</td></tr>\n",
-                              namelist[i]->d_name, namelist[i]->d_name);
+                              "<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"%s/\">%s/</a></td><td>-</td><td>%s</td></tr>\n",
+                              namelist[i]->d_name, namelist[i]->d_name,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
         }
