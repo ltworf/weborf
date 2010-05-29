@@ -35,8 +35,7 @@ CGIDIR=/usr/lib/cgi-bin/
 
 all: weborf cgi
 
-weborf: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o
-	$(CC) $(LDFLAGS) $(ARCHFLAGS) $(OFLAGS) $+ -o $@
+weborf: debug
 	strip weborf
 
 %.c: %.h
@@ -45,7 +44,7 @@ cgi:
 	cd cgi_wrapper; make
 
 debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o
-	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o $@
+	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o weborf
 
 clean: 
 	rm -f *.o weborf debug *.orig *~ *.gz
@@ -92,7 +91,7 @@ install: uninstall installdirs
 
 	install -m 755 weborf.daemon $(DESTDIR)/$(DAEMONDIR)/weborf
 
-	install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/; fi
+	install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/weborf.conf
 
 uninstall:
 	rm -f $(DESTDIR)/$(MANDIR)/man5/weborf.conf.5.gz
