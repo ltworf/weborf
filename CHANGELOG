@@ -21,7 +21,6 @@
 - CGI does chdir into script's directory (Rev 374)
 - Enables logging
 - Uses reentrant version of readdir (Rev 381)
-- Uses fdopendir on systems supporting that (POSIX 2008.1 compliant), to save syscalls and file descriptors
 - Added more controls on memory allocation
 - Bug: buffer size corrected in queue.c
 - Logs insufficient memory
@@ -31,6 +30,8 @@
 - Edited daemon script to pass the new lintian's test
 - Attempt to resolve race-condition by refactoring
 - Changed astyle parameters to use the new version
+- Sorts content of directories when generating html index
+- Bug: replaced unsafe sprintf with snprintf (Rev 415)
 
 0.11
 - Support for ETag header

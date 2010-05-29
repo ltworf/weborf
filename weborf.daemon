@@ -18,15 +18,15 @@
 
 
 ### BEGIN INIT INFO
-# Provides:          weborf-daemon
+# Provides:          weborf
 # Required-Start:    $network $local_fs $syslog $remote_fs
 # Required-Stop:     $remote_fs
 # Should-Start:      $named
 # Should-Stop:
 # Default-Start:     2 3 4 5
-# Default-Stop:      1
+# Default-Stop:      0 1 6
 # Short-Description: Fast and small webserver
-# Description:       Weborf is a configurationless webeserver mainly meant to allow users
+# Description:       Weborf is a configurationless webserver mainly meant to allow users
 #                    to easily share their directories over the web.
 #                    It also supports php5-cgi.
 ### END INIT INFO
@@ -177,3 +177,4 @@ case $1 in
     * )
         echo "Usage: $0 {start|stop|restart|force-reload|status}";;
 esac
+

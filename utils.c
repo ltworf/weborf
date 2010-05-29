@@ -38,32 +38,23 @@ page with links to all the files within the directory.
 
 Buffer for html must be allocated by the calling function.
 bufsize is the size of the buffer allocated for html. To avoid buffer overflows.
-parent is true when no link to parent directory has to be generated
+parent is true when the dir has a parent dir
 */
 int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bool parent) {
     int pagesize=0; //Written bytes on the page
     int maxsize = bufsize - 1; //String's max size
     int printf_s;
-
-#if fdopendir       /*OsX doesn't implement fdopendir :-( */
-    DIR *dp = fdopendir(connection_prop->strfile_fd); //Open dir
-#else
-    DIR *dp = opendir(connection_prop->strfile); //Open dir
-#endif
-
-    struct dirent entry;
-    struct dirent *result;
-    int return_code;
-
-    bool print;
-
     char *color; //Depending on row count chooses a background color
-    char measure[4]; //contains measure unit for file's size (B, KiB, MiB)
-    unsigned int counter = 0; //Used to determine if row is odd or even
+    char *measure; //contains measure unit for file's size (B, KiB, MiB)
+    int counter = 0;
 
     char path[INBUFFER]; //Buffer to contain element's absolute path
 
-    if (dp == NULL) { //Open not succesfull
+    struct dirent **namelist;
+    counter = scandir(connection_prop->strfile, &namelist, 0, alphasort);
+
+
+    if (counter <0) { //Open not succesfull
         return -1;
     }
 
@@ -72,11 +63,17 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     maxsize-=printf_s;
 
     //Cycles trough dir's elements
-    for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) {
+    int i;
+    for (i=0; i<counter; i++) {
+        //Skipping hidden files, except for .. link
+        if (namelist[i]->d_name[0] == '.' && (!(parent==true && namelist[i]->d_name[1] == '.' && namelist[i]->d_name[2] == '\0'))) {
+            free(namelist[i]);
+            continue;
+        }
 
-        counter++; //Increases counter, to know if the row is odd or even
-        sprintf(path, "%s/%s", connection_prop->strfile, entry.d_name);
+        snprintf(path, INBUFFER,"%s/%s", connection_prop->strfile, namelist[i]->d_name);
 
+        //Stat on the entry
         struct stat f_prop; //File's property
         stat(path, &f_prop);
         int f_mode = f_prop.st_mode; //Get's file's mode
@@ -88,43 +85,38 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
             //Scaling the file's size
             off_t size = f_prop.st_size;
             if (size < 1024) {
-                sprintf(measure,"B");
+                measure="B";
             } else if ((size = (size / 1024)) < 1024) {
-                sprintf(measure,"KiB");
+                measure="KiB";
             } else {
                 size = size / 1024;
-                sprintf(measure,"MiB");
+                measure="MiB";
             }
 
-            if (counter % 2 == 0)
+            if (i % 2 == 0)
                 color = "white";
             else
                 color = "#EAEAEA";
 
-            printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%u%s</td></tr>\n",
-                              color, entry.d_name, entry.d_name, (int)size, measure);
+            printf_s=snprintf(html+pagesize,maxsize,
+                              "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%u%s</td></tr>\n",
+                              color, namelist[i]->d_name, namelist[i]->d_name, (int)size, measure);
             maxsize-=printf_s;
             pagesize+=printf_s;
 
         } else if (S_ISDIR(f_mode)) { //Directory entry
-            print=true;
-            //Printed only if it is not "." and if ".." and we aren't in the root directory
             //Table row for the dir
-            if ((!parent && (entry.d_name[0] == '.' && entry.d_name[1] == '.' && entry.d_name[2] == '\0')) ||  (!(entry.d_name[0] == '.' && entry.d_name[1] == '\0'))) {
-                printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"%s/\">%s/</a></td><td>-</td></tr>\n",entry.d_name, entry.d_name);
-                maxsize-=printf_s;
-                pagesize+=printf_s;
-            }
-
+            printf_s=snprintf(html+pagesize,maxsize,
+                              "<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"%s/\">%s/</a></td><td>-</td></tr>\n",
+                              namelist[i]->d_name, namelist[i]->d_name);
+            maxsize-=printf_s;
+            pagesize+=printf_s;
         }
+
+        free(namelist[i]);
     }
 
-#if fdopendir
-    //Free the allocated memory without closing the file descriptor (it isn't opened here and it won't be closed here)
-    free(dp);
-#else
-    closedir(dp);
-#endif
+    free(namelist);
 
     printf_s=snprintf(html+pagesize,maxsize,"</table>%s",HTMLFOOT);
     pagesize+=printf_s;
