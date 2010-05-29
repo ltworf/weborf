@@ -4,3 +4,4 @@
 - Create a Doxyfile to use doxygen
 - Put -g when compiling in debug mode
 - able to use libmagic to send content-type in both GET and PROPFIND
+- Column with time of last modify in file listing
