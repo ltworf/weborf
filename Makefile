@@ -90,8 +90,6 @@ install: uninstall installdirs
 	#install -m 644 python_cgi_weborf/__init__.py $(DESTDIR)/$(PYDIR)
 	#install -m 644 python_cgi_weborf/cgi.py $(DESTDIR)/$(PYDIR)
 
-	#Use in case of debian package makefile
-	#install -m 755 weborf.daemon debian/weborf-daemon.init
 	install -m 755 weborf.daemon $(DESTDIR)/$(DAEMONDIR)/weborf
 
 	install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/; fi
