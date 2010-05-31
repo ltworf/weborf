@@ -30,6 +30,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "options.h"
 
+typedef struct {
+    long int id;                //ID of the thread
+} thread_prop_t;
 
 typedef struct {
     ssize_t len;                //length of the array

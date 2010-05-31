@@ -77,7 +77,7 @@ void init_threads(unsigned int count) {
 
         thread_info.count+=effective; // increases the count of started threads
 #ifdef THREADDBG
-        syslog(LOG_DEBUG, "There are %d free threads", t_free);
+        syslog(LOG_DEBUG, "There are %d free threads", thread_info.free);
 #endif
 
 #ifdef SERVERDBG

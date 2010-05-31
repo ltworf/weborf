@@ -34,6 +34,9 @@ extern bool virtual_host;                   //True if must check for virtual hos
 extern char ** environ;                     //To reset environ vars
 extern array_ll cgi_paths;                  //Paths to cgi binaries
 
+__thread thread_prop_t thread_prop;
+
+
 void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
     int from;
     char * lasts;//Used by strtok_r
@@ -154,9 +157,9 @@ Doesn't do busy waiting
 */
 void * instance(void * nulla) {
     //General init of the thread
-    long int id=(long int)nulla;//Set thread's id
+    thread_prop.id=(long int)nulla;//Set thread's id
 #ifdef THREADDBG
-    syslog(LOG_DEBUG,"Starting thread %ld",id);
+    syslog(LOG_DEBUG,"Starting thread %ld",thread_prop.id);
 #endif
 
     //Vars
@@ -183,24 +186,24 @@ void * instance(void * nulla) {
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
 #endif
-        change_free_thread(id,0,-1);
+        change_free_thread(thread_prop.id,0,-1);
         pthread_exit(0);
     }
 
     //Start accepting sockets
-    change_free_thread(id,1,0);
+    change_free_thread(thread_prop.id,1,0);
 
     while (true) {
         q_get(&queue, &sock);//Gets a socket from the queue
-        change_free_thread(id,-1,0);//Sets this thread as busy
+        change_free_thread(thread_prop.id,-1,0);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order
 #ifdef THREADDBG
-            syslog(LOG_DEBUG,"Terminating thread %ld",id);
+            syslog(LOG_DEBUG,"Terminating thread %ld",thread_prop.id);
 #endif
             free(buf);
             buffer_free(&read_b);
-            change_free_thread(id,0,-1);//Reduces count of threads
+            change_free_thread(thread_prop.id,0,-1);//Reduces count of threads
             pthread_exit(0);
         }
 
@@ -214,12 +217,12 @@ void * instance(void * nulla) {
 #endif
 
 #ifdef THREADDBG
-        syslog(LOG_DEBUG,"Thread %ld: Reading from socket",id);
+        syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
 #endif
-        handle_requests(sock,buf,&read_b,&bufFull,&connection_prop,id);
+        handle_requests(sock,buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
 
 #ifdef THREADDBG
-        syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",id);
+        syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",thread_prop.id);
 #endif
 
         close(sock);//Closing the socket
@@ -227,7 +230,7 @@ void * instance(void * nulla) {
         buffer_reset (&read_b);
 
 
-        change_free_thread(id,1,0);//Sets this thread as free
+        change_free_thread(thread_prop.id,1,0);//Sets this thread as free
     }
 
     return NULL;//Never reached
