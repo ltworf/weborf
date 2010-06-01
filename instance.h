@@ -121,7 +121,6 @@ int send_http_header_scode(int sock, char *code, int size, char *headers);
 void piperr();
 void modURL(char *url);
 int request_auth(int sock, char *descr);
-int check_auth(int sock, connection_t * connection_prop);
 string_t read_post_data(int sock, connection_t * connection_prop, buffered_read_t * read_b);
 char *get_basedir(char *http_param);
 void handle_requests(int sock, char *buf, buffered_read_t * read_b, int *bufFull, connection_t * connection_prop, long int id);

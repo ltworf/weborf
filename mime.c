@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include <magic.h>
-
 #include "mime.h"
 
 /**
@@ -28,25 +27,34 @@ Returns a token for the libmagic.
 buffer must NOT be shared amongst threads.
 The size of buffer is assumed to be at least MIMETYPELEN
 */
-inline magic_t init_mime(char* buffer) {
-    magic_t token=magic_open(MAGIC_SYMLINK | MAGIC_MIME_TYPE);
-    if (token==NULL) return NULL;
-    magic_load(token,NULL);                     //Load the database
-    return token;
+inline int init_mime(magic_t *token) {
+#ifdef SEND_MIMETYPES
+    *token=magic_open(MAGIC_SYMLINK | MAGIC_MIME_TYPE);
+    if (*token==NULL) return 1;
+    return magic_load(*token,NULL);                     //Load the database
+#else
+    *token=NULL;
+    return 0;
+#endif
+    
+}
+
+inline void release_mime(magic_t token) {
+    if (token==NULL) return;
+    magic_close(token);
 }
 
 /**
 returns mimetype of an opened file descriptor
 */
 inline const char* get_mime_fd (magic_t token,int fd) {
-    
+    if (token==NULL) return NULL;
     /*Dup file to work around the magic_descriptor
     that will close the file
     */
     int new_fd=dup(fd);
-    const char *r = magic_descriptor(token,new_fd);
+    return magic_descriptor(token,new_fd);
     //lseek(fd,0,SEEK_SET);
-    return r;
 }
 
 /*int main () {

@@ -36,6 +36,73 @@ extern array_ll cgi_paths;                  //Paths to cgi binaries
 
 __thread thread_prop_t thread_prop;
 
+/**
+This function checks if the authentication can be granted or not calling the external program.
+Returns 0 if authorization is granted.
+*/
+static inline int check_auth(int sock, connection_t* connection_prop) {
+    if (authsock==NULL) return 0;
+    
+    char username[PWDLIMIT*2];
+    char* password=username; //will be changed if there is a password
+
+    char* auth=strstr(connection_prop->http_param,"Authorization: Basic ");//Locates the auth information
+    if (auth==NULL) { //No auth informations
+        username[0]=0;
+        //password[0]=0;
+    } else { //Retrieves provided username and password
+        char*auth_end=strstr(auth,"\r\n");//Finds the end of the header
+        char a[PWDLIMIT*2];
+        auth+=21;//Moves the begin of the string to exclude Authorization: Basic
+        if ((auth_end-auth+1)<(PWDLIMIT*2))
+            memcpy(&a,auth,auth_end-auth); //Copies the base64 encoded string to a temp buffer
+        else { //Auth string is too long for the buffer
+#ifdef SERVERDBG
+            syslog(LOG_ERR,"Unable to accept authentication, buffer is too small");
+#endif
+            return ERR_NOMEM;
+        }
+
+        a[auth_end-auth]=0;
+        decode64(username,a);//Decodes the base64 string
+
+        password=strstr(username,":");//Locates the separator :
+        password[0]=0;//Nulls the separator to split username and password
+        password++;//make password point to the beginning of the password
+    }
+
+    short int result=-1;
+    {
+        int s,len;
+        struct sockaddr_un remote;
+        s=socket(AF_UNIX,SOCK_STREAM,0);
+
+        remote.sun_family = AF_UNIX;
+        strcpy(remote.sun_path, authsock);
+        len = strlen(remote.sun_path) + sizeof(remote.sun_family);
+        if (connect(s, (struct sockaddr *)&remote, len) == -1) {//Unable to connect
+            return -1;
+        }
+        char* auth_str=malloc(HEADBUF+PWDLIMIT*2);
+        if (auth_str==NULL) {
+#ifdef SERVERDBG
+            syslog(LOG_CRIT,"Not enough memory to allocate buffers");
+#endif
+            return -1;
+        }
+
+        int auth_str_l=snprintf(auth_str,HEADBUF+PWDLIMIT*2,"%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",connection_prop->page,connection_prop->ip_addr,connection_prop->method,username,password,connection_prop->http_param);
+        if (write(s,auth_str,auth_str_l)==auth_str_l && read(s,auth_str,1)==0) {//All data written and no output, ok
+            result=0;
+        }
+
+        close(s);
+        free(auth_str);
+    }
+
+    return result;
+}
+
 
 void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
     int from;
@@ -168,11 +235,7 @@ void * instance(void * nulla) {
     buffered_read_t read_b;                         //Buffer for buffered reader
     int sock=0;                                     //Socket with the client
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
-
-#ifdef SEND_MIMETYPES
-    thread_prop.mime_token=init_mime(thread_prop.str_mime);
-#endif
-
+    
     signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
 
 #ifdef IPV6
@@ -183,9 +246,10 @@ void * instance(void * nulla) {
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    if (buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL) { //Unable to allocate the buffer
+    if (init_mime(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL) { //Unable to allocate the buffer
         buffer_free(&read_b);             //Frees buffered reader if it was allocated or does nothing
         free(buf);                        //Frees buf if it was allocated or does nothing
+        release_mime(thread_prop.mime_token);
 
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
@@ -207,6 +271,7 @@ void * instance(void * nulla) {
 #endif
             free(buf);
             buffer_free(&read_b);
+            release_mime(thread_prop.mime_token);
             change_free_thread(thread_prop.id,0,-1);//Reduces count of threads
             pthread_exit(0);
         }
@@ -230,7 +295,6 @@ void * instance(void * nulla) {
 #endif
 
         close(sock);//Closing the socket
-        //memset(buf,0,bufFull);//Sets to 0 the buffer, only the part used for the previous
         buffer_reset (&read_b);
 
 
@@ -413,7 +477,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         real_basedir=basedir;
     }
 
-    if ((authsock!=NULL) && check_auth(sock,connection_prop)!=0) { //If auth is required
+    if (check_auth(sock,connection_prop)!=0) { //If auth is required
         retval = ERR_NOAUTH;
         post_param.data=NULL;
         connection_prop->strfile=NULL;
@@ -977,7 +1041,7 @@ int write_file(int sock,connection_t* connection_prop) {
     }
 
     int reads,wrote;
-    
+
     //Sends file
     while (count>0 && (reads=read(connection_prop->strfile_fd, buf, FILEBUF<count? FILEBUF:count ))>0) {
         count-=reads;
@@ -1105,71 +1169,6 @@ int send_http_header_scode(int sock,char* code, int size,char* headers) {
 }
 
 /**
-This function checks if the authentication can be granted or not calling the external program.
-Returns 0 if authorization is granted.
-*/
-int check_auth(int sock, connection_t* connection_prop) {
-    char username[PWDLIMIT*2];
-    char* password=username; //will be changed if there is a password
-
-    char* auth=strstr(connection_prop->http_param,"Authorization: Basic ");//Locates the auth information
-    if (auth==NULL) { //No auth informations
-        username[0]=0;
-        //password[0]=0;
-    } else { //Retrieves provided username and password
-        char*auth_end=strstr(auth,"\r\n");//Finds the end of the header
-        char a[PWDLIMIT*2];
-        auth+=21;//Moves the begin of the string to exclude Authorization: Basic
-        if ((auth_end-auth+1)<(PWDLIMIT*2))
-            memcpy(&a,auth,auth_end-auth); //Copies the base64 encoded string to a temp buffer
-        else { //Auth string is too long for the buffer
-#ifdef SERVERDBG
-            syslog(LOG_ERR,"Unable to accept authentication, buffer is too small");
-#endif
-            return ERR_NOMEM;
-        }
-
-        a[auth_end-auth]=0;
-        decode64(username,a);//Decodes the base64 string
-
-        password=strstr(username,":");//Locates the separator :
-        password[0]=0;//Nulls the separator to split username and password
-        password++;//make password point to the beginning of the password
-    }
-
-    short int result=-1;
-    {
-        int s,len;
-        struct sockaddr_un remote;
-        s=socket(AF_UNIX,SOCK_STREAM,0);
-
-        remote.sun_family = AF_UNIX;
-        strcpy(remote.sun_path, authsock);
-        len = strlen(remote.sun_path) + sizeof(remote.sun_family);
-        if (connect(s, (struct sockaddr *)&remote, len) == -1) {//Unable to connect
-            return -1;
-        }
-        char* auth_str=malloc(HEADBUF+PWDLIMIT*2);
-        if (auth_str==NULL) {
-#ifdef SERVERDBG
-            syslog(LOG_CRIT,"Not enough memory to allocate buffers");
-#endif
-            return -1;
-        }
-
-        int auth_str_l=snprintf(auth_str,HEADBUF+PWDLIMIT*2,"%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",connection_prop->page,connection_prop->ip_addr,connection_prop->method,username,password,connection_prop->http_param);
-        if (write(s,auth_str,auth_str_l)==auth_str_l && read(s,auth_str,1)==0) {//All data written and no output, ok
-            result=0;
-        }
-
-        close(s);
-        free(auth_str);
-    }
-
-    return result;
-}
-
-/**
 This function reads post data and returns the pointer to the buffer containing the data (if there is any)
 or NULL if there was no data.
 If it doesn't return a null value, the returned pointer must be freed.
@@ -1291,7 +1290,6 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
     len_head=snprintf(head,left_head,"%s\r\n",headers);
     head+=len_head;
     left_head-=len_head;
-
 
     wrote=write (sock,h_ptr,HEADBUF-left_head);
     free(h_ptr);

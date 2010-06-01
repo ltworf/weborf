@@ -29,7 +29,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "options.h"
 #include "types.h"
 
-inline magic_t init_mime(char* buffer);
+inline int init_mime(magic_t *token);
+inline void release_mime(magic_t token);
 inline const char* get_mime_fd (magic_t token,int fd);
 
 #endif

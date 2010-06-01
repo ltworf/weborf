@@ -34,7 +34,6 @@ typedef struct {
     long int id;                //ID of the thread
 #ifdef SEND_MIMETYPES
     magic_t mime_token;         //Token for libmagic
-    char str_mime[MIMETYPELEN];
 #endif
 } thread_prop_t;
 
