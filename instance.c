@@ -42,7 +42,7 @@ Returns 0 if authorization is granted.
 */
 static inline int check_auth(int sock, connection_t* connection_prop) {
     if (authsock==NULL) return 0;
-    
+
     char username[PWDLIMIT*2];
     char* password=username; //will be changed if there is a password
 
@@ -235,7 +235,7 @@ void * instance(void * nulla) {
     buffered_read_t read_b;                         //Buffer for buffered reader
     int sock=0;                                     //Socket with the client
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
-    
+
     signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
 
 #ifdef IPV6
@@ -247,15 +247,10 @@ void * instance(void * nulla) {
 #endif
 
     if (init_mime(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL) { //Unable to allocate the buffer
-        buffer_free(&read_b);             //Frees buffered reader if it was allocated or does nothing
-        free(buf);                        //Frees buf if it was allocated or does nothing
-        release_mime(thread_prop.mime_token);
-
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
 #endif
-        change_free_thread(thread_prop.id,0,-1);
-        pthread_exit(0);
+        goto release_resources;
     }
 
     //Start accepting sockets
@@ -266,14 +261,7 @@ void * instance(void * nulla) {
         change_free_thread(thread_prop.id,-1,0);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order
-#ifdef THREADDBG
-            syslog(LOG_DEBUG,"Terminating thread %ld",thread_prop.id);
-#endif
-            free(buf);
-            buffer_free(&read_b);
-            release_mime(thread_prop.mime_token);
-            change_free_thread(thread_prop.id,0,-1);//Reduces count of threads
-            pthread_exit(0);
+            goto release_resources;
         }
 
         //Converting address to string
@@ -297,10 +285,20 @@ void * instance(void * nulla) {
         close(sock);//Closing the socket
         buffer_reset (&read_b);
 
-
         change_free_thread(thread_prop.id,1,0);//Sets this thread as free
     }
 
+
+
+release_resources:
+#ifdef THREADDBG
+    syslog(LOG_DEBUG,"Terminating thread %ld",thread_prop.id);
+#endif
+    free(buf);
+    buffer_free(&read_b);
+    release_mime(thread_prop.mime_token);
+    change_free_thread(thread_prop.id,0,-1);//Reduces count of threads
+    pthread_exit(0);
     return NULL;//Never reached
 }
 
@@ -308,7 +306,7 @@ void * instance(void * nulla) {
 This function does some changes on the URL.
 The url will never be longer than the original one.
 */
-void modURL(char* url) {
+static inline void modURL(char* url) {
     //Prevents the use of .. to access the whole filesystem
     strReplace(url,"../",'\0');
 
@@ -441,7 +439,7 @@ Returns the list of supported methods. In theory this list should be
 different depending on the URI requested. But this method will return
 the same list for everything.
 */
-int options (int sock, connection_t* connection_prop) {
+static inline int options (int sock, connection_t* connection_prop) {
 
 #ifdef WEBDAV
 #define ALLOWED "Allow: GET,POST,PUT,DELETE,OPTIONS,PROPFIND,MKCOL,COPY,MOVE\r\nDAV: 1,2\r\nDAV: <http://apache.org/dav/propset/fs/1>\r\nMS-Author-Via: DAV\r\n"

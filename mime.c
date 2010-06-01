@@ -36,7 +36,7 @@ inline int init_mime(magic_t *token) {
     *token=NULL;
     return 0;
 #endif
-    
+
 }
 
 inline void release_mime(magic_t token) {

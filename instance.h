@@ -119,7 +119,6 @@ int exec_page(int sock, char *executor, string_t * post_param, char *real_basedi
 int send_err(int sock, int err, char *descr, char *ip_addr);
 int send_http_header_scode(int sock, char *code, int size, char *headers);
 void piperr();
-void modURL(char *url);
 int request_auth(int sock, char *descr);
 string_t read_post_data(int sock, connection_t * connection_prop, buffered_read_t * read_b);
 char *get_basedir(char *http_param);
@@ -127,5 +126,4 @@ void handle_requests(int sock, char *buf, buffered_read_t * read_b, int *bufFull
 int send_http_header_full(int sock, int code, unsigned int size, char *headers, bool content, time_t timestamp, connection_t * connection_prop);
 int delete_file(int sock,connection_t* connection_prop);
 int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b);
-int options (int sock, connection_t* connection_prop);
 #endif
