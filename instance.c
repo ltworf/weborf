@@ -169,6 +169,10 @@ void * instance(void * nulla) {
     int sock=0;                                     //Socket with the client
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
 
+#ifdef SEND_MIMETYPES
+    thread_prop.mime_token=init_mime(thread_prop.str_mime);
+#endif
+
     signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
 
 #ifdef IPV6
@@ -886,16 +890,7 @@ If the file is larger, it will be sent using write_compressed_file,
 see that function for details.
 */
 int write_file(int sock,connection_t* connection_prop) {
-    char a[RBUFFER]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
-    //If the file has the same date, there is no need of sending it again
-    if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER,13)) {//Find if it is a range request, 13 is strlen of "if-none-match"
-        time_t etag=(time_t)strtol(a+1,NULL,0);
-        if (connection_prop->strfile_stat.st_mtime==etag) {//Browser has the item in its cache, sending 304
-            send_http_header_full(sock,304,0,NULL,true,etag,connection_prop);
-            return 0;
-        }
-    }
 #ifdef __COMPRESSION
     if (connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN && connection_prop->strfile_stat.st_size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
         char* accept;
@@ -915,6 +910,17 @@ int write_file(int sock,connection_t* connection_prop) {
     }
 #endif
 
+    char a[RBUFFER+MIMETYPELEN+16]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
+
+    //If the file has the same date, there is no need of sending it again
+    if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER,13)) {//Find if it is a range request, 13 is strlen of "if-none-match"
+        time_t etag=(time_t)strtol(a+1,NULL,0);
+        if (connection_prop->strfile_stat.st_mtime==etag) {//Browser has the item in its cache, sending 304
+            send_http_header_full(sock,304,0,NULL,true,etag,connection_prop);
+            return 0;
+        }
+    }
+
     char* buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
 #ifdef SERVERDBG
@@ -924,6 +930,18 @@ int write_file(int sock,connection_t* connection_prop) {
     }
 
     off_t count=connection_prop->strfile_stat.st_size;//Bytes to send to the client
+
+
+//Creates the mimetype header or sets it to null
+#ifdef SEND_MIMETYPES
+    char mime_header[MIMETYPELEN+16];
+    {
+        const char* m=get_mime_fd (thread_prop.mime_token,connection_prop->strfile_fd);
+        snprintf(mime_header,MIMETYPELEN+16,"Content-Type: %s\r\n",m);
+    }
+#else
+    char * mime_header=NULL;
+#endif
 
 #ifdef __RANGE
     if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER,5)) {//Find if it is a range request 5 is strlen of "range"
@@ -946,7 +964,7 @@ int write_file(int sock,connection_t* connection_prop) {
         if (to==0) { //If no to is specified, it is to the end of the file
             to=connection_prop->strfile_stat.st_size-1;
         }
-        snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%d-%d/%d\r\n",from,to,(int)connection_prop->strfile_stat.st_size);
+        snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%d-%d/%d\r\n%s",from,to,(int)connection_prop->strfile_stat.st_size,mime_header);
         lseek(connection_prop->strfile_fd,from,SEEK_SET);
         count=to-from+1;
 
@@ -955,13 +973,13 @@ int write_file(int sock,connection_t* connection_prop) {
     } else //Normal request
 #endif
     {
-        send_http_header_full(sock,200,connection_prop->strfile_stat.st_size,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+        send_http_header_full(sock,200,connection_prop->strfile_stat.st_size,mime_header,true,connection_prop->strfile_stat.st_mtime,connection_prop);
     }
 
     int reads,wrote;
-
+    
     //Sends file
-    while (count>0 && (reads=read(connection_prop->strfile_fd, buf, FILEBUF<count? FILEBUF:count ))!=0) {
+    while (count>0 && (reads=read(connection_prop->strfile_fd, buf, FILEBUF<count? FILEBUF:count ))>0) {
         count-=reads;
         wrote=write(sock,buf,reads);
         if (wrote!=reads) { //Error writing to the socket

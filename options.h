@@ -90,6 +90,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //The following header can be disabled to increase a little the speed
 //#define SEND_LAST_MODIFIED_HEADER
 
+#define SEND_MIMETYPES          //Enables support to sending the mimetype to the client
+#ifdef SEND_MIMETYPES
+#define MIMETYPELEN 15
+#endif
+
 //-------------RANGE
 #define __RANGE                 //Enables support to range (partial download)
 

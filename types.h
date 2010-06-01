@@ -26,12 +26,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/stat.h>
 #include <unistd.h>
 #include <netinet/in.h>
-
+#include <magic.h>
 
 #include "options.h"
 
 typedef struct {
     long int id;                //ID of the thread
+#ifdef SEND_MIMETYPES
+    magic_t mime_token;         //Token for libmagic
+    char str_mime[MIMETYPELEN];
+#endif
 } thread_prop_t;
 
 typedef struct {

@@ -67,7 +67,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     struct tm ts;
     struct stat f_prop; //File's property
     char last_modified[URI_LEN];
-    
+
     for (i=0; i<counter; i++) {
         //Skipping hidden files, except for .. link
         if (namelist[i]->d_name[0] == '.' && (!(parent==true && namelist[i]->d_name[1] == '.' && namelist[i]->d_name[2] == '\0'))) {
@@ -78,10 +78,10 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
         snprintf(path, INBUFFER,"%s/%s", connection_prop->strfile, namelist[i]->d_name);
 
         //Stat on the entry
-        
+
         stat(path, &f_prop);
         int f_mode = f_prop.st_mode; //Get's file's mode
-        
+
         //get last modified
         localtime_r(&f_prop.st_mtime,&ts);
         strftime(last_modified,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);

@@ -19,7 +19,7 @@ CC=gcc
 OFLAGS=-O2
 #-pedantic -Wextra
 CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat -g
-LDFLAGS=-lpthread
+LDFLAGS=-lpthread -lmagic
 
 #Opensolaris flags
 #CFLAGS=-D_POSIX_PTHREAD_SEMANTICS  -Wall $(DEFS) $(ARCHFLAGS)  -Wformat
@@ -43,7 +43,7 @@ weborf: debug
 cgi:
 	cd cgi_wrapper; make
 
-debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o
+debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o mime.o
 	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o weborf
 
 clean: 
