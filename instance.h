@@ -72,7 +72,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define POST 1
 #define PUT 2
 #define DELETE 3
-
+#define OPTIONS 8
 
 #ifdef WEBDAV
 #define PROPFIND 4
@@ -81,7 +81,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define MKCOL 7
 #endif
 
-#define OPTIONS 8
+
+
+#define NO_ACTION -120
 
 //Errors
 #define ERR_PRECONDITION_FAILED -14
@@ -112,9 +114,6 @@ int write_dir(int sock, char *real_basedir, connection_t * connection_prop);
 void *instance(void *);
 int send_page(int sock, buffered_read_t * read_b, connection_t * connection_prop);
 int write_file(int sock, connection_t * connection_prop);
-#ifdef __COMPRESSION
-int write_compressed_file(int sock, unsigned int size, time_t timestamp, connection_t * connection_prop);
-#endif
 int exec_page(int sock, char *executor, string_t * post_param, char *real_basedir, connection_t * connection_prop);
 int send_err(int sock, int err, char *descr, char *ip_addr);
 int send_http_header_scode(int sock, char *code, int size, char *headers);

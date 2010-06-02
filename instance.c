@@ -914,7 +914,26 @@ strfile is the file to compress and send
 size is the size of the uncompressed file
 */
 #ifdef __COMPRESSION
-int write_compressed_file(int sock,unsigned int size,time_t timestamp,connection_t* connection_prop ) {
+static inline int write_compressed_file(int sock,unsigned int size,time_t timestamp,connection_t* connection_prop ) {
+
+    if (connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN && connection_prop->strfile_stat.st_size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
+        char* accept;
+
+        if ((accept=strstr(connection_prop->http_param,"Accept-Encoding:"))!=NULL) {
+            char* end=strstr(accept,"\r\n");
+
+            //Avoid to parse the entire header.
+            end[0]='\0';
+            char* gzip=strstr(accept,"gzip");
+            end[0]='\r';
+
+            if (gzip==NULL) {
+                return NO_ACTION;
+            }
+        }
+    }
+
+
     connection_prop->keep_alive=false;
     send_http_header_full(sock,200,size,"Connection: close\r\nContent-Encoding: gzip\r\n",false,timestamp,connection_prop);
     int pid=fork();
@@ -938,6 +957,65 @@ int write_compressed_file(int sock,unsigned int size,time_t timestamp,connection
 }
 #endif
 
+
+/**
+Checks if the required resource has the same date as the one cached in the client.
+If they are the same, returns 0,
+returns 1 otherwise
+
+The char* buffer must be at least RBUFFER bytes (see definitions in options.h)
+*/
+static inline int check_etag(int sock,connection_t* connection_prop,char *a) {
+    //Find if it is a range request, 13 is strlen of "if-none-match"
+    if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER,13)) {
+        time_t etag=(time_t)strtol(a+1,NULL,0);
+        if (connection_prop->strfile_stat.st_mtime==etag) {
+            //Browser has the item in its cache, sending 304
+            send_http_header_full(sock,304,0,NULL,true,etag,connection_prop);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+static inline off_t bytes_to_send(int sock,connection_t* connection_prop,char *a) {
+    errno=0;
+#ifdef __RANGE
+    if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER,5)) {//Find if it is a range request 5 is strlen of "range"
+        int from,to;
+
+        {
+            //Locating from and to
+            //Range: bytes=12323-123401
+            char* eq=strstr(a,"=");
+            char* sep=strstr(eq,"-");
+            if (eq==NULL||sep==NULL) {//Invalid data in Range header.
+                errno =ERR_NOTHTTP;
+                return ERR_NOTHTTP;
+            }
+            sep[0]=0;
+            from=strtol(eq+1,NULL,0);
+            to=strtol(sep+1,NULL,0);
+        }
+
+        if (to==0) { //If no to is specified, it is to the end of the file
+            to=connection_prop->strfile_stat.st_size-1;
+        }
+        snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%d-%d/%d\r\n",from,to,(int)connection_prop->strfile_stat.st_size);
+        lseek(connection_prop->strfile_fd,from,SEEK_SET);
+        off_t count=to-from+1;
+
+        send_http_header_full(sock,206,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+        return count;
+    } else //Normal request
+#endif
+    {
+        send_http_header_full(sock,200,connection_prop->strfile_stat.st_size,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+        return connection_prop->strfile_stat.st_size;
+    }
+}
+
 /**
 This function reads a file and writes it to the socket.
 Also sends the http header with the content length header
@@ -952,36 +1030,20 @@ If the file is larger, it will be sent using write_compressed_file,
 see that function for details.
 */
 int write_file(int sock,connection_t* connection_prop) {
-
-#ifdef __COMPRESSION
-    if (connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN && connection_prop->strfile_stat.st_size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
-        char* accept;
-
-        if ((accept=strstr(connection_prop->http_param,"Accept-Encoding:"))!=NULL) {
-            char* end=strstr(accept,"\r\n");
-
-            //Avoid to parse the entire header.
-            end[0]='\0';
-            char* gzip=strstr(accept,"gzip");
-            end[0]='\r';
-
-            if (gzip!=NULL) {
-                return write_compressed_file(sock,stat_f.st_size,stat_f.st_mtime,connection_prop);
-            }
-        }
-    }
-#endif
-
+    
     char a[RBUFFER+MIMETYPELEN+16]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
-    //If the file has the same date, there is no need of sending it again
-    if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER,13)) {//Find if it is a range request, 13 is strlen of "if-none-match"
-        time_t etag=(time_t)strtol(a+1,NULL,0);
-        if (connection_prop->strfile_stat.st_mtime==etag) {//Browser has the item in its cache, sending 304
-            send_http_header_full(sock,304,0,NULL,true,etag,connection_prop);
-            return 0;
-        }
+    //Check if the resource cached in the client is the same
+    //printf("etag 0\n");
+    //if (check_etag(sock,connection_prop,&a[0])==0) return 0;
+    //printf("etag 1\n");
+
+#ifdef __COMPRESSION
+    {
+        int c= write_compressed_file(sock,stat_f.st_size,stat_f.st_mtime,connection_prop);
+        if (c!=NO_ACTION) return c;
     }
+#endif
 
     char* buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
@@ -991,52 +1053,16 @@ int write_file(int sock,connection_t* connection_prop) {
         return ERR_NOMEM;//If no memory is available
     }
 
-    off_t count=connection_prop->strfile_stat.st_size;//Bytes to send to the client
 
-
-//Creates the mimetype header or sets it to null
-#ifdef SEND_MIMETYPES
-    char mime_header[MIMETYPELEN+16];
-    {
-        const char* m=get_mime_fd (thread_prop.mime_token,connection_prop->strfile_fd);
-        snprintf(mime_header,MIMETYPELEN+16,"Content-Type: %s\r\n",m);
+    //Determines how many bytes send, depending on file size and ranges
+    off_t count= bytes_to_send(sock,connection_prop,&a[0]);
+    if (errno !=0) {
+        printf("count %d\n",count);
+        int e=errno;
+        errno=0;
+        return e;
     }
-#else
-    char * mime_header=NULL;
-#endif
-
-#ifdef __RANGE
-    if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER,5)) {//Find if it is a range request 5 is strlen of "range"
-        int from,to;
-
-        {
-            //Locating from and to
-            //Range: bytes=12323-123401
-            char* eq=strstr(a,"=");
-            char* sep=strstr(eq,"-");
-            if (eq==NULL||sep==NULL) {//Invalid data in Range header.
-                free(buf);
-                return ERR_NOTHTTP;
-            }
-            sep[0]=0;
-            from=strtol(eq+1,NULL,0);
-            to=strtol(sep+1,NULL,0);
-        }
-
-        if (to==0) { //If no to is specified, it is to the end of the file
-            to=connection_prop->strfile_stat.st_size-1;
-        }
-        snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%d-%d/%d\r\n%s",from,to,(int)connection_prop->strfile_stat.st_size,mime_header);
-        lseek(connection_prop->strfile_fd,from,SEEK_SET);
-        count=to-from+1;
-
-        send_http_header_full(sock,206,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
-
-    } else //Normal request
-#endif
-    {
-        send_http_header_full(sock,200,connection_prop->strfile_stat.st_size,mime_header,true,connection_prop->strfile_stat.st_mtime,connection_prop);
-    }
+    
 
     int reads,wrote;
 
