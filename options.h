@@ -62,6 +62,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define DATEBUFFER 50           //Buffer for text date
 #define URI_LEN 256
 #define PATH_LEN 1024
+#define MIMETYPELEN 15          //Size of mimetype string
 
 //Number of index pages allowed to search
 #define MAXINDEXCOUNT 10
@@ -91,9 +92,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define SEND_LAST_MODIFIED_HEADER
 
 #define SEND_MIMETYPES          //Enables support to sending the mimetype to the client
-#ifdef SEND_MIMETYPES
-#define MIMETYPELEN 15
-#endif
+
 
 //-------------RANGE
 #define __RANGE                 //Enables support to range (partial download)

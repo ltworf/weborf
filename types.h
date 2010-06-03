@@ -32,9 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct {
     long int id;                //ID of the thread
-#ifdef SEND_MIMETYPES
     magic_t mime_token;         //Token for libmagic
-#endif
 } thread_prop_t;
 
 typedef struct {

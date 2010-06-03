@@ -107,6 +107,8 @@ default_prop:
 /**
 This function sends a xml property to the client.
 It can be called only by funcions aware of this xml, because it sends only partial xml.
+
+If the file can't be opened in readonly mode, this function does nothing.
 */
 int printprops(int sock,connection_t* connection_prop,char*props[],char* file,char*filename,bool parent) {
     int i,p_len;
@@ -116,6 +118,7 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     bool invalid_props=false; //Used to avoid sending the invalid props if there isn't any
 
     int file_fd=open(file,O_RDONLY);
+    if (file_fd==-1) return 0;
     fstat(file_fd, &stat_s);
 
 
@@ -179,6 +182,7 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
 
     write(sock,"</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>",58);
 
+    //Lists the unknown requested props
     if (invalid_props) {
         write(sock,"<D:propstat><prop>",18);
         for (i=0; props[i]!=NULL; i++) {

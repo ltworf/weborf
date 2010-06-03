@@ -58,9 +58,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "base64.h"
 #include "types.h"
 
-#ifdef SEND_MIMETYPES
 #include "mime.h"
-#endif
 
 #ifdef WEBDAV
 #include "webdav.h"

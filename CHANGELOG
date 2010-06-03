@@ -1,6 +1,7 @@
 0.13
 - Shows last modified column in directory listing (Rev 419)
 - Webdav module can send mimetype
+- Bug: fixes denial of service in case of malformed header range (Rev 429)
 
 0.12
 - Fixed bug: now threads are closed again (Rev 305)
