@@ -2,4 +2,3 @@
 - use openSSL (instead of using read and write, use wrappers so openssl or direct accesso to socket can be used)
 - Create a Doxyfile to use doxygen
 - able to use libmagic to send content-type in both GET and PROPFIND
-- Column with time of last modify in file listing

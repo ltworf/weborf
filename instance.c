@@ -1030,7 +1030,7 @@ If the file is larger, it will be sent using write_compressed_file,
 see that function for details.
 */
 int write_file(int sock,connection_t* connection_prop) {
-    
+
     char a[RBUFFER+MIMETYPELEN+16]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
     //Check if the resource cached in the client is the same
@@ -1052,9 +1052,9 @@ int write_file(int sock,connection_t* connection_prop) {
         errno=0;
         return e;
     }
-    
-    
-        char *buf=malloc(FILEBUF);//Buffer to read from file
+
+
+    char *buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers");
@@ -1062,7 +1062,7 @@ int write_file(int sock,connection_t* connection_prop) {
         return ERR_NOMEM;//If no memory is available
     }
 
-    
+
 
     int reads,wrote;
 

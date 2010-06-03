@@ -1,5 +1,7 @@
 0.13
 - Shows last modified column in directory listing (Rev 419)
+- Webdav module can send mimetype
+
 0.12
 - Fixed bug: now threads are closed again (Rev 305)
 - Using keep-alive with CGI only in case of small pages (Rev 306)

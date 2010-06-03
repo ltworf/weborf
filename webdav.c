@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 extern char* authsock;
 extern char* basedir;
 extern bool virtual_host;
+extern __thread thread_prop_t thread_prop;
 
 /**
 This function will split the required props into a char* array.
@@ -114,7 +115,10 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     bool props_invalid[MAXPROPCOUNT]; //Used to keep trace of invalid props
     bool invalid_props=false; //Used to avoid sending the invalid props if there isn't any
 
-    stat(file, &stat_s);
+    int file_fd=open(file,O_RDONLY);
+    fstat(file_fd, &stat_s);
+
+
     write(sock,"<D:response>\n",13);
 
     {
@@ -129,53 +133,50 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     }
 
     write(sock,"<D:propstat><D:prop>",20);
-    {
-        //Writing properties
-        char prop_buffer[URI_LEN];
-        for (i=0; props[i]!=NULL; i++) {
-            props_invalid[i]=false;
 
-            prop_buffer[0]=0;
-            p_len-=2;
+    //Writing properties
+    char prop_buffer[URI_LEN];
+    for (i=0; props[i]!=NULL; i++) {
+        props_invalid[i]=false;
 
-            if (strstr(props[i],"getetag")!=NULL) {
-                //The casting might be wrong on some architectures
-                p_len=snprintf(prop_buffer,URI_LEN,"%d",(unsigned int)stat_s.st_mtime);
-                goto end_comp;
-            } else if (strstr(props[i],"getcontentlength")!=NULL) {
-                p_len=snprintf(prop_buffer,URI_LEN,"%lld",(long long)stat_s.st_size);
-                goto end_comp;
-            } else if (strstr(props[i],"resourcetype")!=NULL) {
-                if (S_ISDIR(stat_s.st_mode)) {
-                    snprintf(prop_buffer,URI_LEN,"<D:collection/>");
-                } else {
-                    prop_buffer[0]=' ';
-                    prop_buffer[1]=0;
-                }
-                goto end_comp;
-            } else if (strstr(props[i],"getlastmodified")!=NULL) { //Sends Date
-                struct tm ts;
-                localtime_r(&stat_s.st_mtime,&ts);
-                strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
-                goto end_comp;
+        prop_buffer[0]=0;
+        p_len-=2;
+
+        if (strstr(props[i],"getetag")!=NULL) {
+            //The casting might be wrong on some architectures
+            snprintf(prop_buffer,URI_LEN,"%d",(unsigned int)stat_s.st_mtime);
+        } else if (strstr(props[i],"getcontentlength")!=NULL) {
+            snprintf(prop_buffer,URI_LEN,"%lld",(long long)stat_s.st_size);
+        } else if (strstr(props[i],"resourcetype")!=NULL) {
+            if (S_ISDIR(stat_s.st_mode)) {
+                snprintf(prop_buffer,URI_LEN,"<D:collection/>");
             } else {
-                invalid_props=true;
-                props_invalid[i]=true;
+                prop_buffer[0]=' ';
+                prop_buffer[1]=0;
             }
-end_comp: //goto pointing here are optimization. It would work also without
-            /*
-            if (strncmp(props[i],"D:getetag",p_len)==0) {
-                p_len=snprintf(prop_buffer,URI_LEN,"%d",stat_s.st_mtime);
-            }
-            */
-
-            if (prop_buffer[0]!=0) {
-                p_len=snprintf(buffer,URI_LEN,"<%s>%s</%s>\n",props[i],prop_buffer,props[i]);
-                write (sock,buffer,p_len);
-            }
-
+        } else if (strstr(props[i],"getlastmodified")!=NULL) { //Sends Date
+            struct tm ts;
+            localtime_r(&stat_s.st_mtime,&ts);
+            strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
+#ifdef SEND_MIMETYPES
+        } else if(strstr(props[i],"getcontenttype")!=NULL) { //Sends MIME type
+            const char* t=get_mime_fd(thread_prop.mime_token,file_fd);
+            snprintf(prop_buffer,URI_LEN,"%s",t);
+#endif
+        } else {
+            invalid_props=true;
+            props_invalid[i]=true;
         }
+
+
+        //Writes the <prop>value</prop> on the socket if the prop can be handled
+        if (prop_buffer[0]!=0) {
+            p_len=snprintf(buffer,URI_LEN,"<%s>%s</%s>\n",props[i],prop_buffer,props[i]);
+            write (sock,buffer,p_len);
+        }
+
     }
+
     write(sock,"</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>",58);
 
     if (invalid_props) {
@@ -190,6 +191,7 @@ end_comp: //goto pointing here are optimization. It would work also without
     }
     write(sock,"</D:response>",13);
 
+    close(file_fd);
     return 0;
 }
 
