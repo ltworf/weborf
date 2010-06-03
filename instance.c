@@ -537,6 +537,7 @@ escape:
     case ERR_NOMEM:
         return send_err(sock,503,"Service Unavailable",connection_prop->ip_addr);
     case ERR_NODATA:
+    case ERR_NOTHTTP:
         return send_err(sock,400,"Bad request",connection_prop->ip_addr);
     case ERR_FORBIDDEN:
         return send_err(sock,403,"Forbidden",connection_prop->ip_addr);
@@ -929,9 +930,8 @@ int write_file(int sock,connection_t* connection_prop) {
         {
             //Locating from and to
             //Range: bytes=12323-123401
-            char* eq=strstr(a,"=");
-            char* sep=strstr(eq,"-");
-            if (eq==NULL||sep==NULL) {//Invalid data in Range header.
+            char *eq, *sep;
+            if ((eq=strstr(a,"="))==NULL||(sep=strstr(eq,"-"))==NULL) {//Invalid data in Range header.
                 free(buf);
                 return ERR_NOTHTTP;
             }
