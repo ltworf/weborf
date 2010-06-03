@@ -47,9 +47,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <pthread.h>
 #include <sys/un.h>
 
-
-
-
 #include "buffered_reader.h"
 #include "options.h"
 #include "utils.h"
@@ -57,7 +54,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mystring.h"
 #include "base64.h"
 #include "types.h"
-
 #include "mime.h"
 
 #ifdef WEBDAV
