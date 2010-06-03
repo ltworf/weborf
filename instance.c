@@ -1045,7 +1045,16 @@ int write_file(int sock,connection_t* connection_prop) {
     }
 #endif
 
-    char* buf=malloc(FILEBUF);//Buffer to read from file
+    //Determines how many bytes send, depending on file size and ranges
+    off_t count= bytes_to_send(sock,connection_prop,&a[0]);
+    if (errno !=0) {
+        int e=errno;
+        errno=0;
+        return e;
+    }
+    
+    
+        char *buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers");
@@ -1053,15 +1062,6 @@ int write_file(int sock,connection_t* connection_prop) {
         return ERR_NOMEM;//If no memory is available
     }
 
-
-    //Determines how many bytes send, depending on file size and ranges
-    off_t count= bytes_to_send(sock,connection_prop,&a[0]);
-    if (errno !=0) {
-        printf("count %d\n",count);
-        int e=errno;
-        errno=0;
-        return e;
-    }
     
 
     int reads,wrote;
