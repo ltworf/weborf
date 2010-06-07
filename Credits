@@ -2,3 +2,4 @@ Angelo Puglisi, for fixing a warning and founding and fixing a buffer overflow
 Simone Veneziano, for improving performaces of a string function
 Prof. Giuseppe Pappalardo for the Synchronized queue
 Salvo Rinaldi for handling non pipelined connections and sending content length
+David Paleino and Enrico Zini for sponsoring the debian package and helping improving it

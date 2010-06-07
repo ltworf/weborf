@@ -39,15 +39,23 @@ inline int init_mime(magic_t *token) {
 
 }
 
+/**
+Releases the token for libmagic
+If the token is null, it will do nothing.
+*/
 inline void release_mime(magic_t token) {
     if (token==NULL) return;
+#ifdef SEND_MIMETYPES
     magic_close(token);
+#endif
 }
 
 /**
 returns mimetype of an opened file descriptor
 */
 inline const char* get_mime_fd (magic_t token,int fd) {
+
+#ifdef SEND_MIMETYPES
     if (token==NULL) return NULL;
     /*Dup file to work around the magic_descriptor
     that will close the file
@@ -55,6 +63,9 @@ inline const char* get_mime_fd (magic_t token,int fd) {
     int new_fd=dup(fd);
     return magic_descriptor(token,new_fd);
     //lseek(fd,0,SEEK_SET);
+#else
+    return NULL;
+#endif
 }
 
 /*int main () {
