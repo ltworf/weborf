@@ -896,10 +896,11 @@ int write_file(int sock,connection_t* connection_prop) {
     }
 #ifdef __COMPRESSION
     if (connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN && connection_prop->strfile_stat.st_size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
-        char* accept;
+        char *accept;
+        char *end;
 
-        if ((accept=strstr(connection_prop->http_param,"Accept-Encoding:"))!=NULL) {
-            char* end=strstr(accept,"\r\n");
+        if ((accept=strstr(connection_prop->http_param,"Accept-Encoding:"))!=NULL && (end=strstr(accept,"\r\n"))!=NULL) {
+            
 
             //Avoid to parse the entire header.
             end[0]='\0';
@@ -1097,6 +1098,8 @@ int check_auth(int sock, connection_t* connection_prop) {
         //password[0]=0;
     } else { //Retrieves provided username and password
         char*auth_end=strstr(auth,"\r\n");//Finds the end of the header
+        if (auth_end==NULL) return -1;
+        
         char a[PWDLIMIT*2];
         auth+=21;//Moves the begin of the string to exclude Authorization: Basic
         if ((auth_end-auth+1)<(PWDLIMIT*2))
@@ -1111,9 +1114,10 @@ int check_auth(int sock, connection_t* connection_prop) {
         a[auth_end-auth]=0;
         decode64(username,a);//Decodes the base64 string
 
-        password=strstr(username,":");//Locates the separator :
-        password[0]=0;//Nulls the separator to split username and password
-        password++;//make password point to the beginning of the password
+        if ((password=strstr(username,":"))!=NULL) {;//Locates the separator :
+            password[0]=0;//Nulls the separator to split username and password
+            password++;//make password point to the beginning of the password
+        }
     }
 
     short int result=-1;
@@ -1189,6 +1193,7 @@ char* get_basedir(char* http_param) {
 
     h+=8;//Removing "Host:" string
     char* end=strstr(h,"\r");
+    if (end==NULL) return basedir;
     end[0]=0;
     result=getenv(h);
     end[0]='\r';

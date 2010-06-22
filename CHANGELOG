@@ -1,3 +1,6 @@
+0.12.2
+- Fixes DoS occurring when wide chars are used in some headers
+
 0.12.1
 - Fixes DoS occurring on malformed Range header, backported from trunk
 

@@ -270,6 +270,9 @@ bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,
 
     //Retrieves the field
     char *field_end = strstr(val, "\r\n"); //Searches the end of the parameter
+    if (field_end==NULL)
+        return false;
+    
     val += param_len + 2; //Moves the begin of the string to exclude the name of the field
 
     if ((field_end - val + 1) < size) { //If the parameter's length is less than buffer's size
