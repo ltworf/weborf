@@ -277,10 +277,16 @@ bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,
     }
 
     //Retrieves the field
-    char *field_end = strstr(val, "\r\n"); //Searches the end of the parameter
     val += param_len + 2; //Moves the begin of the string to exclude the name of the field
+    char *field_end = strstr(val, "\r\n"); //Searches the end of the parameter
+    if (field_end==NULL) {
+        return false;
+    }
 
     if ((field_end - val + 1) < size) { //If the parameter's length is less than buffer's size
+        write(1,val,field_end-val);
+        printf("p1 %ld\tp2 %ld\tsum %ld\n",val,field_end,field_end-val);
+        
         memcpy(buf, val, field_end - val);
     } else { //Parameter string is too long for the buffer
         return false;
