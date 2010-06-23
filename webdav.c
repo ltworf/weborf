@@ -84,6 +84,7 @@ int get_props(string_t* post_param,char * props[]) {
 
         //Removes the />
         temp=strstr(props[i],"/>");
+        if (temp==NULL) return ERR_NODATA;
         temp[0]=0;
 
         //Removing if there are parameters to the node
