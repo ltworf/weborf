@@ -2,7 +2,14 @@
 - Shows last modified column in directory listing (Rev 419)
 - Webdav module can send mimetype
 - Bug: fixes denial of service in case of malformed header range (Rev 429)
+- Bug: ported fix from 0.12.2
 - Faster listing of directories with several hidden files
+
+0.12.2
+- Fixes DoS occurring when wide chars are used in some headers
+
+0.12.1
+- Fixes DoS occurring on malformed Range header, backported from trunk
 
 0.12
 - Fixed bug: now threads are closed again (Rev 305)
