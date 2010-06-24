@@ -67,10 +67,17 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     struct tm ts;
     struct stat f_prop; //File's property
     char last_modified[URI_LEN];
+    
+    //Print link to parent directory, if there is any
+    if (parent) {
+        printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"../\">../</a></td><td>-</td><td>-</td></tr>");
+        maxsize-=printf_s;
+        pagesize+=printf_s;
+    }
 
     for (i=0; i<counter; i++) {
-        //Skipping hidden files, except for .. link
-        if (namelist[i]->d_name[0] == '.' && (!(parent==true && namelist[i]->d_name[1] == '.' && namelist[i]->d_name[2] == '\0'))) {
+        //Skipping hidden files
+        if (namelist[i]->d_name[0] == '.') {
             free(namelist[i]);
             continue;
         }
@@ -284,9 +291,6 @@ bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,
     }
 
     if ((field_end - val + 1) < size) { //If the parameter's length is less than buffer's size
-        write(1,val,field_end-val);
-        printf("p1 %ld\tp2 %ld\tsum %ld\n",val,field_end,field_end-val);
-        
         memcpy(buf, val, field_end - val);
     } else { //Parameter string is too long for the buffer
         return false;
