@@ -33,8 +33,16 @@ extern __thread thread_prop_t thread_prop;
 void escape_uri(char *source, char *dest, int dest_size) {
     int i;
     for (i=0;source[i]!=0 && i<dest_size;i++) {
+        
+        //The or with the space changes it to lower case, so there is no need to compare with two ranges
+        if ( (source[i]>=45 && source[i]<=57) || ((source[i] | ' ')>=97 && (source[i] | ' ')<=122 )) {
+            dest[0]=source[i];
+            dest[1]=0;
+            dest++;
+        } else {
         sprintf(dest,"%%%02x",source[i]);
-        dest+=3;
+        dest+=3; 
+        }
     }
 }
 
