@@ -30,6 +30,15 @@ extern char* basedir;
 extern bool virtual_host;
 extern __thread thread_prop_t thread_prop;
 
+void escape_uri(char *source, char *dest, int dest_size) {
+    int i;
+    for (i=0;source[i]!=0 && i<dest_size;i++) {
+        sprintf(dest,"%%%02x",source[i]);
+        dest+=3;
+    }
+}
+
+
 /**
 This function will split the required props into a char* array.
 
@@ -115,6 +124,8 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     int i,p_len;
     struct stat stat_s;
     char buffer[URI_LEN];
+    char escaped_filename[URI_LEN];
+    
     bool props_invalid[MAXPROPCOUNT]; //Used to keep trace of invalid props
     bool invalid_props=false; //Used to avoid sending the invalid props if there isn't any
 
@@ -122,15 +133,16 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     if (file_fd==-1) return 0;
     fstat(file_fd, &stat_s);
 
-
+    escape_uri(filename,escaped_filename,URI_LEN);
+    
     write(sock,"<D:response>\n",13);
 
     {
         //Sends href of the resource
         if (parent) {
-            p_len=snprintf(buffer,URI_LEN,"<D:href>%s</D:href>",filename);
+            p_len=snprintf(buffer,URI_LEN,"<D:href>%s</D:href>",escaped_filename);
         } else {
-            p_len=snprintf(buffer,URI_LEN,"<D:href>%s%s</D:href>",connection_prop->page,filename);
+            p_len=snprintf(buffer,URI_LEN,"<D:href>%s%s</D:href>",connection_prop->page,escaped_filename);
         }
 
         write (sock,buffer,p_len);

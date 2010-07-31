@@ -4,6 +4,7 @@
 - Bug: fixes denial of service in case of malformed header range (Rev 429)
 - Bug: ported fix from 0.12.2
 - Faster listing of directories with several hidden files
+- PROPFIND now gives %-escaped URIs (Rev 444)
 
 0.12.2
 - Fixes DoS occurring when wide chars are used in some headers
