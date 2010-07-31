@@ -108,10 +108,10 @@ static inline int check_auth(int sock, connection_t* connection_prop) {
 
 void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
     int from;
-    char * lasts;//Used by strtok_r
+    char *lasts;//Used by strtok_r
 
     short int r;//Readed char
-    char* end;//Pointer to header's end
+    char *end;//Pointer to header's end
 
     while (true) { //Infinite cycle to handle all pipelined requests
         if ((*bufFull)!=0) {
@@ -347,22 +347,21 @@ int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
     }
 
     char a[NBUFFER]; //Buffer for field's value
+    int retval;
+    int content_l;  //Length of the put data
+    
     //Gets the value of content-length header
     bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,14);//14 is content-lenght's len
-    int content_l;  //Length of the put data
-
-    //Checks if file already exists or not (needed for response code)
-    bool preexistent=file_exists(connection_prop->strfile);
+    
 
     if (r!=false) {//If there is no content-lenght returns error
         content_l=strtol( a , NULL, 0 );
     } else {//No data
         return ERR_NODATA;
     }
-
-    int retval;
-
-    if (preexistent) {//Resource already existed (No content)
+    
+    //Checks if file already exists or not (needed for response code)
+    if (file_exists(connection_prop->strfile)) {//Resource already existed (No content)
         retval=OK_NOCONTENT;
     } else {//Resource was created (Created)
         retval=OK_CREATED;
@@ -378,6 +377,7 @@ int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers");
 #endif
+        close(fd);
         return ERR_NOMEM;
     }
 

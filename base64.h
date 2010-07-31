@@ -22,7 +22,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WEBORF_BASE64_H
 
 void decode64(char *result, char *encoded);
-void decode4_64(char *res, char *group);
-char getCode(char c);
 
 #endif
