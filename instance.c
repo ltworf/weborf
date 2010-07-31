@@ -349,17 +349,17 @@ int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
     char a[NBUFFER]; //Buffer for field's value
     int retval;
     int content_l;  //Length of the put data
-    
+
     //Gets the value of content-length header
     bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,14);//14 is content-lenght's len
-    
+
 
     if (r!=false) {//If there is no content-lenght returns error
         content_l=strtol( a , NULL, 0 );
     } else {//No data
         return ERR_NODATA;
     }
-    
+
     //Checks if file already exists or not (needed for response code)
     if (file_exists(connection_prop->strfile)) {//Resource already existed (No content)
         retval=OK_NOCONTENT;
@@ -926,7 +926,7 @@ static inline int write_compressed_file(int sock,unsigned int size,time_t timest
         char *end;
 
         if ((accept=strstr(connection_prop->http_param,"Accept-Encoding:"))!=NULL && (end=strstr(accept,"\r\n"))!=NULL) {
-            
+
 
             //Avoid to parse the entire header.
             end[0]='\0';

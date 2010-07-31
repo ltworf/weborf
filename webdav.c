@@ -30,18 +30,28 @@ extern char* basedir;
 extern bool virtual_host;
 extern __thread thread_prop_t thread_prop;
 
+/**
+This function will create a copy of the source URI into the
+dest buffer %-escaping it.
+
+dest_size specifies the size of the dest buffer
+*/
 void escape_uri(char *source, char *dest, int dest_size) {
     int i;
-    for (i=0;source[i]!=0 && i<dest_size;i++) {
-        
+
+    //dest_size must have at least 4 bytes to contain %00\0
+    for (i=0; source[i]!=0 && dest_size>=4; i++) {
+
         //The or with the space changes it to lower case, so there is no need to compare with two ranges
-        if ( (source[i]>=45 && source[i]<=57) || ((source[i] | ' ')>=97 && (source[i] | ' ')<=122 )) {
+        if ( (source[i]>='-' && source[i]<='9') || ((source[i] | ' ')>='a' && (source[i] | ' ')<='z' )) {
             dest[0]=source[i];
             dest[1]=0;
             dest++;
+            dest_size--;
         } else {
-        sprintf(dest,"%%%02x",source[i]);
-        dest+=3; 
+            sprintf(dest,"%%%02x",source[i]);
+            dest+=3;
+            dest_size-=3;
         }
     }
 }
@@ -133,7 +143,8 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     struct stat stat_s;
     char buffer[URI_LEN];
     char escaped_filename[URI_LEN];
-    
+    char escaped_page[URI_LEN];
+
     bool props_invalid[MAXPROPCOUNT]; //Used to keep trace of invalid props
     bool invalid_props=false; //Used to avoid sending the invalid props if there isn't any
 
@@ -142,7 +153,8 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
     fstat(file_fd, &stat_s);
 
     escape_uri(filename,escaped_filename,URI_LEN);
-    
+    escape_uri(connection_prop->page,escaped_page,URI_LEN);
+
     write(sock,"<D:response>\n",13);
 
     {
@@ -150,7 +162,7 @@ int printprops(int sock,connection_t* connection_prop,char*props[],char* file,ch
         if (parent) {
             p_len=snprintf(buffer,URI_LEN,"<D:href>%s</D:href>",escaped_filename);
         } else {
-            p_len=snprintf(buffer,URI_LEN,"<D:href>%s%s</D:href>",connection_prop->page,escaped_filename);
+            p_len=snprintf(buffer,URI_LEN,"<D:href>%s%s</D:href>",escaped_page,escaped_filename);
         }
 
         write (sock,buffer,p_len);

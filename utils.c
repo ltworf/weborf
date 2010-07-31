@@ -67,7 +67,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     struct tm ts;
     struct stat f_prop; //File's property
     char last_modified[URI_LEN];
-    
+
     //Print link to parent directory, if there is any
     if (parent) {
         printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"../\">../</a></td><td>-</td><td>-</td></tr>");
