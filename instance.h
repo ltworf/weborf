@@ -110,13 +110,12 @@ int send_page(int sock, buffered_read_t * read_b, connection_t * connection_prop
 int write_file(int sock, connection_t * connection_prop);
 int exec_page(int sock, char *executor, string_t * post_param, char *real_basedir, connection_t * connection_prop);
 int send_err(int sock, int err, char *descr, char *ip_addr);
-int send_http_header_scode(int sock, char *code, int size, char *headers);
 void piperr();
 int request_auth(int sock, char *descr);
 string_t read_post_data(int sock, connection_t * connection_prop, buffered_read_t * read_b);
 char *get_basedir(char *http_param);
 void handle_requests(int sock, char *buf, buffered_read_t * read_b, int *bufFull, connection_t * connection_prop, long int id);
-int send_http_header_full(int sock, int code, unsigned int size, char *headers, bool content, time_t timestamp, connection_t * connection_prop);
+int send_http_header(int sock, int code, unsigned int size, char *headers, bool content, time_t timestamp, connection_t * connection_prop);
 int delete_file(int sock,connection_t* connection_prop);
 int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b);
 #endif

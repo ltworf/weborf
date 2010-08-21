@@ -449,7 +449,7 @@ static inline int options (int sock, connection_t* connection_prop) {
 #define ALLOWED "Allow: GET,POST,PUT,DELETE,OPTIONS\r\n"
 #endif
 
-    send_http_header_full(sock,200,0,ALLOWED,true,-1,connection_prop);
+    send_http_header(sock,200,0,ALLOWED,true,-1,connection_prop);
     return 0;
 }
 
@@ -544,7 +544,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
-            send_http_header_full(sock,301,0,head,true,-1,connection_prop);
+            send_http_header(sock,301,0,head,true,-1,connection_prop);
         } else {//Requested directory with /. Search for index files or list directory
 
             char* index_name=&connection_prop->strfile[connection_prop->strfile_len];//Pointer to where to write the filename
@@ -556,7 +556,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
                 if (file_exists(connection_prop->strfile)) { //If index exists, redirect to it
                     char head[URI_LEN+12];//12 is the size for the location header
                     snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,indexes[i]);
-                    send_http_header_full(sock,303,0,head,true,-1,connection_prop);
+                    send_http_header(sock,303,0,head,true,-1,connection_prop);
 
                     index_found=true;
                     break;
@@ -629,9 +629,9 @@ escape:
     case ERR_NOAUTH:
         return request_auth(sock,connection_prop->page);//Sends a request for authentication
     case OK_NOCONTENT:
-        return send_http_header_full(sock,204,0,NULL,true,-1,connection_prop);
+        return send_http_header(sock,204,0,NULL,true,-1,connection_prop);
     case OK_CREATED:
-        return send_http_header_full(sock,201,0,NULL,true,-1,connection_prop);
+        return send_http_header(sock,201,0,NULL,true,-1,connection_prop);
     }
     return 0; //Make gcc happy
 }
@@ -822,14 +822,14 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
         }
 
         if (e_reads>0) {//There is output from script
-            char* status; //Standard status
+            unsigned int status; //Standard status
             {
                 //Reading if there is another status
                 char*s=strstr(header_buf,"Status: ");
                 if (s!=NULL) {
-                    status=s+8; //Replacing status
+                    status=(unsigned int)strtoul( s+8 , NULL, 0 );
                 } else {
-                    status="200"; //Standard status
+                    status=200; //Standard status
                 }
             }
 
@@ -841,7 +841,14 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
                 connection_prop->keep_alive=false;
             }
 
-            send_http_header_scode(sock,status,reads,header_buf);
+
+            /*
+            Sends header,
+            reads is the size
+            true tells to use Content-Length rather than entity-length
+            -1 won't use any ETag, and will eventually use the current time as last-modified
+            */
+            send_http_header(sock,status,reads,header_buf,true,-1,connection_prop);
 
             if (reads!=0) {//Sends the page if there is something to send
                 write (sock,scrpt_buf,reads);
@@ -899,7 +906,7 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
         free(html);//Frees the memory used for the page
         return ERR_FILENOTFOUND;
     } else { //If there are no errors sends the page
-        send_http_header_full(sock,200,pagelen,NULL,true,-1,connection_prop);
+        send_http_header(sock,200,pagelen,NULL,true,-1,connection_prop);
         write(sock,html,pagelen);
     }
 
@@ -941,7 +948,7 @@ static inline int write_compressed_file(int sock,unsigned int size,time_t timest
 
 
     connection_prop->keep_alive=false;
-    send_http_header_full(sock,200,size,"Connection: close\r\nContent-Encoding: gzip\r\n",false,timestamp,connection_prop);
+    send_http_header(sock,200,size,"Content-Encoding: gzip\r\n",false,timestamp,connection_prop);
     int pid=fork();
 
     if (pid==0) { //child, executing gzip
@@ -977,7 +984,7 @@ static inline int check_etag(int sock,connection_t* connection_prop,char *a) {
         time_t etag=(time_t)strtol(a+1,NULL,0);
         if (connection_prop->strfile_stat.st_mtime==etag) {
             //Browser has the item in its cache, sending 304
-            send_http_header_full(sock,304,0,NULL,true,etag,connection_prop);
+            send_http_header(sock,304,0,NULL,true,etag,connection_prop);
             return 0;
         }
     }
@@ -1012,12 +1019,12 @@ static inline off_t bytes_to_send(int sock,connection_t* connection_prop,char *a
         lseek(connection_prop->strfile_fd,from,SEEK_SET);
         off_t count=to-from+1;
 
-        send_http_header_full(sock,206,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+        send_http_header(sock,206,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
         return count;
     } else //Normal request
 #endif
     {
-        send_http_header_full(sock,200,connection_prop->strfile_stat.st_size,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+        send_http_header(sock,200,connection_prop->strfile_stat.st_size,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
         return connection_prop->strfile_stat.st_size;
     }
 }
@@ -1168,37 +1175,6 @@ int send_err(int sock,int err,char* descr,char* ip_addr) {
 }
 
 /**
-This function sends a code header to the specified socket
-size is the Content-Length field.
-headers can be NULL or some extra headers to add. Headers must be
-separated by \r\n and must have an \r\n at the end.
-Code is a string, no need to terminate it with a \0 because only the 1st 2nd and 3rd chars of it
-will be used in each case. A shorter string will produce unpredictable behaviour
-*/
-int send_http_header_scode(int sock,char* code, int size,char* headers) {
-
-    char *head=malloc(HEADBUF);
-    if (head==NULL) {
-#ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
-#endif
-        return ERR_NOMEM;
-    }
-
-    int len_head;
-    if (size>=0) {
-        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %c%c%c OK Server: Weborf (GNU/Linux)\r\nContent-Length: %u\r\n%s\r\n",code[0],code[1],code[2], size,headers);
-    } else {
-        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %c%c%c OK Server: Weborf (GNU/Linux)\r\nConnection: close\r\n%s\r\n",code[0],code[1],code[2],headers);
-    }
-
-    int wrote=write (sock,head,len_head);
-    free(head);
-    if (wrote!=len_head) return ERR_BRKPIPE;
-    return 0;
-}
-
-/**
 This function reads post data and returns the pointer to the buffer containing the data (if there is any)
 or NULL if there was no data.
 If it doesn't return a null value, the returned pointer must be freed.
@@ -1258,9 +1234,9 @@ separated by \r\n and must have an \r\n at the end.
 
 Content says if the size is for content-lenght or for entity-length
 
-Timestamp is the timestamp for the content. Set to -1 to use the current timestamp
+Timestamp is the timestamp for the content. Set to -1 to use the current timestamp for Last-Modified and to omit ETag.
 */
-int send_http_header_full(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
+int send_http_header(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
     int len_head,wrote;
     char *head=malloc(HEADBUF);
     char* h_ptr=head;
@@ -1273,12 +1249,23 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
         return ERR_NOMEM;
     }
     if (headers==NULL) headers="";
+    
+    /*Defines the Connection header
+    It will send the connection header if the setting is non-default
+    Ie: will send keep alive if keep-alive is enabled and protocol is not 1.1
+    And will send close if keep-alive isn't enabled and protocol is 1.1
+    */
+    char *connection_header;
     if (connection_prop->protocol_version!=HTTP_1_1 && connection_prop->keep_alive==true) {
-        //Putting explicit keep-alive header, since client is not 1.1 but is using keep alive
-        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\nConnection: Keep-Alive\r\n",code);
+        connection_header="Connection: Keep-Alive\r\n";
+    } else if (connection_prop->protocol_version==HTTP_1_1 && connection_prop->keep_alive==false) {
+        connection_header="Connection: close\r\n";
     } else {
-        len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\n",code);
+        connection_header="";
     }
+    
+    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\n%s",code,connection_header);
+    
     //This stuff moves the pointer to the buffer forward, and reduces the left space in the buffer itself
     //Next snprintf will append their strings to the buffer, without overwriting.
     head+=len_head;
@@ -1306,7 +1293,7 @@ int send_http_header_full(int sock,int code, unsigned int size,char* headers,boo
     }
 #endif
 
-    if (size>0 || (connection_prop->keep_alive==true && size==0)) {
+    if (size>0 || (connection_prop->keep_alive==true)) {
         //Content length (or entity lenght) and extra headers
         if (content) {
             len_head=snprintf(head,left_head,"Content-Length: %u\r\n",size);

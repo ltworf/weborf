@@ -255,7 +255,7 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
         if (S_ISDIR(stat_s.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
-            send_http_header_full(sock,301,0,head,true,-1,connection_prop);
+            send_http_header(sock,301,0,head,true,-1,connection_prop);
             return 0;
         }
     } // End redirection
@@ -283,7 +283,7 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
 
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
     connection_prop->keep_alive=false;
-    send_http_header_full(sock,207,0,"Connection: close\r\nContent-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
+    send_http_header(sock,207,0,"Content-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
 
     //Sends header of xml response
     write(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>",39);
