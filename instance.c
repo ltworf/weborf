@@ -37,6 +37,26 @@ extern array_ll cgi_paths;                  //Paths to cgi binaries
 __thread thread_prop_t thread_prop;
 
 /**
+Checks if the required resource has the same date as the one cached in the client.
+If they are the same, returns 0,
+returns 1 otherwise
+
+The char* buffer must be at least RBUFFER bytes (see definitions in options.h)
+*/
+static inline int check_etag(int sock,connection_t* connection_prop,char *a) {
+    //Find if it is a range request, 13 is strlen of "if-none-match"
+    if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER,13)) {
+        time_t etag=(time_t)strtol(a+1,NULL,0);
+        if (connection_prop->strfile_stat.st_mtime==etag) {
+            //Browser has the item in its cache, sending 304
+            send_http_header(sock,304,0,NULL,true,etag,connection_prop);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/**
 This function checks if the authentication can be granted or not calling the external program.
 Returns 0 if authorization is granted.
 */
@@ -881,17 +901,33 @@ This function writes on the specified socket an html page containing the list of
 specified directory.
 */
 int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
+    
+    /* 
+    WARNING
+    This code checks the ETag and returns if the client has a copy in cache
+    since the impact of using ETag for generated directory list is not known
+    yet, if ETag goes away, also the following block will have to be deleted
+    */
+    {
+        char a[RBUFFER+MIMETYPELEN+16]; //Buffer for if-none-match from header
+        //Check if the resource cached in the client is the same
+        if (check_etag(sock,connection_prop,&a[0])==0) return 0;
+    }
+
+    
+    int pagelen;
+    bool parent;
+
     /*
     Determines if has to show the link to parent dir or not.
     If page is the basedir, it won't show the link to ..
     */
-    int pagelen;
-    bool parent=true;
-
     {
         size_t basedir_len=strlen(real_basedir);
         if (connection_prop->strfile_len-1==basedir_len || connection_prop->strfile_len==basedir_len)
             parent=false;
+        else
+            parent=true;
     }
 
     char* html=malloc(MAXSCRIPTOUT);//Memory for the html page
@@ -906,7 +942,16 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
         free(html);//Frees the memory used for the page
         return ERR_FILENOTFOUND;
     } else { //If there are no errors sends the page
-        send_http_header(sock,200,pagelen,NULL,true,-1,connection_prop);
+        
+        /*WARNING using the directory's mtime here allows better caching and
+        the mtime will anyway be changed when files are added or deleted.
+        
+        Anyway i couldn't find the proof that it is changed also when files
+        are modified.
+        I tried on reiserfs and the directory's mtime changes too but i didn't
+        find any doc about the other filesystems and OS.
+        */
+        send_http_header(sock,200,pagelen,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
         write(sock,html,pagelen);
     }
 
@@ -971,25 +1016,7 @@ static inline int write_compressed_file(int sock,unsigned int size,time_t timest
 #endif
 
 
-/**
-Checks if the required resource has the same date as the one cached in the client.
-If they are the same, returns 0,
-returns 1 otherwise
 
-The char* buffer must be at least RBUFFER bytes (see definitions in options.h)
-*/
-static inline int check_etag(int sock,connection_t* connection_prop,char *a) {
-    //Find if it is a range request, 13 is strlen of "if-none-match"
-    if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER,13)) {
-        time_t etag=(time_t)strtol(a+1,NULL,0);
-        if (connection_prop->strfile_stat.st_mtime==etag) {
-            //Browser has the item in its cache, sending 304
-            send_http_header(sock,304,0,NULL,true,etag,connection_prop);
-            return 0;
-        }
-    }
-    return 1;
-}
 
 
 static inline off_t bytes_to_send(int sock,connection_t* connection_prop,char *a) {
@@ -1048,7 +1075,7 @@ int write_file(int sock,connection_t* connection_prop) {
 
     //Check if the resource cached in the client is the same
     //printf("etag 0\n");
-    //if (check_etag(sock,connection_prop,&a[0])==0) return 0;
+    if (check_etag(sock,connection_prop,&a[0])==0) return 0;
     //printf("etag 1\n");
 
 #ifdef __COMPRESSION
@@ -1234,7 +1261,12 @@ separated by \r\n and must have an \r\n at the end.
 
 Content says if the size is for content-lenght or for entity-length
 
-Timestamp is the timestamp for the content. Set to -1 to use the current timestamp for Last-Modified and to omit ETag.
+Timestamp is the timestamp for the content. Set to -1 to use the current
+timestamp for Last-Modified and to omit ETag.
+
+This function will automatically take care of generating Connection header when
+needed, according to keep_alive and protocol_version of connection_prop
+
 */
 int send_http_header(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
     int len_head,wrote;
