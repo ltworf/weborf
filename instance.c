@@ -901,8 +901,8 @@ This function writes on the specified socket an html page containing the list of
 specified directory.
 */
 int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
-    
-    /* 
+
+    /*
     WARNING
     This code checks the ETag and returns if the client has a copy in cache
     since the impact of using ETag for generated directory list is not known
@@ -914,7 +914,7 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
         if (check_etag(sock,connection_prop,&a[0])==0) return 0;
     }
 
-    
+
     int pagelen;
     bool parent;
 
@@ -942,10 +942,10 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
         free(html);//Frees the memory used for the page
         return ERR_FILENOTFOUND;
     } else { //If there are no errors sends the page
-        
+
         /*WARNING using the directory's mtime here allows better caching and
         the mtime will anyway be changed when files are added or deleted.
-        
+
         Anyway i couldn't find the proof that it is changed also when files
         are modified.
         I tried on reiserfs and the directory's mtime changes too but i didn't
@@ -1254,6 +1254,29 @@ char* get_basedir(char* http_param) {
 
 
 /**
+This function returns the reason phrase according to the response
+code.
+*/
+static inline char *reason_phrase(int code) {
+    code=code/100;
+
+    switch (code) {
+    case 2:
+        return "OK";
+    case 3:
+        return "Found";
+    case 4:
+        return "Request error";
+    case 5:
+        return "Server error";
+    case 1:
+        return "Received";
+
+    };
+    return "Something is very wrong";
+}
+
+/**
 This function sends a code header to the specified socket
 size is the Content-Length field.
 headers can be NULL or some extra headers to add. Headers must be
@@ -1281,7 +1304,7 @@ int send_http_header(int sock,int code, unsigned int size,char* headers,bool con
         return ERR_NOMEM;
     }
     if (headers==NULL) headers="";
-    
+
     /*Defines the Connection header
     It will send the connection header if the setting is non-default
     Ie: will send keep alive if keep-alive is enabled and protocol is not 1.1
@@ -1295,9 +1318,9 @@ int send_http_header(int sock,int code, unsigned int size,char* headers,bool con
     } else {
         connection_header="";
     }
-    
-    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d\r\nServer: Weborf (GNU/Linux)\r\n%s",code,connection_header);
-    
+
+    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: Weborf (GNU/Linux)\r\n%s",code,reason_phrase(code),connection_header);
+
     //This stuff moves the pointer to the buffer forward, and reduces the left space in the buffer itself
     //Next snprintf will append their strings to the buffer, without overwriting.
     head+=len_head;
