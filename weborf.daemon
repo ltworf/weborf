@@ -189,7 +189,7 @@ fi
 case $1 in
     start)
         startWeborf;;
-    stop)	
+    stop)
         stopWeborf;;
     restart)
         stopWeborf
