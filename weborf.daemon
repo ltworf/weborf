@@ -31,7 +31,7 @@
 #                    It also supports php5-cgi.
 ### END INIT INFO
 function clear_cache {
-    CDIR=`cat /etc/weborf.conf | fgrep "cachedir=" | cut -d= -f2`
+    CDIR=`cat /etc/weborf.conf | egrep "^cachedir=" | cut -d= -f2`
     rm -rf $CDIR/*
 }
 
@@ -132,17 +132,23 @@ if [ -f /etc/default/$NAME ] ; then
     . /etc/default/$NAME
 fi
 
-USERNAME=`cat /etc/weborf.conf | fgrep "user=" | cut -d= -f2`
-BASEDIR=`cat /etc/weborf.conf | fgrep "basedir=" | cut -d= -f2`
+USERNAME=`cat /etc/weborf.conf | egrep "^user=" | cut -d= -f2`
+BASEDIR=`cat /etc/weborf.conf | egrep "^basedir=" | cut -d= -f2`
 USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
-INDEXES=`cat /etc/weborf.conf | fgrep "indexes=" | cut -d= -f2`
-USE_CGI=`cat /etc/weborf.conf | fgrep "use-cgi=" | cut -d= -f2`
-CGI_BIN=`cat /etc/weborf.conf | fgrep "cgi=" | cut -d= -f2`
-CACHE_DIR=`cat /etc/weborf.conf | fgrep "cachedir=" | cut -d= -f2`
+INDEXES=`cat /etc/weborf.conf | egrep "^indexes=" | cut -d= -f2`
+USE_CGI=`cat /etc/weborf.conf | egrep "^use-cgi=" | cut -d= -f2`
+CGI_BIN=`cat /etc/weborf.conf | egrep "^cgi=" | cut -d= -f2`
+CACHE_DIR=`cat /etc/weborf.conf | egrep "^cachedir=" | cut -d= -f2`
 
 # Authentication
 AUTH_BIN=`cat /etc/weborf.conf | grep "^auth-bin=" | cut -d= -f2`
 AUTH_SOCKET=`cat /etc/weborf.conf | grep "^auth-socket=" | cut -d= -f2`
+
+if test -z "$USERNAME" || test "$USERNAME" = "root"
+then
+    logger -s -perror "You are trying to run weborf as root!"
+    exit 0 #LSB requires 0 termination in each case
+fi
 
 if test -n "$CACHE_DIR"
 then
@@ -150,9 +156,11 @@ then
         then
             #Does not exist or it is not a directory
             rm -rf $CACHE_DIR
-            mkdir -m777 $CACHE_DIR
+            mkdir -m700 $CACHE_DIR
+            
         fi
 
+        chown $USERNAME $CACHE_DIR
         CACHE_DIR="-C $CACHE_DIR"
 fi
 
