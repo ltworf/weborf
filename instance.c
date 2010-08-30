@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo Rinaldi <salvin@anche.no>
  */
 #include "instance.h"
+#include "cachedir.h"
 
 extern syn_queue_t queue;                   //Queue for open sockets
 
@@ -40,6 +41,9 @@ __thread thread_prop_t thread_prop;
 Checks if the required resource has the same date as the one cached in the client.
 If they are the same, returns 0,
 returns 1 otherwise
+
+If the ETag matches this function will send to the client a 304 response too, so
+if this function returns 0, the HTTP request has been already served.
 
 The char* buffer must be at least RBUFFER bytes (see definitions in options.h)
 */
@@ -915,6 +919,34 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
     }
 
 
+    {
+        //Try to send the cached file instead
+        int cachedfd=get_cached_item(0,connection_prop);
+
+        if (cachedfd!=-1) {
+            int oldfd=connection_prop->strfile_fd;
+            connection_prop->strfile_fd=cachedfd;
+
+            /*
+            replaces the stat of the directory with the stat of the cached file
+            it is safe here since get_cached_item has already been executed
+            */
+            fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
+
+            write_file(sock,connection_prop);
+
+            //Restore file descriptor so it can be closed later
+            connection_prop->strfile_fd=oldfd;
+
+            //Closes the cache file descriptor
+            close(cachedfd);
+
+            return 0;
+        }
+
+    }
+
+
     int pagelen;
     bool parent;
 
@@ -953,6 +985,9 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
         */
         send_http_header(sock,200,pagelen,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
         write(sock,html,pagelen);
+
+        //Write item in cache
+        store_cache_item(0,connection_prop,html,pagelen);
     }
 
     free(html);//Frees the memory used for the page
@@ -1019,7 +1054,7 @@ static inline int write_compressed_file(int sock,unsigned int size,time_t timest
 
 
 
-static inline off_t bytes_to_send(int sock,connection_t* connection_prop,char *a) {
+static inline off64_t bytes_to_send(int sock,connection_t* connection_prop,char *a) {
     errno=0;
 #ifdef __RANGE
     if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER,5)) {//Find if it is a range request 5 is strlen of "range"
@@ -1068,15 +1103,16 @@ send large files or not.
 
 If the file is larger, it will be sent using write_compressed_file,
 see that function for details.
+
+To work connection_prop.strfile_fd and connection_prop.strfile_stat must be set.
+The file sent is the one specified by strfile_fd, and it will not be closed after.
 */
 int write_file(int sock,connection_t* connection_prop) {
 
     char a[RBUFFER+MIMETYPELEN+16]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
     //Check if the resource cached in the client is the same
-    //printf("etag 0\n");
     if (check_etag(sock,connection_prop,&a[0])==0) return 0;
-    //printf("etag 1\n");
 
 #ifdef __COMPRESSION
     {
@@ -1086,7 +1122,7 @@ int write_file(int sock,connection_t* connection_prop) {
 #endif
 
     //Determines how many bytes send, depending on file size and ranges
-    off_t count= bytes_to_send(sock,connection_prop,&a[0]);
+    off64_t count= bytes_to_send(sock,connection_prop,&a[0]);
     if (errno !=0) {
         int e=errno;
         errno=0;

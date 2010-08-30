@@ -43,7 +43,7 @@ weborf: debug
 cgi:
 	cd cgi_wrapper; make
 
-debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o mime.o
+debug: listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o mime.o cachedir.o
 	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o weborf
 
 clean: 

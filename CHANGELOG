@@ -7,6 +7,7 @@
 - PROPFIND now gives %-escaped URIs (Rev 444)
 - Improved handling of Connection header in responses
 - Sends reason phrase in HTTP response
+- Directory listing can be cached on disk
 
 0.12.2
 - Fixes DoS occurring when wide chars are used in some headers
