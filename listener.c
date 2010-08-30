@@ -27,6 +27,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utils.h"
 #include "mystring.h"
 #include "types.h"
+#include "cachedir.h"
+
 #define _GNU_SOURCE
 
 syn_queue_t queue;              //Queue for opened sockets
@@ -154,13 +156,14 @@ int main(int argc, char *argv[]) {
             {"moo", no_argument, 0, 'm'},
             {"noexec", no_argument, 0, 'x'},
             {"cgi", required_argument, 0, 'c'},
+            {"cache", required_argument, 0, 'C'},
             {0, 0, 0, 0}
         };
         static int c; //Identify the readed option
         int option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long(argc, argv, "mvhp:i:I:u:dxb:a:V:c:", long_options,
+        c = getopt_long(argc, argv, "mvhp:i:I:u:dxb:a:V:c:C:", long_options,
                         &option_index);
 
         //If there are no options it continues
@@ -168,6 +171,10 @@ int main(int argc, char *argv[]) {
             break;
 
         switch (c) {
+        case 'C'://Inits cache
+            init_cache(optarg);
+            break;
+
         case 'c': { //Setting list of cgi
             int i = 0;
             cgi_paths.len = 1; //count of indexes

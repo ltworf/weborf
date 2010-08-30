@@ -30,6 +30,10 @@
 #                    to easily share their directories over the web.
 #                    It also supports php5-cgi.
 ### END INIT INFO
+function clear_cache {
+    CDIR=`cat /etc/weborf.conf | fgrep "cachedir=" | cut -d= -f2`
+    rm -rf $CDIR/*
+}
 
 function status {
     if ! test -e $PIDFILE
@@ -78,7 +82,7 @@ function startWeborf {
     if test -z "$virtuals"
     then
         echo "Starting weborf"
-        nohup $DAEMON $DAEMON_OPTS $AUTH_SOCKET $CGI $CGI_BIN -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
+        nohup $DAEMON $DAEMON_OPTS $CACHE_DIR $AUTH_SOCKET $CGI $CGI_BIN -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
         echo ${!} >> $PIDFILE # Writes PID so weborf can be terminated
     else #Virtual hosts
     
@@ -87,7 +91,7 @@ function startWeborf {
                 PORT=`echo $i | cut -d# -f2`
                 CMDLINE=`echo $i | cut -d# -f3`
                 echo "Starting weborf on port $PORT"
-                nohup $DAEMON $DAEMON_OPTS $AUTH_SOCKET $CGI $CGI_BIN -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
+                nohup $DAEMON $DAEMON_OPTS $CACHE_DIR $AUTH_SOCKET $CGI $CGI_BIN -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
                 echo $! >> $PIDFILE # Writes PID so weborf can be terminated
             done
     fi
@@ -134,10 +138,23 @@ USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
 INDEXES=`cat /etc/weborf.conf | fgrep "indexes=" | cut -d= -f2`
 USE_CGI=`cat /etc/weborf.conf | fgrep "use-cgi=" | cut -d= -f2`
 CGI_BIN=`cat /etc/weborf.conf | fgrep "cgi=" | cut -d= -f2`
+CACHE_DIR=`cat /etc/weborf.conf | fgrep "cachedir=" | cut -d= -f2`
 
 # Authentication
 AUTH_BIN=`cat /etc/weborf.conf | grep "^auth-bin=" | cut -d= -f2`
 AUTH_SOCKET=`cat /etc/weborf.conf | grep "^auth-socket=" | cut -d= -f2`
+
+if test -n "$CACHE_DIR"
+then
+        if ! test -d $CACHE_DIR
+        then
+            #Does not exist or it is not a directory
+            rm -rf $CACHE_DIR
+            mkdir -m777 $CACHE_DIR
+        fi
+
+        CACHE_DIR="-C $CACHE_DIR"
+fi
 
 if test -n "$AUTH_SOCKET"
 then
@@ -174,7 +191,9 @@ case $1 in
         startWeborf;;
     status)
         status;;
+    clearcache)
+        clear_cache;;
     * )
-        echo "Usage: $0 {start|stop|restart|force-reload|status}";;
+        echo "Usage: $0 {start|stop|restart|force-reload|status|clearcache}";;
 esac
 
