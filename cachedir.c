@@ -32,8 +32,8 @@ char *cachedir=NULL;
 /**
 Generates the filename for the cached entity and stores it in the buffer
 */
-static inline void cached_filename(int uprefix,connection_t *connection_prop, char *buffer) {
-    snprintf(buffer,PATH_LEN,"%s/%d-%llu-%llu-%ld",cachedir,uprefix,(unsigned long long int)connection_prop->strfile_stat.st_ino,(unsigned long long int)connection_prop->strfile_stat.st_dev,connection_prop->strfile_stat.st_mtime);
+static inline void cached_filename(unsigned int uprefix,connection_t *connection_prop, char *buffer) {
+    snprintf(buffer,PATH_LEN,"%s/%u-%llu-%llu-%ld",cachedir,uprefix,(unsigned long long int)connection_prop->strfile_stat.st_ino,(unsigned long long int)connection_prop->strfile_stat.st_dev,connection_prop->strfile_stat.st_mtime);
 }
 
 /**
@@ -49,9 +49,9 @@ It's purpose is to distinguish between calls that will eventually generate an
 HTML file and calls that will generate XML or other data.
 So the directory would be the same but the generated content is different.
 */
-int get_cached_item(int uprefix,connection_t* connection_prop) {
+int get_cached_item(unsigned int uprefix,connection_t* connection_prop) {
     if (!cachedir) return -1;
-    
+
     char fname[PATH_LEN];
 
     //Get the filename
@@ -62,9 +62,9 @@ int get_cached_item(int uprefix,connection_t* connection_prop) {
 
 
 
-void store_cache_item(int uprefix,connection_t* connection_prop, char *content, size_t content_len) {
+void store_cache_item(unsigned int uprefix,connection_t* connection_prop, char *content, size_t content_len) {
     if (!cachedir) return;
-    
+
     char fname[PATH_LEN];
     cached_filename(uprefix,connection_prop,fname);
 
@@ -110,7 +110,7 @@ Returns 0 on success, -1 otherwise
 */
 int clear_cache() {
     if (!cachedir) return -1;
-    
+
     //Empty directory
     DIR *dp = opendir(cachedir); //Open dir
     struct dirent entry;

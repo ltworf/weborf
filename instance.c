@@ -998,22 +998,22 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
 /**
 Writes a file to the socket, compressing it with gzip.
 Then, since it is not possible to know the size of the compressed file,
-it is not possible to send the size in advance, so it will close the connection
+it is not possible to send the size in advance, so it will set keep_alive to false
 (and will seand the header "Connection: close" before) after sending.
 
 sock is the socket
-strfile is the file to compress and send
-size is the size of the uncompressed file
 */
 #ifdef __COMPRESSION
-static inline int write_compressed_file(int sock,unsigned int size,time_t timestamp,connection_t* connection_prop ) {
+static inline int write_compressed_file(int sock,connection_t* connection_prop ) {
 
-    if (connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN && connection_prop->strfile_stat.st_size<SIZE_COMPRESS_MAX) { //Using compressed file method instead of sending it raw
+    if (
+        connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN &&
+        connection_prop->strfile_stat.st_size<SIZE_COMPRESS_MAX
+    ) { //Using compressed file method instead of sending it raw
         char *accept;
         char *end;
 
         if ((accept=strstr(connection_prop->http_param,"Accept-Encoding:"))!=NULL && (end=strstr(accept,"\r\n"))!=NULL) {
-
 
             //Avoid to parse the entire header.
             end[0]='\0';
@@ -1024,11 +1024,18 @@ static inline int write_compressed_file(int sock,unsigned int size,time_t timest
                 return NO_ACTION;
             }
         }
+    } else { //File size is not in the size range to be compressed
+        return NO_ACTION;
     }
 
 
     connection_prop->keep_alive=false;
-    send_http_header(sock,200,size,"Content-Encoding: gzip\r\n",false,timestamp,connection_prop);
+    send_http_header(sock,200,
+                     connection_prop->strfile_stat.st_size,
+                     "Content-Encoding: gzip\r\n",
+                     false,
+                     connection_prop->strfile_stat.st_mtime,
+                     connection_prop);
     int pid=fork();
 
     if (pid==0) { //child, executing gzip
@@ -1045,12 +1052,9 @@ static inline int write_compressed_file(int sock,unsigned int size,time_t timest
     } else { //Error
         return ERR_NOMEM; //Well not enough memory in process table...
     }
-    close(sock);
     return 0;
 }
 #endif
-
-
 
 
 
@@ -1116,7 +1120,7 @@ int write_file(int sock,connection_t* connection_prop) {
 
 #ifdef __COMPRESSION
     {
-        int c= write_compressed_file(sock,stat_f.st_size,stat_f.st_mtime,connection_prop);
+        int c= write_compressed_file(sock,connection_prop);
         if (c!=NO_ACTION) return c;
     }
 #endif

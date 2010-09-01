@@ -18,7 +18,7 @@ CC=gcc
 #DEFS=-Ddebug
 OFLAGS=-O2
 #-pedantic -Wextra
-CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat -g
+CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat -g  $(OFLAGS)
 LDFLAGS=-lpthread  -lmagic
 
 #Opensolaris flags

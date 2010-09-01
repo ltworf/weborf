@@ -138,7 +138,7 @@ It can be called only by funcions aware of this xml, because it sends only parti
 
 If the file can't be opened in readonly mode, this function does nothing.
 */
-int printprops(int sock,connection_t* connection_prop,char*props[],char* file,char*filename,bool parent) {
+static inline int printprops(int sock,connection_t *connection_prop,char*props[],char* file,char*filename,bool parent) {
     int i,p_len;
     struct stat stat_s;
     char buffer[URI_LEN];
@@ -239,6 +239,8 @@ Can serve both depth and non-depth requests. This funcion works only if
 authentication is enabled.
 */
 int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
+
+    //Forbids the method if no authentication is in use
     if (authsock==NULL) {
         return ERR_FORBIDDEN;
     }
