@@ -32,11 +32,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "options.h"
 
-//TODO Dealing with off64_t type
-//#ifndef off64_t
-//typedef unsigned long long int off64_t;
-//#endif
-
 typedef struct {
     long int id;                //ID of the thread
     magic_t mime_token;         //Token for libmagic

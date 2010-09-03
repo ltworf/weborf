@@ -1090,11 +1090,11 @@ static inline int write_compressed_file(int sock,connection_t* connection_prop )
 
 
 
-static inline off64_t bytes_to_send(int sock,connection_t* connection_prop,char *a) {
+static inline unsigned long long int bytes_to_send(int sock,connection_t* connection_prop,char *a) {
     errno=0;
 #ifdef __RANGE
     if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER,5)) {//Find if it is a range request 5 is strlen of "range"
-        off64_t from,to;
+        unsigned long long int from,to;
 
         {
             //Locating from and to
@@ -1115,7 +1115,7 @@ static inline off64_t bytes_to_send(int sock,connection_t* connection_prop,char 
         }
         snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%llu-%llu/%lld\r\n",(unsigned long long int)from,(unsigned long long int)to,(long long int)connection_prop->strfile_stat.st_size);
         lseek64(connection_prop->strfile_fd,from,SEEK_SET);
-        off64_t count=to-from+1;
+        unsigned long long int count=to-from+1;
 
         send_http_header(sock,206,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
         return count;
@@ -1158,7 +1158,7 @@ int write_file(int sock,connection_t* connection_prop) {
 #endif
 
     //Determines how many bytes send, depending on file size and ranges
-    off64_t count= bytes_to_send(sock,connection_prop,&a[0]);
+    unsigned long long int count= bytes_to_send(sock,connection_prop,&a[0]);
     if (errno !=0) {
         int e=errno;
         errno=0;

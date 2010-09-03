@@ -9,6 +9,7 @@
 - Sends reason phrase in HTTP response
 - Directory listing can be cached on disk
 - Can seek on large files
+- Added GiB measure in directory listing
 
 0.12.2
 - Fixes DoS occurring when wide chars are used in some headers
