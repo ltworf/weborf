@@ -19,7 +19,7 @@ CC=gcc
 OFLAGS=-O2
 #-pedantic -Wextra
 CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat -g  $(OFLAGS)
-LDFLAGS=-lpthread  -lmagic
+LDFLAGS=-lpthread
 
 #Opensolaris flags
 #CFLAGS=-D_POSIX_PTHREAD_SEMANTICS  -Wall $(DEFS) $(ARCHFLAGS)  -Wformat

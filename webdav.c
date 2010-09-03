@@ -48,7 +48,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 extern char* authsock;
 extern char* basedir;
 extern bool virtual_host;
-extern __thread thread_prop_t thread_prop;
 
 /**
 This function will create a copy of the source URI into the
@@ -103,7 +102,6 @@ int get_props(string_t* post_param,char * props[]) {
         data=strstr(post_param->data,"<prop ");
     if (data==NULL)
         data=strstr(post_param->data,"<prop>");
-
     if (data==NULL) {
         return ERR_NODATA;
     }
