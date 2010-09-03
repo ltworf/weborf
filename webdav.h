@@ -21,17 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_WEBDAV_H
 #define WEBORF_WEBDAV_H
 
-#include <string.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-
-#include "instance.h"
+#include "types.h"
 
 int propfind(int sock,connection_t* connection_prop,string_t *post_param);
 int mkcol(int sock,connection_t* connection_prop);

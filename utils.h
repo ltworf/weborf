@@ -21,21 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_UTILS_H
 #define WEBORF_UTILS_H
 
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <netdb.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <sys/stat.h>
-#include <dirent.h>
-#include <unistd.h>
-
-
-#include "mystring.h"
-#include "options.h"
 #include "types.h"
 
 bool file_exists(char *file);

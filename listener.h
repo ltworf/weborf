@@ -23,21 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_LISTENER_H
 #define WEBORF_LISTENER_H
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <syslog.h>
-#include <getopt.h>
-
-
-#include <stdlib.h>
-#include <pthread.h>
 
 #define NOMEM 7
 

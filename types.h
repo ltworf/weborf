@@ -21,6 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_TYPES_H
 #define WEBORF_TYPES_H
 
+#define _GNU_SOURCE
+#define _LARGEFILE64_SOURCE
 #include <stdbool.h> //Adds boolean type
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -29,6 +31,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <magic.h>
 
 #include "options.h"
+
+//TODO Dealing with off64_t type
+//#ifndef off64_t
+//typedef unsigned long long int off64_t;
+//#endif
 
 typedef struct {
     long int id;                //ID of the thread

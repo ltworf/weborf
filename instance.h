@@ -22,43 +22,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_INSTANCE_H
 #define WEBORF_INSTANCE_H
 
-#define _GNU_SOURCE
-
-
 #ifndef O_LARGEFILE //Needed to compile on Mac, where this doesn't exist
 #define O_LARGEFILE 0
 #endif
 
-#include <time.h>
-#include <netinet/in.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <signal.h>
-#include <syslog.h> //To use syslog
-#include <string.h>
-#include <strings.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <sys/un.h>
-
-#include "buffered_reader.h"
-#include "options.h"
-#include "utils.h"
-#include "queue.h"
-#include "mystring.h"
-#include "base64.h"
 #include "types.h"
-#include "mime.h"
+#include "buffered_reader.h"
 
 #ifdef WEBDAV
 #include "webdav.h"
 #endif
+
+
+//Define lseek64 if does not exist
+#ifndef _LARGEFILE64_SOURCE
+#define _LARGEFILE64_SOURCE
+#endif 
+
+#include <sys/types.h>
+#include <unistd.h>
+#ifndef lseek64
+#define lseek64 lseek
+#endif
+
 
 //Request
 #define INVALID -1
@@ -115,7 +101,7 @@ int request_auth(int sock, char *descr);
 string_t read_post_data(int sock, connection_t * connection_prop, buffered_read_t * read_b);
 char *get_basedir(char *http_param);
 void handle_requests(int sock, char *buf, buffered_read_t * read_b, int *bufFull, connection_t * connection_prop, long int id);
-int send_http_header(int sock, int code, unsigned int size, char *headers, bool content, time_t timestamp, connection_t * connection_prop);
+int send_http_header(int sock, int code, unsigned long long int size, char *headers, bool content, time_t timestamp, connection_t * connection_prop);
 int delete_file(int sock,connection_t* connection_prop);
 int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b);
 #endif

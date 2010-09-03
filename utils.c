@@ -21,16 +21,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include "utils.h"
 #include <stdio.h>
-#include <sys/types.h>
+#include <time.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <netdb.h>
 #include <dirent.h>
-#include "options.h"
+#include <unistd.h>
+
+
 #include "mystring.h"
+#include "options.h"
+#include "utils.h"
 
 /**
 This function reads the directory dir, putting inside the html string an html

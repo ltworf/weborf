@@ -21,9 +21,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "types.h"
 #include "options.h"
 
+
 #ifdef WEBDAV
 
 #include "webdav.h"
+#include "instance.h"
+#include "mime.h"
+#include "mystring.h"
+#include "utils.h"
+
+#include <string.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <stdio.h>
+
+
 
 extern char* authsock;
 extern char* basedir;

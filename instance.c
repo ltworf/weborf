@@ -18,8 +18,40 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 @author Salvo Rinaldi <salvin@anche.no>
  */
+
+#define _LARGEFILE64_SOURCE
+#include <time.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
+#include <syslog.h> //To use syslog
+#include <string.h>
+#include <strings.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <sys/un.h>
+#include <errno.h>
+
+
+#include "options.h"
+#include "utils.h"
+#include "queue.h"
+#include "mystring.h"
+#include "base64.h"
+#include "mime.h"
 #include "instance.h"
 #include "cachedir.h"
+
+
+
 
 extern syn_queue_t queue;                   //Queue for open sockets
 
@@ -1062,7 +1094,7 @@ static inline off64_t bytes_to_send(int sock,connection_t* connection_prop,char 
     errno=0;
 #ifdef __RANGE
     if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER,5)) {//Find if it is a range request 5 is strlen of "range"
-        int from,to;
+        off64_t from,to;
 
         {
             //Locating from and to
@@ -1074,16 +1106,16 @@ static inline off64_t bytes_to_send(int sock,connection_t* connection_prop,char 
                 return ERR_NOTHTTP;
             }
             sep[0]=0;
-            from=strtol(eq+1,NULL,0);
-            to=strtol(sep+1,NULL,0);
+            from=strtoll(eq+1,NULL,0);
+            to=strtoll(sep+1,NULL,0);
         }
 
         if (to==0) { //If no to is specified, it is to the end of the file
             to=connection_prop->strfile_stat.st_size-1;
         }
-        snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%d-%d/%d\r\n",from,to,(int)connection_prop->strfile_stat.st_size);
-        lseek(connection_prop->strfile_fd,from,SEEK_SET);
-        off_t count=to-from+1;
+        snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%llu-%llu/%lld\r\n",(unsigned long long int)from,(unsigned long long int)to,(long long int)connection_prop->strfile_stat.st_size);
+        lseek64(connection_prop->strfile_fd,from,SEEK_SET);
+        off64_t count=to-from+1;
 
         send_http_header(sock,206,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
         return count;
@@ -1132,7 +1164,6 @@ int write_file(int sock,connection_t* connection_prop) {
         errno=0;
         return e;
     }
-
 
     char *buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
@@ -1331,7 +1362,7 @@ This function will automatically take care of generating Connection header when
 needed, according to keep_alive and protocol_version of connection_prop
 
 */
-int send_http_header(int sock,int code, unsigned int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
+int send_http_header(int sock,int code, unsigned long long int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
     int len_head,wrote;
     char *head=malloc(HEADBUF);
     char* h_ptr=head;
@@ -1391,9 +1422,9 @@ int send_http_header(int sock,int code, unsigned int size,char* headers,bool con
     if (size>0 || (connection_prop->keep_alive==true)) {
         //Content length (or entity lenght) and extra headers
         if (content) {
-            len_head=snprintf(head,left_head,"Content-Length: %u\r\n",size);
+            len_head=snprintf(head,left_head,"Content-Length: %llu\r\n",(unsigned long long int)size);
         } else {
-            len_head=snprintf(head,left_head,"entity-length: %u\r\n",size);
+            len_head=snprintf(head,left_head,"entity-length: %llu\r\n",(unsigned long long int)size);
         }
 
         head+=len_head;
