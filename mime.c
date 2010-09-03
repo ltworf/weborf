@@ -18,11 +18,37 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
-#ifdef SEND_MIMETYPES
+
 #include <magic.h>
+#include "mime.h"
+
+/**
+Returns a token for the libmagic.
+buffer must NOT be shared amongst threads.
+The size of buffer is assumed to be at least MIMETYPELEN
+*/
+inline int init_mime(magic_t *token) {
+#ifdef SEND_MIMETYPES
+    *token=magic_open(MAGIC_SYMLINK | MAGIC_MIME_TYPE);
+    if (*token==NULL) return 1;
+    return magic_load(*token,NULL);                     //Load the database
+#else
+    *token=NULL;
+    return 0;
 #endif
 
-#include "mime.h"
+}
+
+/**
+Releases the token for libmagic
+If the token is null, it will do nothing.
+*/
+inline void release_mime(magic_t token) {
+    if (token==NULL) return;
+#ifdef SEND_MIMETYPES
+    magic_close(token);
+#endif
+}
 
 /**
 returns mimetype of an opened file descriptor
@@ -66,32 +92,3 @@ inline const char* get_mime_fd (magic_t token,int fd) {
     magic_close(cookie);
 
 }*/
-
-/**
-Returns a token for the libmagic.
-buffer must NOT be shared amongst threads.
-The size of buffer is assumed to be at least MIMETYPELEN
-*/
-inline int init_mime(magic_t *token) {
-#ifdef SEND_MIMETYPES
-    *token=magic_open(MAGIC_SYMLINK | MAGIC_MIME_TYPE);
-    if (*token==NULL) return 1;
-    return magic_load(*token,NULL);                     //Load the database
-#else
-    *token=NULL;
-    return 0;
-#endif
-
-}
-
-/**
-Releases the token for libmagic
-If the token is null, it will do nothing.
-*/
-inline void release_mime(magic_t token) {
-    if (token==NULL) return;
-#ifdef SEND_MIMETYPES
-    magic_close(token);
-#endif
-}
-

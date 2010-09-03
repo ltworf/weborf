@@ -28,12 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/stat.h>
 #include <unistd.h>
 #include <netinet/in.h>
-
-#ifdef SEND_MIMETYPES
 #include <magic.h>
-#else
-typedef int magic_t;
-#endif
 
 #include "options.h"
 
@@ -83,7 +78,6 @@ typedef struct {
     ssize_t strfile_len;        //Length of string strfile
     struct stat strfile_stat;   //Stat of strfile
     int strfile_fd;             //File descriptor for strfile
-    thread_prop_t thread_prop;  //Props specific of the thread
 } connection_t;
 
 typedef struct {
