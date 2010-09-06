@@ -113,9 +113,9 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
             } else if ((size = (size / 1024)) < 1024) {
                 measure="MiB";
             } else {
-		size = size / 1024;
-		measure="GiB";
-	    }
+                size = size / 1024;
+                measure="GiB";
+            }
 
             if (i % 2 == 0)
                 color = "white";
@@ -123,8 +123,8 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
                 color = "#EAEAEA";
 
             printf_s=snprintf(html+pagesize,maxsize,
-                              "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%llu%s</td><td>%s</td></tr>\n",
-                              color, namelist[i]->d_name, namelist[i]->d_name, (unsigned long long int)size, measure,last_modified);
+                              "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%lld%s</td><td>%s</td></tr>\n",
+                              color, namelist[i]->d_name, namelist[i]->d_name, (long long int)size, measure,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
 

@@ -62,7 +62,6 @@ inline const char* get_mime_fd (magic_t token,int fd) {
     */
     int new_fd=dup(fd);
     return magic_descriptor(token,new_fd);
-    //lseek(fd,0,SEEK_SET);
 #else
     return NULL;
 #endif

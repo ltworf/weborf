@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo Rinaldi <salvin@anche.no>
  */
 
-#define _LARGEFILE64_SOURCE
 #include <time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -32,14 +31,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/wait.h>
-#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include <sys/un.h>
 #include <errno.h>
-
 
 #include "options.h"
 #include "utils.h"
@@ -162,7 +159,7 @@ static inline int check_auth(int sock, connection_t* connection_prop) {
 }
 
 
-void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
+static inline void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
     int from;
     char *lasts;//Used by strtok_r
 
@@ -1114,7 +1111,7 @@ static inline unsigned long long int bytes_to_send(int sock,connection_t* connec
             to=connection_prop->strfile_stat.st_size-1;
         }
         snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%llu-%llu/%lld\r\n",(unsigned long long int)from,(unsigned long long int)to,(long long int)connection_prop->strfile_stat.st_size);
-        lseek64(connection_prop->strfile_fd,from,SEEK_SET);
+        lseek(connection_prop->strfile_fd,from,SEEK_SET);
         unsigned long long int count=to-from+1;
 
         send_http_header(sock,206,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);

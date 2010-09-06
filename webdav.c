@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
-#include "types.h"
+
 #include "options.h"
 
 
@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mime.h"
 #include "mystring.h"
 #include "utils.h"
+#include "types.h"
 
 #include <string.h>
 #include <stdbool.h>

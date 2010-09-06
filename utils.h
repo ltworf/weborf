@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WEBORF_UTILS_H
 
 #include "types.h"
+#include "options.h"
 
 bool file_exists(char *file);
 int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bool parent);

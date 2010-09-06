@@ -18,8 +18,11 @@ CC=gcc
 #DEFS=-Ddebug
 OFLAGS=-O2
 #-pedantic -Wextra
-CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat -g  $(OFLAGS)
+DEFINES=-D_FILE_OFFSET_BITS=64
+
+CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat -g  $(OFLAGS) $(DEFINES)
 LDFLAGS=-lpthread  -lmagic
+
 
 #Opensolaris flags
 #CFLAGS=-D_POSIX_PTHREAD_SEMANTICS  -Wall $(DEFS) $(ARCHFLAGS)  -Wformat

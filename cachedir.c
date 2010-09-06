@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <syslog.h>
 
 
 #include "cachedir.h"
@@ -64,7 +65,6 @@ int get_cached_item(unsigned int uprefix,connection_t* connection_prop) {
 
     return open(fname,O_RDONLY);
 }
-
 
 
 void store_cache_item(unsigned int uprefix,connection_t* connection_prop, char *content, size_t content_len) {
