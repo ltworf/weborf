@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cachedir.h"
 #include "options.h"
 #include "utils.h"
+#include "types.h"
 
 
 char *cachedir=NULL;
@@ -84,7 +85,11 @@ void store_cache_item(unsigned int uprefix,connection_t* connection_prop, char *
 
 
 /**
-This function initializes a cache directory and makes sure it is empty.
+This function initializes a cache directory.
+If the dir is not a directory or it is impossible to stat
+weborf will terminate.
+If it is impossible to delete and create files in it, weborf
+will just log a warning.
 */
 void init_cache(char* dir) {
     cachedir=dir;
@@ -95,15 +100,26 @@ void init_cache(char* dir) {
         struct stat stat_buf;
         if (stat(dir, &stat_buf)!=0) {
             write(2,"Unable to stat cache directory\n",31);
+#ifdef SERVERDBG
+            syslog(LOG_ERR,"Unable to stat cache directory");
+#endif
+
             exit(10);
         }
 
         if (!S_ISDIR(stat_buf.st_mode)) {
             //Not a directory
             write(2,"--cache parameter must be a directory\n",38);
+
+#ifdef SERVERDBG
+            syslog(LOG_ERR,"--cache parameter must be a directory");
+#endif
             exit(10);
         }
     }
+
+
+    //TODO Check if it is possible to create and delete files
 }
 
 /**
