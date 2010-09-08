@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include <magic.h>
-#include "mime.h"
 
 /**
 Returns a token for the libmagic.
