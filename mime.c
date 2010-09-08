@@ -19,7 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 
+#include <string.h>
+#include <unistd.h>
 #include <magic.h>
+
+#include "mime.h"
 
 /**
 Returns a token for the libmagic.
@@ -90,3 +94,4 @@ inline const char* get_mime_fd (magic_t token,int fd) {
     magic_close(cookie);
 
 }*/
+

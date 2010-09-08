@@ -47,9 +47,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "instance.h"
 #include "cachedir.h"
 
-
-
-
 extern syn_queue_t queue;                   //Queue for open sockets
 
 extern t_thread_info thread_info;
@@ -63,8 +60,7 @@ extern int indexes_l;                       //Length of array
 extern bool virtual_host;                   //True if must check for virtual hosts
 extern char ** environ;                     //To reset environ vars
 extern array_ll cgi_paths;                  //Paths to cgi binaries
-
-__thread thread_prop_t thread_prop;
+extern pthread_key_t thread_key;            //key for pthread_setspecific
 
 /**
 Checks if the required resource has the same date as the one cached in the client.
@@ -158,6 +154,40 @@ static inline int check_auth(int sock, connection_t* connection_prop) {
     return result;
 }
 
+/**
+This function does some changes on the URL.
+The url will never be longer than the original one.
+*/
+static inline void modURL(char* url) {
+    //Prevents the use of .. to access the whole filesystem
+    strReplace(url,"../",'\0');
+
+    replaceEscape(url);
+
+    //TODO AbsoluteURI: Check if the url uses absolute url, and in that case remove the 1st part
+}
+
+/**
+Sets keep_alive and protocol_version fields of connection_t
+*/
+static inline void set_connection_props(connection_t *connection_prop) {
+    char a[12];//Gets the value
+    //Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
+    bool connection=get_param_value(connection_prop->http_param,"Connection", a,12,10);//12 is the buffer size and 10 is strlen("connection")
+
+    //Setting the connection type, using protocol version
+    if (connection_prop->http_param[7]=='1' && connection_prop->http_param[5]=='1') {//Keep alive by default (protocol 1.1)
+        connection_prop->protocol_version=HTTP_1_1;
+        connection_prop->keep_alive=(connection && strncmp(a,"close",5)==0)?false:true;
+    } else {//Not http1.1
+        //Constants are set to make this line work
+        connection_prop->protocol_version=connection_prop->http_param[7];
+        connection_prop->keep_alive=(connection && strncmp(a,"Keep",4)==0)?true:false;
+    }
+    
+    modURL(connection_prop->page);//Operations on the url string
+    split_get_params(connection_prop);//Splits URI into page and parameters
+}
 
 static inline void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
     int from;
@@ -232,21 +262,8 @@ static inline void handle_requests(int sock,char* buf,buffered_read_t * read_b,i
         syslog(LOG_INFO,"Requested page: %s to Thread %ld",connection_prop->page,id);
 #endif
         //Stores the parameters of the request
-        {
-            char a[12];//Gets the value
-            //Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
-            bool connection=get_param_value(connection_prop->http_param,"Connection", a,12,10);//12 is the buffer size and 10 is strlen("connection")
+        set_connection_props(connection_prop);
 
-            //Setting the connection type, using protocol version
-            if (connection_prop->http_param[7]=='1' && connection_prop->http_param[5]=='1') {//Keep alive by default (protocol 1.1)
-                connection_prop->protocol_version=HTTP_1_1;
-                connection_prop->keep_alive=(connection && strncmp(a,"close",5)==0)?false:true;
-            } else {//Not http1.1
-                //Constants are set to make this line work
-                connection_prop->protocol_version=connection_prop->http_param[7];
-                connection_prop->keep_alive=(connection && strncmp(a,"Keep",4)==0)?true:false;
-            }
-        }
         if (send_page(sock,read_b, connection_prop)<0) {
             return;//Unable to send an error
         }
@@ -278,6 +295,10 @@ Takes open sockets from the queue and serves the requests
 Doesn't do busy waiting
 */
 void * instance(void * nulla) {
+    thread_prop_t thread_prop;  //Server's props
+    pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
+
+
     //General init of the thread
     thread_prop.id=(long int)nulla;//Set thread's id
 #ifdef THREADDBG
@@ -356,20 +377,6 @@ release_resources:
     pthread_exit(0);
     return NULL;//Never reached
 }
-
-/**
-This function does some changes on the URL.
-The url will never be longer than the original one.
-*/
-static inline void modURL(char* url) {
-    //Prevents the use of .. to access the whole filesystem
-    strReplace(url,"../",'\0');
-
-    replaceEscape(url);
-
-    //TODO AbsoluteURI: Check if the url uses absolute url, and in that case remove the 1st part
-}
-
 
 /**
 This function handles a PUT request.
@@ -514,10 +521,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
     int retval=0;//Return value after sending the page
     char* real_basedir; //Basedir, might be different than basedir due to virtual hosts
-    string_t post_param; //Contains POST data
-
-    modURL(connection_prop->page);//Operations on the url string
-    split_get_params(connection_prop);//Splits URI into page and parameters
+    string_t post_param; //Contains POST data  
 
 #ifdef SENDINGDBG
     syslog (LOG_DEBUG,"URL changed into %s",connection_prop->page);

@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utils.h"
 #include "types.h"
 
+#include <pthread.h>
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -49,7 +50,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 extern char* authsock;
 extern char* basedir;
 extern bool virtual_host;
-extern __thread thread_prop_t thread_prop;
+extern pthread_key_t thread_key;            //key for pthread_setspecific
+
 
 /**
 This function will create a copy of the source URI into the
@@ -217,7 +219,9 @@ static inline int printprops(int sock,connection_t *connection_prop,char*props[]
             strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
 #ifdef SEND_MIMETYPES
         } else if(strstr(props[i],"getcontenttype")!=NULL) { //Sends MIME type
-            const char* t=get_mime_fd(thread_prop.mime_token,file_fd);
+            thread_prop_t *thread_prop = pthread_getspecific(thread_key);
+
+            const char* t=get_mime_fd(thread_prop->mime_token,file_fd);
             snprintf(prop_buffer,URI_LEN,"%s",t);
 #endif
         } else {

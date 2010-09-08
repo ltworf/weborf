@@ -65,12 +65,17 @@ bool virtual_host = false;      //True if must check for virtual hosts
 
 array_ll cgi_paths;             //Paths to cgi binaries
 
+pthread_key_t thread_key;            //key for pthread_setspecific
+
 /**
 Sets t_attr to make detached threads
+and initializes pthread_keys
 */
 void init_thread_attr() {
     int rc = pthread_attr_init(&t_attr);
     rc = pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED);
+    pthread_key_create(&thread_key,NULL);
+
 }
 
 /**
