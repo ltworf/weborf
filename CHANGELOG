@@ -10,6 +10,10 @@
 - Directory listing can be cached on disk
 - Can support large files
 - Added GiB measure in directory listing
+- Ported fix from 0.12.3 (Rev. 465)
+
+0.12.3
+- Fixes directory traversal vulnerability
 
 0.12.2
 - Fixes DoS occurring when wide chars are used in some headers

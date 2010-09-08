@@ -265,11 +265,13 @@ authentication is enabled.
 */
 int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
 
+    printf("FILE %s %u\n",connection_prop->strfile,connection_prop);
+
     //Forbids the method if no authentication is in use
     if (authsock==NULL) {
         return ERR_FORBIDDEN;
     }
-
+    
     {
         //This redirects directory without ending / to directory with the ending /
         struct stat stat_s;

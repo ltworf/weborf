@@ -159,10 +159,10 @@ This function does some changes on the URL.
 The url will never be longer than the original one.
 */
 static inline void modURL(char* url) {
+    replaceEscape(url);
+    
     //Prevents the use of .. to access the whole filesystem
     strReplace(url,"../",'\0');
-
-    replaceEscape(url);
 
     //TODO AbsoluteURI: Check if the url uses absolute url, and in that case remove the 1st part
 }
@@ -569,7 +569,9 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         case PROPFIND:
             //Propfind has data, not strictly post but read_post_data will work
             post_param=read_post_data(sock,connection_prop,read_b);
+            printf("FILE %s %u\n",connection_prop->strfile,connection_prop);
             retval=propfind(sock,connection_prop,&post_param);
+            printf("FILE %s %u\n",connection_prop->strfile,connection_prop);
             break;
         case MKCOL:
             retval=mkcol(sock,connection_prop);
