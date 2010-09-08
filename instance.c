@@ -238,10 +238,10 @@ This function does some changes on the URL.
 The url will never be longer than the original one.
 */
 void modURL(char* url) {
+    replaceEscape(url);
+
     //Prevents the use of .. to access the whole filesystem
     strReplace(url,"../",'\0');
-
-    replaceEscape(url);
 
     //TODO AbsoluteURI: Check if the url uses absolute url, and in that case remove the 1st part
 }
