@@ -46,6 +46,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mime.h"
 #include "instance.h"
 #include "cachedir.h"
+#include "types.h"
 
 extern syn_queue_t queue;                   //Queue for open sockets
 
@@ -311,6 +312,10 @@ void * instance(void * nulla) {
     buffered_read_t read_b;                         //Buffer for buffered reader
     int sock=0;                                     //Socket with the client
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
+    
+     
+    connection_prop.strfile=malloc(URI_LEN);//buffer for filename
+
 
     signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
 
@@ -322,7 +327,7 @@ void * instance(void * nulla) {
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    if (init_mime(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL) { //Unable to allocate the buffer
+    if (init_mime(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
 #endif
@@ -371,6 +376,7 @@ release_resources:
     syslog(LOG_DEBUG,"Terminating thread %ld",thread_prop.id);
 #endif
     free(buf);
+    free(connection_prop.strfile);
     buffer_free(&read_b);
     release_mime(thread_prop.mime_token);
     change_free_thread(thread_prop.id,0,-1);//Reduces count of threads
@@ -542,13 +548,6 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         goto escape;
     }
 
-    connection_prop->strfile=malloc(URI_LEN);//buffer for filename
-    if (connection_prop->strfile==NULL) {
-#ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
-#endif
-        return ERR_NOMEM;//If no memory is available
-    }
     connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",real_basedir,connection_prop->page);//Prepares the string
 
     if (connection_prop->method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
@@ -597,9 +596,10 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
     fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
 
-    if (S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Requested a directory without ending /
+    if (S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Requested a directory
         bool index_found=false;
 
+	//Requested a directory without ending /
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
@@ -650,7 +650,6 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
 escape:
     free(post_param.data);
-    free(connection_prop->strfile);
 
     //Closing local file previously opened
     if ((connection_prop->method_id==GET || connection_prop->method_id==POST) && connection_prop->strfile_fd>=0) {
