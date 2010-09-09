@@ -73,13 +73,13 @@ if this function returns 0, the HTTP request has been already served.
 
 The char* buffer must be at least RBUFFER bytes (see definitions in options.h)
 */
-static inline int check_etag(int sock,connection_t* connection_prop,char *a) {
+static inline int check_etag(connection_t* connection_prop,char *a) {
     //Find if it is a range request, 13 is strlen of "if-none-match"
     if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER,13)) {
         time_t etag=(time_t)strtol(a+1,NULL,0);
         if (connection_prop->strfile_stat.st_mtime==etag) {
             //Browser has the item in its cache, sending 304
-            send_http_header(sock,304,0,NULL,true,etag,connection_prop);
+            send_http_header(304,0,NULL,true,etag,connection_prop);
             return 0;
         }
     }
@@ -90,9 +90,9 @@ static inline int check_etag(int sock,connection_t* connection_prop,char *a) {
 This function checks if the authentication can be granted or not calling the external program.
 Returns 0 if authorization is granted.
 */
-static inline int check_auth(int sock, connection_t* connection_prop) {
+static inline int check_auth(connection_t* connection_prop) {
     if (authsock==NULL) return 0;
-
+    
     char username[PWDLIMIT*2];
     char* password=username; //will be changed if there is a password
 
@@ -190,9 +190,11 @@ static inline void set_connection_props(connection_t *connection_prop) {
     split_get_params(connection_prop);//Splits URI into page and parameters
 }
 
-static inline void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
+static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
     int from;
+    int sock=connection_prop->sock;
     char *lasts;//Used by strtok_r
+    
 
     short int r;//Readed char
     char *end;//Pointer to header's end
@@ -265,7 +267,7 @@ static inline void handle_requests(int sock,char* buf,buffered_read_t * read_b,i
         //Stores the parameters of the request
         set_connection_props(connection_prop);
 
-        if (send_page(sock,read_b, connection_prop)<0) {
+        if (send_page(read_b, connection_prop)<0) {
             return;//Unable to send an error
         }
 
@@ -340,6 +342,8 @@ void * instance(void * nulla) {
         if (sock<0) { //Was not a socket but a termination order
             goto release_resources;
         }
+        
+        connection_prop.sock=sock;//Assigned socket into the struct
 
         //Converting address to string
 #ifdef IPV6
@@ -353,7 +357,7 @@ void * instance(void * nulla) {
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
 #endif
-        handle_requests(sock,buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
+        handle_requests(buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",thread_prop.id);
@@ -390,8 +394,8 @@ PUT size has no hardcoded limits.
 Auth provider has to check for the file's size and refuse it if it is the case.
 This function will not work if there is no auth provider.
 */
-int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
-
+int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
+    int sock=connection_prop->sock;
     if (authsock==NULL) {
         return ERR_FORBIDDEN;
     }
@@ -473,7 +477,7 @@ It requires the socket, connection_t struct
 Auth provider has to check if it is allowed to delete the file or not.
 This function will not work if there is no auth provider.
 */
-int delete_file(int sock,connection_t* connection_prop) {
+int delete_file(connection_t* connection_prop) {
     int retval;
 
     if (authsock==NULL) {
@@ -503,7 +507,7 @@ Returns the list of supported methods. In theory this list should be
 different depending on the URI requested. But this method will return
 the same list for everything.
 */
-static inline int options (int sock, connection_t* connection_prop) {
+static inline int options (connection_t* connection_prop) {
 
 #ifdef WEBDAV
 #define ALLOWED "Allow: GET,POST,PUT,DELETE,OPTIONS,PROPFIND,MKCOL,COPY,MOVE\r\nDAV: 1,2\r\nDAV: <http://apache.org/dav/propset/fs/1>\r\nMS-Author-Via: DAV\r\n"
@@ -511,7 +515,7 @@ static inline int options (int sock, connection_t* connection_prop) {
 #define ALLOWED "Allow: GET,POST,PUT,DELETE,OPTIONS\r\n"
 #endif
 
-    send_http_header(sock,200,0,ALLOWED,true,-1,connection_prop);
+    send_http_header(200,0,ALLOWED,true,-1,connection_prop);
     return 0;
 }
 
@@ -519,8 +523,8 @@ static inline int options (int sock, connection_t* connection_prop) {
 This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
-int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
-
+int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
+  int sock=connection_prop->sock;
     int retval=0;//Return value after sending the page
     char* real_basedir; //Basedir, might be different than basedir due to virtual hosts
     string_t post_param; //Contains POST data  
@@ -536,7 +540,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         real_basedir=basedir;
     }
 
-    if (check_auth(sock,connection_prop)!=0) { //If auth is required
+    if (check_auth(connection_prop)!=0) { //If auth is required
         retval = ERR_NOAUTH;
         post_param.data=NULL;
         goto escape;
@@ -550,26 +554,26 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
         switch (connection_prop->method_id) {
         case PUT:
-            retval=read_file(sock,connection_prop,read_b);
+            retval=read_file(connection_prop,read_b);
             break;
         case DELETE:
-            retval=delete_file(sock,connection_prop);
+            retval=delete_file(connection_prop);
             break;
         case OPTIONS:
-            retval=options(sock,connection_prop);
+            retval=options(connection_prop);
             break;
 #ifdef WEBDAV
         case PROPFIND:
             //Propfind has data, not strictly post but read_post_data will work
-            post_param=read_post_data(sock,connection_prop,read_b);
-            retval=propfind(sock,connection_prop,&post_param);
+            post_param=read_post_data(connection_prop,read_b);
+            retval=propfind(connection_prop,&post_param);
             break;
         case MKCOL:
-            retval=mkcol(sock,connection_prop);
+            retval=mkcol(connection_prop);
             break;
         case COPY:
         case MOVE:
-            retval=copy_move(sock,connection_prop);
+            retval=copy_move(connection_prop);
             break;
 #endif
         }
@@ -577,7 +581,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         goto escape;
     }
 
-    post_param=read_post_data(sock,connection_prop,read_b);
+    post_param=read_post_data(connection_prop,read_b);
 
     if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY | O_LARGEFILE))<0) {
         //File doesn't exist. Must return errorcode
@@ -594,7 +598,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
-            send_http_header(sock,301,0,head,true,-1,connection_prop);
+            send_http_header(301,0,head,true,-1,connection_prop);
         } else {//Requested directory with /. Search for index files or list directory
 
             char* index_name=&connection_prop->strfile[connection_prop->strfile_len];//Pointer to where to write the filename
@@ -606,7 +610,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
                 if (file_exists(connection_prop->strfile)) { //If index exists, redirect to it
                     char head[URI_LEN+12];//12 is the size for the location header
                     snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,indexes[i]);
-                    send_http_header(sock,303,0,head,true,-1,connection_prop);
+                    send_http_header(303,0,head,true,-1,connection_prop);
 
                     index_found=true;
                     break;
@@ -615,7 +619,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
             connection_prop->strfile[connection_prop->strfile_len]=0; //Removing the index part
             if (index_found==false) {//If no index was found in the dir
-                write_dir(sock,real_basedir,connection_prop);
+                write_dir(real_basedir,connection_prop);
             }
         }
     } else {//Requested an existing file
@@ -626,16 +630,16 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
             for (q_=0; q_<cgi_paths.len; q_+=2) { //Check if it is a CGI script
                 f_len=cgi_paths.data_l[q_];
                 if (endsWith(connection_prop->page+connection_prop->page_len-f_len,cgi_paths.data[q_],f_len,f_len)) {
-                    retval=exec_page(sock,cgi_paths.data[++q_],&post_param,real_basedir,connection_prop);
+                    retval=exec_page(cgi_paths.data[++q_],&post_param,real_basedir,connection_prop);
                     break;
                 }
             }
 
             if (q_%2==0) { //Normal file
-                retval= write_file(sock,connection_prop);
+                retval= write_file(connection_prop);
             }
         } else { //Scripts disabled
-            retval= write_file(sock,connection_prop);
+            retval= write_file(connection_prop);
         }
     }
 
@@ -678,9 +682,9 @@ escape:
     case ERR_NOAUTH:
         return request_auth(sock,connection_prop->page);//Sends a request for authentication
     case OK_NOCONTENT:
-        return send_http_header(sock,204,0,NULL,true,-1,connection_prop);
+        return send_http_header(204,0,NULL,true,-1,connection_prop);
     case OK_CREATED:
-        return send_http_header(sock,201,0,NULL,true,-1,connection_prop);
+        return send_http_header(201,0,NULL,true,-1,connection_prop);
     }
     return 0; //Make gcc happy
 }
@@ -697,7 +701,8 @@ The child will clean all the envvars and then set new ones as needed by CGI.
 Then the child will call alarm to set the timeout to its execution, and then will exec the script.
 
 */
-int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,connection_t* connection_prop) {
+int exec_page(char * executor,string_t* post_param,char* real_basedir,connection_t* connection_prop) {
+  int sock=connection_prop->sock;
 #ifdef SENDINGDBG
     syslog(LOG_INFO,"Executing file %s",connection_prop->strfile);
 #endif
@@ -898,7 +903,7 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
             true tells to use Content-Length rather than entity-length
             -1 won't use any ETag, and will eventually use the current time as last-modified
             */
-            send_http_header(sock,status,reads,header_buf,true,-1,connection_prop);
+            send_http_header(status,reads,header_buf,true,-1,connection_prop);
 
             if (reads!=0) {//Sends the page if there is something to send
                 write (sock,scrpt_buf,reads);
@@ -930,7 +935,8 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
 This function writes on the specified socket an html page containing the list of files within the
 specified directory.
 */
-int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
+int write_dir(char* real_basedir,connection_t* connection_prop) {
+  int sock=connection_prop->sock;
 
     /*
     WARNING
@@ -941,7 +947,7 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
     {
         char a[RBUFFER+MIMETYPELEN+16]; //Buffer for if-none-match from header
         //Check if the resource cached in the client is the same
-        if (check_etag(sock,connection_prop,&a[0])==0) return 0;
+        if (check_etag(connection_prop,&a[0])==0) return 0;
     }
 
 
@@ -959,7 +965,7 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
             */
             fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
 
-            write_file(sock,connection_prop);
+            write_file(connection_prop);
 
             //Restore file descriptor so it can be closed later
             connection_prop->strfile_fd=oldfd;
@@ -1009,7 +1015,7 @@ int write_dir(int sock,char* real_basedir,connection_t* connection_prop) {
         I tried on reiserfs and the directory's mtime changes too but i didn't
         find any doc about the other filesystems and OS.
         */
-        send_http_header(sock,200,pagelen,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+        send_http_header(200,pagelen,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
         write(sock,html,pagelen);
 
         //Write item in cache
@@ -1030,7 +1036,8 @@ it is not possible to send the size in advance, so it will set keep_alive to fal
 sock is the socket
 */
 #ifdef __COMPRESSION
-static inline int write_compressed_file(int sock,connection_t* connection_prop ) {
+static inline int write_compressed_file(connection_t* connection_prop ) {
+  int sock=connection_prop->sock;
 
     if (
         connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN &&
@@ -1056,7 +1063,7 @@ static inline int write_compressed_file(int sock,connection_t* connection_prop )
 
 
     connection_prop->keep_alive=false;
-    send_http_header(sock,200,
+    send_http_header(200,
                      connection_prop->strfile_stat.st_size,
                      "Content-Encoding: gzip\r\n",
                      false,
@@ -1084,7 +1091,7 @@ static inline int write_compressed_file(int sock,connection_t* connection_prop )
 
 
 
-static inline unsigned long long int bytes_to_send(int sock,connection_t* connection_prop,char *a) {
+static inline unsigned long long int bytes_to_send(connection_t* connection_prop,char *a) {
     errno=0;
 #ifdef __RANGE
     if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER,5)) {//Find if it is a range request 5 is strlen of "range"
@@ -1111,12 +1118,12 @@ static inline unsigned long long int bytes_to_send(int sock,connection_t* connec
         lseek(connection_prop->strfile_fd,from,SEEK_SET);
         unsigned long long int count=to-from+1;
 
-        send_http_header(sock,206,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+        send_http_header(206,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
         return count;
     } else //Normal request
 #endif
     {
-        send_http_header(sock,200,connection_prop->strfile_stat.st_size,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+        send_http_header(200,connection_prop->strfile_stat.st_size,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
         return connection_prop->strfile_stat.st_size;
     }
 }
@@ -1137,22 +1144,24 @@ see that function for details.
 To work connection_prop.strfile_fd and connection_prop.strfile_stat must be set.
 The file sent is the one specified by strfile_fd, and it will not be closed after.
 */
-int write_file(int sock,connection_t* connection_prop) {
+int write_file(connection_t* connection_prop) {
+  
+  int sock=connection_prop->sock;
 
     char a[RBUFFER+MIMETYPELEN+16]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
     //Check if the resource cached in the client is the same
-    if (check_etag(sock,connection_prop,&a[0])==0) return 0;
+    if (check_etag(connection_prop,&a[0])==0) return 0;
 
 #ifdef __COMPRESSION
     {
-        int c= write_compressed_file(sock,connection_prop);
+        int c= write_compressed_file(connection_prop);
         if (c!=NO_ACTION) return c;
     }
 #endif
 
     //Determines how many bytes send, depending on file size and ranges
-    unsigned long long int count= bytes_to_send(sock,connection_prop,&a[0]);
+    unsigned long long int count= bytes_to_send(connection_prop,&a[0]);
     if (errno !=0) {
         int e=errno;
         errno=0;
@@ -1271,7 +1280,8 @@ This function reads post data and returns the pointer to the buffer containing t
 or NULL if there was no data.
 If it doesn't return a null value, the returned pointer must be freed.
 */
-string_t read_post_data(int sock,connection_t* connection_prop,buffered_read_t* read_b) {
+string_t read_post_data(connection_t* connection_prop,buffered_read_t* read_b) {
+  int sock=connection_prop->sock;
     string_t res;
     res.len=0;
     res.data=NULL;
@@ -1356,7 +1366,8 @@ This function will automatically take care of generating Connection header when
 needed, according to keep_alive and protocol_version of connection_prop
 
 */
-int send_http_header(int sock,int code, unsigned long long int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
+int send_http_header(int code, unsigned long long int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
+    int sock=connection_prop->sock;
     int len_head,wrote;
     char *head=malloc(HEADBUF);
     char* h_ptr=head;

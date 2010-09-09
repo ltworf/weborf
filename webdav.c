@@ -158,7 +158,8 @@ It can be called only by funcions aware of this xml, because it sends only parti
 
 If the file can't be opened in readonly mode, this function does nothing.
 */
-static inline int printprops(int sock,connection_t *connection_prop,char*props[],char* file,char*filename,bool parent) {
+static inline int printprops(connection_t *connection_prop,char*props[],char* file,char*filename,bool parent) {
+  int sock=connection_prop->sock;
     int i,p_len;
     struct stat stat_s;
     char buffer[URI_LEN];
@@ -260,7 +261,8 @@ This function serves a PROPFIND request.
 Can serve both depth and non-depth requests. This funcion works only if
 authentication is enabled.
 */
-int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
+int propfind(connection_t* connection_prop,string_t *post_param) {
+  int sock=connection_prop->sock;
 
     //Forbids the method if no authentication is in use
     if (authsock==NULL) {
@@ -279,7 +281,7 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
         if (S_ISDIR(stat_s.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
-            send_http_header(sock,301,0,head,true,-1,connection_prop);
+            send_http_header(301,0,head,true,-1,connection_prop);
             return 0;
         }
     } // End redirection
@@ -307,14 +309,14 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
 
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
     connection_prop->keep_alive=false;
-    send_http_header(sock,207,0,"Content-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
+    send_http_header(207,0,"Content-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
 
     //Sends header of xml response
     write(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>",39);
     write(sock,"<D:multistatus xmlns:D=\"DAV:\">",30);
 
     //sends props about the requested file
-    printprops(sock,connection_prop,props,connection_prop->strfile,connection_prop->page,true);
+    printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true);
     if (deep) {//Send children files
         DIR *dp = opendir(connection_prop->strfile); //Open dir
         char file[URI_LEN];
@@ -340,7 +342,7 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
             snprintf(file,URI_LEN,"%s%s", connection_prop->strfile, entry.d_name);
 
             //Sends details about a file
-            printprops(sock,connection_prop,props,file,entry.d_name,false);
+            printprops(connection_prop,props,file,entry.d_name,false);
         }
 
         closedir(dp);
@@ -355,7 +357,7 @@ int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
 /**
 This funcion should be named mkdir. But standards writers are weird people.
 */
-int mkcol(int sock,connection_t* connection_prop) {
+int mkcol(connection_t* connection_prop) {
     if (authsock==NULL) {
         return ERR_FORBIDDEN;
     }
@@ -392,7 +394,7 @@ int mkcol(int sock,connection_t* connection_prop) {
 /**
 Webdav method copy.
 */
-int copy_move(int sock,connection_t* connection_prop) {
+int copy_move(connection_t* connection_prop) {
     struct stat f_prop; //File's property
     bool deep=true;
     bool check_exists=false;

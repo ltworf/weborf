@@ -78,17 +78,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HTTP_1_0 48
 #define HTTP_1_1 2
 
-int write_dir(int sock, char *real_basedir, connection_t * connection_prop);
+int write_dir(char *real_basedir, connection_t * connection_prop);
 void *instance(void *);
-int send_page(int sock, buffered_read_t * read_b, connection_t * connection_prop);
-int write_file(int sock, connection_t * connection_prop);
-int exec_page(int sock, char *executor, string_t * post_param, char *real_basedir, connection_t * connection_prop);
+int send_page(buffered_read_t * read_b, connection_t * connection_prop);
+int write_file(connection_t * connection_prop);
+int exec_page(char *executor, string_t * post_param, char *real_basedir, connection_t * connection_prop);
 int send_err(int sock, int err, char *descr, char *ip_addr);
 void piperr();
 int request_auth(int sock, char *descr);
-string_t read_post_data(int sock, connection_t * connection_prop, buffered_read_t * read_b);
+string_t read_post_data(connection_t * connection_prop, buffered_read_t * read_b);
 char *get_basedir(char *http_param);
-int send_http_header(int sock, int code, unsigned long long int size, char *headers, bool content, time_t timestamp, connection_t * connection_prop);
-int delete_file(int sock,connection_t* connection_prop);
-int read_file(int sock,connection_t* connection_prop,buffered_read_t* read_b);
+int send_http_header(int code, unsigned long long int size, char *headers, bool content, time_t timestamp, connection_t * connection_prop);
+int delete_file(connection_t* connection_prop);
+int read_file(connection_t* connection_prop,buffered_read_t* read_b);
 #endif
