@@ -299,7 +299,6 @@ void * instance(void * nulla) {
     thread_prop_t thread_prop;  //Server's props
     pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
 
-
     //General init of the thread
     thread_prop.id=(long int)nulla;//Set thread's id
 #ifdef THREADDBG
@@ -312,10 +311,7 @@ void * instance(void * nulla) {
     buffered_read_t read_b;                         //Buffer for buffered reader
     int sock=0;                                     //Socket with the client
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
-    
-     
-    connection_prop.strfile=malloc(URI_LEN);//buffer for filename
-
+    connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
 
     signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
 
@@ -533,7 +529,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     syslog (LOG_DEBUG,"URL changed into %s",connection_prop->page);
 #endif
 
-
+    //TODO remove this from here and add a field in connection_prop
     if (virtual_host) { //Using virtual hosts
         real_basedir=get_basedir(connection_prop->http_param);
     } else {//No virtual Host
@@ -543,8 +539,6 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
     if (check_auth(sock,connection_prop)!=0) { //If auth is required
         retval = ERR_NOAUTH;
         post_param.data=NULL;
-        connection_prop->strfile=NULL;
-
         goto escape;
     }
 
@@ -568,9 +562,7 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
         case PROPFIND:
             //Propfind has data, not strictly post but read_post_data will work
             post_param=read_post_data(sock,connection_prop,read_b);
-            printf("FILE %u %u\n",connection_prop->strfile,connection_prop);
             retval=propfind(sock,connection_prop,&post_param);
-            printf("FILE %u %u\n",connection_prop->strfile,connection_prop);
             break;
         case MKCOL:
             retval=mkcol(sock,connection_prop);
@@ -587,13 +579,12 @@ int send_page(int sock,buffered_read_t* read_b, connection_t* connection_prop) {
 
     post_param=read_post_data(sock,connection_prop,read_b);
 
-    //Opening file and doing stat
     if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY | O_LARGEFILE))<0) {
         //File doesn't exist. Must return errorcode
         retval=ERR_FILENOTFOUND;
         goto escape;
     }
-
+    
     fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
 
     if (S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Requested a directory
@@ -756,8 +747,9 @@ int exec_page(int sock,char * executor,string_t* post_param,char* real_basedir,c
             setenv("SERVER_PORT",port,true);
         }
         setEnvVars(connection_prop->http_param); //Sets env var starting with HTTP
-        {
-            //Sets SERVER_ADDR var
+        
+        {//Sets SERVER_ADDR var
+            
 #ifdef IPV6
             char loc_addr[INET6_ADDRSTRLEN];
             struct sockaddr_in6 addr;//Local and remote address

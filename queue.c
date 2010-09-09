@@ -20,6 +20,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo Rinaldi <salvin@anche.no>
 */
 
+#include <stdlib.h>
+#include <pthread.h>
+#include <netinet/in.h>
+
 #include "queue.h"
 
 /**

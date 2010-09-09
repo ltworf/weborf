@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/stat.h>
 #include <unistd.h>
 #include <netinet/in.h>
+
 #include <magic.h>
 
 #include "options.h"
@@ -63,6 +64,7 @@ typedef struct {
 #ifdef IPV6
     char ip_addr[INET6_ADDRSTRLEN];              //ip address in string format
 #else
+#error suca
     char ip_addr[INET_ADDRSTRLEN];
 #endif
 

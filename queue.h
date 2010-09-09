@@ -22,11 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_QUEUE_H
 #define WEBORF_QUEUE_H
 
-#include <stdlib.h>
-#include <pthread.h>
-#include <netinet/in.h>
-
-#include "options.h"
 #include "types.h"
 
 int q_init(syn_queue_t * q, int size);

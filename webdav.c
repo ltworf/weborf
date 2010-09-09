@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "options.h"
 
-
 #ifdef WEBDAV
 
 #include <pthread.h>
@@ -43,8 +42,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mime.h"
 #include "mystring.h"
 #include "utils.h"
-#include "types.h"
-
 
 
 extern char* authsock;
@@ -264,8 +261,6 @@ Can serve both depth and non-depth requests. This funcion works only if
 authentication is enabled.
 */
 int propfind(int sock,connection_t* connection_prop,string_t *post_param) {
-
-    printf("FILE %u %u\n",connection_prop->strfile,connection_prop);
 
     //Forbids the method if no authentication is in use
     if (authsock==NULL) {
