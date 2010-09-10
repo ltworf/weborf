@@ -21,15 +21,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_TYPES_H
 #define WEBORF_TYPES_H
 
+#include "options.h"
+
 #include <stdbool.h> //Adds boolean type
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <netinet/in.h>
 
+#ifdef SEND_MIMETYPES
 #include <magic.h>
+#else
+typedef int magic_t;
+#endif
 
-#include "options.h"
 
 typedef struct {
     long int id;                //ID of the thread

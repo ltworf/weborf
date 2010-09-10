@@ -21,9 +21,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string.h>
 #include <unistd.h>
-#include <magic.h>
+
 
 #include "mime.h"
+#include "options.h"
+
+#ifdef SEND_MIMETYPES
+#include <magic.h>
+#endif
 
 /**
 Returns a token for the libmagic.
