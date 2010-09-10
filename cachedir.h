@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "types.h"
 
+bool send_cached_item(unsigned int uprefix,connection_t* connection_prop);
 int get_cached_item(unsigned int uprefix,connection_t* connection_prop);
 void store_cache_item(unsigned int uprefix,connection_t* connection_prop, char *content, size_t content_len);
 void init_cache(char *dir);

@@ -25,12 +25,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <dirent.h>
 #include <syslog.h>
+#include <stdbool.h>
 
 
 #include "cachedir.h"
 #include "options.h"
 #include "utils.h"
 #include "types.h"
+#include "instance.h"
 
 
 char *cachedir=NULL;
@@ -41,6 +43,38 @@ Generates the filename for the cached entity and stores it in the buffer
 static inline void cached_filename(unsigned int uprefix,connection_t *connection_prop, char *buffer) {
     snprintf(buffer,PATH_LEN,"%s/%u-%llu-%llu-%ld",cachedir,uprefix,(unsigned long long int)connection_prop->strfile_stat.st_ino,(unsigned long long int)connection_prop->strfile_stat.st_dev,connection_prop->strfile_stat.st_mtime);
 }
+
+/**
+Sends a cached item if present and returns true.
+Returns false on cache miss.
+*/
+bool send_cached_item(unsigned int uprefix,connection_t* connection_prop) {//Try to send the cached file instead
+        int cachedfd=get_cached_item(uprefix,connection_prop);
+
+        if (cachedfd==-1) 
+            return false;
+        
+            int oldfd=connection_prop->strfile_fd;
+            connection_prop->strfile_fd=cachedfd;
+
+            /*
+            replaces the stat of the directory with the stat of the cached file
+            it is safe here since get_cached_item has already been executed
+            */
+            fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
+
+            write_file(connection_prop);
+
+            //Restore file descriptor so it can be closed later
+            connection_prop->strfile_fd=oldfd;
+
+            //Closes the cache file descriptor
+            close(cachedfd);
+
+            return true;
+        
+
+    }
 
 /**
 

@@ -22,8 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define WEBORF_MIME_H
 
 
-
-
 #include "options.h"
 #include "types.h"
 
@@ -31,7 +29,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 int init_mime(magic_t *token);
 void release_mime(magic_t token);
 const char* get_mime_fd (magic_t token,int fd);
-
-
 
 #endif

@@ -952,32 +952,8 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
     }
 
 
-    {
-        //Try to send the cached file instead
-        int cachedfd=get_cached_item(0,connection_prop);
-
-        if (cachedfd!=-1) {
-            int oldfd=connection_prop->strfile_fd;
-            connection_prop->strfile_fd=cachedfd;
-
-            /*
-            replaces the stat of the directory with the stat of the cached file
-            it is safe here since get_cached_item has already been executed
-            */
-            fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
-
-            write_file(connection_prop);
-
-            //Restore file descriptor so it can be closed later
-            connection_prop->strfile_fd=oldfd;
-
-            //Closes the cache file descriptor
-            close(cachedfd);
-
-            return 0;
-        }
-
-    }
+    //Tries to send the item from the cache
+    if (send_cached_item(0,connection_prop)) return 0;
 
 
     int pagelen;
