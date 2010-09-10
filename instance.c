@@ -1217,7 +1217,7 @@ int request_auth(int sock,char * descr) {
     int page_len=snprintf(page,MAXSCRIPTOUT,"%s<H1>Authorization required</H1><p>%s</p>%s",HTMLHEAD,descr,HTMLFOOT);
 
     //Prepares http header
-    int head_len = snprintf(head,HEADBUF,"HTTP/1.1 401 Authorization Required: Weborf (GNU/Linux)\r\nContent-Length: %d\r\nWWW-Authenticate: Basic realm=\"%s\"\r\n\r\n",page_len,descr);
+    int head_len = snprintf(head,HEADBUF,"HTTP/1.1 401 Authorization Required\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nWWW-Authenticate: Basic realm=\"%s\"\r\n\r\n",page_len,descr);
 
     //Sends the header
     if (write (sock,head,head_len)!=head_len) {
@@ -1257,7 +1257,7 @@ int send_err(int sock,int err,char* descr,char* ip_addr) {
     int page_len=snprintf(page,MAXSCRIPTOUT,"%s <H1>Error %d</H1>%s %s",HTMLHEAD,err,descr,HTMLFOOT);
 
     //Prepares the header
-    int head_len = snprintf(head,HEADBUF,"HTTP/1.1 %d %s: Weborf (GNU/Linux)\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n",err,descr ,(int)page_len);
+    int head_len = snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n",err,descr ,(int)page_len);
 
     //Sends the http header
     if (write (sock,head,head_len)!=head_len) {
@@ -1395,7 +1395,7 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
         connection_header="";
     }
 
-    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: Weborf (GNU/Linux)\r\n%s",code,reason_phrase(code),connection_header);
+    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\n%s",code,reason_phrase(code),connection_header);
 
     //This stuff moves the pointer to the buffer forward, and reduces the left space in the buffer itself
     //Next snprintf will append their strings to the buffer, without overwriting.
