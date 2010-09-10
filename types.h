@@ -65,11 +65,10 @@ typedef struct {
 
 typedef struct {
     int sock;                   //File descriptor for the socket
-    
+
 #ifdef IPV6
     char ip_addr[INET6_ADDRSTRLEN];              //ip address in string format
 #else
-#error suca
     char ip_addr[INET_ADDRSTRLEN];
 #endif
 
@@ -85,7 +84,7 @@ typedef struct {
     ssize_t strfile_len;        //Length of string strfile
     struct stat strfile_stat;   //Stat of strfile
     int strfile_fd;             //File descriptor for strfile
-    
+
 } connection_t;
 
 typedef struct {

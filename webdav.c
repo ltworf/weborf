@@ -43,6 +43,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mystring.h"
 #include "utils.h"
 
+typedef struct {
+    bool getetag :1;
+    bool getcontentlength :1;
+    bool resourcetype :1;
+    bool getlastmodified :1;
+    bool getcontenttype :1;
+    bool deep :1;
+} t_dav_details;
+
 
 extern char* authsock;
 extern char* basedir;
@@ -69,6 +78,7 @@ static inline void escape_uri(char *source, char *dest, int dest_size) {
             dest++;
             dest_size--;
         } else {
+            //Prints % followed by 2 digits hex code of the character
             sprintf(dest,"%%%02x",source[i]);
             dest+=3;
             dest_size-=3;
@@ -78,7 +88,8 @@ static inline void escape_uri(char *source, char *dest, int dest_size) {
 
 
 /**
-This function will split the required props into a char* array.
+This function will use the result param prop to return the required
+props and the value of the Depth header
 
 Properties are in the form <D:prop><prop1/><prop2/></D:prop>
 If something unexpected happens during the xml parsing, ERR_NODATA
@@ -90,9 +101,30 @@ in this funcion. It will accept many forms of invalid xml.
 
 The original string post_param->data will be modified.
 */
-int get_props(string_t* post_param,char * props[]) {
+static inline int get_props(connection_t* connection_prop,string_t* post_param,t_dav_details *props) {
+    
+    {//Determining if it is deep or not
+                //props.deep=false; commented because redoundant
+        char a[4]; //Buffer for field's value
+        //Gets the value of content-length header
+        bool r=get_param_value(connection_prop->http_param,"Depth", a,4,5);
+
+        if (r==true) {
+            props->deep=a[0]=='1';
+        }
+    }
+    
+
+    char *sprops[MAXPROPCOUNT];   //List of pointers to properties
+
     if (post_param->len==0) {//No specific prop request, sending everything
-        goto default_prop;
+        props->getetag=true;
+        props->getcontentlength=true;
+        props->resourcetype=true;
+        props->getlastmodified=true;
+        // props->getcontenttype=false; Commented because redoundant
+
+        return 0;
     }
 
 //Locates the starting prop tag
@@ -122,33 +154,41 @@ int get_props(string_t* post_param,char * props[]) {
     }
     int i;
     char *temp, *p_temp;
-    for (i=0; (props[i]=strstr(data,"<"))!=NULL; i++,data=temp+1) {
+    for (i=0; (sprops[i]=strstr(data,"<"))!=NULL; i++,data=temp+1) {
         if (i==MAXPROPCOUNT-1) {//Reached limit
-            props[i]=NULL;
+            sprops[i]=NULL;
             break;
         }
-        props[i]+=1; //Removes the < stuff
+        sprops[i]+=1; //Removes the < stuff
 
         //Removes the />
-        temp=strstr(props[i],"/>");
+        temp=strstr(sprops[i],"/>");
         if (temp==NULL) return ERR_NODATA;
         temp[0]=0;
 
         //Removing if there are parameters to the node
-        p_temp=strstr(props[i]," ");
+        p_temp=strstr(sprops[i]," ");
         if (p_temp!=NULL) {
             p_temp[0]=0;
         }
     }
-    return 0;
-default_prop:
-    //Sets the array to some default props
-    props[0]="getetag";
-    props[1]="getcontentlength";
-    props[2]="resourcetype";
-    props[3]="getlastmodified";
-    props[4]=NULL;
 
+
+    for (i=0; sprops[i]!=NULL; i++) {
+        if (strstr(sprops[i],"getetag")!=NULL) {
+            props->getetag=true;
+        } else if (strstr(sprops[i],"getcontentlength")!=NULL) {
+            props->getcontentlength=true;
+        } else if (strstr(sprops[i],"resourcetype")!=NULL) {
+            props->resourcetype=true;
+        } else if (strstr(sprops[i],"getlastmodified")!=NULL) { //Sends Date
+            props->getlastmodified=true;
+#ifdef SEND_MIMETYPES
+        } else if(strstr(sprops[i],"getcontenttype")!=NULL) { //Sends MIME type
+            props->getcontenttype=true;
+#endif
+        }
+    }
     return 0;
 }
 
@@ -158,16 +198,13 @@ It can be called only by funcions aware of this xml, because it sends only parti
 
 If the file can't be opened in readonly mode, this function does nothing.
 */
-static inline int printprops(connection_t *connection_prop,char*props[],char* file,char*filename,bool parent) {
-  int sock=connection_prop->sock;
-    int i,p_len;
+static inline int printprops(connection_t *connection_prop,t_dav_details props,char* file,char*filename,bool parent) {
+    int sock=connection_prop->sock;
+    int p_len;
     struct stat stat_s;
     char buffer[URI_LEN];
     char escaped_filename[URI_LEN];
     char escaped_page[URI_LEN];
-
-    bool props_invalid[MAXPROPCOUNT]; //Used to keep trace of invalid props
-    bool invalid_props=false; //Used to avoid sending the invalid props if there isn't any
 
     int file_fd=open(file,O_RDONLY);
     if (file_fd==-1) return 0;
@@ -193,62 +230,53 @@ static inline int printprops(connection_t *connection_prop,char*props[],char* fi
 
     //Writing properties
     char prop_buffer[URI_LEN];
-    for (i=0; props[i]!=NULL; i++) {
-        props_invalid[i]=false;
 
-        prop_buffer[0]=0;
-        p_len-=2;
-
-        if (strstr(props[i],"getetag")!=NULL) {
-            //The casting might be wrong on some architectures
-            snprintf(prop_buffer,URI_LEN,"%d",(unsigned int)stat_s.st_mtime);
-        } else if (strstr(props[i],"getcontentlength")!=NULL) {
-            snprintf(prop_buffer,URI_LEN,"%lld",(long long)stat_s.st_size);
-        } else if (strstr(props[i],"resourcetype")!=NULL) {
-            if (S_ISDIR(stat_s.st_mode)) {
-                snprintf(prop_buffer,URI_LEN,"<D:collection/>");
-            } else {
-                prop_buffer[0]=' ';
-                prop_buffer[1]=0;
-            }
-        } else if (strstr(props[i],"getlastmodified")!=NULL) { //Sends Date
-            struct tm ts;
-            localtime_r(&stat_s.st_mtime,&ts);
-            strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
-#ifdef SEND_MIMETYPES
-        } else if(strstr(props[i],"getcontenttype")!=NULL) { //Sends MIME type
-            thread_prop_t *thread_prop = pthread_getspecific(thread_key);
-
-            const char* t=get_mime_fd(thread_prop->mime_token,file_fd);
-            snprintf(prop_buffer,URI_LEN,"%s",t);
-#endif
-        } else {
-            invalid_props=true;
-            props_invalid[i]=true;
-        }
-
-
-        //Writes the <prop>value</prop> on the socket if the prop can be handled
-        if (prop_buffer[0]!=0) {
-            p_len=snprintf(buffer,URI_LEN,"<%s>%s</%s>\n",props[i],prop_buffer,props[i]);
-            write (sock,buffer,p_len);
-        }
+    if (props.getetag) {
+        snprintf(prop_buffer,URI_LEN,"%d",(unsigned int)stat_s.st_mtime);
+        p_len=snprintf(buffer,URI_LEN,"<D:getetag>%s</D:getetag>\n",prop_buffer);
+        write (sock,buffer,p_len);
 
     }
+
+    if (props.getcontentlength) {
+        snprintf(prop_buffer,URI_LEN,"%lld",(long long)stat_s.st_size);
+        p_len=snprintf(buffer,URI_LEN,"<D:getcontentlength>%s</D:getcontentlength>\n",prop_buffer);
+        write (sock,buffer,p_len);
+    }
+
+    if (props.resourcetype) {//Directory or normal file
+        if (S_ISDIR(stat_s.st_mode)) {
+            snprintf(prop_buffer,URI_LEN,"<D:collection/>");
+        } else {
+            prop_buffer[0]=' ';
+            prop_buffer[1]=0;
+        }
+
+        p_len=snprintf(buffer,URI_LEN,"<D:resourcetype>%s</D:resourcetype>\n",prop_buffer);
+        write (sock,buffer,p_len);
+    }
+
+    if (props.getlastmodified) { //Sends Date
+        struct tm ts;
+        localtime_r(&stat_s.st_mtime,&ts);
+        strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
+        p_len=snprintf(buffer,URI_LEN,"<D:getlastmodified>%s</D:getlastmodified>\n",prop_buffer);
+        write (sock,buffer,p_len);
+    }
+
+
+#ifdef SEND_MIMETYPES
+    if(props.getcontenttype) { //Sends MIME type
+        thread_prop_t *thread_prop = pthread_getspecific(thread_key);
+
+        const char* t=get_mime_fd(thread_prop->mime_token,file_fd);
+        p_len=snprintf(buffer,URI_LEN,"<D:getcontenttype>%s</D:getcontenttype>\n",t);
+        write (sock,buffer,p_len);
+    }
+#endif
 
     write(sock,"</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>",58);
 
-    //Lists the unknown requested props
-    if (invalid_props) {
-        write(sock,"<D:propstat><prop>",18);
-        for (i=0; props[i]!=NULL; i++) {
-            if (props_invalid[i]==true) {
-                p_len=snprintf(buffer,URI_LEN,"<%s/>\n",props[i]);
-                write (sock,buffer,p_len);
-            }
-        }
-        write(sock,"</prop><D:status>HTTP/1.1 404 Not Found</D:status></D:propstat>",63);
-    }
     write(sock,"</D:response>",13);
 
     close(file_fd);
@@ -262,15 +290,16 @@ Can serve both depth and non-depth requests. This funcion works only if
 authentication is enabled.
 */
 int propfind(connection_t* connection_prop,string_t *post_param) {
-  int sock=connection_prop->sock;
-
     //Forbids the method if no authentication is in use
     if (authsock==NULL) {
         return ERR_FORBIDDEN;
     }
+
+    int sock=connection_prop->sock;
+    t_dav_details props;    
+    memset(&props, 0, sizeof(t_dav_details));
     
-    {
-        //This redirects directory without ending / to directory with the ending /
+    { //This redirects directory without ending / to directory with the ending /
         struct stat stat_s;
         int stat_r=stat(connection_prop->strfile, &stat_s);
 
@@ -286,23 +315,8 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
         }
     } // End redirection
 
-    char *props[MAXPROPCOUNT];   //List of pointers to properties
-    bool deep=false;
-
-
-    {
-        //Determining if it is deep or not
-        char a[4]; //Buffer for field's value
-        //Gets the value of content-length header
-        bool r=get_param_value(connection_prop->http_param,"Depth", a,4,5);//14 is content-lenght's len
-
-        if (r==true) {
-            deep=a[0]=='1';
-        }
-    }
-
     int retval;
-    retval=get_props(post_param,props);//splitting props
+    retval=get_props(connection_prop,post_param,&props);//splitting props
     if (retval!=0) {
         return retval;
     }
@@ -317,7 +331,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
 
     //sends props about the requested file
     printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true);
-    if (deep) {//Send children files
+    if (props.deep) {//Send children files
         DIR *dp = opendir(connection_prop->strfile); //Open dir
         char file[URI_LEN];
         struct dirent entry;

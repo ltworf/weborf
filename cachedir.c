@@ -66,7 +66,9 @@ int get_cached_item(unsigned int uprefix,connection_t* connection_prop) {
     return open(fname,O_RDONLY);
 }
 
-
+/**
+Stores the content of the buffer "content" in cache, for the size specified by content_len
+*/
 void store_cache_item(unsigned int uprefix,connection_t* connection_prop, char *content, size_t content_len) {
     if (!cachedir) return;
 

@@ -35,7 +35,7 @@ Returns a token for the libmagic.
 buffer must NOT be shared amongst threads.
 The size of buffer is assumed to be at least MIMETYPELEN
 */
-inline int init_mime(magic_t *token) {
+int init_mime(magic_t *token) {
 #ifdef SEND_MIMETYPES
     *token=magic_open(MAGIC_SYMLINK | MAGIC_MIME_TYPE);
     if (*token==NULL) return 1;
@@ -51,7 +51,7 @@ inline int init_mime(magic_t *token) {
 Releases the token for libmagic
 If the token is null, it will do nothing.
 */
-inline void release_mime(magic_t token) {
+void release_mime(magic_t token) {
     if (token==NULL) return;
 #ifdef SEND_MIMETYPES
     magic_close(token);
@@ -61,7 +61,7 @@ inline void release_mime(magic_t token) {
 /**
 returns mimetype of an opened file descriptor
 */
-inline const char* get_mime_fd (magic_t token,int fd) {
+const char* get_mime_fd (magic_t token,int fd) {
 
 #ifdef SEND_MIMETYPES
     if (token==NULL) return NULL;

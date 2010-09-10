@@ -92,7 +92,7 @@ Returns 0 if authorization is granted.
 */
 static inline int check_auth(connection_t* connection_prop) {
     if (authsock==NULL) return 0;
-    
+
     char username[PWDLIMIT*2];
     char* password=username; //will be changed if there is a password
 
@@ -161,7 +161,7 @@ The url will never be longer than the original one.
 */
 static inline void modURL(char* url) {
     replaceEscape(url);
-    
+
     //Prevents the use of .. to access the whole filesystem
     strReplace(url,"../",'\0');
 
@@ -185,7 +185,7 @@ static inline void set_connection_props(connection_t *connection_prop) {
         connection_prop->protocol_version=connection_prop->http_param[7];
         connection_prop->keep_alive=(connection && strncmp(a,"Keep",4)==0)?true:false;
     }
-    
+
     modURL(connection_prop->page);//Operations on the url string
     split_get_params(connection_prop);//Splits URI into page and parameters
 }
@@ -194,7 +194,7 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
     int from;
     int sock=connection_prop->sock;
     char *lasts;//Used by strtok_r
-    
+
 
     short int r;//Readed char
     char *end;//Pointer to header's end
@@ -342,7 +342,7 @@ void * instance(void * nulla) {
         if (sock<0) { //Was not a socket but a termination order
             goto release_resources;
         }
-        
+
         connection_prop.sock=sock;//Assigned socket into the struct
 
         //Converting address to string
@@ -524,10 +524,10 @@ This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
 int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
-  int sock=connection_prop->sock;
+    int sock=connection_prop->sock;
     int retval=0;//Return value after sending the page
     char* real_basedir; //Basedir, might be different than basedir due to virtual hosts
-    string_t post_param; //Contains POST data  
+    string_t post_param; //Contains POST data
 
 #ifdef SENDINGDBG
     syslog (LOG_DEBUG,"URL changed into %s",connection_prop->page);
@@ -588,13 +588,13 @@ int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
         retval=ERR_FILENOTFOUND;
         goto escape;
     }
-    
+
     fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
 
     if (S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Requested a directory
         bool index_found=false;
 
-	//Requested a directory without ending /
+        //Requested a directory without ending /
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
@@ -702,7 +702,7 @@ Then the child will call alarm to set the timeout to its execution, and then wil
 
 */
 int exec_page(char * executor,string_t* post_param,char* real_basedir,connection_t* connection_prop) {
-  int sock=connection_prop->sock;
+    int sock=connection_prop->sock;
 #ifdef SENDINGDBG
     syslog(LOG_INFO,"Executing file %s",connection_prop->strfile);
 #endif
@@ -752,9 +752,10 @@ int exec_page(char * executor,string_t* post_param,char* real_basedir,connection
             setenv("SERVER_PORT",port,true);
         }
         setEnvVars(connection_prop->http_param); //Sets env var starting with HTTP
-        
-        {//Sets SERVER_ADDR var
-            
+
+        {
+            //Sets SERVER_ADDR var
+
 #ifdef IPV6
             char loc_addr[INET6_ADDRSTRLEN];
             struct sockaddr_in6 addr;//Local and remote address
@@ -936,7 +937,7 @@ This function writes on the specified socket an html page containing the list of
 specified directory.
 */
 int write_dir(char* real_basedir,connection_t* connection_prop) {
-  int sock=connection_prop->sock;
+    int sock=connection_prop->sock;
 
     /*
     WARNING
@@ -1037,7 +1038,7 @@ sock is the socket
 */
 #ifdef __COMPRESSION
 static inline int write_compressed_file(connection_t* connection_prop ) {
-  int sock=connection_prop->sock;
+    int sock=connection_prop->sock;
 
     if (
         connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN &&
@@ -1145,8 +1146,8 @@ To work connection_prop.strfile_fd and connection_prop.strfile_stat must be set.
 The file sent is the one specified by strfile_fd, and it will not be closed after.
 */
 int write_file(connection_t* connection_prop) {
-  
-  int sock=connection_prop->sock;
+
+    int sock=connection_prop->sock;
 
     char a[RBUFFER+MIMETYPELEN+16]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
@@ -1281,7 +1282,7 @@ or NULL if there was no data.
 If it doesn't return a null value, the returned pointer must be freed.
 */
 string_t read_post_data(connection_t* connection_prop,buffered_read_t* read_b) {
-  int sock=connection_prop->sock;
+    int sock=connection_prop->sock;
     string_t res;
     res.len=0;
     res.data=NULL;
