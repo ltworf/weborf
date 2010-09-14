@@ -1138,41 +1138,16 @@ int write_file(connection_t* connection_prop) {
 #endif
 
     //Determines how many bytes send, depending on file size and ranges
+    //Also sends the http header
     unsigned long long int count= bytes_to_send(connection_prop,&a[0]);
     if (errno !=0) {
         int e=errno;
         errno=0;
         return e;
     }
-
-    char *buf=malloc(FILEBUF);//Buffer to read from file
-    if (buf==NULL) {
-#ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
-#endif
-        return ERR_NOMEM;//If no memory is available
-    }
-
-
-
-    int reads,wrote;
-
-    //Sends file
-    while (count>0 && (reads=read(connection_prop->strfile_fd, buf, FILEBUF<count? FILEBUF:count ))>0) {
-        count-=reads;
-        wrote=write(sock,buf,reads);
-        if (wrote!=reads) { //Error writing to the socket
-#ifdef SOCKETDBG
-            syslog(LOG_ERR,"Unable to send %s: error writing to the socket",connection_prop->strfile);
-#endif
-            break;
-        }
-    }
-
-    free(buf);
-    return 0;
+    
+    return file_cp(connection_prop->strfile_fd,sock,count);
 }
-
 
 /**
 Sends a request for authentication

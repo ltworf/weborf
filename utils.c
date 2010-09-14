@@ -29,15 +29,47 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <time.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <netdb.h>
 #include <dirent.h>
 #include <unistd.h>
+#include <syslog.h>
 
 
 #include "mystring.h"
 #include "options.h"
 #include "utils.h"
+
+
+/**
+Copies count bytes from the file descriptor "from" to the 
+file descriptor "to".
+*/
+int file_cp(int from, int to, unsigned long long int count) {
+    char *buf=malloc(FILEBUF);//Buffer to read from file
+    int reads,wrote;
+    
+    if (buf==NULL) {
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
+#endif
+        return ERR_NOMEM;//If no memory is available
+    }
+
+    //Sends file
+    while (count>0 && (reads=read(from, buf, FILEBUF<count? FILEBUF:count ))>0) {
+        count-=reads;
+        wrote=write(to,buf,reads);
+        if (wrote!=reads) { //Error writing to the socket
+#ifdef SOCKETDBG
+            syslog(LOG_ERR,"Unable to send %s: error writing to the socket",connection_prop->strfile);
+#endif
+            break;
+        }
+    }
+
+    free(buf);
+    return 0;
+}
 
 /**
 This function reads the directory dir, putting inside the html string an html
