@@ -45,36 +45,46 @@ static inline void cached_filename(unsigned int uprefix,connection_t *connection
 }
 
 /**
+Returns true if the caching is enabled and
+false otherwise
+*/
+bool cache_is_enabled() {
+    if (cachedir==NULL)
+        return false;
+    return true;
+}
+
+/**
 Sends a cached item if present and returns true.
 Returns false on cache miss.
 */
-bool send_cached_item(unsigned int uprefix,connection_t* connection_prop) {//Try to send the cached file instead
-        int cachedfd=get_cached_item(uprefix,connection_prop);
+bool cache_send_item(unsigned int uprefix,connection_t* connection_prop) {//Try to send the cached file instead
+    int cachedfd=cache_get_item_fd(uprefix,connection_prop);
 
-        if (cachedfd==-1) 
-            return false;
-        
-            int oldfd=connection_prop->strfile_fd;
-            connection_prop->strfile_fd=cachedfd;
+    if (cachedfd==-1)
+        return false;
 
-            /*
-            replaces the stat of the directory with the stat of the cached file
-            it is safe here since get_cached_item has already been executed
-            */
-            fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
+    int oldfd=connection_prop->strfile_fd;
+    connection_prop->strfile_fd=cachedfd;
 
-            write_file(connection_prop);
+    /*
+    replaces the stat of the directory with the stat of the cached file
+    it is safe here since get_cached_item has already been executed
+    */
+    fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
 
-            //Restore file descriptor so it can be closed later
-            connection_prop->strfile_fd=oldfd;
+    write_file(connection_prop);
 
-            //Closes the cache file descriptor
-            close(cachedfd);
+    //Restore file descriptor so it can be closed later
+    connection_prop->strfile_fd=oldfd;
 
-            return true;
-        
+    //Closes the cache file descriptor
+    close(cachedfd);
 
-    }
+    return true;
+
+
+}
 
 /**
 
@@ -89,7 +99,7 @@ It's purpose is to distinguish between calls that will eventually generate an
 HTML file and calls that will generate XML or other data.
 So the directory would be the same but the generated content is different.
 */
-int get_cached_item(unsigned int uprefix,connection_t* connection_prop) {
+int cache_get_item_fd(unsigned int uprefix,connection_t* connection_prop) {
     if (!cachedir) return -1;
 
     char fname[PATH_LEN];
@@ -100,10 +110,26 @@ int get_cached_item(unsigned int uprefix,connection_t* connection_prop) {
     return open(fname,O_RDONLY);
 }
 
+
+/**
+Same as cache_get_item_fd but here the file is created and opened for writing
+*/
+int cache_get_item_fd_wr(unsigned int uprefix,connection_t *connection_prop) {
+    if (!cachedir) return -1;
+
+    char fname[PATH_LEN];
+
+    //Get the filename
+    cached_filename(uprefix,connection_prop,fname);
+
+    return open(fname,O_WRONLY| O_CREAT,S_IRUSR|S_IWUSR);
+
+}
+
 /**
 Stores the content of the buffer "content" in cache, for the size specified by content_len
 */
-void store_cache_item(unsigned int uprefix,connection_t* connection_prop, char *content, size_t content_len) {
+void cache_store_item(unsigned int uprefix,connection_t* connection_prop, char *content, size_t content_len) {
     if (!cachedir) return;
 
     char fname[PATH_LEN];
@@ -127,7 +153,7 @@ weborf will terminate.
 If it is impossible to delete and create files in it, weborf
 will just log a warning.
 */
-void init_cache(char* dir) {
+void cache_init(char* dir) {
     cachedir=dir;
 
 
@@ -164,7 +190,7 @@ The cache must have been already initialized for this to work
 
 Returns 0 on success, -1 otherwise
 */
-int clear_cache() {
+int cache_clear() {
     if (!cachedir) return -1;
 
     //Empty directory

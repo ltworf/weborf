@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
 
         switch (c) {
         case 'C'://Inits cache
-            init_cache(optarg);
+            cache_init(optarg);
             break;
 
         case 'c': { //Setting list of cgi

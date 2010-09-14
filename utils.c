@@ -41,13 +41,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 /**
-Copies count bytes from the file descriptor "from" to the 
+Copies count bytes from the file descriptor "from" to the
 file descriptor "to".
+It is possible to use lseek on the descriptors before calling
+this function.
+Will not close any descriptor
 */
 int file_cp(int from, int to, unsigned long long int count) {
     char *buf=malloc(FILEBUF);//Buffer to read from file
     int reads,wrote;
-    
+
     if (buf==NULL) {
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers");

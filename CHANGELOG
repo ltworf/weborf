@@ -13,6 +13,7 @@
 - Ported fix from 0.12.3 (Rev. 465)
 - Reduced number of params for functions
 - Uses pthread calls for TLS instead of relying on __thread that doesn't work on OsX
+- Dav's PROPFIND with different required properties can be cached on disk
 
 0.12.3
 - Fixes directory traversal vulnerability

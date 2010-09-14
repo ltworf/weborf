@@ -42,6 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mime.h"
 #include "mystring.h"
 #include "utils.h"
+#include "cachedir.h"
 
 typedef struct {
     bool getetag :1;
@@ -50,6 +51,7 @@ typedef struct {
     bool getlastmodified :1;
     bool getcontenttype :1;
     bool deep :1;
+    unsigned type :2;
 } t_dav_details;
 
 
@@ -102,9 +104,10 @@ in this funcion. It will accept many forms of invalid xml.
 The original string post_param->data will be modified.
 */
 static inline int get_props(connection_t* connection_prop,string_t* post_param,t_dav_details *props) {
-    
-    {//Determining if it is deep or not
-                //props.deep=false; commented because redoundant
+
+    {
+        //Determining if it is deep or not
+        //props.deep=false; commented because redoundant
         char a[4]; //Buffer for field's value
         //Gets the value of content-length header
         bool r=get_param_value(connection_prop->http_param,"Depth", a,4,5);
@@ -113,7 +116,7 @@ static inline int get_props(connection_t* connection_prop,string_t* post_param,t
             props->deep=a[0]=='1';
         }
     }
-    
+
 
     char *sprops[MAXPROPCOUNT];   //List of pointers to properties
 
@@ -296,18 +299,21 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     }
 
     int sock=connection_prop->sock;
-    t_dav_details props;    
+    t_dav_details props;
     memset(&props, 0, sizeof(t_dav_details));
-    
-    { //This redirects directory without ending / to directory with the ending /
-        struct stat stat_s;
-        int stat_r=stat(connection_prop->strfile, &stat_s);
+    props.type=1; //I need to avoid the struct to be fully 0 in each case
+    int swap_fd; //swap file descriptor
+    unsigned int *props_int=&props; //Used to get an integer representation of props
+
+    {
+        //This redirects directory without ending / to directory with the ending /
+        int stat_r=stat(connection_prop->strfile, &connection_prop->strfile_stat);
 
         if (stat_r!=0) {
             return ERR_FILENOTFOUND;
         }
 
-        if (S_ISDIR(stat_s.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
+        if (S_ISDIR(connection_prop->strfile_stat.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
             send_http_header(301,0,head,true,-1,connection_prop);
@@ -324,6 +330,27 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
     connection_prop->keep_alive=false;
     send_http_header(207,0,"Content-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
+
+    //Check if exists in cache
+    if (cache_is_enabled()) {
+        if ((swap_fd=cache_get_item_fd(*props_int,connection_prop))!=-1) {
+            //Sends the item stored in the cache
+            struct stat sb;
+            fstat(swap_fd,&sb);
+
+            file_cp(swap_fd,sock, sb.st_size);
+
+            close(swap_fd);
+            return 0;
+        } else { //Prepares for storing the item in cache, will be sent afterwards
+            swap_fd=sock; //Stores the real socket
+            //Will write to file instead than socket
+            connection_prop->sock=sock=cache_get_item_fd_wr(*props_int,connection_prop);
+
+        }
+
+    }
+
 
     //Sends header of xml response
     write(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>",39);
@@ -364,6 +391,20 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
 
     //ends multistatus
     write(sock,"</D:multistatus>",16);
+
+
+    if (cache_is_enabled()) { //All was stored to a file and not sent yet, so here we send the generated XML to the client
+        close(sock); //In truth it closes the file descriptor where the XML was stored
+        connection_prop->sock=sock=swap_fd; //Restore sock to it's value
+
+        swap_fd=cache_get_item_fd(*props_int,connection_prop);
+        struct stat sb;
+        fstat(swap_fd,&sb);
+
+        file_cp(swap_fd,sock, sb.st_size);
+
+        close(swap_fd);
+    }
 
     return 0;
 }

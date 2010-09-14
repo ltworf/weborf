@@ -953,7 +953,7 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
 
 
     //Tries to send the item from the cache
-    if (send_cached_item(0,connection_prop)) return 0;
+    if (cache_send_item(0,connection_prop)) return 0;
 
 
     int pagelen;
@@ -996,7 +996,7 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
         write(sock,html,pagelen);
 
         //Write item in cache
-        store_cache_item(0,connection_prop,html,pagelen);
+        cache_store_item(0,connection_prop,html,pagelen);
     }
 
     free(html);//Frees the memory used for the page
@@ -1132,6 +1132,7 @@ int write_file(connection_t* connection_prop) {
 
 #ifdef __COMPRESSION
     {
+        //Tryies gzipping and sending the file
         int c= write_compressed_file(connection_prop);
         if (c!=NO_ACTION) return c;
     }
@@ -1145,7 +1146,8 @@ int write_file(connection_t* connection_prop) {
         errno=0;
         return e;
     }
-    
+
+    //Copy file using descriptors; from to and size
     return file_cp(connection_prop->strfile_fd,sock,count);
 }
 
