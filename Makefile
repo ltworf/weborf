@@ -16,7 +16,7 @@
 
 CC=gcc
 #DEFS=-Ddebug
-OFLAGS=-O4
+OFLAGS=-O2
 #-pedantic -Wextra
 DEFINES=-D_FILE_OFFSET_BITS=64
 
