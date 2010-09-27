@@ -417,14 +417,14 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
 
     char a[NBUFFER]; //Buffer for field's value
     int retval;
-    int content_l;  //Length of the put data
+    long long int content_l;  //Length of the put data
 
     //Gets the value of content-length header
     bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,14);//14 is content-lenght's len
 
 
     if (r!=false) {//If there is no content-lenght returns error
-        content_l=strtol( a , NULL, 0 );
+        content_l=strtoll( a , NULL, 0 );
     } else {//No data
         return ERR_NODATA;
     }

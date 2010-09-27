@@ -62,9 +62,9 @@ int file_cp(int from, int to, unsigned long long int count) {
     while (count>0 && (reads=read(from, buf, FILEBUF<count? FILEBUF:count ))>0) {
         count-=reads;
         wrote=write(to,buf,reads);
-        if (wrote!=reads) { //Error writing to the socket
+        if (wrote!=reads) { //Error writing to the descriptor
 #ifdef SOCKETDBG
-            syslog(LOG_ERR,"Unable to send %s: error writing to the socket",connection_prop->strfile);
+            syslog(LOG_ERR,"Unable to send %s: error writing to the file descriptor",connection_prop->strfile);
 #endif
             break;
         }
