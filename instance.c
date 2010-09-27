@@ -56,6 +56,10 @@ extern char* basedir;                       //Basedir
 extern char* authsock;                       //Executable that will authenticate
 extern bool exec_script;                    //Execute scripts if true, sends the file if false
 
+#ifdef SEND_MIMETYPES
+extern bool send_content_type;              //True if we send content type when sending files
+#endif
+
 extern char* indexes[MAXINDEXCOUNT];        //Array containing index files
 extern int indexes_l;                       //Length of array
 extern bool virtual_host;                   //True if must check for virtual hosts
@@ -1070,6 +1074,11 @@ static inline int write_compressed_file(connection_t* connection_prop ) {
 
 static inline unsigned long long int bytes_to_send(connection_t* connection_prop,char *a) {
     errno=0;
+    unsigned long long int count;
+    char *hbuf=a;
+    int remain=RBUFFER, t;
+    a[0]='\0';
+
 #ifdef __RANGE
     if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER,5)) {//Find if it is a range request 5 is strlen of "range"
         unsigned long long int from,to;
@@ -1091,18 +1100,36 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         if (to==0) { //If no to is specified, it is to the end of the file
             to=connection_prop->strfile_stat.st_size-1;
         }
-        snprintf(a,RBUFFER,"Accept-Ranges: bytes\r\nContent-Range: bytes=%llu-%llu/%lld\r\n",(unsigned long long int)from,(unsigned long long int)to,(long long int)connection_prop->strfile_stat.st_size);
-        lseek(connection_prop->strfile_fd,from,SEEK_SET);
-        unsigned long long int count=to-from+1;
 
-        send_http_header(206,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
-        return count;
+        t=snprintf(hbuf,remain,"Accept-Ranges: bytes\r\nContent-Range: bytes=%llu-%llu/%lld\r\n",(unsigned long long int)from,(unsigned long long int)to,(long long int)connection_prop->strfile_stat.st_size);
+        hbuf+=t;
+        remain-=t;
+
+        lseek(connection_prop->strfile_fd,from,SEEK_SET);
+        count=to-from+1;
+
     } else //Normal request
 #endif
     {
-        send_http_header(200,connection_prop->strfile_stat.st_size,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
-        return connection_prop->strfile_stat.st_size;
+        count=connection_prop->strfile_stat.st_size;
     }
+
+
+    //Sending MIME to the client
+#ifdef SEND_MIMETYPES
+    if (send_content_type) {
+        thread_prop_t *thread_prop = pthread_getspecific(thread_key);
+        const char* mime=get_mime_fd(thread_prop->mime_token,connection_prop->strfile_fd);
+
+        //t=
+        snprintf(hbuf,remain,"Content-Type: %s\r\n",mime);
+        //hbuf+=t;
+        //remain-=t;
+    }
+#endif
+
+    send_http_header(200,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+    return count;
 }
 
 /**

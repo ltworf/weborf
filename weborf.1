@@ -42,6 +42,11 @@ It is advised to flush the cache on reboot (manually or with kill) because some 
 When used, weborf will send scripts as if they were normal files instead of executing them and sending their output.
 
 .TP
+.B \-m, \-\-mime
+When used, weborf will send the Content-Type header. It is strongli advised to use it when using weborf as production server because some browsers rely on this field.
+This value will not affect the CGI pages.
+
+.TP
 .B \-i, \-\-ip
 Must be followed by a valid IP address (v6 or v4, depending on how weborf was compiled. Run weborf \-h to know it), and weborf will accept only connections directed to that specific IP.
 If the IP address provided isn't used by a network device on the host, weborf will terminate.

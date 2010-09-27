@@ -34,6 +34,10 @@ Default base directory used by the webserver. The default means that this will b
 Can be true or false. If false weborf will handle all files as normal files. Otherwise it will use the CGI protocol to execute some files.
 
 .TP
+.B use-mime
+Can be true or false. If true weborf will send the Content-Type header to the clients. Turning it off will increase speed but might cause problems with some old clients.
+
+.TP
 .B cgi
 List of extensions to consider as dynamic pages and binaries to execute them
 

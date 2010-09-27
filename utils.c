@@ -201,15 +201,15 @@ bool file_exists(char *file) {
 Prints version information
 */
 void version() {
-    printf("Weborf %s\n", VERSION);
-    printf("Copyright (C) 2007 Salvo 'LtWorf' Tomaselli.\n");
-    printf("This is free software.  You may redistribute copies of it under the terms of\n");
-    printf("the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n");
-    printf("There is NO WARRANTY, to the extent permitted by law.\n\n");
+    printf("Weborf %s\n"
+           "Copyright (C) 2007 Salvo 'LtWorf' Tomaselli.\n"
+           "This is free software.  You may redistribute copies of it under the terms of\n"
+           "the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n"
+           "There is NO WARRANTY, to the extent permitted by law.\n\n"
 
-    printf("Written by Salvo 'LtWorf' Tomaselli and Salvo Rinaldi.\n");
-    printf("Synchronized queue by Prof. Giuseppe Pappalardo.\n\n\n");
-    printf("https://galileo.dmi.unict.it/wiki/weborf/\n");
+           "Written by Salvo 'LtWorf' Tomaselli and Salvo Rinaldi.\n"
+           "Synchronized queue by Prof. Giuseppe Pappalardo.\n\n"
+           "https://galileo.dmi.unict.it/wiki/weborf/\n", VERSION);
     exit(0);
 }
 
@@ -218,37 +218,45 @@ Prints command line help
  */
 void help() {
 
-    printf("\tUsage: weborf [OPTIONS]\n");
-    printf("\tStart the weborf webserver\n\n");
+    printf("\tUsage: weborf [OPTIONS]\n"
+           "\tStart the weborf webserver\n\n"
 #ifdef IPV6
-    printf("\tCompiled for IPv6\n\n");
+           "\tCompiled for IPv6\n"
 #else
-    printf("\tCompiled for IPv4\n\n");
+           "\tCompiled for IPv4\n"
 #endif
 
 #ifdef WEBDAV
-    printf("\tHas webdav support\n\n");
+           "\tHas webdav support\n"
 #endif
 
-    printf("  -p, --port	followed by port number to listen\n");
-    printf("  -i, --ip	followed by IP address to listen (dotted format)\n");
-    printf("  -b, --basedir	followed by absolute path of basedir\n");
-    printf("  -a, --auth    followed by absolute path of the program to handle authentication\n");
-    printf("  -x  --noexec  tells weborf to send each file instead of executing scripts\n");
-    printf("  -I  --index   list of index files, comma-separated\n");
-    printf("  -c  --cgi     list of cgi files and binary to execute them comma-separated\n");
-    printf("  -C  --cache   sets the directory to use for cache files\n");
-    printf("  -V  --virtual list of virtualhosts in the form host=basedir, comma-separated\n");
-    printf("  -u            followed by a valid uid\n");
-    printf("                If started by root weborf will use this user to read files and execute scripts\n");
-    printf("  -d            run as a daemon\n");
-    printf("  -h, --help	display this help and exit\n");
-    printf("  -v, --version	print program version\n\n");
+#ifdef SEND_MIMETYPES
+           "\tHas MIME support\n"
+#endif
 
-    printf("Default port is %s\n", PORT);
-    printf("Default base directory is %s\n\n", BASEDIR);
+           "Default port is        %s\n"
+           "Default base directory %s\n"
+           "Signature used         %s\n\n", PORT,BASEDIR,SIGNATURE);
 
-    printf("Report bugs to <tiposchi@tiscali.it>\n");
+    printf("  -a, --auth    followed by absolute path of the program to handle authentication\n"
+           "  -b, --basedir followed by absolute path of basedir\n"
+           "  -C, --cache   sets the directory to use for cache files\n"
+           "  -c, --cgi     list of cgi files and binary to execute them comma-separated\n"
+           "  -d            run as a daemon\n"
+           "  -h, --help    display this help and exit\n"
+           "  -I, --index   list of index files, comma-separated\n"
+           "  -i, --ip  followed by IP address to listen (dotted format)\n"
+           "  -m, --mime    sends content type header to clients\n"
+           "  -p, --port	followed by port number to listen\n"
+           "  -u,           followed by a valid uid\n"
+           "                If started by root weborf will use this user to read files and execute scripts\n"
+           "  -V, --virtual list of virtualhosts in the form host=basedir, comma-separated\n"
+           "  -v, --version print program version\n"
+           "  -x, --noexec  tells weborf to send each file instead of executing scripts\n\n"
+
+
+           "Report bugs here https://bugs.launchpad.net/weborf\n"
+           "or to <tiposchi@tiscali.it>\n");
     exit(0);
 }
 
@@ -256,14 +264,14 @@ void help() {
 Searching for easter eggs within the code isn't fair!
 */
 void moo() {
-    printf(" _____________________________________\n");
-    printf("< Weborf ha i poteri della supermucca >\n");
-    printf(" -------------------------------------\n");
-    printf("        \\   ^__^\n");
-    printf("         \\  (oo)\\_______\n");
-    printf("            (__)\\       )\\/\\\n");
-    printf("                ||----w |\n");
-    printf("                ||     ||\n");
+    printf(" _____________________________________\n"
+           "< Weborf ha i poteri della supermucca >\n"
+           " -------------------------------------\n"
+           "        \\   ^__^\n"
+           "         \\  (oo)\\_______\n"
+           "            (__)\\       )\\/\\\n"
+           "                ||----w |\n"
+           "                ||     ||\n");
     exit(0);
 }
 

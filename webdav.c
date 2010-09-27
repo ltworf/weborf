@@ -321,8 +321,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
         }
     } // End redirection
 
-    int retval;
-    retval=get_props(connection_prop,post_param,&props);//splitting props
+    int retval=get_props(connection_prop,post_param,&props);//splitting props
     if (retval!=0) {
         return retval;
     }

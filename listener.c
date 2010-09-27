@@ -52,6 +52,10 @@ char *basedir = BASEDIR;        //Base directory
 char *authsock;                  //Executable that will authenticate
 bool exec_script = true;        //Execute scripts if true, sends the file if false
 
+#ifdef SEND_MIMETYPES
+bool send_content_type = false; //True if we want to send the content type
+#endif
+
 uid_t uid = ROOTUID;            //Uid to use after bind
 
 pthread_attr_t t_attr;          //thread's attributes
@@ -175,6 +179,7 @@ int main(int argc, char *argv[]) {
             {"noexec", no_argument, 0, 'x'},
             {"cgi", required_argument, 0, 'c'},
             {"cache", required_argument, 0, 'C'},
+            {"mime", no_argument,0,'m'},
             {0, 0, 0, 0}
         };
         static int c; //Identify the readed option
@@ -192,7 +197,16 @@ int main(int argc, char *argv[]) {
         case 'C'://Inits cache
             cache_init(optarg);
             break;
+        case 'm': {
+#ifdef SEND_MIMETYPES
+            send_content_type=true;
+#else
+            write(2,"Support for MIME is not available\n");
+            exit(19);
+#endif
 
+        }
+        break;
         case 'c': { //Setting list of cgi
             int i = 0;
             cgi_paths.len = 1; //count of indexes
@@ -282,7 +296,7 @@ int main(int argc, char *argv[]) {
         case 'a':   //Set authentication script
             set_authsocket(optarg);
             break;
-        case 'm':   //Supercow!
+        case 'M':   //Supercow!
             moo();
             break;
         default:

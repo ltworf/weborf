@@ -137,6 +137,7 @@ BASEDIR=`cat /etc/weborf.conf | egrep "^basedir=" | cut -d= -f2`
 USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
 INDEXES=`cat /etc/weborf.conf | egrep "^indexes=" | cut -d= -f2`
 USE_CGI=`cat /etc/weborf.conf | egrep "^use-cgi=" | cut -d= -f2`
+USE_MIME=`cat /etc/weborf.conf | egrep "^use-mime=" | cut -d= -f2`
 CGI_BIN=`cat /etc/weborf.conf | egrep "^cgi=" | cut -d= -f2`
 CACHE_DIR=`cat /etc/weborf.conf | egrep "^cachedir=" | cut -d= -f2`
 
@@ -179,6 +180,10 @@ then
     CGI="-x"
 fi
 
+if test $USE_MIME = "true"
+then
+    CGI="-m"
+fi
 
 if test -z $USERID
 then
