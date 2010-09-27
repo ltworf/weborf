@@ -65,38 +65,18 @@ const char* get_mime_fd (magic_t token,int fd) {
 
 #ifdef SEND_MIMETYPES
     if (token==NULL) return NULL;
-    /*Dup file to work around the magic_descriptor
-    that will close the file
+    /*Dup file and read it's header to know it's mime type
     */
+    char buf[64];
     int new_fd=dup(fd);
-    return magic_descriptor(token,new_fd);
+    int r=read(new_fd,&buf,64);
+
+    const char* mime=magic_buffer(token,&buf,r);
+    close(new_fd);
+    return mime;
+
+
 #else
     return NULL;
 #endif
 }
-
-/*int main () {
-
-    char q[500];
-    magic_t cookie= magic_open(MAGIC_SYMLINK | MAGIC_MIME_TYPE);
-    magic_buffer(cookie,&q, 500);
-    int load=magic_load(cookie,NULL);
-
-    char p[500];
-    magic_t cookie1= magic_open(MAGIC_SYMLINK | MAGIC_MIME_TYPE);
-    load=magic_load(cookie1,NULL);
-
-    const char *f=magic_file(cookie,"/tmp/ciao");
-    const char *g=magic_file(cookie1,"/boot/vmlinuz-2.6.33.3-aracne");
-
-    //printf("%s\n",f);
-
-    printf("%s\n",f);
-
-
-    printf("%s\n",g);
-
-    magic_close(cookie);
-
-}*/
-

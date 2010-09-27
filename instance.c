@@ -261,7 +261,6 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
         connection_prop->http_param=lasts;
 
 #ifdef REQUESTDBG
-        //TODO for some strange reason sometimes there is a strange char after the ip addr, investigate why
         syslog(LOG_INFO,"%s - %s %s\n",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
 #endif
 
@@ -623,7 +622,7 @@ int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
 
             connection_prop->strfile[connection_prop->strfile_len]=0; //Removing the index part
             if (index_found==false) {//If no index was found in the dir
-                write_dir(real_basedir,connection_prop);
+                retval=write_dir(real_basedir,connection_prop);
             }
         }
     } else {//Requested an existing file
@@ -1168,11 +1167,11 @@ int write_file(connection_t* connection_prop) {
     //Determines how many bytes send, depending on file size and ranges
     //Also sends the http header
     unsigned long long int count= bytes_to_send(connection_prop,&a[0]);
-    if (errno !=0) {
+    /*if (errno !=0) {
         int e=errno;
         errno=0;
         return e;
-    }
+    }*/
 
     //Copy file using descriptors; from to and size
     return file_cp(connection_prop->strfile_fd,sock,count);
