@@ -69,21 +69,21 @@ const char* get_mime_fd (magic_t token,int fd) {
     /*Dup file and read it's header to know it's mime type
     */
     char buf[64];
-    
+
     //Get the current cursor position
-    unsigned long long int prev_pos=lseek(fd,0,SEEK_CUR); 
-    
+    unsigned long long int prev_pos=lseek(fd,0,SEEK_CUR);
+
     //Set the cursor to the beginning of the file
     lseek(fd,0,SEEK_SET);
-    
+
     //Reads 64 bytes to determine the type
     int r=read(fd,&buf,64);
-    
+
     //Reset the position
     lseek(fd,prev_pos,SEEK_SET);
 
     const char* mime=magic_buffer(token,&buf,r);
-    
+
     return mime;
 
 
