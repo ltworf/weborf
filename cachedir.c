@@ -112,7 +112,7 @@ int cache_get_item_fd(unsigned int uprefix,connection_t* connection_prop) {
 
 
 /**
-Same as cache_get_item_fd but here the file is created and opened for 
+Same as cache_get_item_fd but here the file is created and opened for
 reading and writing, and will be created if it doesn't exist
 */
 int cache_get_item_fd_wr(unsigned int uprefix,connection_t *connection_prop) {

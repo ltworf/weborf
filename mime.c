@@ -69,32 +69,43 @@ const char* get_mime_fd (magic_t token,int fd,struct stat *sb) {
 
 #ifdef SEND_MIMETYPES
     if (token==NULL) return NULL;
-    
+
     /*If fd is a directory, send the mimetype without attempting to read it*/
-    if (sb->st_mode & S_IFDIR)
+
+    if (sb->st_mode & S_IFREG) {
+        /*
+         * Seek file to 0 and read it's header to know it's mime type
+         * then seek again to the previous position
+        */
+        char buf[64];
+
+        //Get the current cursor position
+        unsigned long long int prev_pos=lseek(fd,0,SEEK_CUR);
+
+        //Set the cursor to the beginning of the file
+        lseek(fd,0,SEEK_SET);
+
+        //Reads 64 bytes to determine the type
+        int r=read(fd,&buf,64);
+
+        //Reset the position
+        lseek(fd,prev_pos,SEEK_SET);
+
+        const char* mime=magic_buffer(token,&buf,r);
+
+        return mime;
+    } else if (sb->st_mode & S_IFDIR)
         return "application/x-directory";
-    
-    /*
-     * Seek file to 0 and read it's header to know it's mime type
-     * then seek again to the previous position
-    */
-    char buf[64];
-
-    //Get the current cursor position
-    unsigned long long int prev_pos=lseek(fd,0,SEEK_CUR);
-
-    //Set the cursor to the beginning of the file
-    lseek(fd,0,SEEK_SET);
-
-    //Reads 64 bytes to determine the type
-    int r=read(fd,&buf,64);
-
-    //Reset the position
-    lseek(fd,prev_pos,SEEK_SET);
-
-    const char* mime=magic_buffer(token,&buf,r);
-
-    return mime;
+    else if (sb->st_mode & S_IFSOCK)
+        return "application/x-socket";
+    else if (sb->st_mode & S_IFLNK)
+        return "application/x-symlink";
+    else if (sb->st_mode & S_IFBLK)
+        return "application/x-block-device";
+    else if (sb->st_mode & S_IFCHR)
+        return "application/x-character-device";
+    else if (sb->st_mode & S_IFIFO)
+        return "application/x-fifo";
 
 #else
     return NULL;
