@@ -228,7 +228,7 @@ static inline int printprops(connection_t *connection_prop,t_dav_details props,c
 
         write (sock,buffer,p_len);
     }
-
+    
     write(sock,"<D:propstat><D:prop>",20);
 
     //Writing properties
@@ -272,7 +272,7 @@ static inline int printprops(connection_t *connection_prop,t_dav_details props,c
     if(props.getcontenttype) { //Sends MIME type
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
 
-        const char* t=get_mime_fd(thread_prop->mime_token,file_fd);
+        const char* t=get_mime_fd(thread_prop->mime_token,file_fd,&stat_s);
         p_len=snprintf(buffer,URI_LEN,"<D:getcontenttype>%s</D:getcontenttype>\n",t);
         write (sock,buffer,p_len);
     }
@@ -297,7 +297,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     if (authsock==NULL) {
         return ERR_FORBIDDEN;
     }
-
+    
     int sock=connection_prop->sock;
     t_dav_details props;
     memset(&props, 0, sizeof(t_dav_details));
@@ -320,12 +320,12 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
             return 0;
         }
     } // End redirection
-
+    
     int retval=get_props(connection_prop,post_param,&props);//splitting props
     if (retval!=0) {
         return retval;
     }
-
+    
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
     connection_prop->keep_alive=false;
     send_http_header(207,0,"Content-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
@@ -345,18 +345,17 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
             swap_fd=sock; //Stores the real socket
             //Will write to file instead than socket
             connection_prop->sock=sock=cache_get_item_fd_wr(*props_int,connection_prop);
-
         }
 
     }
 
-
     //Sends header of xml response
     write(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>",39);
     write(sock,"<D:multistatus xmlns:D=\"DAV:\">",30);
-
+    
     //sends props about the requested file
     printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true);
+    
     if (props.deep) {//Send children files
         DIR *dp = opendir(connection_prop->strfile); //Open dir
         char file[URI_LEN];
@@ -391,18 +390,15 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     //ends multistatus
     write(sock,"</D:multistatus>",16);
 
-
     if (cache_is_enabled()) { //All was stored to a file and not sent yet, so here we send the generated XML to the client
-        close(sock); //In truth it closes the file descriptor where the XML was stored
+        int cache_fd=sock;
         connection_prop->sock=sock=swap_fd; //Restore sock to it's value
+        
+        off_t prev_pos=lseek(cache_fd,0,SEEK_CUR); //Get size of the file
+        lseek(cache_fd,0,SEEK_SET);          //Set cursor to the beginning
+        file_cp(cache_fd,sock,prev_pos);     //Send the file
 
-        swap_fd=cache_get_item_fd(*props_int,connection_prop);
-        struct stat sb;
-        fstat(swap_fd,&sb);
-
-        file_cp(swap_fd,sock, sb.st_size);
-
-        close(swap_fd);
+        close(cache_fd);
     }
 
     return 0;

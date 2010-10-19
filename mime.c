@@ -61,12 +61,22 @@ void release_mime(magic_t token) {
 /**
 returns mimetype of an opened file descriptor
 the cursor can be located at any position
+
+fd is the descriptor to an open file
+sb is the stat to the same file
 */
-const char* get_mime_fd (magic_t token,int fd) {
+const char* get_mime_fd (magic_t token,int fd,struct stat *sb) {
 
 #ifdef SEND_MIMETYPES
     if (token==NULL) return NULL;
-    /*Dup file and read it's header to know it's mime type
+    
+    /*If fd is a directory, send the mimetype without attempting to read it*/
+    if (sb->st_mode & S_IFDIR)
+        return "application/x-directory";
+    
+    /*
+     * Seek file to 0 and read it's header to know it's mime type
+     * then seek again to the previous position
     */
     char buf[64];
 
@@ -85,7 +95,6 @@ const char* get_mime_fd (magic_t token,int fd) {
     const char* mime=magic_buffer(token,&buf,r);
 
     return mime;
-
 
 #else
     return NULL;

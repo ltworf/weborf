@@ -1118,7 +1118,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
 #ifdef SEND_MIMETYPES
     if (send_content_type) {
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
-        const char* mime=get_mime_fd(thread_prop->mime_token,connection_prop->strfile_fd);
+        const char* mime=get_mime_fd(thread_prop->mime_token,connection_prop->strfile_fd,&(connection_prop->strfile_stat));
 
         //t=
         snprintf(hbuf,remain,"Content-Type: %s\r\n",mime);

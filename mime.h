@@ -28,6 +28,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int init_mime(magic_t *token);
 void release_mime(magic_t token);
-const char* get_mime_fd (magic_t token,int fd);
+const char* get_mime_fd (magic_t token,int fd,struct stat *sb);
 
 #endif

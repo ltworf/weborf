@@ -89,7 +89,7 @@ bool cache_send_item(unsigned int uprefix,connection_t* connection_prop) {//Try 
 /**
 
 This function returns the file descriptor to the file containing the cached
-directory.
+item.
 
 If a cache miss occurs -1 will be returned
 If cache is not in use (cache_init was not called) it will always return -1
@@ -112,7 +112,8 @@ int cache_get_item_fd(unsigned int uprefix,connection_t* connection_prop) {
 
 
 /**
-Same as cache_get_item_fd but here the file is created and opened for writing
+Same as cache_get_item_fd but here the file is created and opened for 
+reading and writing, and will be created if it doesn't exist
 */
 int cache_get_item_fd_wr(unsigned int uprefix,connection_t *connection_prop) {
     if (!cachedir) return -1;
@@ -122,7 +123,7 @@ int cache_get_item_fd_wr(unsigned int uprefix,connection_t *connection_prop) {
     //Get the filename
     cached_filename(uprefix,connection_prop,fname);
 
-    return open(fname,O_WRONLY| O_CREAT,S_IRUSR|S_IWUSR);
+    return open(fname,O_RDWR| O_CREAT,S_IRUSR|S_IWUSR);
 
 }
 
