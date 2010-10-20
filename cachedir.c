@@ -108,7 +108,7 @@ int cache_get_item_fd(unsigned int uprefix,connection_t* connection_prop) {
     //Get the filename
     cached_filename(uprefix,connection_prop,fname);
 
-    int fd=return open(fname,O_RDONLY);
+    int fd=open(fname,O_RDONLY);
     if (fd==-1) return -1; //Cache miss
 
     //Acquire lock on the file and return the file descriptor
