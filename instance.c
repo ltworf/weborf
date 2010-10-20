@@ -67,6 +67,14 @@ extern char ** environ;                     //To reset environ vars
 extern array_ll cgi_paths;                  //Paths to cgi binaries
 extern pthread_key_t thread_key;            //key for pthread_setspecific
 
+
+
+int exec_page(char *executor, string_t * post_param, char *real_basedir, connection_t * connection_prop);
+int request_auth(int sock, char *descr);
+int send_page(buffered_read_t * read_b, connection_t * connection_prop);
+void piperr();
+int write_dir(char *real_basedir, connection_t * connection_prop);
+
 /**
 Checks if the required resource has the same date as the one cached in the client.
 If they are the same, returns 0,
@@ -328,7 +336,7 @@ void * instance(void * nulla) {
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    if (init_mime(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
+    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
 #endif
@@ -381,7 +389,7 @@ release_resources:
     free(buf);
     free(connection_prop.strfile);
     buffer_free(&read_b);
-    release_mime(thread_prop.mime_token);
+    mime_release(thread_prop.mime_token);
     change_free_thread(thread_prop.id,0,-1);//Reduces count of threads
     pthread_exit(0);
     return NULL;//Never reached
@@ -1118,7 +1126,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
 #ifdef SEND_MIMETYPES
     if (send_content_type) {
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
-        const char* mime=get_mime_fd(thread_prop->mime_token,connection_prop->strfile_fd,&(connection_prop->strfile_stat));
+        const char* mime=mime_get_fd(thread_prop->mime_token,connection_prop->strfile_fd,&(connection_prop->strfile_stat));
 
         //t=
         snprintf(hbuf,remain,"Content-Type: %s\r\n",mime);

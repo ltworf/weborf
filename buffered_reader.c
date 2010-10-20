@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 This funcion inits the struct allocating a buffer of the specified size.
 It will return 0 on success and 1 on fail.
 */
-short int buffer_init(buffered_read_t * buf, ssize_t size) {
+int buffer_init(buffered_read_t * buf, ssize_t size) {
     buf->buffer = malloc(sizeof(char) * size);
     buf->size = size;
     buffer_reset(buf);

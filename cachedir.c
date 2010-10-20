@@ -20,13 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <syslog.h>
 #include <stdbool.h>
-
 
 #include "cachedir.h"
 #include "options.h"
@@ -82,8 +82,6 @@ bool cache_send_item(unsigned int uprefix,connection_t* connection_prop) {//Try 
     close(cachedfd);
 
     return true;
-
-
 }
 
 /**
@@ -98,6 +96,9 @@ uprefix is an integer that must be unique for each call of get_cached_dir.
 It's purpose is to distinguish between calls that will eventually generate an
 HTML file and calls that will generate XML or other data.
 So the directory would be the same but the generated content is different.
+
+Acquires a shared lock on the file, so if the file is already opened in write mode
+the lock will fail and the function will return the same resulf of a cache miss.
 */
 int cache_get_item_fd(unsigned int uprefix,connection_t* connection_prop) {
     if (!cachedir) return -1;
@@ -107,13 +108,25 @@ int cache_get_item_fd(unsigned int uprefix,connection_t* connection_prop) {
     //Get the filename
     cached_filename(uprefix,connection_prop,fname);
 
-    return open(fname,O_RDONLY);
+    int fd=return open(fname,O_RDONLY);
+    if (fd==-1) return -1; //Cache miss
+
+    //Acquire lock on the file and return the file descriptor
+    if (flock(fd,LOCK_SH|LOCK_NB)==0)
+        return fd;
+
+    //Lock could not be acquired
+    close(fd);
+    return -1;
 }
 
 
 /**
 Same as cache_get_item_fd but here the file is created and opened for
 reading and writing, and will be created if it doesn't exist
+
+An exclusive lock will be acquired over the file, since it is being opened
+for writing too.
 */
 int cache_get_item_fd_wr(unsigned int uprefix,connection_t *connection_prop) {
     if (!cachedir) return -1;
@@ -123,12 +136,26 @@ int cache_get_item_fd_wr(unsigned int uprefix,connection_t *connection_prop) {
     //Get the filename
     cached_filename(uprefix,connection_prop,fname);
 
-    return open(fname,O_RDWR| O_CREAT,S_IRUSR|S_IWUSR);
+    int fd = open(fname,O_RDWR| O_CREAT,S_IRUSR|S_IWUSR);
+
+    //Acquire the exclusive lock in a non-blocking way
+    if (flock(fd,LOCK_EX|LOCK_NB)==0) {
+        return fd;
+    }
+    close(fd);
+    return -1;
 
 }
 
 /**
 Stores the content of the buffer "content" in cache, for the size specified by content_len
+The cache file will have an exclusive lock to prevent multiple threads accessing the same file
+in write mode.
+
+Lock is acquired in a non-blocking way, so if the file is already locked the method will just return
+without writing anything on the file. This behavior is wanted because it is assumed that the lock is held
+by another thread writing the same content on the file, waiting for the lock to be released would lead to
+override the content of the file with the same content.
 */
 void cache_store_item(unsigned int uprefix,connection_t* connection_prop, char *content, size_t content_len) {
     if (!cachedir) return;
@@ -138,7 +165,14 @@ void cache_store_item(unsigned int uprefix,connection_t* connection_prop, char *
 
     int fd=open(fname,O_WRONLY| O_CREAT,S_IRUSR|S_IWUSR);
 
+
     if (fd==-1) return; //Just do nothing in case of error
+
+    //Try to acquire lock in a non-blocking way, and exit if another thread has that lock
+    if (flock(fd,LOCK_EX|LOCK_NB)!=0) {
+        close(fd);
+        return;
+    }
 
     write(fd,content,content_len);
     close(fd);

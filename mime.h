@@ -26,8 +26,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "types.h"
 
 
-int init_mime(magic_t *token);
-void release_mime(magic_t token);
-const char* get_mime_fd (magic_t token,int fd,struct stat *sb);
+int mime_init(magic_t *token);
+void mime_release(magic_t token);
+const char* mime_get_fd (magic_t token,int fd,struct stat *sb);
 
 #endif

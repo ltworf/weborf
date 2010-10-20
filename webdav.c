@@ -272,7 +272,7 @@ static inline int printprops(connection_t *connection_prop,t_dav_details props,c
     if(props.getcontenttype) { //Sends MIME type
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
 
-        const char* t=get_mime_fd(thread_prop->mime_token,file_fd,&stat_s);
+        const char* t=mime_get_fd(thread_prop->mime_token,file_fd,&stat_s);
         p_len=snprintf(buffer,URI_LEN,"<D:getcontenttype>%s</D:getcontenttype>\n",t);
         write (sock,buffer,p_len);
     }
@@ -342,9 +342,15 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
             close(swap_fd);
             return 0;
         } else { //Prepares for storing the item in cache, will be sent afterwards
-            swap_fd=sock; //Stores the real socket
-            //Will write to file instead than socket
-            connection_prop->sock=sock=cache_get_item_fd_wr(*props_int,connection_prop);
+            //Get file descriptor of cache file
+            int cache_fd=cache_get_item_fd_wr(*props_int,connection_prop);
+
+            //If we obtained that descriptor, replace socket with it
+            if (cache_fd!=-1) {
+                swap_fd=sock; //Stores the real socket
+                connection_prop->sock=sock=cache_fd;
+            } else
+                swap_fd=-1;
         }
 
     }
@@ -390,7 +396,12 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     //ends multistatus
     write(sock,"</D:multistatus>",16);
 
-    if (cache_is_enabled()) { //All was stored to a file and not sent yet, so here we send the generated XML to the client
+    /*
+     * If we were able to get a file descriptor for the cache file, and cache is enabled,
+     * at this point the XMP has been saved into the cache but not sent to the client,
+     * so now we read from cache and send to the client
+     */
+    if (cache_is_enabled() && swap_fd!=-1) {
         int cache_fd=sock;
         connection_prop->sock=sock=swap_fd; //Restore sock to it's value
 

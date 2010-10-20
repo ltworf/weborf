@@ -35,7 +35,7 @@ Returns a token for the libmagic.
 buffer must NOT be shared amongst threads.
 The size of buffer is assumed to be at least MIMETYPELEN
 */
-int init_mime(magic_t *token) {
+int mime_init(magic_t *token) {
 #ifdef SEND_MIMETYPES
     *token=magic_open(MAGIC_SYMLINK | MAGIC_MIME_TYPE);
     if (*token==NULL) return 1;
@@ -51,7 +51,7 @@ int init_mime(magic_t *token) {
 Releases the token for libmagic
 If the token is null, it will do nothing.
 */
-void release_mime(magic_t token) {
+void mime_release(magic_t token) {
     if (token==NULL) return;
 #ifdef SEND_MIMETYPES
     magic_close(token);
@@ -65,7 +65,7 @@ the cursor can be located at any position
 fd is the descriptor to an open file
 sb is the stat to the same file
 */
-const char* get_mime_fd (magic_t token,int fd,struct stat *sb) {
+const char* mime_get_fd (magic_t token,int fd,struct stat *sb) {
 
 #ifdef SEND_MIMETYPES
     if (token==NULL) return NULL;
@@ -104,8 +104,8 @@ const char* get_mime_fd (magic_t token,int fd,struct stat *sb) {
         return "application/x-block-device";
     else if (sb->st_mode & S_IFCHR)
         return "application/x-character-device";
-    else if (sb->st_mode & S_IFIFO)
-        return "application/x-fifo";
+    //else if (sb->st_mode & S_IFIFO)
+    return "application/x-fifo";
 
 #else
     return NULL;
