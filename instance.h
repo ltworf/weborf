@@ -78,6 +78,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HTTP_1_0 48
 #define HTTP_1_1 2
 
+void inetd();
 void *instance(void *);
 int write_file(connection_t * connection_prop);
 int send_err(int sock, int err, char *descr, char *ip_addr);

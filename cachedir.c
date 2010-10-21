@@ -191,7 +191,6 @@ will just log a warning.
 void cache_init(char* dir) {
     cachedir=dir;
 
-
     //Check if it exists and is a directory
     {
         struct stat stat_buf;

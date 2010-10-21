@@ -161,6 +161,7 @@ int main(int argc, char *argv[]) {
     cgi_paths.data_l[2]=3;
     cgi_paths.data_l[3]=strlen(CGI_PY);
 
+    bool is_inetd=false;
     while (1) { //Block to read command line
 
         //Declares options
@@ -175,18 +176,19 @@ int main(int argc, char *argv[]) {
             {"index", required_argument, 0, 'I'},
             {"auth", required_argument, 0, 'a'},
             {"virtual", required_argument, 0, 'V'},
-            {"moo", no_argument, 0, 'm'},
+            {"moo", no_argument, 0, 'M'},
             {"noexec", no_argument, 0, 'x'},
             {"cgi", required_argument, 0, 'c'},
             {"cache", required_argument, 0, 'C'},
             {"mime", no_argument,0,'m'},
+            {"inetd", no_argument,0,'T'},
             {0, 0, 0, 0}
         };
         static int c; //Identify the readed option
         int option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long(argc, argv, "mvhp:i:I:u:dxb:a:V:c:C:", long_options,
+        c = getopt_long(argc, argv, "TMmvhp:i:I:u:dxb:a:V:c:C:", long_options,
                         &option_index);
 
         //If there are no options it continues
@@ -194,6 +196,9 @@ int main(int argc, char *argv[]) {
             break;
 
         switch (c) {
+        case 'T':
+            is_inetd=true;
+            break;
         case 'C'://Inits cache
             cache_init(optarg);
             break;
@@ -305,6 +310,10 @@ int main(int argc, char *argv[]) {
 
     }
 
+    setenv("SERVER_PORT", port, true);
+
+    if (is_inetd) inetd();
+
 
     printf("Weborf\n");
     printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
@@ -312,7 +321,7 @@ int main(int argc, char *argv[]) {
     printf("under certain conditions.\nFor details see the GPLv3 Licese.\n");
     printf("Run %s --help to see the options\n", argv[0]);
 
-    setenv("SERVER_PORT", port, true);
+
     //Creates the socket
 #ifdef IPV6
     s = socket(PF_INET6, SOCK_STREAM, 0);
