@@ -38,6 +38,13 @@ To flush the cache (empty that directory) you must send USR2 signal to the proce
 It is advised to flush the cache on reboot (manually or with kill) because some items might be invalid after a reboot but weborf would not know that.
 
 .TP
+.B \-T, \-\-inetd
+Must be specified when using weborf with inetd or xinetd.
+It will be still necessary to specify the used port, to pass the correct value to the CGI scripts.
+The \-u directive will be ignored.
+Daemon \-d mode should not be used.
+
+.TP
 .B \-x, \-\-noexec
 When used, weborf will send scripts as if they were normal files instead of executing them and sending their output.
 

@@ -1437,6 +1437,7 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
 /**
 Function executed when weborf is called from inetd
 will use 0 as socket and exit after.
+It is almost a copy of instance()
 */
 void inetd() {
     thread_prop_t thread_prop;  //Server's props
