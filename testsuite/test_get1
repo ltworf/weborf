@@ -1,0 +1,70 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+'''
+Weborf
+Copyright (C) 2010  Salvo "LtWorf" Tomaselli
+
+Weborf is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+@author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
+
+
+This package provides testing suite for weborf
+'''
+
+import httplib
+import common
+
+host='localhost'
+port=8080
+weborfpid=0
+weborfpath='../weborf'
+
+
+
+common.start_server(('-b','site1/','-p','8080'))
+
+connection=common.connection()
+
+#connection.request(method, url[, body[, headers]])
+connection.request('GET', '/robots.txt')
+
+response=connection.getresponse()
+
+print response.read()
+
+'''HTTPResponse instances have the following methods and attributes:
+
+HTTPResponse.read([amt])
+Reads and returns the response body, or up to the next amt bytes.
+HTTPResponse.getheader(name[, default])
+Get the contents of the header name, or default if there is no matching header.
+HTTPResponse.getheaders()
+Return a list of (header, value) tuples.
+
+New in version 2.4.
+
+HTTPResponse.fileno()
+Returns the fileno of the underlying socket.
+HTTPResponse.msg
+A mimetools.Message instance containing the response headers.
+HTTPResponse.version
+HTTP protocol version used by server. 10 for HTTP/1.0, 11 for HTTP/1.1.
+HTTPResponse.status
+Status code returned by server.
+HTTPResponse.reason
+Reason phrase returned by server.'''
+
+
+common.stop_server()
