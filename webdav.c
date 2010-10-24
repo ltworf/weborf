@@ -71,12 +71,12 @@ static inline void escape_uri(char *source, char *dest, int dest_size) {
     int i;
 
     //dest_size must have at least 4 bytes to contain %00\0
-    for (i=0; source[i]!=0 && dest_size>=4; i++) {
+    for (i=0; source[i]!=NULL && dest_size>=4; i++) {
 
         //The or with the space changes it to lower case, so there is no need to compare with two ranges
         if (((source[i] | ' ')>='a' && (source[i] | ' ')<='z' ) || (source[i]>='-' && source[i]<='9')) {
             dest[0]=source[i];
-            dest[1]=0;
+            dest[1]='\0';
             dest++;
             dest_size--;
         } else {
@@ -112,7 +112,7 @@ static inline int get_props(connection_t* connection_prop,string_t* post_param,t
         //Gets the value of content-length header
         bool r=get_param_value(connection_prop->http_param,"Depth", a,4,5);
 
-        if (r==true) {
+        if (r) {
             props->deep=a[0]=='1';
         }
     }

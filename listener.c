@@ -120,9 +120,6 @@ Will use syslogd
 */
 void init_logger() {
     openlog("weborf", LOG_ODELAY, LOG_DAEMON);
-#ifdef SERVERDBG
-    syslog(LOG_INFO, "Starting server...");
-#endif
 }
 
 int main(int argc, char *argv[]) {
@@ -320,6 +317,10 @@ int main(int argc, char *argv[]) {
     printf("This is free software, and you are welcome to redistribute it\n");
     printf("under certain conditions.\nFor details see the GPLv3 Licese.\n");
     printf("Run %s --help to see the options\n", argv[0]);
+
+#ifdef SERVERDBG
+    syslog(LOG_INFO, "Starting server...");
+#endif
 
 
     //Creates the socket

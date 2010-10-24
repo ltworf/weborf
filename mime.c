@@ -80,7 +80,7 @@ const char* mime_get_fd (magic_t token,int fd,struct stat *sb) {
         char buf[64];
 
         //Get the current cursor position
-        unsigned long long int prev_pos=lseek(fd,0,SEEK_CUR);
+        off_t prev_pos=lseek(fd,0,SEEK_CUR);
 
         //Set the cursor to the beginning of the file
         lseek(fd,0,SEEK_SET);

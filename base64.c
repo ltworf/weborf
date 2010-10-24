@@ -39,7 +39,7 @@ char getCode(char c) {
         if (encodingTable[i] == c)
             return i;
     }
-    return 0;
+    return '\0';
 }
 
 /**

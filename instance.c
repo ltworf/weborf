@@ -1441,24 +1441,21 @@ It is almost a copy of instance()
 */
 void inetd() {
     thread_prop_t thread_prop;  //Server's props
-    pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
-
-    //General init of the thread
+    int bufFull=0;                                  //Amount of buf used
+    connection_t connection_prop;                   //Struct to contain properties of the connection
+    buffered_read_t read_b;                         //Buffer for buffered reader
+    int sock=connection_prop.sock=0;                //Socket with the client,using normal file descriptor 0
+    char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
+    connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
+    
     thread_prop.id=0;
+    signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
+    
+    pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
 
 #ifdef THREADDBG
     syslog(LOG_DEBUG,"Starting from inetd");
 #endif
-
-    //Vars
-    int bufFull=0;                                  //Amount of buf used
-    connection_t connection_prop;                   //Struct to contain properties of the connection
-    buffered_read_t read_b;                         //Buffer for buffered reader
-    int sock=0;                                     //Socket with the client,using normal file descriptor 0
-    char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
-    connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
-
-    signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
 
 #ifdef IPV6
     struct sockaddr_in6 addr;//Local and remote address
@@ -1475,8 +1472,6 @@ void inetd() {
         goto release_resources;
     }
 
-    connection_prop.sock=sock;//Assigned socket into the struct
-
     //Converting address to string
 #ifdef IPV6
     getpeername(sock, (struct sockaddr *)&addr, &addr_l);
@@ -1488,18 +1483,15 @@ void inetd() {
 
     handle_requests(buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
     //close(sock);//Closing the socket
-
     //buffer_reset (&read_b);
-
 
 release_resources:
     exit(0);
-#ifdef THREADDBG
-    syslog(LOG_DEBUG,"Terminating thread %ld",thread_prop.id);
-#endif
+    /* No need to free memory and resources
     free(buf);
     free(connection_prop.strfile);
     buffer_free(&read_b);
     mime_release(thread_prop.mime_token);
+    */
     return;
 }
