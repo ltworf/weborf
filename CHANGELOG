@@ -16,6 +16,7 @@
 - Dav's PROPFIND with different required properties can be cached on disk
 - Can send Content-Type
 - Can be used with inetd
+- Fixes crash on invalid request (Rev 492)
 
 0.12.3
 - Fixes directory traversal vulnerability

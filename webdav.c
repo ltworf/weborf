@@ -71,7 +71,7 @@ static inline void escape_uri(char *source, char *dest, int dest_size) {
     int i;
 
     //dest_size must have at least 4 bytes to contain %00\0
-    for (i=0; source[i]!=NULL && dest_size>=4; i++) {
+    for (i=0; source[i]!=0 && dest_size>=4; i++) {
 
         //The or with the space changes it to lower case, so there is no need to compare with two ranges
         if (((source[i] | ' ')>='a' && (source[i] | ' ')<='z' ) || (source[i]>='-' && source[i]<='9')) {

@@ -235,10 +235,9 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
                 (*bufFull)+=r;
             }
 
-            if ((*bufFull)>=INBUFFER) { //Buffer full and still no valid http header
-                send_err(sock,400,"Bad request",connection_prop->ip_addr);
-                return;
-            }
+            //Buffer full and still no valid http header
+            if ((*bufFull)>=INBUFFER) goto bad_request;
+
         }
 
         if (strstr(buf+from,"\r\n\r\n")==NULL) {//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
@@ -259,13 +258,13 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
         else if (strncmp(buf,"COPY",4)==0) connection_prop->method_id=COPY;
         else if (strncmp(buf,"MOVE",4)==0) connection_prop->method_id=MOVE;
 #endif
-        else {
-            send_err(sock,400,"Bad request",connection_prop->ip_addr);
-            return;
-        }
+        else goto bad_request;
 
         connection_prop->method=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
         connection_prop->page=strtok_r(NULL," ",&lasts);
+        if (connection_prop->page==NULL || connection_prop->method == NULL) {
+            goto bad_request;
+        }
         connection_prop->http_param=lasts;
 
 #ifdef REQUESTDBG
@@ -286,6 +285,11 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
         if (connection_prop->keep_alive==false) return;
 
     } /* while */
+
+bad_request:
+    send_err(sock,400,"Bad request",connection_prop->ip_addr);
+    close(sock);
+    return;
 }
 
 /**
@@ -1447,10 +1451,10 @@ void inetd() {
     int sock=connection_prop.sock=0;                //Socket with the client,using normal file descriptor 0
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
     connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
-    
+
     thread_prop.id=0;
     signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
-    
+
     pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
 
 #ifdef THREADDBG
