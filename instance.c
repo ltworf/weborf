@@ -65,10 +65,8 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
                 (*bufFull)+=r;
             }
 
-            if ((*bufFull)>=INBUFFER) { //Buffer full and still no valid http header
-                send_err(sock,400,"Bad request",connection_prop->ip_addr);
-                return;
-            }
+            //Buffer full and still no valid http header
+            if ((*bufFull)>=INBUFFER) goto bad_request;
         }
 
         if (strstr(buf+from,"\r\n\r\n")==NULL) {//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
@@ -89,14 +87,12 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         else if (strncmp(buf,"COPY",4)==0) connection_prop->method_id=COPY;
         else if (strncmp(buf,"MOVE",4)==0) connection_prop->method_id=MOVE;
 #endif
-        else {
-            send_err(sock,400,"Bad request",connection_prop->ip_addr);
-            return;
-        }
+        else goto bad_request;
 
         connection_prop->method=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
         connection_prop->page=strtok_r(NULL," ",&lasts);
         connection_prop->http_param=lasts;
+        if (connection_prop->page==NULL || connection_prop->method == NULL) goto bad_request;
 
 #ifdef REQUESTDBG
         //TODO for some strange reason sometimes there is a strange char after the ip addr, investigate why
@@ -130,6 +126,11 @@ void handle_requests(int sock,char* buf,buffered_read_t * read_b,int * bufFull,c
         if (connection_prop->keep_alive==false) return;
 
     } /* while */
+
+bad_request:
+    send_err(sock,400,"Bad request",connection_prop->ip_addr);
+    close(sock);
+    return;
 }
 
 /**
@@ -900,7 +901,7 @@ int write_file(int sock,connection_t* connection_prop) {
         char *end;
 
         if ((accept=strstr(connection_prop->http_param,"Accept-Encoding:"))!=NULL && (end=strstr(accept,"\r\n"))!=NULL) {
-            
+
 
             //Avoid to parse the entire header.
             end[0]='\0';
@@ -1099,7 +1100,7 @@ int check_auth(int sock, connection_t* connection_prop) {
     } else { //Retrieves provided username and password
         char*auth_end=strstr(auth,"\r\n");//Finds the end of the header
         if (auth_end==NULL) return -1;
-        
+
         char a[PWDLIMIT*2];
         auth+=21;//Moves the begin of the string to exclude Authorization: Basic
         if ((auth_end-auth+1)<(PWDLIMIT*2))
@@ -1114,7 +1115,8 @@ int check_auth(int sock, connection_t* connection_prop) {
         a[auth_end-auth]=0;
         decode64(username,a);//Decodes the base64 string
 
-        if ((password=strstr(username,":"))!=NULL) {;//Locates the separator :
+        if ((password=strstr(username,":"))!=NULL) {
+            ;//Locates the separator :
             password[0]=0;//Nulls the separator to split username and password
             password++;//make password point to the beginning of the password
         }
