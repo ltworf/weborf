@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2007  Salvo "LtWorf" Tomaselli
+Copyright (C) 2010  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,16 +18,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
-#ifndef WEBORF_UTILS_H
-#define WEBORF_UTILS_H
+#ifndef WEBORF_MYIO_H
+#define WEBORF_MYIO_H
 
 #include "types.h"
 #include "options.h"
 
-int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bool parent);
-void help();
-void version();
-void moo();
-bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,ssize_t param_len);
+int fd_copy(int from, int to, off_t count);
+int dir_remove(char * dir);
+bool file_exists(char *file);
+
+#ifdef WEBDAV
+int dir_move_copy (char* source, char* dest,int method);
+int file_copy(char* source, char* dest);
+int file_move(char* source, char* dest);
+int dir_move (char* source, char* dest);
+int dir_copy (char* source, char* dest);
+#endif
 
 #endif

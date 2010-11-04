@@ -40,6 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "options.h"
 #include "utils.h"
+#include "myio.h"
 #include "cgi.h"
 #include "queue.h"
 #include "mystring.h"
@@ -505,7 +506,7 @@ int delete_file(connection_t* connection_prop) {
     }
 
     if (S_ISDIR(stat_d.st_mode)) {
-        retval=deep_rmdir(connection_prop->strfile);
+        retval=dir_remove(connection_prop->strfile);
     } else {
         retval=unlink(connection_prop->strfile);
     }
@@ -942,7 +943,7 @@ int write_file(connection_t* connection_prop) {
     }*/
 
     //Copy file using descriptors; from to and size
-    return file_cp(connection_prop->strfile_fd,sock,count);
+    return fd_copy(connection_prop->strfile_fd,sock,count);
 }
 
 /**

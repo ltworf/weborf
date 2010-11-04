@@ -42,7 +42,7 @@ weborf: debug
 	strip weborf
 
 combined:
-	$(CC) $(CFLAGS) $(LDFLAGS) $(ARCHFLAGS) -combine *.c -o weborf
+	$(CC) $(CFLAGS) $(LDFLAGS) $(ARCHFLAGS) -fwhole-program -combine *.c -o weborf
 	strip weborf
 
 %.c: %.h
@@ -50,7 +50,7 @@ combined:
 cgi:
 	cd cgi_wrapper; make
 
-debug: cgi.o listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o mime.o cachedir.o
+debug: cgi.o listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o mime.o cachedir.o myio.o
 	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o weborf
 
 clean: 

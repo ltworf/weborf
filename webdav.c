@@ -40,6 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "webdav.h"
 #include "instance.h"
 #include "mime.h"
+#include "myio.h"
 #include "mystring.h"
 #include "utils.h"
 #include "cachedir.h"
@@ -337,7 +338,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
             struct stat sb;
             fstat(swap_fd,&sb);
 
-            file_cp(swap_fd,sock, sb.st_size);
+            fd_copy(swap_fd,sock, sb.st_size);
 
             close(swap_fd);
             return 0;
@@ -407,7 +408,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
 
         off_t prev_pos=lseek(cache_fd,0,SEEK_CUR); //Get size of the file
         lseek(cache_fd,0,SEEK_SET);          //Set cursor to the beginning
-        file_cp(cache_fd,sock,prev_pos);     //Send the file
+        fd_copy(cache_fd,sock,prev_pos);     //Send the file
 
         close(cache_fd);
     }
