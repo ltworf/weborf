@@ -40,6 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utils.h"
 
 
+
 /**
 Copies count bytes from the file descriptor "from" to the
 file descriptor "to".
@@ -48,6 +49,21 @@ this function.
 Will not close any descriptor
 */
 int file_cp(int from, int to, unsigned long long int count) {
+
+    /*#ifdef linux
+     *
+     * #ifdef linux
+    #include <sys/sendfile.h>
+    #endif
+
+
+     * check that to is a socket
+    if (sendfile(to,from,NULL,count)==-1) return ERR_NOMEM;
+
+    #else
+
+    */
+
     char *buf=malloc(FILEBUF);//Buffer to read from file
     int reads,wrote;
 
@@ -274,50 +290,6 @@ void moo() {
            "                ||----w |\n"
            "                ||     ||\n");
     exit(0);
-}
-
-/**
-This functions set enviromental variables according to the data present in the HTTP request
-*/
-void setEnvVars(char *http_param) { //Sets Enviroment vars
-    if (http_param == NULL)
-        return;
-
-    char *lasts;
-    char *param;
-    int i;
-    int p_len;
-
-    //Removes the 1st part with the protocol
-    param = strtok_r(http_param, "\r\n", &lasts);
-    setenv("SERVER_PROTOCOL", param, true);
-
-    char hparam[200];
-    hparam[0] = 'H';
-    hparam[1] = 'T';
-    hparam[2] = 'T';
-    hparam[3] = 'P';
-    hparam[4] = '_';
-
-    //Cycles parameters
-    while ((param = strtok_r(NULL, "\r\n", &lasts)) != NULL) {
-
-        p_len = lasts-param-1;
-        char *value = NULL;
-
-        //Parses the parameter to split name from value
-        for (i = 0; i < p_len; i++) {
-            if (param[i] == ':' && param[i + 1] == ' ') {
-                param[i] = '\0';
-                value = &param[i + 2];
-                break;
-            }
-        }
-        strToUpper(param); //Converts to upper case
-        strReplace(param, "-", '_');
-        memccpy(hparam+5,param,'\0',195);
-        setenv(hparam, value, true);
-    }
 }
 
 /**

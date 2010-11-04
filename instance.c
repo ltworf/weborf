@@ -40,6 +40,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "options.h"
 #include "utils.h"
+#include "cgi.h"
 #include "queue.h"
 #include "mystring.h"
 #include "base64.h"
@@ -63,7 +64,6 @@ extern bool send_content_type;              //True if we send content type when 
 extern char* indexes[MAXINDEXCOUNT];        //Array containing index files
 extern int indexes_l;                       //Length of array
 extern bool virtual_host;                   //True if must check for virtual hosts
-extern char ** environ;                     //To reset environ vars
 extern array_ll cgi_paths;                  //Paths to cgi binaries
 extern pthread_key_t thread_key;            //key for pthread_setspecific
 
@@ -262,9 +262,8 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
 
         connection_prop->method=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
         connection_prop->page=strtok_r(NULL," ",&lasts);
-        if (connection_prop->page==NULL || connection_prop->method == NULL) {
-            goto bad_request;
-        }
+        if (connection_prop->page==NULL || connection_prop->method == NULL) goto bad_request;
+
         connection_prop->http_param=lasts;
 
 #ifdef REQUESTDBG
@@ -702,249 +701,6 @@ escape:
         return send_http_header(201,0,NULL,true,-1,connection_prop);
     }
     return 0; //Make gcc happy
-}
-/**
-Executes a CGI script with a given interpreter and sends the resulting output
-sock is the socket with the client
-executor is the path to the binary which will execute the page
-post_param contains the post data sent to the page (if present). This can't be null, but the string pointer inside the struct can be null.
-real_basedir is the basedir (according to the virtualhost)
-connection_prop is the struct containing all the data of the request
-
-exec_page will fork and create pipes with the child.
-The child will clean all the envvars and then set new ones as needed by CGI.
-Then the child will call alarm to set the timeout to its execution, and then will exec the script.
-
-*/
-int exec_page(char * executor,string_t* post_param,char* real_basedir,connection_t* connection_prop) {
-    int sock=connection_prop->sock;
-#ifdef SENDINGDBG
-    syslog(LOG_INFO,"Executing file %s",connection_prop->strfile);
-#endif
-
-    int wpid;//Child's pid
-    int wpipe[2];//Pipe's file descriptor
-    int ipipe[2];//Pipe's file descriptor, used to pass POST on script's standard input
-
-    //Pipe created and used only if there is POST data to send to the script
-    if (post_param->data!=NULL) {
-        pipe(ipipe);//Pipe to comunicate with the child
-    }
-
-    //Pipe to get the output of the child
-    pipe(wpipe);//Pipe to comunicate with the child
-
-    if ((wpid=fork())<0) { //Error, returns a no memory error
-#ifdef SENDINGDBG
-        syslog(LOG_CRIT,"Unable to fork to execute the file %s",connection_prop->strfile);
-#endif
-        if (post_param->data!=NULL) {
-            close(ipipe[0]);
-            close(ipipe[1]);
-        }
-        close(wpipe[1]);
-        close(wpipe[0]);
-        return ERR_NOMEM;
-    } else if (wpid==0) { //Child, executes the script
-        close (wpipe[0]); //Closes unused end of the pipe
-
-        fclose (stdout); //Closing the stdout
-        dup(wpipe[1]); //Redirects the stdout
-
-#ifdef HIDE_CGI_ERRORS
-        fclose (stderr); //Not printing any error
-#endif
-        //Redirecting standard input only if there is POST data
-        if (post_param->data!=NULL) {//Send post data to script's stdin
-            fclose(stdin);
-            dup(ipipe[0]);
-        }
-
-        {
-            //Clears all the env var, saving only SERVER_PORT
-            char *port=getenv("SERVER_PORT");
-            environ=NULL;
-            setenv("SERVER_PORT",port,true);
-        }
-        setEnvVars(connection_prop->http_param); //Sets env var starting with HTTP
-
-        {
-            //Sets SERVER_ADDR var
-
-#ifdef IPV6
-            char loc_addr[INET6_ADDRSTRLEN];
-            struct sockaddr_in6 addr;//Local and remote address
-            socklen_t addr_l=sizeof(struct sockaddr_in6);
-
-            getsockname(sock, (struct sockaddr *)&addr, &addr_l);
-            inet_ntop(AF_INET6, &addr.sin6_addr,(char*)&loc_addr, INET6_ADDRSTRLEN);
-#else
-            char loc_addr[INET_ADDRSTRLEN];
-            struct sockaddr_in addr;
-            int addr_l=sizeof(struct sockaddr_in);
-
-            getsockname(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
-            inet_ntop(AF_INET, &addr.sin_addr,(char*)&loc_addr, INET_ADDRSTRLEN);
-#endif
-
-            setenv("SERVER_ADDR",(char*)&loc_addr,true);
-        }
-
-        //Set CGI needed vars
-        setenv("SERVER_SIGNATURE",SIGNATURE,true);
-        setenv("SERVER_SOFTWARE",SIGNATURE,true);
-        setenv("GATEWAY_INTERFACE","CGI/1.1",true);
-        setenv("REQUEST_METHOD",connection_prop->method,true); //POST GET
-        setenv("SERVER_NAME", getenv("HTTP_HOST"),true); //TODO for older http version this header might not exist
-        setenv("REDIRECT_STATUS","Ciao",true); // Mah.. i'll never understand php, this env var is needed
-        setenv("SCRIPT_FILENAME",connection_prop->strfile,true); //This var is needed as well or php say no input file...
-        setenv("DOCUMENT_ROOT",real_basedir,true);
-
-        setenv("REMOTE_ADDR",connection_prop->ip_addr,true); //Client's address
-        setenv("SCRIPT_NAME",connection_prop->page,true); //Name of the script without complete path
-
-        //Request URI with or without a query
-        if (connection_prop->get_params==NULL) {
-            setenv("REQUEST_URI",connection_prop->page,true);
-            setenv("QUERY_STRING","",true);//Query after ?
-        } else {
-            setenv("QUERY_STRING",connection_prop->get_params,true);//Query after ?
-
-            //file and params were the same string.
-            //Joining them again temporarily
-            int delim=connection_prop->page_len;
-            connection_prop->page[delim]='?';
-            setenv("REQUEST_URI",connection_prop->page,true);
-            connection_prop->page[delim]='\0';
-        }
-
-        {
-            //If Content-Length field exists
-            char *content_l=getenv("HTTP_CONTENT_LENGTH");
-            if (content_l!=NULL) {
-                setenv("CONTENT_LENGTH",content_l,true);
-                setenv("CONTENT_TYPE",getenv("HTTP_CONTENT_TYPE"),true);
-            }
-        }
-
-        {
-            //chdir to the directory
-            char* last_slash=rindex(connection_prop->strfile,'/');
-            last_slash[0]=0;
-            chdir(connection_prop->strfile);
-        }
-
-        alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
-
-        execl(executor,executor,(char *)0);
-#ifdef SERVERDBG
-        syslog(LOG_ERR,"Execution of %s failed",executor);
-        perror("Execution of the page failed");
-#endif
-        exit(1);
-
-    } else { //Father: reads from pipe and sends
-        //Closing pipes, so if they're empty read is non blocking
-        close (wpipe[1]);
-
-        //Large buffer, must contain the output of the script
-        char* header_buf=malloc(MAXSCRIPTOUT+HEADBUF);
-
-        if (header_buf==NULL) { //Was unable to allocate the buffer
-            int state;
-#ifdef SERVERDBG
-            syslog(LOG_CRIT,"Not enough memory to allocate buffers for CGI");
-#endif
-            close (wpipe[0]);
-            if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
-                close (ipipe[0]); //Closes unused end of the pipe
-                close (ipipe[1]); //Closes the pipe
-            }
-            kill(wpid,SIGKILL); //Kills cgi process
-            waitpid (wpid,&state,0); //Removes zombie process
-            return ERR_NOMEM;//Returns if buffer was not allocated
-        }
-
-        if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
-            //Send post data to script's stdin
-            write(ipipe[1],post_param->data,post_param->len);
-            close (ipipe[0]); //Closes unused end of the pipe
-            close (ipipe[1]); //Closes the pipe
-        }
-
-        {
-            int state;
-            waitpid (wpid,&state,0); //Wait the termination of the script
-        }
-
-        //Reads output of the script
-        int e_reads=read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF);
-
-        //Separating header from contents
-        char* scrpt_buf=strstr(header_buf,"\r\n\r\n");
-        int reads=0;
-        if (scrpt_buf!=NULL) {
-            scrpt_buf+=2;
-            scrpt_buf[0]=0;
-            scrpt_buf=scrpt_buf+2;
-            reads=e_reads - (int)(scrpt_buf-header_buf);//Len of the content
-        } else {//Something went wrong, ignoring the output (it's missing the headers)
-            e_reads=0;
-        }
-
-        if (e_reads>0) {//There is output from script
-            unsigned int status; //Standard status
-            {
-                //Reading if there is another status
-                char*s=strstr(header_buf,"Status: ");
-                if (s!=NULL) {
-                    status=(unsigned int)strtoul( s+8 , NULL, 0 );
-                } else {
-                    status=200; //Standard status
-                }
-            }
-
-            /* There could be other data, which didn't fit in the buffer,
-            so we set reads to -1 (this will make connection non-keep-alive)
-            and we continue reading and writing to the socket */
-            if (e_reads==MAXSCRIPTOUT+HEADBUF) {
-                reads=-1;
-                connection_prop->keep_alive=false;
-            }
-
-
-            /*
-            Sends header,
-            reads is the size
-            true tells to use Content-Length rather than entity-length
-            -1 won't use any ETag, and will eventually use the current time as last-modified
-            */
-            send_http_header(status,reads,header_buf,true,-1,connection_prop);
-
-            if (reads!=0) {//Sends the page if there is something to send
-                write (sock,scrpt_buf,reads);
-            }
-
-            if (reads==-1) {//Reading until the pipe is empty, if it wasn't fully read before
-                e_reads=MAXSCRIPTOUT+HEADBUF;
-                while (e_reads==MAXSCRIPTOUT+HEADBUF) {
-                    e_reads=read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF);
-                    write (sock,header_buf,e_reads);
-                }
-            }
-
-            //Closing pipe
-            close (wpipe[0]);
-
-
-        } else {//No output from script, maybe terminated...
-            send_err(sock,500,"Internal server error",connection_prop->ip_addr);
-        }
-
-        free(header_buf);
-
-    }
-    return 0;
 }
 
 /**
