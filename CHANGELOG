@@ -17,6 +17,8 @@
 - Can send Content-Type
 - Can be used with inetd
 - Fixes crash on invalid request (Rev 492)
+- Will no longer terminate on failed accept
+- Heavy code refactory
 
 0.12.3
 - Fixes directory traversal vulnerability

@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <dirent.h>
 #include <unistd.h>
 #include <syslog.h>
-
+#include <signal.h>
 
 #include "mystring.h"
 #include "options.h"
@@ -225,6 +225,30 @@ void moo() {
            "                ||----w |\n"
            "                ||     ||\n");
     exit(0);
+}
+
+/**
+ * This function prints the start disclaimer on stdout.
+ * It wants the command line parameters
+ * */
+void print_start_disclaimer(int argc, char *argv[]) {
+    printf("Weborf\n"
+           "This program comes with ABSOLUTELY NO WARRANTY.\n"
+           "This is free software, and you are welcome to redistribute it\n"
+           "under certain conditions.\nFor details see the GPLv3 Licese.\n"
+           "Run %s --help to see the options\n", argv[0]);
+}
+
+/**
+ * Detaches the process from the shell,
+ * it is re-implemented because it is not
+ * included in POSIX
+ * */
+void daemonize() {
+    if (fork() == 0)
+        signal(SIGHUP, SIG_IGN);
+    else
+        exit(0);
 }
 
 /**

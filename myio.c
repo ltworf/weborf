@@ -144,7 +144,7 @@ int file_move(char* source, char* dest) {
     //Could link, file was on the same partition
     if (retval==0)
         goto escape;
-    
+
     //Not the same device, doing a normal copy
     if (errno==EXDEV)
         retval=file_copy(source,dest);

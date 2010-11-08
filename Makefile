@@ -50,7 +50,7 @@ combined:
 cgi:
 	cd cgi_wrapper; make
 
-debug: cgi.o listener.o queue.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o mime.o cachedir.o myio.o
+debug: cgi.o listener.o queue.o configuration.o auth.o mynet.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o mime.o cachedir.o myio.o
 	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o weborf
 
 clean: 

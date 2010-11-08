@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2007  Salvo "LtWorf" Tomaselli
+Copyright (C) 2010  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,18 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
-#ifndef WEBORF_UTILS_H
-#define WEBORF_UTILS_H
+#ifndef WEBORF_AUTH_H
+#define WEBORF_AUTH_H
 
 #include "types.h"
 #include "options.h"
 
-int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bool parent);
-void help();
-void version();
-void moo();
-void print_start_disclaimer(int argc, char *argv[]);
-bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,ssize_t param_len);
-void daemonize();
+void auth_set_socket(char *u_socket);
+int auth_check_request(connection_t* connection_prop);
 
 #endif

@@ -35,7 +35,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 typedef int magic_t;
 #endif
 
-
 typedef struct {
     long int id;                //ID of the thread
     magic_t mime_token;         //Token for libmagic
@@ -93,10 +92,29 @@ typedef struct {
 } string_t;
 
 typedef struct {
-    pthread_mutex_t mutex;          //Mutex to access this struct
-    unsigned int free;              //Free threads
-    unsigned int count;             //thread count
+    pthread_mutex_t mutex;      //Mutex to access this struct
+    unsigned int free;          //Free threads
+    unsigned int count;         //thread count
 } t_thread_info;
+
+typedef struct {
+    char *basedir;
+    char* authsock;             //Executable that will authenticate
+    uid_t uid;                  //Uid to use after bind
+#ifdef SEND_MIMETYPES
+    bool send_content_type;     //True if we want to send the content type
+#endif
+    bool is_inetd;              //True if it expects to be executed by inetd
+    array_ll cgi_paths;         //Paths to cgi binaries
+    bool virtual_host;          //True if must check for virtual hosts
+    bool exec_script;           //Enable CGI if false
+    char *ip;                   //IP addr with default value
+    char *port;                 //port with default value
+
+    char *indexes[MAXINDEXCOUNT];//List of pointers to index files
+    int indexes_l;              //Count of the list
+
+} weborf_configuration_t;
 
 #endif
 

@@ -50,7 +50,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 
-
 #define NO_ACTION -120
 
 //Errors

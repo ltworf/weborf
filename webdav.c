@@ -56,9 +56,7 @@ typedef struct {
 } t_dav_details;
 
 
-extern char* authsock;
-extern char* basedir;
-extern bool virtual_host;
+extern weborf_configuration_t weborf_conf;
 extern pthread_key_t thread_key;            //key for pthread_setspecific
 
 
@@ -295,7 +293,7 @@ authentication is enabled.
 */
 int propfind(connection_t* connection_prop,string_t *post_param) {
     //Forbids the method if no authentication is in use
-    if (authsock==NULL) {
+    if (weborf_conf.authsock==NULL) {
         return ERR_FORBIDDEN;
     }
 
@@ -420,7 +418,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
 This funcion should be named mkdir. But standards writers are weird people.
 */
 int mkcol(connection_t* connection_prop) {
-    if (authsock==NULL) {
+    if (weborf_conf.authsock==NULL) {
         return ERR_FORBIDDEN;
     }
 
@@ -503,12 +501,7 @@ int copy_move(connection_t* connection_prop) {
     }
     dest+=strlen(host);
 
-    if (virtual_host) { //Using virtual hosts
-        real_basedir=get_basedir(connection_prop->http_param);
-        if (real_basedir==NULL) real_basedir=basedir;
-    } else {//No virtual Host
-        real_basedir=basedir;
-    }
+    real_basedir=get_basedir(connection_prop->http_param);
 
     //Local path for destination file
     snprintf(destination,PATH_LEN,"%s%s",real_basedir,dest);

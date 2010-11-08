@@ -36,6 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "instance.h"
 
 extern char ** environ;                     //To reset environ vars
+extern weborf_configuration_t weborf_conf;
 
 /**
  * This function will set enviromental variables mapping the HTTP request.
@@ -107,12 +108,8 @@ static inline void cgi_set_SERVER_ADDR_PORT(int sock) {
 
     setenv("SERVER_ADDR",(char*)&loc_addr,true);
 
-    {
-        //Clears all the env var, saving only SERVER_PORT
-        char *port=getenv("SERVER_PORT");
-        environ=NULL;
-        setenv("SERVER_PORT",port,true);
-    }
+    //TODO
+    setenv("SERVER_PORT",weborf_conf.port,true);
 
 }
 
@@ -210,6 +207,8 @@ static inline void cgi_execute_child(connection_t* connection_prop,string_t* pos
         close(STDIN);
         dup(ipipe[0]);
     }
+
+    environ=NULL; //Clear env vars
 
     cgi_set_http_env_vars(connection_prop->http_param);
     cgi_set_SERVER_ADDR_PORT(connection_prop->sock);

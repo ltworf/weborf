@@ -30,7 +30,6 @@ void init_logger();
 void init_threads(unsigned int count);
 void quit();
 void print_queue_status();
-void setBasedir(char *bd);
 void *t_shape(void *nulla);
 void set_authsocket(char *);
 void chn_thread_count(int val);

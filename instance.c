@@ -44,33 +44,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cgi.h"
 #include "queue.h"
 #include "mystring.h"
-#include "base64.h"
 #include "mime.h"
 #include "instance.h"
 #include "cachedir.h"
 #include "types.h"
+#include "auth.h"
 
 extern syn_queue_t queue;                   //Queue for open sockets
 
 extern t_thread_info thread_info;
 
-extern char* basedir;                       //Basedir
-extern char* authsock;                       //Executable that will authenticate
-extern bool exec_script;                    //Execute scripts if true, sends the file if false
-
-#ifdef SEND_MIMETYPES
-extern bool send_content_type;              //True if we send content type when sending files
-#endif
+extern weborf_configuration_t weborf_conf;
 
 extern char* indexes[MAXINDEXCOUNT];        //Array containing index files
 extern int indexes_l;                       //Length of array
-extern bool virtual_host;                   //True if must check for virtual hosts
-extern array_ll cgi_paths;                  //Paths to cgi binaries
 extern pthread_key_t thread_key;            //key for pthread_setspecific
 
 
 
-int exec_page(char *executor, string_t * post_param, char *real_basedir, connection_t * connection_prop);
 int request_auth(int sock, char *descr);
 int send_page(buffered_read_t * read_b, connection_t * connection_prop);
 void piperr();
@@ -97,75 +88,6 @@ static inline int check_etag(connection_t* connection_prop,char *a) {
         }
     }
     return 1;
-}
-
-/**
-This function checks if the authentication can be granted or not calling the external program.
-Returns 0 if authorization is granted.
-*/
-static inline int check_auth(connection_t* connection_prop) {
-    if (authsock==NULL) return 0;
-
-    char username[PWDLIMIT*2];
-    char* password=username; //will be changed if there is a password
-
-    char* auth=strstr(connection_prop->http_param,"Authorization: Basic ");//Locates the auth information
-    if (auth==NULL) { //No auth informations
-        username[0]=0;
-        //password[0]=0;
-    } else { //Retrieves provided username and password
-        char*auth_end=strstr(auth,"\r\n");//Finds the end of the header
-        if (auth_end==NULL) return -1;
-        char a[PWDLIMIT*2];
-        auth+=21;//Moves the begin of the string to exclude Authorization: Basic
-        if ((auth_end-auth+1)<(PWDLIMIT*2))
-            memcpy(&a,auth,auth_end-auth); //Copies the base64 encoded string to a temp buffer
-        else { //Auth string is too long for the buffer
-#ifdef SERVERDBG
-            syslog(LOG_ERR,"Unable to accept authentication, buffer is too small");
-#endif
-            return ERR_NOMEM;
-        }
-
-        a[auth_end-auth]=0;
-        decode64(username,a);//Decodes the base64 string
-
-        password=strstr(username,":");//Locates the separator :
-        if (password==NULL) return -1;
-        password[0]=0;//Nulls the separator to split username and password
-        password++;//make password point to the beginning of the password
-    }
-
-    short int result=-1;
-    {
-        int s,len;
-        struct sockaddr_un remote;
-        s=socket(AF_UNIX,SOCK_STREAM,0);
-
-        remote.sun_family = AF_UNIX;
-        strcpy(remote.sun_path, authsock);
-        len = strlen(remote.sun_path) + sizeof(remote.sun_family);
-        if (connect(s, (struct sockaddr *)&remote, len) == -1) {//Unable to connect
-            return -1;
-        }
-        char* auth_str=malloc(HEADBUF+PWDLIMIT*2);
-        if (auth_str==NULL) {
-#ifdef SERVERDBG
-            syslog(LOG_CRIT,"Not enough memory to allocate buffers");
-#endif
-            return -1;
-        }
-
-        int auth_str_l=snprintf(auth_str,HEADBUF+PWDLIMIT*2,"%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",connection_prop->page,connection_prop->ip_addr,connection_prop->method,username,password,connection_prop->http_param);
-        if (write(s,auth_str,auth_str_l)==auth_str_l && read(s,auth_str,1)==0) {//All data written and no output, ok
-            result=0;
-        }
-
-        close(s);
-        free(auth_str);
-    }
-
-    return result;
 }
 
 /**
@@ -411,7 +333,7 @@ This function will not work if there is no auth provider.
 */
 int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     int sock=connection_prop->sock;
-    if (authsock==NULL) {
+    if (weborf_conf.authsock==NULL) {
         return ERR_FORBIDDEN;
     }
 
@@ -495,7 +417,7 @@ This function will not work if there is no auth provider.
 int delete_file(connection_t* connection_prop) {
     int retval;
 
-    if (authsock==NULL) {
+    if (weborf_conf.authsock==NULL) {
         return ERR_FORBIDDEN;
     }
 
@@ -549,13 +471,9 @@ int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
 #endif
 
     //TODO remove this from here and add a field in connection_prop
-    if (virtual_host) { //Using virtual hosts
-        real_basedir=get_basedir(connection_prop->http_param);
-    } else {//No virtual Host
-        real_basedir=basedir;
-    }
+    real_basedir=get_basedir(connection_prop->http_param);
 
-    if (check_auth(connection_prop)!=0) { //If auth is required
+    if (auth_check_request(connection_prop)!=0) { //If auth is required
         retval = ERR_NOAUTH;
         post_param.data=NULL;
         goto escape;
@@ -620,11 +538,11 @@ int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
             int i;
 
             //Cyclyng through the indexes
-            for (i=0; i<indexes_l; i++) {
-                snprintf(index_name,INDEXMAXLEN,"%s",indexes[i]);//Add INDEX to the url
+            for (i=0; i<weborf_conf.indexes_l; i++) {
+                snprintf(index_name,INDEXMAXLEN,"%s",weborf_conf.indexes[i]);//Add INDEX to the url
                 if (file_exists(connection_prop->strfile)) { //If index exists, redirect to it
                     char head[URI_LEN+12];//12 is the size for the location header
-                    snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,indexes[i]);
+                    snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes[i]);
                     send_http_header(303,0,head,true,-1,connection_prop);
 
                     index_found=true;
@@ -638,14 +556,14 @@ int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
             }
         }
     } else {//Requested an existing file
-        if (exec_script) { //Scripts enabled
+        if (weborf_conf.exec_script) { //Scripts enabled
 
             int q_;
             int f_len;
-            for (q_=0; q_<cgi_paths.len; q_+=2) { //Check if it is a CGI script
-                f_len=cgi_paths.data_l[q_];
-                if (endsWith(connection_prop->page+connection_prop->page_len-f_len,cgi_paths.data[q_],f_len,f_len)) {
-                    retval=exec_page(cgi_paths.data[++q_],&post_param,real_basedir,connection_prop);
+            for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
+                f_len=weborf_conf.cgi_paths.data_l[q_];
+                if (endsWith(connection_prop->page+connection_prop->page_len-f_len,weborf_conf.cgi_paths.data[q_],f_len,f_len)) {
+                    retval=exec_page(weborf_conf.cgi_paths.data[++q_],&post_param,real_basedir,connection_prop);
                     break;
                 }
             }
@@ -885,7 +803,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
 
     //Sending MIME to the client
 #ifdef SEND_MIMETYPES
-    if (send_content_type) {
+    if (weborf_conf.send_content_type) {
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
         const char* mime=mime_get_fd(thread_prop->mime_token,connection_prop->strfile_fd,&(connection_prop->strfile_stat));
 
@@ -1057,21 +975,21 @@ the default basedir.
 Those string must
 */
 char* get_basedir(char* http_param) {
-    if (virtual_host==false) return basedir;
+    if (weborf_conf.virtual_host==false) return weborf_conf.basedir;
 
     char* result;
     char* h=strstr(http_param,"\r\nHost: ");
 
-    if (h==NULL) return basedir;
+    if (h==NULL) return weborf_conf.basedir;
 
     h+=8;//Removing "Host:" string
     char* end=strstr(h,"\r");
-    if (end==NULL) return basedir;
+    if (end==NULL) return weborf_conf.basedir;
     end[0]=0;
     result=getenv(h);
     end[0]='\r';
 
-    if (result==NULL) return basedir; //Reqeusted host doesn't exist
+    if (result==NULL) return weborf_conf.basedir; //Reqeusted host doesn't exist
 
     return result;
 }
