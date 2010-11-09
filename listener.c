@@ -136,12 +136,24 @@ static void init_thread_shaping() {
         pthread_create(&t_id, NULL, t_shape, (void *) NULL);
     }
 
+/**
+ * Set quit action on SIGTERM and SIGINT
+ * and prints the internal status on SIGUSR1
+ * */
+static void init_signals() {
+    //Handle SIGINT and SIGTERM
+    signal(SIGINT, quit);
+    signal(SIGTERM, quit);
+
+    //Prints queue status with this signal
+    signal(SIGUSR1, print_queue_status);
+}
+
 int main(int argc, char *argv[]) {
-    int s, s1;          //Socket
+    int s, s1;          //Socket descriptors
     
     init_thread_info();
-
-    init_logger();      //Inits the logger
+    init_logger();
 
     configuration_load(argc,argv);
 
@@ -167,13 +179,7 @@ int main(int argc, char *argv[]) {
     init_thread_attr();
     init_threads(INITIALTHREAD);
     init_thread_shaping();
-
-    //Handle SIGINT and SIGTERM
-    signal(SIGINT, quit);
-    signal(SIGTERM, quit);
-
-    //Prints queue status with this signal
-    signal(SIGUSR1, print_queue_status);
+    init_signals();
 
     //Infinite cycle, accept connections
     while (1) {

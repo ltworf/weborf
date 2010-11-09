@@ -26,7 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define NOMEM 7
 
-void init_logger();
 void init_threads(unsigned int count);
 void quit();
 void print_queue_status();
