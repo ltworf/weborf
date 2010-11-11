@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-CC=gcc
+#CC=gcc
 #DEFS=-Ddebug
 OFLAGS=-O2
 #-pedantic -Wextra
@@ -113,3 +113,5 @@ uninstall:
 memcheck: debug
 	valgrind -v --track-origins=yes --tool=memcheck --leak-check=yes --leak-resolution=high --show-reachable=yes --num-callers=20 --track-fds=yes ./weborf || echo "Valgrind doesn't appear to be installed on this system"
 
+clangstaticcheck:
+	scan-build gcc -c *c
