@@ -79,7 +79,8 @@ The char* buffer must be at least RBUFFER bytes (see definitions in options.h)
 */
 static inline int check_etag(connection_t* connection_prop,char *a) {
     //Find if it is a range request, 13 is strlen of "if-none-match"
-    if (get_param_value(connection_prop->http_param,"If-None-Match",a,RBUFFER,13)) {
+    char *if_none_match="If-None-Match";
+    if (get_param_value(connection_prop->http_param,if_none_match,a,RBUFFER,strlen(if_none_match))) {
         time_t etag=(time_t)strtol(a+1,NULL,0);
         if (connection_prop->strfile_stat.st_mtime==etag) {
             //Browser has the item in its cache, sending 304
@@ -956,7 +957,8 @@ string_t read_post_data(connection_t* connection_prop,buffered_read_t* read_b) {
     //Buffer for field's value
     char a[NBUFFER];
     //Gets the value
-    bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,14);//14 is content-lenght's len
+    char *content_length="Content-Length";
+    bool r=get_param_value(connection_prop->http_param,content_length, a,NBUFFER,strlen(content_length));
 
     //If there is a value and method is POST
     if (r!=false) { //&& connection_prop->method_id==POST) {
