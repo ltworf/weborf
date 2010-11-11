@@ -191,9 +191,9 @@ will just log a warning.
 void cache_init(char* dir) {
     cachedir=dir;
 
-    
+
     {
-        //Check if it exists 
+        //Check if it exists
         struct stat stat_buf;
         if (stat(dir, &stat_buf)!=0) {
             write(2,"Unable to stat cache directory\n",31);
@@ -217,15 +217,15 @@ void cache_init(char* dir) {
 
     //check we have permissions
     if (access(dir,W_OK|R_OK)!=0) {
-            write(2,"no read or write permissions on cache dir\n",42);
+        write(2,"no read or write permissions on cache dir\n",42);
 
 #ifdef SERVERDBG
-            syslog(LOG_ERR,"no read or write permissions on cache dir");
+        syslog(LOG_ERR,"no read or write permissions on cache dir");
 #endif
-            exit(10);
+        exit(10);
 
     }
-    
+
 }
 
 /**

@@ -1106,7 +1106,7 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
     }
 
     len_head=snprintf(head,left_head,"%s\r\n",headers);
-    head+=len_head;
+    //head+=len_head; Not necessary because the snprintf was the last one
     left_head-=len_head;
 
     wrote=write (sock,h_ptr,HEADBUF-left_head);

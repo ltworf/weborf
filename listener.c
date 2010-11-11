@@ -75,8 +75,8 @@ Sets t_attr to make detached threads
 and initializes pthread_keys
 */
 static void init_thread_attr() {
-    int rc = pthread_attr_init(&t_attr);
-    rc = pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED);
+    pthread_attr_init(&t_attr);
+    pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED);
     pthread_key_create(&thread_key,NULL);
 
 }
@@ -131,10 +131,10 @@ static void init_thread_info() {
 }
 
 static void init_thread_shaping() {
-        //Starts the monitoring thread, to close unused threads
-        pthread_t t_id; //Unused var
-        pthread_create(&t_id, NULL, t_shape, (void *) NULL);
-    }
+    //Starts the monitoring thread, to close unused threads
+    pthread_t t_id; //Unused var
+    pthread_create(&t_id, NULL, t_shape, (void *) NULL);
+}
 
 /**
  * Set quit action on SIGTERM and SIGINT
@@ -151,7 +151,7 @@ static void init_signals() {
 
 int main(int argc, char *argv[]) {
     int s, s1;          //Socket descriptors
-    
+
     init_thread_info();
     init_logger();
 

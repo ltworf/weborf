@@ -74,13 +74,16 @@ static inline void cgi_set_http_env_vars(char *http_param) { //Sets Enviroment v
             if (param[i] == ':' && param[i + 1] == ' ') {
                 param[i] = '\0';
                 value = &param[i + 2];
+
+                strToUpper(param); //Converts to upper case
+                strReplace(param, "-", '_');
+                memccpy(hparam+5,param,'\0',195);
+                setenv(hparam, value, true);
+
                 break;
             }
         }
-        strToUpper(param); //Converts to upper case
-        strReplace(param, "-", '_');
-        memccpy(hparam+5,param,'\0',195);
-        setenv(hparam, value, true);
+
     }
 }
 

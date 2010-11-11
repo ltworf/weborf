@@ -456,7 +456,6 @@ Webdav method copy.
 */
 int copy_move(connection_t* connection_prop) {
     struct stat f_prop; //File's property
-    bool deep=true;
     bool check_exists=false;
     int retval=0;
     char* real_basedir;
@@ -467,14 +466,12 @@ int copy_move(connection_t* connection_prop) {
         return ERR_NOMEM;
     }
     char* dest=host+PATH_LEN;
-    char* depth=dest+PATH_LEN;
-    char* overwrite=depth+10;
+    char* overwrite=dest+10;
     char* destination=overwrite+2;
 
     //If the file has the same date, there is no need of sending it again
     bool host_b=get_param_value(connection_prop->http_param,"Host",host,RBUFFER,4);
     bool dest_b=get_param_value(connection_prop->http_param,"Destination",dest,RBUFFER,11);
-    bool depth_b=get_param_value(connection_prop->http_param,"Depth",depth,RBUFFER,5);
     bool overwrite_b=get_param_value(connection_prop->http_param,"Overwrite",overwrite,RBUFFER,9);
 
     if (host_b && dest_b == false) { //Some important header is missing
@@ -486,12 +483,7 @@ int copy_move(connection_t* connection_prop) {
     ovewrite header is a boolean where F is false.
     */
     if (overwrite_b) {
-        check_exists=overwrite[0]!='F';
-    }
-
-    //Set the depth of the copy (valid just in case of directory
-    if (depth_b) {
-        deep=depth[0]=='0'?false:true;
+        check_exists=(overwrite[0]!='F');
     }
 
     dest=strstr(dest,host);
