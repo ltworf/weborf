@@ -136,18 +136,15 @@ int splitParams(char *string) {
 Returns true if str ends with end
 
 str String to compare
-end second string. If str ends with end, true is returned
+end second string
+size of str
+size of end
+
+If str ends with end, true is returned
 false otherwise
 */
 bool endsWith(char *str, char *end,ssize_t len_str,ssize_t len_end) {
-    int i;
-
-    for (i = 1; i <= len_end; i++) {
-        if (end[len_end - i] != str[len_str - i])
-            return false;
-    }
-
-    return true;
+    return strcmp(str+len_str-len_end,end)==0;
 }
 
 /**
