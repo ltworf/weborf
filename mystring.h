@@ -30,12 +30,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "types.h"
 
 void split_get_params(connection_t* connection_prop);
-int splitParams(char *string);
 bool endsWith(char *str, char *end,ssize_t len_str,ssize_t len_end);
 void delChar(char *string, int pos, int n);
 void strReplace(char *string, char *substr, char with);
 void replaceEscape(char *string);
-int removeCrLf(char *buf);
 void strToUpper(char *str);
 
 #endif

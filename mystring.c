@@ -94,42 +94,17 @@ void strReplace(char *string, char *substr, char with) {
 This function deletes n chars from the string, starting from the position pos.
 In case deleting of more chars than the string's len itself, the string will be returned unchanged.
 
-This function is in-place, doesn't create copies but changes the original string.
+This function doesn't create copies but changes the original string.
 */
 void delChar(char *string, int pos, int n) {
-    /*
-    This isn't using strcpy because here the strings overlap.
-    memmove isn't good too because
-    */
-    if (strlen(string+pos) < n) { //String is long enough
-        return;
-    }
+    size_t l=strlen(string+pos);
 
-    char *c1, *c2;
-    for (c1 = string + pos, c2 = c1 + n; *c2 != 0; c1++, c2++) {
-        *c1 = *c2;
-    }
-    *c1 = 0;
-}
+    if (l<n) return;
+    l-=n;
+    memmove(string+pos,string+pos+n,l);
+    string[1+pos+n]=0;
 
-
-
-/**
-This function changes param's separator from & to \0, to create several strings.
-Returns number of strings
-*/
-int splitParams(char *string) {
-    int params = 0;
-    int i;
-    int to = strlen(string);
-
-    for (i = 0; i < to; i++) {
-        if (string[i] == '&') {
-            string[i] = '\0';
-            params++;
-        }
-    }
-    return params + 1;
+    return;
 }
 
 /**
@@ -145,17 +120,4 @@ false otherwise
 */
 bool endsWith(char *str, char *end,ssize_t len_str,ssize_t len_end) {
     return strcmp(str+len_str-len_end,end)==0;
-}
-
-/**
-Removes cr lf chars from the beginning of the string
-
-This function is in-place, doesn't create copies but changes the original string.
-*/
-int removeCrLf(char *buf) { //Removing initial \n or \r
-    int count = 0;
-    while (buf[count] == 10 || buf[count] == 13)
-        count++;
-    delChar(buf, 0, count);
-    return count;
 }
