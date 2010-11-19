@@ -63,9 +63,11 @@ extern pthread_key_t thread_key;            //key for pthread_setspecific
 
 
 int request_auth(int sock, char *descr);
-int send_page(buffered_read_t * read_b, connection_t * connection_prop);
 void piperr();
 int write_dir(char *real_basedir, connection_t * connection_prop);
+static int send_page(buffered_read_t* read_b, connection_t* connection_prop);
+static int send_error_header(int retval, connection_t *connection_prop);
+static int get_or_post(connection_t *connection_prop, string_t post_param);
 
 /**
 Checks if the required resource has the same date as the one cached in the client.
@@ -110,7 +112,7 @@ Sets keep_alive and protocol_version fields of connection_t
 static inline void set_connection_props(connection_t *connection_prop) {
     char a[12];//Gets the value
     //Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
-    bool connection=get_param_value(connection_prop->http_param,"Connection", a,12,10);//12 is the buffer size and 10 is strlen("connection")
+    bool connection=get_param_value(connection_prop->http_param,"Connection", a,sizeof(a),strlen("Connection"));
 
     //Setting the connection type, using protocol version
     if (connection_prop->http_param[7]=='1' && connection_prop->http_param[5]=='1') {//Keep alive by default (protocol 1.1)
@@ -124,6 +126,7 @@ static inline void set_connection_props(connection_t *connection_prop) {
 
     modURL(connection_prop->page);//Operations on the url string
     split_get_params(connection_prop);//Splits URI into page and parameters
+    connection_prop->basedir=get_basedir(connection_prop->http_param);
 }
 
 static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
@@ -210,7 +213,7 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
     } /* while */
 
 bad_request:
-    send_err(sock,400,"Bad request",connection_prop->ip_addr);
+    send_err(connection_prop,400,"Bad request");
     close(sock);
     return;
 }
@@ -355,7 +358,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     long long int content_l;  //Length of the put data
 
     //Gets the value of content-length header
-    bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,14);//14 is content-lenght's len
+    bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,strlen("Content-Length"));//14 is content-lenght's len
 
 
     if (r!=false) {//If there is no content-lenght returns error
@@ -461,18 +464,13 @@ static inline int options (connection_t* connection_prop) {
 This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
-int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
-    int sock=connection_prop->sock;
+static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
     int retval=0;//Return value after sending the page
-    char* real_basedir; //Basedir, might be different than basedir due to virtual hosts
     string_t post_param; //Contains POST data
 
 #ifdef SENDINGDBG
     syslog (LOG_DEBUG,"URL changed into %s",connection_prop->page);
 #endif
-
-    //TODO remove this from here and add a field in connection_prop
-    real_basedir=get_basedir(connection_prop->http_param);
 
     if (auth_check_request(connection_prop)!=0) { //If auth is required
         retval = ERR_NOAUTH;
@@ -480,7 +478,7 @@ int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
         goto escape;
     }
 
-    connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",real_basedir,connection_prop->page);//Prepares the string
+    connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",connection_prop->basedir,connection_prop->page);//Prepares the string
 
     if (connection_prop->method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
         post_param.data=NULL;
@@ -515,7 +513,10 @@ int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
         goto escape;
     }
 
-    post_param=read_post_data(connection_prop,read_b);
+    if (connection_prop->method_id==POST)
+        post_param=read_post_data(connection_prop,read_b);
+    else
+        post_param.data=NULL;
 
     if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY | O_LARGEFILE))<0) {
         //File doesn't exist. Must return errorcode
@@ -525,15 +526,35 @@ int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
 
     fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
 
+    retval = get_or_post(connection_prop,post_param);
+
+escape:
+    free(post_param.data);
+
+    //Closing local file previously opened
+    if ((connection_prop->method_id==GET || connection_prop->method_id==POST) && connection_prop->strfile_fd>=0) {
+        close(connection_prop->strfile_fd);
+    }
+
+    return send_error_header(retval,connection_prop);
+}
+
+/**
+ * With get or post this function is called, it decides if execute CGI or send
+ * the simple file, and if the request points to a directory it will redirect to
+ * the appropriate index file or show the list of the files.
+ * */
+static int get_or_post(connection_t *connection_prop, string_t post_param) {
+
     if (S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Requested a directory
-        bool index_found=false;
 
         //Requested a directory without ending /
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
             send_http_header(301,0,head,true,-1,connection_prop);
-        } else {//Requested directory with /. Search for index files or list directory
+            return 0;
+        } else {//Requested directory with "/" Search for index files or list directory
 
             char* index_name=&connection_prop->strfile[connection_prop->strfile_len];//Pointer to where to write the filename
             int i;
@@ -545,17 +566,15 @@ int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
                     char head[URI_LEN+12];//12 is the size for the location header
                     snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes[i]);
                     send_http_header(303,0,head,true,-1,connection_prop);
-
-                    index_found=true;
-                    break;
+                    return 0;
                 }
             }
 
             connection_prop->strfile[connection_prop->strfile_len]=0; //Removing the index part
-            if (index_found==false) {//If no index was found in the dir
-                retval=write_dir(real_basedir,connection_prop);
-            }
+            return write_dir(connection_prop->basedir,connection_prop);
         }
+
+
     } else {//Requested an existing file
         if (weborf_conf.exec_script) { //Scripts enabled
 
@@ -564,63 +583,60 @@ int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
             for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
                 f_len=weborf_conf.cgi_paths.data_l[q_];
                 if (endsWith(connection_prop->page+connection_prop->page_len-f_len,weborf_conf.cgi_paths.data[q_],f_len,f_len)) {
-                    retval=exec_page(weborf_conf.cgi_paths.data[++q_],&post_param,real_basedir,connection_prop);
-                    break;
+                    return exec_page(weborf_conf.cgi_paths.data[++q_],&post_param,connection_prop->basedir,connection_prop);
                 }
             }
-
-            if (q_%2==0) { //Normal file
-                retval= write_file(connection_prop);
-            }
-        } else { //Scripts disabled
-            retval= write_file(connection_prop);
         }
+
+        //send normal file, control reaches this point if scripts are disabled or if the filename doesn't trigger CGI
+        return write_file(connection_prop);
+
+
     }
+    //return 0; //make gcc happy
+}
 
-escape:
-    free(post_param.data);
-
-    //Closing local file previously opened
-    if ((connection_prop->method_id==GET || connection_prop->method_id==POST) && connection_prop->strfile_fd>=0) {
-        close(connection_prop->strfile_fd);
-    }
-
-
+/**
+ * If retval is not 0, this function will send an appropriate error
+ * or request authentication or any other header that does not imply
+ * sending some content as well.
+ * */
+static int send_error_header(int retval, connection_t *connection_prop) {
     switch (retval) {
     case 0:
         return 0;
-
     case ERR_BRKPIPE:
-        return send_err(sock,500,"Internal server error",connection_prop->ip_addr);
+        return send_err(connection_prop,500,"Internal server error");
     case ERR_FILENOTFOUND:
-        return send_err(sock,404,"Page not found",connection_prop->ip_addr);
+        return send_err(connection_prop,404,"Page not found");
     case ERR_NOMEM:
-        return send_err(sock,503,"Service Unavailable",connection_prop->ip_addr);
+        return send_err(connection_prop,503,"Service Unavailable");
     case ERR_NODATA:
     case ERR_NOTHTTP:
-        return send_err(sock,400,"Bad request",connection_prop->ip_addr);
+        return send_err(connection_prop,400,"Bad request");
     case ERR_FORBIDDEN:
-        return send_err(sock,403,"Forbidden",connection_prop->ip_addr);
+        return send_err(connection_prop,403,"Forbidden");
     case ERR_NOTIMPLEMENTED:
-        return send_err(sock,501,"Not implemented",connection_prop->ip_addr);
+        return send_err(connection_prop,501,"Not implemented");
     case ERR_SERVICE_UNAVAILABLE:
-        return send_err(sock,503,"Service Unavailable",connection_prop->ip_addr);
+        return send_err(connection_prop,503,"Service Unavailable");
     case ERR_PRECONDITION_FAILED:
-        return send_err(sock,412,"Precondition Failed",connection_prop->ip_addr);
+        return send_err(connection_prop,412,"Precondition Failed");
     case ERR_CONFLICT:
-        return send_err(sock,409,"Conflict",connection_prop->ip_addr);
+        return send_err(connection_prop,409,"Conflict");
     case ERR_INSUFFICIENT_STORAGE:
-        return send_err(sock,507,"Insufficient Storage",connection_prop->ip_addr);
+        return send_err(connection_prop,507,"Insufficient Storage");
     case ERR_NOT_ALLOWED:
-        return send_err(sock,405,"Method Not Allowed",connection_prop->ip_addr);
+        return send_err(connection_prop,405,"Method Not Allowed");
     case ERR_NOAUTH:
-        return request_auth(sock,connection_prop->page);//Sends a request for authentication
+        return request_auth(connection_prop->sock,connection_prop->page);//Sends a request for authentication
     case OK_NOCONTENT:
         return send_http_header(204,0,NULL,true,-1,connection_prop);
     case OK_CREATED:
         return send_http_header(201,0,NULL,true,-1,connection_prop);
     }
     return 0; //Make gcc happy
+
 }
 
 /**
@@ -767,7 +783,8 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
     a[0]='\0';
 
 #ifdef __RANGE
-    if (get_param_value(connection_prop->http_param,"Range",a,RBUFFER,5)) {//Find if it is a range request 5 is strlen of "range"
+    char *range="Range";
+    if (get_param_value(connection_prop->http_param,range,a,RBUFFER,strlen(range))) {//Find if it is a range request 5 is strlen of "range"
         unsigned long long int from,to;
 
         {
@@ -907,7 +924,8 @@ int request_auth(int sock,char * descr) {
 /**
 Sends an error to the client
 */
-int send_err(int sock,int err,char* descr,char* ip_addr) {
+int send_err(connection_t *connection_prop,int err,char* descr) {
+    int sock=connection_prop->sock;
 
     //Buffer for both header and page
     char * head=malloc(MAXSCRIPTOUT+HEADBUF);

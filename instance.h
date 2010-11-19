@@ -80,7 +80,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 void inetd();
 void *instance(void *);
 int write_file(connection_t * connection_prop);
-int send_err(int sock, int err, char *descr, char *ip_addr);
+int send_err(connection_t *connection_prop,int err,char* descr);
 string_t read_post_data(connection_t * connection_prop, buffered_read_t * read_b);
 char *get_basedir(char *http_param);
 int send_http_header(int code, unsigned long long int size, char *headers, bool content, time_t timestamp, connection_t * connection_prop);

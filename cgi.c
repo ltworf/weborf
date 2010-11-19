@@ -326,7 +326,7 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
         close (wpipe[0]);
 
     } else {//No output from script, maybe terminated...
-        send_err(sock,500,"Internal server error",connection_prop->ip_addr);
+        send_err(connection_prop,500,"Internal server error");
     }
 
     free(header_buf);

@@ -83,6 +83,7 @@ typedef struct {
     ssize_t strfile_len;        //Length of string strfile
     struct stat strfile_stat;   //Stat of strfile
     int strfile_fd;             //File descriptor for strfile
+    char *basedir;              //Basedir for the host
 
 } connection_t;
 

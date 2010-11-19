@@ -109,10 +109,10 @@ static inline int get_props(connection_t* connection_prop,string_t* post_param,t
         //props.deep=false; commented because redoundant
         char a[4]; //Buffer for field's value
         //Gets the value of content-length header
-        bool r=get_param_value(connection_prop->http_param,"Depth", a,4,5);
+        bool r=get_param_value(connection_prop->http_param,"Depth", a,sizeof(a),strlen("Depth"));
 
         if (r) {
-            props->deep=a[0]=='1';
+            props->deep=(a[0]=='1');
         }
     }
 
@@ -458,7 +458,6 @@ int copy_move(connection_t* connection_prop) {
     struct stat f_prop; //File's property
     bool check_exists=false;
     int retval=0;
-    char* real_basedir;
     bool exists;
 
     char* host=malloc(3*PATH_LEN+12);
@@ -470,9 +469,9 @@ int copy_move(connection_t* connection_prop) {
     char* destination=overwrite+2;
 
     //If the file has the same date, there is no need of sending it again
-    bool host_b=get_param_value(connection_prop->http_param,"Host",host,RBUFFER,4);
-    bool dest_b=get_param_value(connection_prop->http_param,"Destination",dest,RBUFFER,11);
-    bool overwrite_b=get_param_value(connection_prop->http_param,"Overwrite",overwrite,RBUFFER,9);
+    bool host_b=get_param_value(connection_prop->http_param,"Host",host,PATH_LEN,strlen("Host"));
+    bool dest_b=get_param_value(connection_prop->http_param,"Destination",dest,PATH_LEN,strlen("Destination"));
+    bool overwrite_b=get_param_value(connection_prop->http_param,"Overwrite",overwrite,PATH_LEN,strlen("Overwrite"));
 
     if (host_b && dest_b == false) { //Some important header is missing
         retval=ERR_NOTHTTP;
@@ -493,10 +492,8 @@ int copy_move(connection_t* connection_prop) {
     }
     dest+=strlen(host);
 
-    real_basedir=get_basedir(connection_prop->http_param);
-
     //Local path for destination file
-    snprintf(destination,PATH_LEN,"%s%s",real_basedir,dest);
+    snprintf(destination,PATH_LEN,"%s%s",connection_prop->basedir,dest);
 
     if (strcmp(connection_prop->strfile,destination)==0) {//same
         retval=ERR_FORBIDDEN;
