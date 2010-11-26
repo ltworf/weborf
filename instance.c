@@ -146,6 +146,8 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
         from=0;
 
         while ((end=strstr(buf+from,"\r\n\r"))==NULL) { //Determines if there is a \r\n\r which is an ending sequence
+            //ssize_t rsize=buffer_strstr(sock,read_b,"\r\n\r\n");
+            //r=buffer_read(sock, buf+(*bufFull),rsize+strlen("\r\n\r\n"),read_b);//Reads 2 char and adds to the buffer
             r=buffer_read(sock, buf+(*bufFull),2,read_b);//Reads 2 char and adds to the buffer
 
             if (r<=0) { //Connection closed or error
@@ -156,11 +158,12 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
                 from=(*bufFull);
             }
 
-            if ((*bufFull)!=0) { //Removes Cr Lf from beginning
+            //TODO remove this crap!!
+            //if ((*bufFull)!=0) { //Removes Cr Lf from beginning
                 (*bufFull)+=r;//Sets the end of the user buffer (may contain more than one header)
-            } else if (buf[*bufFull]!='\n' && buf[*bufFull]!='\r') {
-                (*bufFull)+=r;
-            }
+            //} else if (buf[*bufFull]!='\n' && buf[*bufFull]!='\r') {
+            //    (*bufFull)+=r;
+            //}
 
             //Buffer full and still no valid http header
             if ((*bufFull)>=INBUFFER) goto bad_request;
@@ -174,16 +177,16 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
         end[2]='\0';//Terminates the header, leaving a final \r\n in it
 
         //Finds out request's kind
-        if (strncmp(buf,"GET",3)==0) connection_prop->method_id=GET;
-        else if (strncmp(buf,"POST",4)==0) connection_prop->method_id=POST;
-        else if (strncmp(buf,"PUT",3)==0) connection_prop->method_id=PUT;
-        else if (strncmp(buf,"DELETE",6)==0) connection_prop->method_id=DELETE;
-        else if (strncmp(buf,"OPTIONS",7)==0) connection_prop->method_id=OPTIONS;
+        if (strncmp(buf,"GET",strlen("GET"))==0) connection_prop->method_id=GET;
+        else if (strncmp(buf,"POST",strlen("POST"))==0) connection_prop->method_id=POST;
+        else if (strncmp(buf,"PUT",strlen("PUT"))==0) connection_prop->method_id=PUT;
+        else if (strncmp(buf,"DELETE",strlen("DELETE"))==0) connection_prop->method_id=DELETE;
+        else if (strncmp(buf,"OPTIONS",strlen("OPTIONS"))==0) connection_prop->method_id=OPTIONS;
 #ifdef WEBDAV
-        else if (strncmp(buf,"PROPFIND",8)==0) connection_prop->method_id=PROPFIND;
-        else if (strncmp(buf,"MKCOL",5)==0) connection_prop->method_id=MKCOL;
-        else if (strncmp(buf,"COPY",4)==0) connection_prop->method_id=COPY;
-        else if (strncmp(buf,"MOVE",4)==0) connection_prop->method_id=MOVE;
+        else if (strncmp(buf,"PROPFIND",strlen("PROPFIND"))==0) connection_prop->method_id=PROPFIND;
+        else if (strncmp(buf,"MKCOL",strlen("MKCOL"))==0) connection_prop->method_id=MKCOL;
+        else if (strncmp(buf,"COPY",strlen("COPY"))==0) connection_prop->method_id=COPY;
+        else if (strncmp(buf,"MOVE",strlen("MOVE"))==0) connection_prop->method_id=MOVE;
 #endif
         else goto bad_request;
 
@@ -204,6 +207,7 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
         set_connection_props(connection_prop);
 
         if (send_page(read_b, connection_prop)<0) {
+            close(sock);
             return;//Unable to send an error
         }
 
