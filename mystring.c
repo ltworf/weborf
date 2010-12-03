@@ -84,6 +84,7 @@ void replaceEscape(char *string) {
 
         delChar(string, 0, 2);  //Deletes 2 chars from the url
 
+
         //Replaces the 3rd character with the char corresponding to the escape
         string[0] = strtol(e_seq, NULL, 16);
     }
@@ -117,7 +118,7 @@ void delChar(char *string, int pos, int n) {
     if (l<n) return;
     l-=n;
     memmove(string+pos,string+pos+n,l);
-    string[1+pos+n]=0;
+    string[l]=0;
 
     return;
 }

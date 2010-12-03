@@ -477,7 +477,7 @@ int copy_move(connection_t* connection_prop) {
         retval=ERR_NOTHTTP;
         goto escape;
     }
-    
+
     /*Sets if there is overwrite or not.
     ovewrite header is a boolean where F is false.
     */
@@ -506,7 +506,7 @@ int copy_move(connection_t* connection_prop) {
         retval=ERR_PRECONDITION_FAILED;
         goto escape;
     }
-    
+
     stat(connection_prop->strfile, &f_prop);
     if (S_ISDIR(f_prop.st_mode)) { //Directory
         if (connection_prop->method_id==COPY) {
