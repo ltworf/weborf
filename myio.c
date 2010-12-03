@@ -214,13 +214,13 @@ Returns 0 on success
 */
 int dir_move(char* source, char* dest) {
     int retval;
-    printf("====source: %s dest %s\n",source,dest);
     retval=rename(source,dest);
-
+        
     if (retval==-1) {
         return dir_move_copy(source,dest,MOVE);
     }
-    return -1;
+    return 0;
+    
 }
 
 /**

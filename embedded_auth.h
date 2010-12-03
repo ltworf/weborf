@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 int c_auth(char *page, char *ip_addr, char *method, char *username, char *password, char *http_param) {
     char *allowed_prefix="::ffff:10.";
     char *foto = "/foto/";
-        
+
     char *user="gentoo";
     char *pass="lalalala";
 

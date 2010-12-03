@@ -465,7 +465,7 @@ int copy_move(connection_t* connection_prop) {
         return ERR_NOMEM;
     }
     char* dest=host+PATH_LEN;
-    char* overwrite=dest+10;
+    char* overwrite=dest+PATH_LEN;
     char* destination=overwrite+2;
 
     //If the file has the same date, there is no need of sending it again
@@ -477,7 +477,7 @@ int copy_move(connection_t* connection_prop) {
         retval=ERR_NOTHTTP;
         goto escape;
     }
-
+    
     /*Sets if there is overwrite or not.
     ovewrite header is a boolean where F is false.
     */
@@ -506,7 +506,7 @@ int copy_move(connection_t* connection_prop) {
         retval=ERR_PRECONDITION_FAILED;
         goto escape;
     }
-
+    
     stat(connection_prop->strfile, &f_prop);
     if (S_ISDIR(f_prop.st_mode)) { //Directory
         if (connection_prop->method_id==COPY) {
@@ -521,7 +521,6 @@ int copy_move(connection_t* connection_prop) {
             retval=file_move(connection_prop->strfile,destination);
         }
     }
-
 
     if (retval==0) {
         retval=exists?OK_NOCONTENT:OK_CREATED;

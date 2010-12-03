@@ -103,6 +103,7 @@ int auth_check_request(connection_t *connection_prop) {
     }
 
     int result=-1;
+
 #ifdef EMBEDDED_AUTH
     result=c_auth(connection_prop->page,
                   connection_prop->ip_addr,
