@@ -34,41 +34,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 extern weborf_configuration_t weborf_conf;
 
-#define USER_AUTH
-#ifdef USER_AUTH
-int c_auth(char *page, char *ip_addr, char *method, char *username, char *password, char *http_param) {
-    char *allowed_prefix="::ffff:10.";
-    char *foto = "/foto/";
-
-    char *user="gentoo";
-    char *pass="suca";
-
-    //Allow anything from 10.*
-    if (strncmp(allowed_prefix,ip_addr,strlen(allowed_prefix))==0) return 0;
-
-    //ALLOW wanted methods
-    if (!(strncmp(method,"GET",strlen("GET"))==0 || strncmp(method,"POST",strlen("POST"))==0)) {
-        return -1;
-    }
-
-    //request authentication for photos
-    if (strncmp(foto,page,strlen(foto))==0) {
-        if (strncmp(username,user,strlen(user))==0 && strncmp(password,pass,strlen(pass))==0)
-            return 0;
-        return -1;
-    }
-
-    return 0;
-
-}
-#endif
+#include "embedded_auth.c"
 
 /**
 Checks that the authentication socket exists and is a unix socket
 */
 void auth_set_socket(char *u_socket) {
-#ifdef USER_AUTH
-    weborf_conf.authsock = 12;
+#ifdef EMBEDDED_AUTH
+    weborf_conf.authsock = "embedded";
 #else
     struct stat sb;
     if (stat(u_socket, &sb) == -1) {
@@ -130,7 +103,7 @@ int auth_check_request(connection_t *connection_prop) {
     }
 
     int result=-1;
-#ifdef USER_AUTH
+#ifdef EMBEDDED_AUTH
     result=c_auth(connection_prop->page,
                   connection_prop->ip_addr,
                   connection_prop->method,
