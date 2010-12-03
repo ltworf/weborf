@@ -139,18 +139,13 @@ Otherwise it will create a new copy and delete the old one.
 Returns 0 on success.
 */
 int file_move(char* source, char* dest) {
-    int retval=link(source,dest);
-
-    //Could link, file was on the same partition
-    if (retval==0)
-        goto escape;
+    int retval=rename(source,dest);
 
     //Not the same device, doing a normal copy
-    if (errno==EXDEV)
+    if (retval==-1 && errno==EXDEV) {
         retval=file_copy(source,dest);
-escape:
-    if (retval==0) {
-        unlink(source);
+        if (retval==0) 
+            unlink(source);
     }
     return retval;
 }
@@ -218,7 +213,14 @@ Then, the source directory will be deleted.
 Returns 0 on success
 */
 int dir_move(char* source, char* dest) {
-    return dir_move_copy(source,dest,MOVE);
+    int retval;
+    printf("====source: %s dest %s\n",source,dest);
+    retval=rename(source,dest);
+    
+    if (retval==-1) {
+        return dir_move_copy(source,dest,MOVE);
+    }
+    return -1;
 }
 
 /**

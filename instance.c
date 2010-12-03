@@ -160,7 +160,7 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
 
             //TODO remove this crap!!
             //if ((*bufFull)!=0) { //Removes Cr Lf from beginning
-                (*bufFull)+=r;//Sets the end of the user buffer (may contain more than one header)
+            (*bufFull)+=r;//Sets the end of the user buffer (may contain more than one header)
             //} else if (buf[*bufFull]!='\n' && buf[*bufFull]!='\r') {
             //    (*bufFull)+=r;
             //}

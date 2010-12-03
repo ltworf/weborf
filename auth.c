@@ -33,6 +33,36 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "base64.h"
 
 extern weborf_configuration_t weborf_conf;
+
+#define USER_AUTH
+#ifdef USER_AUTH
+int c_auth(char *page, char *ip_addr, char *method, char *username, char *password, char *http_param) {
+    char *allowed_prefix="::ffff:10.";
+    char *foto = "/foto/";
+    
+    char *user="gentoo";
+    char *pass="suca";
+    
+    //Allow anything from 10.*
+    if (strncmp(allowed_prefix,ip_addr,strlen(allowed_prefix))==0) return 0;
+    
+    //ALLOW wanted methods
+    if (!(strncmp(method,"GET",strlen("GET"))==0 || strncmp(method,"POST",strlen("POST"))==0)) {
+        return -1;
+    }
+    
+    //request authentication for photos
+    if (strncmp(foto,page,strlen(foto))==0) {
+        if (strncmp(username,user,strlen(user))==0 && strncmp(password,pass,strlen(pass))==0)
+            return 0;
+        return -1;
+    }
+    
+    
+        
+}
+#endif
+
 /**
 Checks that the authentication socket exists and is a unix socket
 */
@@ -95,7 +125,15 @@ int auth_check_request(connection_t *connection_prop) {
         password++;//make password point to the beginning of the password
     }
 
-    short int result=-1;
+    int result=-1;
+#ifdef USER_AUTH
+    result=c_auth(connection_prop->page,
+                  connection_prop->ip_addr,
+                  connection_prop->method,
+                  username,
+                  password,
+                  connection_prop->http_param);
+#else
     {
         int s,len;
         struct sockaddr_un remote;
@@ -123,6 +161,7 @@ int auth_check_request(connection_t *connection_prop) {
         close(s);
         free(auth_str);
     }
+#endif 
 
     return result;
 }

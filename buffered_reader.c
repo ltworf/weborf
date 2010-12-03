@@ -55,9 +55,9 @@ void buffer_free(buffered_read_t * buf) {
 
 static ssize_t buffer_fill(int fd, buffered_read_t * buf) {
     ssize_t r;
-    
+
     buf->start = buf->buffer;
-    
+
     //Timeout implementation
     struct pollfd monitor[1];
     monitor[0].fd = fd; //File descriptor to monitor
@@ -71,13 +71,13 @@ static ssize_t buffer_fill(int fd, buffered_read_t * buf) {
     } else {
         r = read(fd, buf->buffer, buf->size);
     }
-    
+
     if (r <= 0) { //End of the stream
-                buf->end = buf->start;
-            } else {
-            buf->end = buf->start + r;
-            }
-    
+        buf->end = buf->start;
+    } else {
+        buf->end = buf->start + r;
+    }
+
     return r;
 }
 
@@ -94,7 +94,7 @@ end of file is reached and it is impossible to do further reads.
 ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
     ssize_t wrote = 0;              //Count of written bytes
     ssize_t available, needed;      //Available bytes in buffer, and requested bytes remaining
-    
+
 
     while (wrote < count) {
         available = buf->end - buf->start;
@@ -124,9 +124,9 @@ ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
 /**
  * This function returns how many bytes must be read in order to
  * read enough data for it to end with the string needle.
- * strlen(needle) must be added to the returned value to include the 
+ * strlen(needle) must be added to the returned value to include the
  * needle string in the result of the read.
- * 
+ *
  * If the string needle is not in the buffer then the entire size
  * of the data present in cache will be return.
  * */
@@ -134,7 +134,7 @@ size_t buffer_strstr(int fd, buffered_read_t * buf, char * needle) {
     if (buf->end - buf->start==0) {
         buffer_fill(fd,buf);
     }
-    
+
     buf->end[0]=0;
     char *r=strstr(buf->start,needle);
 
@@ -142,7 +142,7 @@ size_t buffer_strstr(int fd, buffered_read_t * buf, char * needle) {
         return buf->end - buf->start;
     } else {
         return r-buf->start;
-        
+
     }
 
 }
@@ -164,7 +164,7 @@ int main () {
     int end=0;
 
     while (1) {
-        
+
         int size=buffer_strstr(fp,&buf,"\n")+1;
         end=buffer_read(fp,k,size,&buf);
         if (end<size || end==0) break;
