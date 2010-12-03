@@ -34,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 extern weborf_configuration_t weborf_conf;
 
-#include "embedded_auth.c"
+#include "embedded_auth.h"
 
 /**
 Checks that the authentication socket exists and is a unix socket
