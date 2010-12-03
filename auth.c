@@ -39,27 +39,27 @@ extern weborf_configuration_t weborf_conf;
 int c_auth(char *page, char *ip_addr, char *method, char *username, char *password, char *http_param) {
     char *allowed_prefix="::ffff:10.";
     char *foto = "/foto/";
-    
+
     char *user="gentoo";
     char *pass="suca";
-    
+
     //Allow anything from 10.*
     if (strncmp(allowed_prefix,ip_addr,strlen(allowed_prefix))==0) return 0;
-    
+
     //ALLOW wanted methods
     if (!(strncmp(method,"GET",strlen("GET"))==0 || strncmp(method,"POST",strlen("POST"))==0)) {
         return -1;
     }
-    
+
     //request authentication for photos
     if (strncmp(foto,page,strlen(foto))==0) {
         if (strncmp(username,user,strlen(user))==0 && strncmp(password,pass,strlen(pass))==0)
             return 0;
         return -1;
     }
-    
-    
-        
+
+    return 0;
+
 }
 #endif
 
@@ -67,6 +67,9 @@ int c_auth(char *page, char *ip_addr, char *method, char *username, char *passwo
 Checks that the authentication socket exists and is a unix socket
 */
 void auth_set_socket(char *u_socket) {
+#ifdef USER_AUTH
+    weborf_conf.authsock = 12;
+#else
     struct stat sb;
     if (stat(u_socket, &sb) == -1) {
         perror("Existing unix socket expected");
@@ -86,6 +89,7 @@ void auth_set_socket(char *u_socket) {
 
 
     weborf_conf.authsock = u_socket;
+#endif
 }
 
 /**
@@ -161,7 +165,7 @@ int auth_check_request(connection_t *connection_prop) {
         close(s);
         free(auth_str);
     }
-#endif 
+#endif
 
     return result;
 }

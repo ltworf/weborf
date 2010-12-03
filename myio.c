@@ -144,7 +144,7 @@ int file_move(char* source, char* dest) {
     //Not the same device, doing a normal copy
     if (retval==-1 && errno==EXDEV) {
         retval=file_copy(source,dest);
-        if (retval==0) 
+        if (retval==0)
             unlink(source);
     }
     return retval;
@@ -216,7 +216,7 @@ int dir_move(char* source, char* dest) {
     int retval;
     printf("====source: %s dest %s\n",source,dest);
     retval=rename(source,dest);
-    
+
     if (retval==-1) {
         return dir_move_copy(source,dest,MOVE);
     }
