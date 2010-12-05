@@ -69,8 +69,8 @@ static int c_auth(char *page, char *ip_addr, char *method, char *username, char 
     //Allow anything from 10.*
     if (strncmp(allowed_prefix,ip_addr,strlen(allowed_prefix))==0) return 0;
 
-    //Allow PROPFIND with authentication
-    if (strncmp(method,"PROPFIND",strlen("PROPFIND"))==0)
+    //Allow PROPFIND and OPTIONS with authentication (to allow read only webdav from anywhere)
+    if ((strncmp(method,"PROPFIND",strlen("PROPFIND"))==0) || (strncmp(method,"OPTIONS",strlen("OPTIONS"))==0))
         return emb_check_password(username,password);
 
     //Deny all except GET and POST
