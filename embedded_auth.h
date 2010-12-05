@@ -18,39 +18,73 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
-/*
+/**
  * This file contains user defined embedded autentication
  * to avoid the usage of an external daemon for authentication.
  * The use of this, will make things faster and parallel, at the cost
  * of needing to define it at compile time
+ *
+ * Everything in this file should be between the "#ifdef EMBEDDED_AUTH"
+ * and its "#endif" to avoid the compilation of unused methods
  * */
 
 //#define EMBEDDED_AUTH
 
 #ifdef EMBEDDED_AUTH
-int c_auth(char *page, char *ip_addr, char *method, char *username, char *password, char *http_param) {
-    char *allowed_prefix="::ffff:10.";
-    char *foto = "/foto/";
 
+/**
+ * This function is just example code, can be changed or deleted
+ */
+static int emb_check_password(char *username, char *password) {
     char *user="gentoo";
     char *pass="lalalala";
+
+    if (strncmp(username,user,strlen(user))==0 && strncmp(password,pass,strlen(pass))==0)
+        return 0;
+    return -1;
+}
+
+/**
+ * This function will be used if EMBEDDED_AUTH is defined, do not modify it's signature!
+ *
+ * page:       URI of requested page
+ * ip_addr:    IP address of the client (it can be an IPv6, depending how weborf is compiled)
+ * method:     HTTP method of the request
+ * username:   Username, if provided, null otherwise
+ * password:   Password, if provided, null otherwise
+ * http_param: Headers of the request
+ *
+ * RETURN VALUE:
+ * Return 0 to allow the request, -1 to deny it.
+ *
+ * NOTES:
+ * The actual content of the function must be regarded as an example, modify it according to your
+ * own needs.
+ * Only use reentrant calls in this function. Weborf is multithreaded.
+ */
+static int c_auth(char *page, char *ip_addr, char *method, char *username, char *password, char *http_param) {
+    char *allowed_prefix="::ffff:10.";
+    char *foto = "/foto/";
 
     //Allow anything from 10.*
     if (strncmp(allowed_prefix,ip_addr,strlen(allowed_prefix))==0) return 0;
 
-    //ALLOW wanted methods
-    if (!(strncmp(method,"GET",strlen("GET"))==0 || strncmp(method,"POST",strlen("POST"))==0)) {
+    //Allow PROPFIND with authentication
+    if (strncmp(method,"PROPFIND",strlen("PROPFIND"))==0)
+        return emb_check_password(username,password);
+
+    //Deny all except GET and POST
+    else if (!(strncmp(method,"GET",strlen("GET"))==0 || strncmp(method,"POST",strlen("POST"))==0)) {
         return -1;
     }
 
     //request authentication for photos
-    if (strncmp(foto,page,strlen(foto))==0) {
-        if (strncmp(username,user,strlen(user))==0 && strncmp(password,pass,strlen(pass))==0)
-            return 0;
-        return -1;
-    }
+    if (strncmp(foto,page,strlen(foto))==0)
+        return emb_check_password(username,password);
+
 
     return 0;
 
 }
+
 #endif
