@@ -19,6 +19,8 @@
 - Fixes crash on invalid request (Rev 492)
 - Will no longer terminate on failed accept
 - Heavy code refactory
+- Webdav method MOVE is now faster on directories
+- Support for embedded authentication policy
 
 0.12.3
 - Fixes directory traversal vulnerability

@@ -160,7 +160,7 @@ int file_copy(char* source, char* dest) {
     int fd_to=-1;
     ssize_t read_,write_;
     int retval=0;
-    char* buf=NULL;
+    char *buf=NULL;
 
     //Open destination file
     if ((fd_to=open(dest,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR))<0) {
