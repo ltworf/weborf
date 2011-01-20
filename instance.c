@@ -778,17 +778,42 @@ static inline int write_compressed_file(connection_t* connection_prop ) {
 #endif
 
 
-
+/**
+ * Returns the amount of bytes to send
+ * Collaterally, this function seeks the file to the requested position
+ * finds out the mimetype
+ * sends the header
+ * 
+ * a must be a pointer to a buffer large at least RBUFFER+MIMETYPELEN+16
+ * */
 static inline unsigned long long int bytes_to_send(connection_t* connection_prop,char *a) {
     errno=0;
     unsigned long long int count;
     char *hbuf=a;
-    int remain=RBUFFER, t;
+    int remain=RBUFFER+MIMETYPELEN+16, t;
     a[0]='\0';
 
 #ifdef __RANGE
     char *range="Range";
-    if (get_param_value(connection_prop->http_param,range,a,RBUFFER,strlen(range))) {//Find if it is a range request 5 is strlen of "range"
+    char *if_range="If-Range";
+    
+    bool range_header=get_param_value(connection_prop->http_param,range,a,RBUFFER,strlen(range));
+    time_t etag=connection_prop->strfile_stat.st_mtime;
+    
+    //Range header present, seeking for If-Range
+    if (range_header) {
+        char b[RBUFFER]; //Buffer for If-Range
+        if (get_param_value(connection_prop->http_param,if_range,&b[0],sizeof(b),strlen(if_range))) {
+            etag=(time_t)strtol(&b[1],NULL,0);
+        }
+    }
+    
+    
+    /*
+     * If range header is present and (If-Range has the same etag OR there is no If-Range)
+     * */
+    if (range_header && connection_prop->strfile_stat.st_mtime==etag) {//Find if it is a range request 5 is strlen of "range"
+
         unsigned long long int from,to;
 
         {

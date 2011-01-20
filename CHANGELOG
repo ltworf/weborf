@@ -21,6 +21,7 @@
 - Heavy code refactory
 - Webdav method MOVE is now faster on directories
 - Support for embedded authentication policy
+- Support for If-Range header (Rev 516)
 
 0.12.3
 - Fixes directory traversal vulnerability
