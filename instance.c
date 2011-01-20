@@ -783,10 +783,11 @@ static inline int write_compressed_file(connection_t* connection_prop ) {
  * Collaterally, this function seeks the file to the requested position
  * finds out the mimetype
  * sends the header
- * 
+ *
  * a must be a pointer to a buffer large at least RBUFFER+MIMETYPELEN+16
  * */
 static inline unsigned long long int bytes_to_send(connection_t* connection_prop,char *a) {
+    int http_code=200;
     errno=0;
     unsigned long long int count;
     char *hbuf=a;
@@ -796,10 +797,10 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
 #ifdef __RANGE
     char *range="Range";
     char *if_range="If-Range";
-    
+
     bool range_header=get_param_value(connection_prop->http_param,range,a,RBUFFER,strlen(range));
     time_t etag=connection_prop->strfile_stat.st_mtime;
-    
+
     //Range header present, seeking for If-Range
     if (range_header) {
         char b[RBUFFER]; //Buffer for If-Range
@@ -807,8 +808,8 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
             etag=(time_t)strtol(&b[1],NULL,0);
         }
     }
-    
-    
+
+
     /*
      * If range header is present and (If-Range has the same etag OR there is no If-Range)
      * */
@@ -834,6 +835,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
             to=connection_prop->strfile_stat.st_size-1;
         }
 
+        http_code=206;
         t=snprintf(hbuf,remain,"Accept-Ranges: bytes\r\nContent-Range: bytes %llu-%llu/%lld\r\n",(unsigned long long int)from,(unsigned long long int)to,(long long int)connection_prop->strfile_stat.st_size);
         hbuf+=t;
         remain-=t;
@@ -861,7 +863,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
     }
 #endif
 
-    send_http_header(200,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+    send_http_header(http_code,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
     return count;
 }
 
