@@ -42,7 +42,7 @@ static void configuration_enable_sending_mime() {
 #ifdef SEND_MIMETYPES
     weborf_conf.send_content_type=true;
 #else
-    write(2,"Support for MIME is not available\n");
+    fprintf(stderr,"Support for MIME is not available\n");
     exit(19);
 #endif
 }

@@ -809,7 +809,6 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         }
     }
 
-
     /*
      * If range header is present and (If-Range has the same etag OR there is no If-Range)
      * */
@@ -836,6 +835,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         }
 
         http_code=206;
+        
         t=snprintf(hbuf,remain,"Accept-Ranges: bytes\r\nContent-Range: bytes %llu-%llu/%lld\r\n",(unsigned long long int)from,(unsigned long long int)to,(long long int)connection_prop->strfile_stat.st_size);
         hbuf+=t;
         remain-=t;
@@ -846,6 +846,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
     } else //Normal request
 #endif
     {
+        a[0]=0; //Reset buffer in case it isn't used for headers
         count=connection_prop->strfile_stat.st_size;
     }
 
