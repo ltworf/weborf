@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
-#include <syslog.h> //To use syslog
+#include <syslog.h>
 #include <string.h>
 #include <strings.h>
 #include <sys/stat.h>
@@ -835,7 +835,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         }
 
         http_code=206;
-        
+
         t=snprintf(hbuf,remain,"Accept-Ranges: bytes\r\nContent-Range: bytes %llu-%llu/%lld\r\n",(unsigned long long int)from,(unsigned long long int)to,(long long int)connection_prop->strfile_stat.st_size);
         hbuf+=t;
         remain-=t;
