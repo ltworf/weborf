@@ -96,7 +96,6 @@ class weborf_runner():
         '''Recieves connection requests and decides if they have to be authorized or denied'''
         
         data = sock.recv(4096).split('\r\n')
-        print data
         uri = data[0]
         client = data[1]
         method = data[2]
@@ -105,6 +104,7 @@ class weborf_runner():
         
         self.logclass.logger("%s - %s %s" % (client,method, uri))
             
+        #TODO allow or deny requests
         sock.close()
 
         pass

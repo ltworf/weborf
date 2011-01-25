@@ -315,7 +315,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>183</x>
-     <y>229</y>
+     <y>209</y>
     </hint>
     <hint type="destinationlabel">
      <x>171</x>
@@ -378,12 +378,28 @@
    <slot>dav_toggle(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>160</x>
-     <y>169</y>
+     <x>187</x>
+     <y>159</y>
     </hint>
     <hint type="destinationlabel">
      <x>249</x>
      <y>515</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmdClose</sender>
+   <signal>clicked(QAbstractButton*)</signal>
+   <receiver>Form</receiver>
+   <slot>terminate()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>509</x>
+     <y>528</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>528</x>
+     <y>447</y>
     </hint>
    </hints>
   </connection>
@@ -394,5 +410,6 @@
   <slot>start_sharing()</slot>
   <slot>select_path()</slot>
   <slot>dav_toggle(int)</slot>
+  <slot>terminate()</slot>
  </slots>
 </ui>

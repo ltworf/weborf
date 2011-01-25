@@ -20,6 +20,7 @@
 from PyQt4 import QtCore, QtGui
 import main
 import whelper
+import sys
 
 class qweborfForm (QtGui.QWidget):
     '''This class is the form used for the survey, needed to intercept the events.
@@ -27,6 +28,7 @@ class qweborfForm (QtGui.QWidget):
     def setUi(self,ui):
         self.ui=ui
         self.weborf=whelper.weborf_runner(self)
+        self.started=False
     
     def logger(self,data):
         #print data
@@ -48,7 +50,13 @@ class qweborfForm (QtGui.QWidget):
         if self.weborf.stop():
             self.ui.cmdStart.setEnabled(True)
             self.ui.cmdStop.setEnabled(False)
+            self.started=False
             
+    def terminate(self):
+        if self.started:
+            self.stop_sharing()
+        sys.exit(0)
+        
     def start_sharing(self):
         
         options={} #Dictionary with the chosen options
@@ -75,6 +83,7 @@ class qweborfForm (QtGui.QWidget):
         if self.weborf.start(options):
             self.ui.cmdStart.setEnabled(False)
             self.ui.cmdStop.setEnabled(True)
+            self.started=True
         
         #print "start", options
         
