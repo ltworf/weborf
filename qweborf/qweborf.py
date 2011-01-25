@@ -26,17 +26,53 @@ class qweborfForm (QtGui.QWidget):
     It also sends the data with http POST to a page hosted on galileo'''
     def setUi(self,ui):
         self.ui=ui
+        self.weborf=whelper.weborf_runner(self)
+    
+    def logger(self,data):
+        print data
+        print dir(self.ui.txtLog)
+        
+        self.ui.txtLog.appendPlainText(data)
+    
     def setDefaultValues(self):
         '''Sets default values into the form GUI. It has to be
         called after the form has been initialized'''
         pass
+    def dav_toggle(self,state):
+        self.ui.chkWrite.setEnabled(state)
     def auth_toggle(self,state):
         self.ui.txtPassword.setEnabled(state)
         self.ui.txtUsername.setEnabled(state)
+                        
     def stop_sharing(self):
         print "stop"
     def start_sharing(self):
-        print "start"
+        
+        options={} #Dictionary with the chosen options
+        
+        options['path']=self.ui.txtPath.text()
+
+        if self.ui.chkEnableAuth.isChecked():
+            options['username']=self.ui.txtUsername.text()
+            options['password']=self.ui.txtPassword.text()
+        else:
+            options['username']=None
+            options['password']=None
+            
+        options['port'] = self.ui.spinPort.value()
+        
+        options['dav'] = self.ui.chkDav.isChecked()
+        if self.ui.chkDav.isChecked():
+            options['write'] = self.ui.chkWrite.isChecked()
+        else:
+            options['write'] = False
+        
+        #todo FIXME
+        #options['ip']=
+        self.weborf.start(options)
+        
+        print "start", options
+        
     def select_path(self):
         print "select"
 
