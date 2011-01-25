@@ -264,6 +264,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="cmdStop">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>Stop sharing the directory</string>
        </property>

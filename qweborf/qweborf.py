@@ -29,8 +29,8 @@ class qweborfForm (QtGui.QWidget):
         self.weborf=whelper.weborf_runner(self)
     
     def logger(self,data):
-        print data
-        print dir(self.ui.txtLog)
+        #print data
+        #print dir(self.ui.txtLog)
         
         self.ui.txtLog.appendPlainText(data)
     
@@ -45,7 +45,10 @@ class qweborfForm (QtGui.QWidget):
         self.ui.txtUsername.setEnabled(state)
                         
     def stop_sharing(self):
-        print "stop"
+        if self.weborf.stop():
+            self.ui.cmdStart.setEnabled(True)
+            self.ui.cmdStop.setEnabled(False)
+            
     def start_sharing(self):
         
         options={} #Dictionary with the chosen options
@@ -69,9 +72,11 @@ class qweborfForm (QtGui.QWidget):
         
         #todo FIXME
         #options['ip']=
-        self.weborf.start(options)
+        if self.weborf.start(options):
+            self.ui.cmdStart.setEnabled(False)
+            self.ui.cmdStop.setEnabled(True)
         
-        print "start", options
+        #print "start", options
         
     def select_path(self):
         print "select"

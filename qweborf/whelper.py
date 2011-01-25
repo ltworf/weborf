@@ -18,12 +18,52 @@
 # author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 
 import os
+import subprocess
 
 class weborf_runner():
     def __init__(self,logfunction):
         self.logclass=logfunction
         self.logclass.logger("Software initialized")
         
+        self.weborf=self.test_weborf()
+        
         pass
+    
+    def test_weborf(self):
+        '''Tests if weborf binary is existing.
+        It will return true if everything is OK
+        and false otherwise.'''
+        ret=0
+        out=""
+        
+        try:
+            p = subprocess.Popen(["weborf", "-v"], bufsize=1024, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            out=p.stdout.read().split("\n")[0]
+            p.stdin.close()
+            ret=p.wait()
+        except:
+            ret=3
+        
+        if ret==0:
+            self.logclass.logger(out)
+            return True
+        else:
+            self.logclass.logger("ERROR: unable to find weborf")
+            return False
+    
     def start(self,options):
+        '''Starts weborf,
+        returns True if it is correctly started'''
+        
+        if not self.weborf:
+            self.logclass.logger("ERROR: Weborf binary is missing")
+            return False
         self.logclass.logger("Starting weborf with options")
+        return True
+
+    def stop(self):
+        '''Stop weborf and correlated processes.
+        Will return True if it goes well'''
+        
+        return True
+    
