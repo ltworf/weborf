@@ -73,6 +73,7 @@ class weborf_runner():
         auth_socket=self.__create_auth_socket()
         self.__start_weborf(options,auth_socket)
         self.__listen_auth_socket(options)
+        return True 
     
     def __create_auth_socket(self):
         '''Creates a unix socket and returns the path to it'''
@@ -129,7 +130,7 @@ class weborf_runner():
         ret=self.child.wait()
         
         self.socket.close()
-        #TODO stop thread
+        self.listener.stop()
         
         return True
 
@@ -138,11 +139,16 @@ class __listener__(threading.Thread):
         threading.Thread.__init__(self)
         self.socket=socket
         self.cback=cback
-        
+        self.socket.settimeout(2.0)
+        self.cycle=True
+    def stop(self):
+        self.cycle=False
     def run(self):
         self.socket.listen(1)
-        while 1:
-            sock, addr = self.socket.accept()
-            print dir(self.cback)
-            self.cback.socket_cback(sock)
+        while self.cycle:
+            try:
+                sock, addr = self.socket.accept()
+                self.cback.socket_cback(sock)
+            except:
+                pass
         pass
