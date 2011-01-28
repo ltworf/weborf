@@ -23,6 +23,12 @@
 - Support for embedded authentication policy
 - Support for If-Range header (Rev 516)
 
+0.12.5
+- Fixes DoS occurring with malformed fields in HTTP request
+
+0.12.4
+- Fixes DoS occurring on malformed HTTP request, backported from trunk
+
 0.12.3
 - Fixes directory traversal vulnerability
 

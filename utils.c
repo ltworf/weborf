@@ -268,8 +268,19 @@ bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,
         return false;
     }
 
-    //Retrieves the field
+    /*
+     * It is very important for this line to be here, for security reasons.
+     * It moves the pointer forward, assuming "Field: Value\r\n"
+     * If the field is malformed like "Field0\r\n" the subsequent strstr
+     * will fail and the function will return false.
+     * Moving this line after the next strstr would introduce a security
+     * vulnerability.
+     * The strstr will not cause a segfault because at this point the header
+     * string must at least terminate with "\r\n\r", the last '\r' is changed to 0
+     * so there is enough space to perform the operation
+     * */
     val += param_len + 2; //Moves the begin of the string to exclude the name of the field
+    
     char *field_end = strstr(val, "\r\n"); //Searches the end of the parameter
     if (field_end==NULL) {
         return false;
