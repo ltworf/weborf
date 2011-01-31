@@ -98,5 +98,6 @@ if __name__ == "__main__":
     ui.setupUi(Form)
     Form.setUi(ui)
     Form.show()
-    sys.exit(app.exec_())
-
+    res=app.exec_()
+    Form.terminate()
+    sys.exit(res)
