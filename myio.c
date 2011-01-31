@@ -214,12 +214,14 @@ Returns 0 on success
 */
 int dir_move(char* source, char* dest) {
     int retval;
-    retval=rename(source,dest);
-
-    if (retval==-1) {
+    
+    if ((retval=rename(source,dest))==0) {
+        return 0;
+    } else if (retval==-1 && errno==EXDEV) {
         return dir_move_copy(source,dest,MOVE);
+    } else {
+        return 1;
     }
-    return 0;
 
 }
 

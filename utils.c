@@ -44,7 +44,7 @@ This function reads the directory dir, putting inside the html string an html
 page with links to all the files within the directory.
 
 Buffer for html must be allocated by the calling function.
-bufsize is the size of the buffer allocated for html. To avoid buffer overflows.
+bufsize is the size of the buffer allocated for html
 parent is true when the dir has a parent dir
 */
 int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bool parent) {
@@ -243,6 +243,10 @@ void print_start_disclaimer(int argc, char *argv[]) {
  * Detaches the process from the shell,
  * it is re-implemented because it is not
  * included in POSIX
+ * 
+ * It shouldn't be executed after launching
+ * other threads. In that case the effects are
+ * not specified.
  * */
 void daemonize() {
     if (fork() == 0)

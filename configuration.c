@@ -73,9 +73,9 @@ static void configuration_set_default_CGI() {
     weborf_conf.cgi_paths.data[1]=CGI_PHP;
     weborf_conf.cgi_paths.data[2]=".py";
     weborf_conf.cgi_paths.data[3]=CGI_PY;
-    weborf_conf.cgi_paths.data_l[0]=4;
+    weborf_conf.cgi_paths.data_l[0]=strlen(".php");
     weborf_conf.cgi_paths.data_l[1]=strlen(CGI_PHP);
-    weborf_conf.cgi_paths.data_l[2]=3;
+    weborf_conf.cgi_paths.data_l[2]=strlen(".py");
     weborf_conf.cgi_paths.data_l[3]=strlen(CGI_PY);
 }
 
