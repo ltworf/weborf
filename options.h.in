@@ -19,12 +19,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <unistd.h> //Needed because it defines the _POSIX_IPV6
+#include "config.h"
 
 #ifndef WEBORF_OPTIONS_H
 #define WEBORF_OPTIONS_H
 
-#define NAME "Weborf"
-#define VERSION "0.13"
+#define NAME PACKAGE
+//#define VERSION PACKAGE_VERSION
 #define SIGNATURE NAME "/" VERSION  " (GNU/Linux)"
 
 //----------System
@@ -82,6 +83,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //-------------SCRIPTS
 #define SCRPT_TIMEOUT 30        //Timeout for the scripts, in seconds
 #define HIDE_CGI_ERRORS         //Hides all the errors.
+
+//#define CGI_PHP "@cgibindir@/php5"
+//#define CGI_PY "@cgibindir@/weborf_py_wrapper"
 #define CGI_PHP "/usr/lib/cgi-bin/php5"
 #define CGI_PY "/usr/lib/cgi-bin/weborf_py_wrapper"
 
@@ -96,7 +100,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //The following header can be disabled to increase a little the speed
 //#define SEND_LAST_MODIFIED_HEADER
 
+#ifdef HAVE_LIBMAGIC==1
 #define SEND_MIMETYPES          //Enables support to sending the mimetype to the client
+#endif
 
 
 //-------------RANGE
