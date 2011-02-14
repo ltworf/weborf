@@ -92,7 +92,7 @@ install: uninstall installdirs
 
 	install -m 755 weborf.daemon $(DESTDIR)/$(DAEMONDIR)/weborf
 
-	install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/; fi
+	install -m 644 weborf.conf $(DESTDIR)/$(CONFDIR)/weborf.conf
 
 uninstall:
 	rm -f $(DESTDIR)/$(MANDIR)/man5/weborf.conf.5.gz

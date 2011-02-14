@@ -1,3 +1,6 @@
+0.12.5
+- Fixes DoS occurring with malformed fields in HTTP request
+
 0.12.4
 - Fixes DoS occurring on malformed HTTP request, backported from trunk
 

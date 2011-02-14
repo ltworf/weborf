@@ -21,8 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_OPTIONS_H
 #define WEBORF_OPTIONS_H
 
-#define VERSION "0.12.3"
-#define SIGNATURE "Weborf/0.12.3 (GNU/Linux)"
+#define VERSION "0.12.5"
+#define SIGNATURE "Weborf/" VERSION " (GNU/Linux)"
 
 //----------System
 #define ROOTUID 0               //Uid for superuser
