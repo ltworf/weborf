@@ -208,7 +208,7 @@ void help() {
 
 
            "Report bugs here https://bugs.launchpad.net/weborf\n"
-           "or to <tiposchi@tiscali.it>\n");
+           "or to " PACKAGE_BUGREPORT "\n");
     exit(0);
 }
 
