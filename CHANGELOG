@@ -23,6 +23,7 @@
 - Support for embedded authentication policy
 - Support for If-Range header (Rev 516)
 - Migrated to GNU autotools
+- Now logs HTTP status code for each request
 
 0.12.5
 - Fixes DoS occurring with malformed fields in HTTP request

@@ -62,7 +62,7 @@ extern pthread_key_t thread_key;            //key for pthread_setspecific
 
 
 
-int request_auth(int sock, char *descr);
+int request_auth(connection_t *connection_prop);
 void piperr();
 int write_dir(char *real_basedir, connection_t * connection_prop);
 static int send_page(buffered_read_t* read_b, connection_t* connection_prop);
@@ -196,9 +196,6 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
 
         connection_prop->http_param=lasts;
 
-#ifdef REQUESTDBG
-        syslog(LOG_INFO,"%s - %s %s\n",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
-#endif
 
 #ifdef THREADDBG
         syslog(LOG_INFO,"Requested page: %s to Thread %ld",connection_prop->page,id);
@@ -207,9 +204,18 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
         set_connection_props(connection_prop);
 
         if (send_page(read_b, connection_prop)<0) {
+#ifdef REQUESTDBG
+        syslog(LOG_INFO,"%s - FAILED - %s %s",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
+#endif
+
             close(sock);
             return;//Unable to send an error
         }
+        
+#ifdef REQUESTDBG
+        syslog(LOG_INFO,"%s - %d - %s %s",connection_prop->ip_addr,connection_prop->status_code,connection_prop->method,connection_prop->page);
+#endif
+
 
         //Non pipelined
         if (connection_prop->keep_alive==false) return;
@@ -633,7 +639,7 @@ static int send_error_header(int retval, connection_t *connection_prop) {
     case ERR_NOT_ALLOWED:
         return send_err(connection_prop,405,"Method Not Allowed");
     case ERR_NOAUTH:
-        return request_auth(connection_prop->sock,connection_prop->page);//Sends a request for authentication
+        return request_auth(connection_prop);//Sends a request for authentication
     case OK_NOCONTENT:
         return send_http_header(204,0,NULL,true,-1,connection_prop);
     case OK_CREATED:
@@ -917,7 +923,10 @@ int write_file(connection_t* connection_prop) {
 /**
 Sends a request for authentication
 */
-int request_auth(int sock,char * descr) {
+int request_auth(connection_t *connection_prop) {
+    int sock=connection_prop->sock;
+    char * descr = connection_prop->page;
+    connection_prop->status_code=401;
 
     //Buffer for both header and page
     char * head=malloc(MAXSCRIPTOUT+HEADBUF);
@@ -958,6 +967,8 @@ Sends an error to the client
 */
 int send_err(connection_t *connection_prop,int err,char* descr) {
     int sock=connection_prop->sock;
+    
+    connection_prop->status_code=err; //Sets status code, for the logs
 
     //Buffer for both header and page
     char * head=malloc(MAXSCRIPTOUT+HEADBUF);
@@ -1091,6 +1102,8 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
     char *head=malloc(HEADBUF);
     char* h_ptr=head;
     int left_head=HEADBUF;
+    
+    connection_prop->status_code=code; //Sets status code, for the logs
 
     if (head==NULL) {
 #ifdef SERVERDBG

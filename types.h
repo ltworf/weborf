@@ -84,6 +84,7 @@ typedef struct {
     struct stat strfile_stat;   //Stat of strfile
     int strfile_fd;             //File descriptor for strfile
     char *basedir;              //Basedir for the host
+    unsigned int status_code;   //HTTP status code
 
 } connection_t;
 
