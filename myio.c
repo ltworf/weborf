@@ -214,7 +214,7 @@ Returns 0 on success
 */
 int dir_move(char* source, char* dest) {
     int retval;
-    
+
     if ((retval=rename(source,dest))==0) {
         return 0;
     } else if (retval==-1 && errno==EXDEV) {

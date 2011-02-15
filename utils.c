@@ -243,7 +243,7 @@ void print_start_disclaimer(int argc, char *argv[]) {
  * Detaches the process from the shell,
  * it is re-implemented because it is not
  * included in POSIX
- * 
+ *
  * It shouldn't be executed after launching
  * other threads. In that case the effects are
  * not specified.
@@ -284,7 +284,7 @@ bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,
      * so there is enough space to perform the operation
      * */
     val += param_len + 2; //Moves the begin of the string to exclude the name of the field
-    
+
     char *field_end = strstr(val, "\r\n"); //Searches the end of the parameter
     if (field_end==NULL) {
         return false;

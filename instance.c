@@ -205,13 +205,13 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
 
         if (send_page(read_b, connection_prop)<0) {
 #ifdef REQUESTDBG
-        syslog(LOG_INFO,"%s - FAILED - %s %s",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
+            syslog(LOG_INFO,"%s - FAILED - %s %s",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
 #endif
 
             close(sock);
             return;//Unable to send an error
         }
-        
+
 #ifdef REQUESTDBG
         syslog(LOG_INFO,"%s - %d - %s %s",connection_prop->ip_addr,connection_prop->status_code,connection_prop->method,connection_prop->page);
 #endif
@@ -967,7 +967,7 @@ Sends an error to the client
 */
 int send_err(connection_t *connection_prop,int err,char* descr) {
     int sock=connection_prop->sock;
-    
+
     connection_prop->status_code=err; //Sets status code, for the logs
 
     //Buffer for both header and page
@@ -1102,7 +1102,7 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
     char *head=malloc(HEADBUF);
     char* h_ptr=head;
     int left_head=HEADBUF;
-    
+
     connection_prop->status_code=code; //Sets status code, for the logs
 
     if (head==NULL) {

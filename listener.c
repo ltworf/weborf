@@ -121,6 +121,10 @@ Will use syslogd
 */
 static void init_logger() {
     openlog("weborf", LOG_ODELAY, LOG_DAEMON);
+#ifdef SERVERDBG
+    syslog(LOG_INFO, "Starting server...");
+#endif
+
 }
 
 static void init_thread_info() {
@@ -152,19 +156,14 @@ static void init_signals() {
 int main(int argc, char *argv[]) {
     int s, s1;          //Socket descriptors
 
-    init_thread_info();
     init_logger();
+    init_thread_info();
 
     configuration_load(argc,argv);
 
     if (weborf_conf.is_inetd) inetd();
 
     print_start_disclaimer(argc,argv);
-
-#ifdef SERVERDBG
-    syslog(LOG_INFO, "Starting server...");
-#endif
-
 
     s = net_create_server_socket();
     net_bind_and_listen(s);

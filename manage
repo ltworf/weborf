@@ -69,7 +69,7 @@ source: clean style
 
 style:
 	#‑‑align‑pointer=name To use when will really work
-	astyle --indent=spaces=4 -a *c *h       
+	astyle --indent=spaces=4 -a *.c *.h       
 
 installdirs:
 	install -d $(DESTDIR)/$(BINDIR)/
