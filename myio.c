@@ -232,7 +232,7 @@ Returns 0 on success
 */
 int dir_move_copy (char* source, char* dest,int method) {
     struct stat f_prop; //File's property
-    int retval;
+    int retval=0;
 
     if (mkdir(dest,S_IRWXU | S_IRWXG | S_IRWXO)!=0) {//Attemps to create destination directory
         return ERR_FORBIDDEN;
