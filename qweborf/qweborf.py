@@ -21,7 +21,9 @@
 from PyQt4 import QtCore, QtGui
 import main
 import whelper
+import nhelper
 import sys
+import os
 
 class qweborfForm (QtGui.QWidget):
     '''This class is the form used for the survey, needed to intercept the events.
@@ -30,7 +32,14 @@ class qweborfForm (QtGui.QWidget):
         self.ui=ui
         self.weborf=whelper.weborf_runner(self)
         self.started=False
-    
+        
+        #Listing addresses
+        for i in nhelper.getaddrs(self.weborf.ipv6):
+            self.ui.cmbAddress.addItem(i,None)
+        
+        if 'HOME' in os.environ:
+            self.ui.txtPath.setText(os.environ['HOME'])
+
     def logger(self,data):
         #print data
         #print dir(self.ui.txtLog)
@@ -80,8 +89,11 @@ class qweborfForm (QtGui.QWidget):
         else:
             options['write'] = False
         
-        #todo FIXME
-        #options['ip']=
+        if self.ui.cmbAddress.currentIndex()==0:
+            options['ip']=None
+        else:
+            options['ip']=str(self.ui.cmbAddress.currentText())
+            
         if self.weborf.start(options):
             self.ui.cmdStart.setEnabled(False)
             self.ui.cmdStop.setEnabled(True)
