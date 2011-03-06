@@ -104,6 +104,11 @@
             <property name="toolTip">
              <string>Select the IP address to bind. Leave the default value if you don't know what this means.</string>
             </property>
+            <item>
+             <property name="text">
+              <string>Bind to all</string>
+             </property>
+            </item>
            </widget>
           </item>
          </layout>
@@ -195,6 +200,9 @@
               </property>
               <property name="inputMask">
                <string/>
+              </property>
+              <property name="echoMode">
+               <enum>QLineEdit::Password</enum>
               </property>
              </widget>
             </item>
