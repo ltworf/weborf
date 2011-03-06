@@ -31,6 +31,9 @@ class weborf_runner():
         self.child=None
         self.socket=None
         self.listener=None
+        self.methods=[]
+        self.username=None
+        self.password=None
         
         pass
     
@@ -73,6 +76,28 @@ class weborf_runner():
         auth_socket=self.__create_auth_socket()
         self.__start_weborf(options,auth_socket)
         self.__listen_auth_socket(options)
+        
+        self.username=options['username']
+        self.password=options['password']
+        
+        #Deciding which HTTP methods will be enabled
+        self.methods=['GET']
+        if options['dav']:
+            self.methods.append('OPTIONS')
+            self.methods.append('PROPFIND')
+            
+            self.logclass.logger("DAV access enabled")
+            
+            #If writing is enabled
+            if options['write']:
+                self.methods.append('PUT')
+                self.methods.append('DELETE')
+                self.methods.append('COPY')
+                self.methods.append('MOVE')
+                self.methods.append('MKCOL')
+                
+                self.logclass.logger("WARNING: writing access enabled. This could pose security threat")
+        
         return True 
     
     def __create_auth_socket(self):
@@ -102,7 +127,23 @@ class weborf_runner():
         username = data[3]
         password = data[4]
         
-        self.logclass.logger("%s - %s %s" % (client,method, uri))
+        
+        ### Checking if the request must be allowed or denied
+        allow=True
+        if self.username!=None: #Must check username and password
+            allow= self.username==username and self.password==password
+        
+        if method not in self.methods:
+            allow=False
+        
+        
+        
+        
+        if allow:
+            self.logclass.logger("%s - %s %s" % (client,method, uri))
+        else:
+            sock.send(' ')
+            self.logclass.logger("DENIED: %s - %s %s" % (client,method, uri))
             
         #TODO allow or deny requests
         sock.close()
@@ -125,9 +166,11 @@ class weborf_runner():
         Will return True if it goes well
         It should be called only if start succeeded'''
         
+        self.logclass.logger("Sending terminate signal and waiting for termination...")
         self.child.stdin.close()
         self.child.terminate()
         ret=self.child.wait()
+        self.logclass.logger("Termination complete")
         
         self.socket.close()
         self.listener.stop()

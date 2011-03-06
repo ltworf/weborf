@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Weborf
 # Copyright (C) 2010  Salvo "LtWorf" Tomaselli
@@ -50,6 +51,7 @@ class qweborfForm (QtGui.QWidget):
         if self.weborf.stop():
             self.ui.cmdStart.setEnabled(True)
             self.ui.cmdStop.setEnabled(False)
+            self.ui.tabWidget.setEnabled(True)
             self.started=False
             
     def terminate(self):
@@ -83,6 +85,7 @@ class qweborfForm (QtGui.QWidget):
         if self.weborf.start(options):
             self.ui.cmdStart.setEnabled(False)
             self.ui.cmdStop.setEnabled(True)
+            self.ui.tabWidget.setEnabled(False)
             self.started=True
         
         #print "start", options
