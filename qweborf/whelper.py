@@ -27,13 +27,16 @@ class weborf_runner():
         self.logclass=logfunction
         self.logclass.logger("Software initialized")
         
-        self.weborf=self.test_weborf()
         self.child=None
         self.socket=None
         self.listener=None
         self.methods=[]
         self.username=None
         self.password=None
+        self.ipv6=True
+        
+        
+        self.weborf=self.test_weborf()
         
         pass
     
@@ -54,11 +57,29 @@ class weborf_runner():
         
         if ret==0:
             self.logclass.logger(out)
-            return True
         else:
             self.logclass.logger("ERROR: unable to find weborf")
             return False
-    
+            
+        #Determining if has ipv6 support
+        try:
+            p = subprocess.Popen(["weborf", "-h"], bufsize=1024, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            out=p.stdout.read()
+            p.stdin.close()
+            ret=p.wait()
+        except:
+            out=''
+            pass
+            
+        
+        if 'Compiled for IPv6' in out:
+            self.ipv6=True
+            self.logclass.logger("Server has IPv6 support")
+        else:
+            self.ipv6=False
+            self.logclass.logger("Server lacks IPv6 support")
+        
+        return True
     def start(self,options):
         '''Starts weborf,
         returns True if it is correctly started'''
@@ -152,10 +173,17 @@ class weborf_runner():
     def __start_weborf(self,options,auth_socket):
         '''Starts a weborf in a subprocess'''
         
-        self.logclass.logger("weborf -p %d -b %s -x -I .... -a %s" % (options['port'],options['path'],auth_socket))
+        cmdline=["weborf", "-p",str(options['port']),"-b",options['path'],"-x","-I","....","-a",auth_socket]
+        
+        if options['ip']!=None:
+            cmdline.append('-i')
+            cmdline.append(options['ip'])
+            self.logclass.logger("weborf -p %d -b %s -x -I .... -a %s -i %s" % (options['port'],options['path'],auth_socket,options['ip']))
+        else:
+            self.logclass.logger("weborf -p %d -b %s -x -I .... -a %s" % (options['port'],options['path'],auth_socket))
         
         self.child = subprocess.Popen(
-                ("weborf", "-p",str(options['port']),"-b",options['path'],"-x","-I","....","-a",auth_socket)
+                cmdline
                 
                 , bufsize=1024, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
                 
