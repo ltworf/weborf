@@ -55,6 +55,11 @@ typedef struct {
     unsigned type :2;
 } t_dav_details;
 
+typedef union {
+    unsigned int int_version;
+    t_dav_details dav_details;
+} u_dav_details;
+
 
 extern weborf_configuration_t weborf_conf;
 extern pthread_key_t thread_key;            //key for pthread_setspecific
@@ -102,7 +107,7 @@ in this funcion. It will accept many forms of invalid xml.
 
 The original string post_param->data will be modified.
 */
-static inline int get_props(connection_t* connection_prop,string_t* post_param,t_dav_details *props) {
+static inline int get_props(connection_t* connection_prop,string_t* post_param,u_dav_details *props) {
 
     {
         //Determining if it is deep or not
@@ -112,7 +117,7 @@ static inline int get_props(connection_t* connection_prop,string_t* post_param,t
         bool r=get_param_value(connection_prop->http_param,"Depth", a,sizeof(a),strlen("Depth"));
 
         if (r) {
-            props->deep=(a[0]=='1');
+            props->dav_details.deep=(a[0]=='1');
         }
     }
 
@@ -120,10 +125,10 @@ static inline int get_props(connection_t* connection_prop,string_t* post_param,t
     char *sprops[MAXPROPCOUNT];   //List of pointers to properties
 
     if (post_param->len==0) {//No specific prop request, sending everything
-        props->getetag=true;
-        props->getcontentlength=true;
-        props->resourcetype=true;
-        props->getlastmodified=true;
+        props->dav_details.getetag=true;
+        props->dav_details.getcontentlength=true;
+        props->dav_details.resourcetype=true;
+        props->dav_details.getlastmodified=true;
         // props->getcontenttype=false; Commented because redoundant
 
         return 0;
@@ -178,16 +183,16 @@ static inline int get_props(connection_t* connection_prop,string_t* post_param,t
 
     for (i=0; sprops[i]!=NULL; i++) {
         if (strstr(sprops[i],"getetag")!=NULL) {
-            props->getetag=true;
+            props->dav_details.getetag=true;
         } else if (strstr(sprops[i],"getcontentlength")!=NULL) {
-            props->getcontentlength=true;
+            props->dav_details.getcontentlength=true;
         } else if (strstr(sprops[i],"resourcetype")!=NULL) {
-            props->resourcetype=true;
+            props->dav_details.resourcetype=true;
         } else if (strstr(sprops[i],"getlastmodified")!=NULL) { //Sends Date
-            props->getlastmodified=true;
+            props->dav_details.getlastmodified=true;
 #ifdef SEND_MIMETYPES
         } else if(strstr(sprops[i],"getcontenttype")!=NULL) { //Sends MIME type
-            props->getcontenttype=true;
+            props->dav_details.getcontenttype=true;
 #endif
         }
     }
@@ -200,7 +205,7 @@ It can be called only by funcions aware of this xml, because it sends only parti
 
 If the file can't be opened in readonly mode, this function does nothing.
 */
-static inline int printprops(connection_t *connection_prop,t_dav_details props,char* file,char*filename,bool parent) {
+static inline int printprops(connection_t *connection_prop,u_dav_details props,char* file,char*filename,bool parent) {
     int sock=connection_prop->sock;
     int p_len;
     struct stat stat_s;
@@ -233,20 +238,20 @@ static inline int printprops(connection_t *connection_prop,t_dav_details props,c
     //Writing properties
     char prop_buffer[URI_LEN];
 
-    if (props.getetag) {
+    if (props.dav_details.getetag) {
         snprintf(prop_buffer,URI_LEN,"%d",(unsigned int)stat_s.st_mtime);
         p_len=snprintf(buffer,URI_LEN,"<D:getetag>%s</D:getetag>\n",prop_buffer);
         write (sock,buffer,p_len);
 
     }
 
-    if (props.getcontentlength) {
+    if (props.dav_details.getcontentlength) {
         snprintf(prop_buffer,URI_LEN,"%lld",(long long)stat_s.st_size);
         p_len=snprintf(buffer,URI_LEN,"<D:getcontentlength>%s</D:getcontentlength>\n",prop_buffer);
         write (sock,buffer,p_len);
     }
 
-    if (props.resourcetype) {//Directory or normal file
+    if (props.dav_details.resourcetype) {//Directory or normal file
         if (S_ISDIR(stat_s.st_mode)) {
             snprintf(prop_buffer,URI_LEN,"<D:collection/>");
         } else {
@@ -258,7 +263,7 @@ static inline int printprops(connection_t *connection_prop,t_dav_details props,c
         write (sock,buffer,p_len);
     }
 
-    if (props.getlastmodified) { //Sends Date
+    if (props.dav_details.getlastmodified) { //Sends Date
         struct tm ts;
         localtime_r(&stat_s.st_mtime,&ts);
         strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
@@ -268,7 +273,7 @@ static inline int printprops(connection_t *connection_prop,t_dav_details props,c
 
 
 #ifdef SEND_MIMETYPES
-    if(props.getcontenttype) { //Sends MIME type
+    if(props.dav_details.getcontenttype) { //Sends MIME type
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
 
         const char* t=mime_get_fd(thread_prop->mime_token,file_fd,&stat_s);
@@ -298,11 +303,9 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     }
 
     int sock=connection_prop->sock;
-    t_dav_details props;
-    memset(&props, 0, sizeof(t_dav_details));
-    props.type=1; //I need to avoid the struct to be fully 0 in each case
+    u_dav_details props={0};
+    props.dav_details.type=1; //I need to avoid the struct to be fully 0 in each case
     int swap_fd; //swap file descriptor
-    unsigned int *props_int=&props; //Used to get an integer representation of props
 
     {
         //This redirects directory without ending / to directory with the ending /
@@ -331,7 +334,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
 
     //Check if exists in cache
     if (cache_is_enabled()) {
-        if ((swap_fd=cache_get_item_fd(*props_int,connection_prop))!=-1) {
+        if ((swap_fd=cache_get_item_fd(props.int_version,connection_prop))!=-1) {
             //Sends the item stored in the cache
             struct stat sb;
             fstat(swap_fd,&sb);
@@ -342,7 +345,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
             return 0;
         } else { //Prepares for storing the item in cache, will be sent afterwards
             //Get file descriptor of cache file
-            int cache_fd=cache_get_item_fd_wr(*props_int,connection_prop);
+            int cache_fd=cache_get_item_fd_wr(props.int_version,connection_prop);
 
             //If we obtained that descriptor, replace socket with it
             if (cache_fd!=-1) {
@@ -361,7 +364,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     //sends props about the requested file
     printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true);
 
-    if (props.deep) {//Send children files
+    if (props.dav_details.deep) {//Send children files
         DIR *dp = opendir(connection_prop->strfile); //Open dir
         char file[URI_LEN];
         struct dirent entry;

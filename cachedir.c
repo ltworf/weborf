@@ -98,7 +98,7 @@ HTML file and calls that will generate XML or other data.
 So the directory would be the same but the generated content is different.
 
 Acquires a shared lock on the file, so if the file is already opened in write mode
-the lock will fail and the function will return the same resulf of a cache miss.
+the lock will fail and the function will return the same result of a cache miss.
 */
 int cache_get_item_fd(unsigned int uprefix,connection_t* connection_prop) {
     if (!cachedir) return -1;
