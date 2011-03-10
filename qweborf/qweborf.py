@@ -41,10 +41,6 @@ class qweborfForm (QtGui.QWidget):
         self.ui.txtPath.setText(self.defaultdir)
             
     def logger(self,data):
-        #print data
-        #print dir(self.ui.txtLog)
-        
-        #self.ui.txtLog.append(data)
         self.ui.txtLog.moveCursor(QtGui.QTextCursor.End)
         self.ui.txtLog.insertHtml(data+'<br>')
         self.ui.txtLog.moveCursor(QtGui.QTextCursor.End)
@@ -53,11 +49,6 @@ class qweborfForm (QtGui.QWidget):
         '''Sets default values into the form GUI. It has to be
         called after the form has been initialized'''
         pass
-    def dav_toggle(self,state):
-        self.ui.chkWrite.setEnabled(state)
-    def auth_toggle(self,state):
-        self.ui.txtPassword.setEnabled(state)
-        self.ui.txtUsername.setEnabled(state)
                         
     def stop_sharing(self):
         if self.weborf.stop():

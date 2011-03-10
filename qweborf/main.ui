@@ -374,22 +374,6 @@
  <resources/>
  <connections>
   <connection>
-   <sender>chkEnableAuth</sender>
-   <signal>stateChanged(int)</signal>
-   <receiver>Form</receiver>
-   <slot>auth_toggle(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>183</x>
-     <y>209</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>171</x>
-     <y>515</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>cmdStop</sender>
    <signal>clicked()</signal>
    <receiver>Form</receiver>
@@ -434,22 +418,6 @@
     <hint type="destinationlabel">
      <x>528</x>
      <y>68</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>chkDav</sender>
-   <signal>stateChanged(int)</signal>
-   <receiver>Form</receiver>
-   <slot>dav_toggle(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>187</x>
-     <y>159</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>249</x>
-     <y>515</y>
     </hint>
    </hints>
   </connection>
@@ -514,6 +482,54 @@
     <hint type="destinationlabel">
      <x>398</x>
      <y>359</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkDav</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>chkWrite</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>178</x>
+     <y>160</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>152</x>
+     <y>193</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkEnableAuth</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>txtUsername</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>139</x>
+     <y>214</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>128</x>
+     <y>239</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkEnableAuth</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>txtPassword</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>169</x>
+     <y>220</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>196</x>
+     <y>276</y>
     </hint>
    </hints>
   </connection>
