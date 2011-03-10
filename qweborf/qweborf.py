@@ -37,18 +37,17 @@ class qweborfForm (QtGui.QWidget):
         for i in nhelper.getaddrs(self.weborf.ipv6):
             self.ui.cmbAddress.addItem(i,None)
         
-        if 'HOME' in os.environ:
-            self.ui.txtPath.setText(os.environ['HOME'])
-            self.defaultdir=os.environ['HOME']
-        else:
-            self.ui.txtPath.setText('/')
-            self.defaultdir='/'
+        self.defaultdir=str(QtGui.QDesktopServices.storageLocation(QtGui.QDesktopServices.HomeLocation))
+        self.ui.txtPath.setText(self.defaultdir)
             
     def logger(self,data):
         #print data
         #print dir(self.ui.txtLog)
         
-        self.ui.txtLog.append(data)
+        #self.ui.txtLog.append(data)
+        self.ui.txtLog.moveCursor(QtGui.QTextCursor.End)
+        self.ui.txtLog.insertHtml(data+'<br>')
+        self.ui.txtLog.moveCursor(QtGui.QTextCursor.End)
     
     def setDefaultValues(self):
         '''Sets default values into the form GUI. It has to be
