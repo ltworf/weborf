@@ -39,7 +39,11 @@ class qweborfForm (QtGui.QWidget):
         
         if 'HOME' in os.environ:
             self.ui.txtPath.setText(os.environ['HOME'])
-
+            self.defaultdir=os.environ['HOME']
+        else:
+            self.ui.txtPath.setText('/')
+            self.defaultdir='/'
+            
     def logger(self,data):
         #print data
         #print dir(self.ui.txtLog)
@@ -100,10 +104,18 @@ class qweborfForm (QtGui.QWidget):
             self.ui.tabWidget.setEnabled(False)
             self.started=True
         
-        #print "start", options
         
     def select_path(self):
-        print "select"
+        #filename = QtGui.QFileDialog
+        #dial=QtGui.QFileDialog()
+        dirname= QtGui.QFileDialog.getExistingDirectory(
+            self,
+            QtGui.QApplication.translate("Form", "Directory to share", None, QtGui.QApplication.UnicodeUTF8),
+            self.defaultdir,
+            QtGui.QFileDialog.ShowDirsOnly
+        )
+        
+        self.ui.txtPath.setText(dirname)
 
 if __name__ == "__main__":
     import sys
