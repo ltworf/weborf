@@ -66,7 +66,18 @@ class qweborfForm (QtGui.QWidget):
             self.ui.cmdStop.setEnabled(False)
             self.ui.tabWidget.setEnabled(True)
             self.started=False
-            
+    def about(self):
+        
+        self.logger('<hr>Qweborf 1.0')
+        self.logger('This program comes with ABSOLUTELY NO WARRANTY.')
+        self.logger('This is free software, and you are welcome to redistribute it')
+        self.logger('under certain conditions.')
+        self.logger('For details see the GPLv3 Licese.')
+        self.logger('<a href="http://galileo.dmi.unict.it/wiki/weborf">http://galileo.dmi.unict.it/wiki/weborf</a>')
+        self.logger('Salvo \'LtWorf\' Tomaselli <a href="mailto:tiposchi@tiscali.it">&lt;tiposchi@tiscali.it&gt;</a>')
+        self.logger('<hr>')
+
+        
     def terminate(self):
         if self.started:
             self.stop_sharing()

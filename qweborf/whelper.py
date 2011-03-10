@@ -217,13 +217,10 @@ class weborf_runner():
             url='http://%s:%d/' % (i,options['port'])
             logentry='Address: <a href="%s">%s</a>' % (url,url)
             self.logclass.logger(logentry)
-            print logentry
         for i in addrs6:
             url='http://[%s]:%d/' % (i,options['port'])
             logentry='Address: <a href="%s">%s</a>' % (url,url)
             self.logclass.logger(logentry)
-            print logentry
-            
             
     def stop(self):
         '''Stop weborf and correlated processes.
