@@ -48,7 +48,7 @@ class qweborfForm (QtGui.QWidget):
         #print data
         #print dir(self.ui.txtLog)
         
-        self.ui.txtLog.appendPlainText(data)
+        self.ui.txtLog.append(data)
     
     def setDefaultValues(self):
         '''Sets default values into the form GUI. It has to be

@@ -21,6 +21,7 @@ import os
 import subprocess
 import socket
 import threading
+import nhelper
 
 class weborf_runner():
     def __init__(self,logfunction):
@@ -58,7 +59,7 @@ class weborf_runner():
         if ret==0:
             self.logclass.logger(out)
         else:
-            self.logclass.logger("ERROR: unable to find weborf")
+            self.logclass.logger("<strong>ERROR</strong>: unable to find weborf")
             return False
             
         #Determining if has ipv6 support
@@ -85,11 +86,11 @@ class weborf_runner():
         returns True if it is correctly started'''
         
         if not self.weborf:
-            self.logclass.logger("ERROR: Weborf binary is missing")
+            self.logclass.logger("<strong>ERROR</strong>: Weborf binary is missing")
             return False
         
         if len(options['path'])==0:
-            self.logclass.logger("ERROR: Path not specified")
+            self.logclass.logger("<strong>ERROR</strong>: Path not specified")
             return False
         
         self.logclass.logger("Starting weborf...")
@@ -117,7 +118,7 @@ class weborf_runner():
                 self.methods.append('MOVE')
                 self.methods.append('MKCOL')
                 
-                self.logclass.logger("WARNING: writing access enabled. This could pose security threat")
+                self.logclass.logger("<strong>WARNING</strong>: writing access enabled. This could pose security threat")
         
         return True 
     
@@ -186,9 +187,44 @@ class weborf_runner():
                 cmdline
                 
                 , bufsize=1024, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-                
+        
+        self.loglinks(options)
         return True
-
+    def loglinks(self,options):
+        
+        if options['ip']==None:
+            addrs4=nhelper.getaddrs(False)
+            
+            if self.ipv6:
+                addrs6=nhelper.getaddrs(True)
+            else:
+                addrs6=tuple()
+        else:
+            if self.ipv6:
+                #address can be both ipv6 or mapped ipv4
+                if '.' in options['ip']:
+                    addrs6=(options['ip'],)
+                    addrs4=(options['ip'][7:],)
+                else: #Normal ipv6
+                    addrs4=tuple()
+                    addrs6=(options['ip'],)
+            else:
+                addrs6=tuple()
+                addrs4=(options['ip'],)
+        
+        #Output of addresses binded
+        for i in addrs4:
+            url='http://%s:%d/' % (i,options['port'])
+            logentry='Address: <a href="%s">%s</a>' % (url,url)
+            self.logclass.logger(logentry)
+            print logentry
+        for i in addrs6:
+            url='http://[%s]:%d/' % (i,options['port'])
+            logentry='Address: <a href="%s">%s</a>' % (url,url)
+            self.logclass.logger(logentry)
+            print logentry
+            
+            
     def stop(self):
         '''Stop weborf and correlated processes.
         Will return True if it goes well
