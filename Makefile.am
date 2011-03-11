@@ -38,7 +38,14 @@ EXTRA_DIST = \
     utils.h \
     examples \
     daemon \
-    weborf.conf
+    weborf.conf \
+    qweborf/main.ui \
+    qweborf/nhelper.py \
+    qweborf/whelper.py \
+    qweborf/qweborf.py \
+    qweborf/qweborf \
+    qweborf/qweborf.1 \
+    qweborf/qweborf.desktop
  
 dist-hook:
 	rm -rf `find $(distdir)/ -name .svn`

@@ -1,0 +1,42 @@
+weborf (0.13-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Fri, 11 Mar 2011 11:37:07 +0100
+
+weborf (0.12.1-1) unstable; urgency=low
+
+  * New upstream release 
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 03 Jun 2010 23:48:40 +0200
+
+weborf (0.12-2) unstable; urgency=low
+
+  * Using quilt
+  * Fixed error in Makefile that prevented building
+  * Fixed date error in debian changelog
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sat, 29 May 2010 18:30:22 +0200
+
+weborf (0.12-1) unstable; urgency=low
+
+  * Corrected spelling mistake in manpage (Closes: #549652)
+  * Builds weborf-daemon package
+  * New upstream release
+  * Added explicit format 1.0
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 27 May 2010 22:10:22 +0200
+
+weborf (0.11-2) unstable; urgency=low
+
+  * Corrected name of upstream author Salvo Rinaldi in the copyright file.
+  * Added name of upstream author Salvo Rinaldi in the manpages.
+  * Edited description of the package 
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sat, 26 Sep 2009 18:46:22 +0200
+
+weborf (0.11-1) unstable; urgency=low
+
+  * Initial release (Closes: #506771)
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Tue, 22 Sep 2009 15:13:55 +0200

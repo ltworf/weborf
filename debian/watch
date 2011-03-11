@@ -1,0 +1,2 @@
+version=3
+opts=filenamemangle=s/.*:// http://galileo.dmi.unict.it/wiki/weborf/doku.php?id=download /wiki/[^:]*:weborf_(\d+.*)\.tar\.gz

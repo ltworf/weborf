@@ -118,7 +118,7 @@ class qweborfForm (QtGui.QWidget):
         
         self.ui.txtPath.setText(dirname)
 
-def q_main()::
+def q_main():
     import sys
     app = QtGui.QApplication(sys.argv)
     Form = qweborfForm()
