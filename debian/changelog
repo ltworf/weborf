@@ -1,8 +1,36 @@
 weborf (0.13-1) unstable; urgency=low
 
   * New upstream release
+  * Adds qweborf package, GUI for sharing files with HTTP
 
- -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Fri, 11 Mar 2011 11:37:07 +0100
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Fri, 11 Mar 2011 14:29:09 +0100
+
+weborf (0.12.5-1) unstable; urgency=high
+
+  * New upstream release
+  * Fixes DoS
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Fri, 28 Jan 2011 11:18:01 +0100
+
+weborf (0.12.4-1) unstable; urgency=high
+
+  * New upstream release 
+  * Fixes DoS (Closes: #601585)
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Wed, 27 Oct 2010 16:01:35 +0200
+
+weborf (0.12.3-1) unstable; urgency=low
+
+  * New upstream release
+  * Fixes directory traversal (Closes: #596112)
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Wed, 08 Sep 2010 22:24:21 +0200
+
+weborf (0.12.2-1) unstable; urgency=low
+
+  * New upstream release 
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Tue, 22 Jun 2010 16:33:22 +0200
 
 weborf (0.12.1-1) unstable; urgency=low
 
