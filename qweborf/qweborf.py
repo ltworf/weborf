@@ -118,7 +118,7 @@ class qweborfForm (QtGui.QWidget):
         
         self.ui.txtPath.setText(dirname)
 
-if __name__ == "__main__":
+def q_main()::
     import sys
     app = QtGui.QApplication(sys.argv)
     Form = qweborfForm()
@@ -129,3 +129,6 @@ if __name__ == "__main__":
     res=app.exec_()
     Form.terminate()
     sys.exit(res)
+
+if __name__ == "__main__":
+    q_main()

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=qweborf
+GenericName=qweborf
+Comment=Shares files using the HTTP protocol
+Comment[it]=Condivide file usando il protocollo HTTP
+Exec=qweborf
+Icon=kexi
+Terminal=0
+Type=Application
+Categories=Education;
