@@ -15,7 +15,7 @@
 - Uses pthread calls for TLS instead of relying on __thread that doesn't work on OsX
 - Dav's PROPFIND with different required properties can be cached on disk
 - Can send Content-Type
-- Can be used with inetd
+- Can be used with inetd/xinetd
 - Fixes crash on invalid request (Rev 492)
 - Will no longer terminate on failed accept
 - Heavy code refactory
@@ -24,6 +24,7 @@
 - Support for If-Range header (Rev 516)
 - Migrated to GNU autotools
 - Now logs HTTP status code for each request
+- Ships qweborf: QT GUI for simple file sharing
 
 0.12.5
 - Fixes DoS occurring with malformed fields in HTTP request
