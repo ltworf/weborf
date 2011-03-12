@@ -31,11 +31,12 @@ class weborf_runner():
         self.child=None
         self.socket=None
         self.listener=None
+        self.waiter=None
         self.methods=[]
         self.username=None
         self.password=None
         self.ipv6=True
-        
+        self._running=False
         
         self.weborf=self.test_weborf()
         
@@ -158,9 +159,6 @@ class weborf_runner():
         if method not in self.methods:
             allow=False
         
-        
-        
-        
         if allow:
             self.logclass.logger("%s - %s %s" % (client,method, uri))
         else:
@@ -189,6 +187,11 @@ class weborf_runner():
                 , bufsize=1024, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         
         self.loglinks(options)
+        
+        self.waiter=__waiter__(self.child,self) #Starts thread to wait for weborf termination
+        self.waiter.start()
+        self._running=True
+        
         return True
     def loglinks(self,options):
         
@@ -221,16 +224,23 @@ class weborf_runner():
             url='http://[%s]:%d/' % (i,options['port'])
             logentry='Address: <a href="%s">%s</a>' % (url,url)
             self.logclass.logger(logentry)
-            
+    def _child_terminated(self,child,exit_code):
+        '''Called when the child process is terminated
+        param is for now ignored'''
+        if exit_code != 0:
+            self.logclass.logger('<font color="red">Weborf terminated with exit code %d</font>'%exit_code)
+        self._running=False
+        pass
     def stop(self):
         '''Stop weborf and correlated processes.
         Will return True if it goes well
         It should be called only if start succeeded'''
-        
-        self.logclass.logger("Sending terminate signal and waiting for termination...")
-        self.child.stdin.close()
-        self.child.terminate()
-        ret=self.child.wait()
+        if self._running:
+            self.logclass.logger("Sending terminate signal and waiting for termination...")
+            self.child.stdin.close()
+            self.child.terminate()
+            #ret=self.child.wait()
+            
         self.logclass.logger("Termination complete")
         
         self.socket.close()
@@ -256,3 +266,19 @@ class __listener__(threading.Thread):
             except:
                 pass
         pass
+
+class __waiter__(threading.Thread):
+    '''This class creates a separate thread that will wait for the
+    termination of weborf, and performs a callback when it occurs.
+    A more normal way to do this would have been to handle SIGCHLD but
+    the use of QT libraries prevents the use of signals apparently.'''
+    def __init__(self,child,cback):
+        '''child: child process to wait
+        cback: class to call back when it terminates
+        '''
+        threading.Thread.__init__(self)
+        self.child=child
+        self.cback=cback
+    def run(self):
+        t=self.child.wait()
+        self.cback._child_terminated(self.child,t)
