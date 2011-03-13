@@ -22,6 +22,7 @@ import subprocess
 import socket
 import threading
 import nhelper
+from PyQt4 import QtCore
 
 class weborf_runner():
     def __init__(self,logfunction):
@@ -137,12 +138,13 @@ class weborf_runner():
         return sockname
         
     def __listen_auth_socket(self,options):
-        self.listener=__listener__(self.socket,self)
+        self.listener=__listener__(self.socket)
+        QtCore.QObject.connect(self.listener, QtCore.SIGNAL("new_socket(PyQt_PyObject)"), self.socket_cback)
         self.listener.start()
         
+    @QtCore.pyqtSignature("PyQt_PyObject")
     def socket_cback(self,sock):
         '''Recieves connection requests and decides if they have to be authorized or denied'''
-        
         data = sock.recv(4096).split('\r\n')
         uri = data[0]
         client = data[1]
@@ -165,7 +167,6 @@ class weborf_runner():
             sock.send(' ')
             self.logclass.logger("DENIED: %s - %s %s" % (client,method, uri))
             
-        #TODO allow or deny requests
         sock.close()
 
         pass
@@ -188,13 +189,14 @@ class weborf_runner():
         
         self.loglinks(options)
         
-        self.waiter=__waiter__(self.child,self) #Starts thread to wait for weborf termination
+        self.waiter=__waiter__(self.child) #Starts thread to wait for weborf termination
+        QtCore.QObject.connect(self.waiter, QtCore.SIGNAL("child_terminated(PyQt_PyObject,PyQt_PyObject)"), self._child_terminated)
         self.waiter.start()
         self._running=True
         
         return True
     def loglinks(self,options):
-        
+        '''Prints to the log all the links that weborf is listening to'''
         if options['ip']==None:
             addrs4=nhelper.getaddrs(False)
             
@@ -224,13 +226,18 @@ class weborf_runner():
             url='http://[%s]:%d/' % (i,options['port'])
             logentry='Address: <a href="%s">%s</a>' % (url,url)
             self.logclass.logger(logentry)
+    
+    @QtCore.pyqtSignature("PyQt_PyObject,PyQt_PyObject")
     def _child_terminated(self,child,exit_code):
         '''Called when the child process is terminated
-        param is for now ignored'''
+        param child is for now ignored'''
         if exit_code != 0:
             self.logclass.logger('<font color="red">Weborf terminated with exit code %d</font>'%exit_code)
+        else:
+            self.logclass.logger("Termination complete")
         self._running=False
         pass
+    
     def stop(self):
         '''Stop weborf and correlated processes.
         Will return True if it goes well
@@ -239,46 +246,55 @@ class weborf_runner():
             self.logclass.logger("Sending terminate signal and waiting for termination...")
             self.child.stdin.close()
             self.child.terminate()
-            #ret=self.child.wait()
-            
-        self.logclass.logger("Termination complete")
         
         self.socket.close()
         self.listener.stop()
         
         return True
 
-class __listener__(threading.Thread):
-    def __init__(self,socket,cback):
-        threading.Thread.__init__(self)
+class __listener__(QtCore.QThread):
+    '''This class is used to listen to a socket.
+    It will accept connections and send those connection
+    using new_socket(PyQt_PyObject).
+    '''
+    def __init__(self,socket):
+        QtCore.QThread.__init__(self) 
         self.socket=socket
-        self.cback=cback
         self.socket.settimeout(2.0)
         self.cycle=True
+        
     def stop(self):
         self.cycle=False
+        
     def run(self):
         self.socket.listen(1)
         while self.cycle:
             try:
                 sock, addr = self.socket.accept()
-                self.cback.socket_cback(sock)
+                self.emit(QtCore.SIGNAL("new_socket(PyQt_PyObject)"),sock)
             except:
                 pass
         pass
 
-class __waiter__(threading.Thread):
+class __waiter__(QtCore.QThread):
     '''This class creates a separate thread that will wait for the
     termination of weborf, and performs a callback when it occurs.
     A more normal way to do this would have been to handle SIGCHLD but
-    the use of QT libraries prevents the use of signals apparently.'''
-    def __init__(self,child,cback):
-        '''child: child process to wait
-        cback: class to call back when it terminates
+    the use of QT libraries prevents the use of signals apparently.
+    
+    connect to child_terminated(PyQt_PyObject,PyQt_PyObject) to handle the event'''
+    def __init__(self,child):
+        '''child: child process to wait        
         '''
-        threading.Thread.__init__(self)
+        QtCore.QThread.__init__(self) 
+        
         self.child=child
-        self.cback=cback
+        
     def run(self):
+        
+        #wait termination for the child process
         t=self.child.wait()
-        self.cback._child_terminated(self.child,t)
+        
+        #Sends callback
+        self.emit(QtCore.SIGNAL("child_terminated(PyQt_PyObject,PyQt_PyObject)"),self.child,t)
+
