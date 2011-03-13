@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
+#include "options.h"
 
 #include <sys/types.h>
 #include <sys/types.h>
@@ -30,7 +31,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "instance.h"
 #include "types.h"
-#include "options.h"
 #include "myio.h"
 
 /**

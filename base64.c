@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
+#include "options.h"
 
 #include <stdlib.h>
 #include <stdio.h>

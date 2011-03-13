@@ -17,6 +17,9 @@ AC_SUBST([initdir], [${sysconfdir}/init.d])
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdlib.h string.h strings.h sys/file.h sys/socket.h syslog.h unistd.h])
 AC_CHECK_FUNCS([alarm inet_ntoa localtime_r memmove memset mkdir putenv rmdir setenv socket strstr strtol strtoul])
 
+AC_SYS_LARGEFILE
+
+
 AC_HEADER_STDBOOL
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
@@ -39,6 +42,5 @@ AC_CONFIG_FILES([Makefile
     options.h
 ])
 
-AC_DEFINE(_FILE_OFFSET_BITS,64)
 
 AC_OUTPUT

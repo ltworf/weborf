@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
+#include "options.h"
 
 #include <arpa/inet.h>
 #include <sys/types.h>
@@ -29,7 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "options.h"
 #include "types.h"
 #include "mynet.h"
 

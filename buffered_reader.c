@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
  */
+#include "options.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -24,7 +25,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <poll.h>
 
 #include "buffered_reader.h"
-#include "options.h"
 #include "types.h"
 
 /**

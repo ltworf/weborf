@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 @author Salvo Rinaldi <salvin@anche.no>
  */
+#include "options.h"
 
 #include <time.h>
 #include <netinet/in.h>
@@ -38,7 +39,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/un.h>
 #include <errno.h>
 
-#include "options.h"
 #include "utils.h"
 #include "myio.h"
 #include "cgi.h"

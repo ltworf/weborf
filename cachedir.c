@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
+#include "options.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -29,7 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdbool.h>
 
 #include "cachedir.h"
-#include "options.h"
 #include "utils.h"
 #include "types.h"
 #include "instance.h"

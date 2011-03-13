@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Giuseppe Pappalardo <pappalardo@dmi.unict.it>
 @author Salvo Rinaldi <salvin@anche.no>
 */
+#include "options.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -36,7 +37,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "listener.h"
 #include "instance.h"
 #include "queue.h"
-#include "options.h"
 #include "utils.h"
 #include "mystring.h"
 #include "types.h"

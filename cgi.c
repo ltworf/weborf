@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
+#include "options.h"
 
 #include <syslog.h>
 #include <signal.h>
@@ -31,7 +32,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mystring.h"
 #include "cgi.h"
-#include "options.h"
 #include "types.h"
 #include "instance.h"
 

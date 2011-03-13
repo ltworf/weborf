@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
+#include "options.h"
 
 #include <unistd.h>
 #include <getopt.h>
@@ -26,7 +27,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "configuration.h"
 #include "types.h"
-#include "options.h"
 #include "utils.h"
 #include "cachedir.h"
 #include "auth.h"

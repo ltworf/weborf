@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
+#include "options.h"
+
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/un.h>
@@ -26,7 +28,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "options.h"
 #include "types.h"
 #include "auth.h"
 #include "instance.h"

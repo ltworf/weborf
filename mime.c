@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
+#include "options.h"
 
 
 #include <string.h>
@@ -24,7 +25,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "mime.h"
-#include "options.h"
 
 #ifdef SEND_MIMETYPES
 #include <magic.h>

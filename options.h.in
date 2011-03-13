@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
  */
 
-#include <unistd.h> //Needed because it defines the _POSIX_IPV6
 #include "config.h"
+#include <unistd.h> //Needed because it defines the _POSIX_IPV6
 
 #ifndef WEBORF_OPTIONS_H
 #define WEBORF_OPTIONS_H
