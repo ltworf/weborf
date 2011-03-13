@@ -122,8 +122,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SERVERDBG
 #define REQUESTDBG
 
-//Defines extra stuff
-#define -D_FILE_OFFSET_BITS=64	//64bytes offsets on all architectures
-
-
 #endif

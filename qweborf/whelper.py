@@ -39,11 +39,11 @@ class weborf_runner():
         self.ipv6=True
         self._running=False
         
-        self.weborf=self.test_weborf()
+        self.weborf=self._test_weborf()
         
         pass
     
-    def test_weborf(self):
+    def _test_weborf(self):
         '''Tests if weborf binary is existing.
         It will return true if everything is OK
         and false otherwise.'''
@@ -247,7 +247,7 @@ class weborf_runner():
             self.child.stdin.close()
             self.child.terminate()
         
-        self.socket.close()
+        self.socket.close() #Closing socket, so the accept will fail and the thread can terminate
         self.listener.stop()
         
         return True

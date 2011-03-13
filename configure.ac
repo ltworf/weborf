@@ -39,5 +39,6 @@ AC_CONFIG_FILES([Makefile
     options.h
 ])
 
+AC_DEFINE(_FILE_OFFSET_BITS,64)
 
 AC_OUTPUT
