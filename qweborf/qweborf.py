@@ -28,6 +28,12 @@ import os
 class qweborfForm (QtGui.QWidget):
     '''This class is the form used for the survey, needed to intercept the events.
     It also sends the data with http POST to a page hosted on galileo'''
+    
+    DBG_DEFAULT=0
+    DBG_WARNING=1
+    DBG_ERROR=2
+    DBG_NOTICE=3
+    
     def setUi(self,ui):
         self.ui=ui
         self.weborf=whelper.weborf_runner(self)
@@ -40,7 +46,13 @@ class qweborfForm (QtGui.QWidget):
         self.defaultdir=str(QtGui.QDesktopServices.storageLocation(QtGui.QDesktopServices.HomeLocation))
         self.ui.txtPath.setText(self.defaultdir)
             
-    def logger(self,data):
+    def logger(self,data,level=DBG_DEFAULT):
+        if level==self.DBG_WARNING:
+            data='<font color="orange"><strong>WARNING</strong></font>: %s' % data
+        elif level==self.DBG_ERROR:
+            data='<font color="red"><strong>ERROR</strong></font>: %s' % data
+        elif level==self.DBG_NOTICE:
+            data='<font color="green"><strong>NOTICE</strong></font>: %s' % data
         self.ui.txtLog.moveCursor(QtGui.QTextCursor.End)
         self.ui.txtLog.insertHtml(data+'<br>')
         self.ui.txtLog.moveCursor(QtGui.QTextCursor.End)

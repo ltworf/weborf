@@ -59,9 +59,9 @@ class weborf_runner():
             ret=3
         
         if ret==0:
-            self.logclass.logger(out)
+            self.logclass.logger(out,self.logclass.DBG_NOTICE)
         else:
-            self.logclass.logger("<strong>ERROR</strong>: unable to find weborf")
+            self.logclass.logger('Unable to find weborf</font>',self.logclass.DBG_ERROR)
             return False
             
         #Determining if has ipv6 support
@@ -77,10 +77,10 @@ class weborf_runner():
         
         if 'Compiled for IPv6' in out:
             self.ipv6=True
-            self.logclass.logger("Server has IPv6 support")
+            self.logclass.logger('Server has IPv6 support',self.logclass.DBG_NOTICE)
         else:
             self.ipv6=False
-            self.logclass.logger("Server lacks IPv6 support")
+            self.logclass.logger('Server lacks IPv6 support',self.logclass.DBG_WARNING)
         
         return True
     def start(self,options):
@@ -88,11 +88,11 @@ class weborf_runner():
         returns True if it is correctly started'''
         
         if not self.weborf:
-            self.logclass.logger("<strong>ERROR</strong>: Weborf binary is missing")
+            self.logclass.logger('Unable to find weborf',self.logclass.DBG_ERROR)
             return False
         
         if len(options['path'])==0:
-            self.logclass.logger("<strong>ERROR</strong>: Path not specified")
+            self.logclass.logger('Path not specified',self.logclass.DBG_ERROR)
             return False
         
         self.logclass.logger("Starting weborf...")
@@ -110,7 +110,7 @@ class weborf_runner():
             self.methods.append('OPTIONS')
             self.methods.append('PROPFIND')
             
-            self.logclass.logger("DAV access enabled")
+            self.logclass.logger("DAV access enabled",self.logclass.DBG_NOTICE)
             
             #If writing is enabled
             if options['write']:
@@ -120,7 +120,7 @@ class weborf_runner():
                 self.methods.append('MOVE')
                 self.methods.append('MKCOL')
                 
-                self.logclass.logger("<strong>WARNING</strong>: writing access enabled. This could pose security threat")
+                self.logclass.logger('Writing access enabled. This could pose security threat',self.logclass.DBG_WARNING)
         
         return True 
     
@@ -232,9 +232,9 @@ class weborf_runner():
         '''Called when the child process is terminated
         param child is for now ignored'''
         if exit_code != 0:
-            self.logclass.logger('<font color="red">Weborf terminated with exit code %d</font>'%exit_code)
+            self.logclass.logger('Weborf terminated with exit code %d'%exit_code,self.logclass.DBG_ERROR)
         else:
-            self.logclass.logger("Termination complete")
+            self.logclass.logger("Termination complete",self.logclass.DBG_NOTICE)
         self._running=False
         pass
     
