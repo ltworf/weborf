@@ -387,15 +387,23 @@
  </widget>
  <tabstops>
   <tabstop>txtPath</tabstop>
+  <tabstop>cmdClearPath</tabstop>
   <tabstop>cmdOpen</tabstop>
+  <tabstop>spinPort</tabstop>
+  <tabstop>cmbAddress</tabstop>
+  <tabstop>chkTar</tabstop>
+  <tabstop>chkDav</tabstop>
+  <tabstop>chkWrite</tabstop>
   <tabstop>chkEnableAuth</tabstop>
   <tabstop>txtUsername</tabstop>
   <tabstop>txtPassword</tabstop>
-  <tabstop>spinPort</tabstop>
-  <tabstop>cmbAddress</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>cmdClearLog</tabstop>
+  <tabstop>cmdAbout</tabstop>
   <tabstop>cmdStart</tabstop>
   <tabstop>cmdStop</tabstop>
   <tabstop>cmdClose</tabstop>
+  <tabstop>txtLog</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -406,8 +414,8 @@
    <slot>stop_sharing()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>375</x>
-     <y>498</y>
+     <x>526</x>
+     <y>495</y>
     </hint>
     <hint type="destinationlabel">
      <x>457</x>
@@ -422,8 +430,8 @@
    <slot>start_sharing()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>120</x>
-     <y>499</y>
+     <x>125</x>
+     <y>495</y>
     </hint>
     <hint type="destinationlabel">
      <x>122</x>
@@ -454,8 +462,8 @@
    <slot>terminate()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>509</x>
-     <y>528</y>
+     <x>513</x>
+     <y>525</y>
     </hint>
     <hint type="destinationlabel">
      <x>528</x>
@@ -518,28 +526,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>178</x>
-     <y>160</y>
+     <x>238</x>
+     <y>181</y>
     </hint>
     <hint type="destinationlabel">
      <x>152</x>
      <y>193</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>chkEnableAuth</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>txtUsername</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>139</x>
-     <y>214</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>128</x>
-     <y>239</y>
     </hint>
    </hints>
   </connection>
@@ -556,6 +548,22 @@
     <hint type="destinationlabel">
      <x>196</x>
      <y>276</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkEnableAuth</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>txtUsername</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>139</x>
+     <y>214</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>128</x>
+     <y>239</y>
     </hint>
    </hints>
   </connection>
