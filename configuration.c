@@ -145,9 +145,31 @@ static void configuration_set_virtualhost(char *optarg) {
     putenv(virtual);
 }
 
+static void configuration_set_defaults() {
+    weborf_conf.tar_directory=false;
+    weborf_conf.is_inetd=false;
+    weborf_conf.virtual_host = false;
+    weborf_conf.exec_script = true;
+    weborf_conf.ip = NULL;
+    weborf_conf.port = PORT;
+    weborf_conf.basedir=BASEDIR;
+    weborf_conf.uid = ROOTUID;
+
+#ifdef SEND_MIMETYPES
+    weborf_conf.send_content_type = false;
+#endif
+
+
+};
+
+
+}
+
 void configuration_load(int argc, char *argv[]) {
+    configuration_set_defaults();
     configuration_set_default_CGI();
     configuration_set_default_index();
+
 
     int c; //Identify the readed option
     int option_index = 0;

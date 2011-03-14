@@ -1207,8 +1207,6 @@ static int tar_send_dir(connection_t* connection_prop) {
 
     connection_prop->keep_alive=false;
 
-    //TODO use this for default filename fname = strrchr (pathname, '/') + 1;
-
     char* headers=malloc(HEADBUF);
 
     if (headers==NULL) return ERR_NOMEM;
