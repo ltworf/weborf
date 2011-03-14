@@ -1207,14 +1207,30 @@ static int tar_send_dir(connection_t* connection_prop) {
     
     connection_prop->keep_alive=false;
     
+    //TODO use this for default filename fname = strrchr (pathname, '/') + 1;
+    
+    char* headers=malloc(HEADBUF);
+    
+    if (headers==NULL) return ERR_NOMEM;
+    
+    
+    //Last char is always '/', i null it so i can use default name
+    connection_prop->strfile[--connection_prop->strfile_len]=0;
+    
+    snprintf(headers,HEADBUF ,
+             "Content-Type: application/x-gzip\r\n"
+             "Content-Disposition: attachment; filename=\"%s.tar.gz\"\r\n",
+             strrchr(connection_prop->strfile,'/')+1
+            );
+    
     send_http_header(200,
                      0,
-                     "Content-Type: application/x-gzip\r\n"
-                     "Content-Disposition: attachment; filename=\"directory.tar.gz\"\r\n",
+                     headers,
                      true,
                      connection_prop->strfile_stat.st_mtime,
                      connection_prop);
     
+    free(headers);
     
     int pid=fork();
     
