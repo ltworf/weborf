@@ -1188,22 +1188,10 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
 
 /**
 This function writes on the specified socket a tar.gz file containing the required
-directory
+directory.
+No caching at all is used or is allowed to the clients
 */
 static int tar_send_dir(connection_t* connection_prop) {
-
-    /*
-    WARNING
-    This code checks the ETag and returns if the client has a copy in cache
-    since the impact of using ETag for generated directory list is not known
-    yet, if ETag goes away, also the following block will have to be deleted
-    */
-    {
-        char a[RBUFFER+MIMETYPELEN+16]; //Buffer for if-none-match from header
-        //Check if the resource cached in the client is the same
-        if (check_etag(connection_prop,&a[0])==0) return 0;
-    }
-
 
     connection_prop->keep_alive=false;
 
@@ -1225,7 +1213,7 @@ static int tar_send_dir(connection_t* connection_prop) {
                      0,
                      headers,
                      true,
-                     connection_prop->strfile_stat.st_mtime,
+                     -1,
                      connection_prop);
 
     free(headers);
