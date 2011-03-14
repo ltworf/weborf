@@ -15,7 +15,7 @@ AC_SUBST([cgibindir], [${libdir}/cgi-bin])
 AC_SUBST([initdir], [${sysconfdir}/init.d])
 
 AC_CHECK_HEADERS([arpa/inet.h fcntl.h netdb.h netinet/in.h stdlib.h string.h strings.h sys/file.h sys/socket.h syslog.h unistd.h])
-AC_CHECK_FUNCS([alarm inet_ntoa localtime_r memmove memset mkdir putenv rmdir setenv socket strstr strtol strtoul ftruncate])
+AC_CHECK_FUNCS([alarm inet_ntoa localtime_r memmove memset mkdir putenv rmdir setenv socket strstr strtol strtoul ftruncate strrchr])
 
 AC_SYS_LARGEFILE
 

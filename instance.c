@@ -390,7 +390,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     if (fd<0) {
         return ERR_FILENOTFOUND;
     }
-    
+
     ftruncate(fd,content_l);
 
     char* buf=malloc(FILEBUF);//Buffer to read from file
@@ -1203,37 +1203,37 @@ static int tar_send_dir(connection_t* connection_prop) {
         //Check if the resource cached in the client is the same
         if (check_etag(connection_prop,&a[0])==0) return 0;
     }
-    
-    
+
+
     connection_prop->keep_alive=false;
-    
+
     //TODO use this for default filename fname = strrchr (pathname, '/') + 1;
-    
+
     char* headers=malloc(HEADBUF);
-    
+
     if (headers==NULL) return ERR_NOMEM;
-    
-    
+
+
     //Last char is always '/', i null it so i can use default name
     connection_prop->strfile[--connection_prop->strfile_len]=0;
-    
+
     snprintf(headers,HEADBUF ,
              "Content-Type: application/x-gzip\r\n"
              "Content-Disposition: attachment; filename=\"%s.tar.gz\"\r\n",
              strrchr(connection_prop->strfile,'/')+1
             );
-    
+
     send_http_header(200,
                      0,
                      headers,
                      true,
                      connection_prop->strfile_stat.st_mtime,
                      connection_prop);
-    
+
     free(headers);
-    
+
     int pid=fork();
-    
+
     if (pid==0) { //child, executing tar
         fclose (stdout); //Closing the stdout
         dup(connection_prop->sock); //Redirects the stdout
@@ -1255,7 +1255,7 @@ will use 0 as socket and exit after.
 It is almost a copy of instance()
 */
 void inetd() {
-    
+
     thread_prop_t thread_prop;  //Server's props
     int bufFull=0;                                  //Amount of buf used
     connection_t connection_prop;                   //Struct to contain properties of the connection
