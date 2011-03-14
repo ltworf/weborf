@@ -45,6 +45,11 @@ The \-u directive will be ignored.
 Daemon \-d mode should not be used.
 
 .TP
+.B \-t, \-\-tar
+If used, instead of sending directory listing when requesting a directory, weborf will send a tar.gz file with the content of that directory.
+It is used mainly to share files and preserving their permissions.
+
+.TP
 .B \-x, \-\-noexec
 When used, weborf will send scripts as if they were normal files instead of executing them and sending their output.
 

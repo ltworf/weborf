@@ -26,6 +26,7 @@
 - Now logs HTTP status code for each request
 - Ships qweborf: QT GUI for simple file sharing
 - Truncates files on PUT
+- Can send directories as tar.gz files
 
 0.12.5
 - Fixes DoS occurring with malformed fields in HTTP request
