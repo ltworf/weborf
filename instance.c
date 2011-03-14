@@ -1209,7 +1209,8 @@ static int tar_send_dir(connection_t* connection_prop) {
     
     send_http_header(200,
                      0,
-                     "Content-Type: application/x-gzip\r\n",
+                     "Content-Type: application/x-gzip\r\n"
+                     "Content-Disposition: attachment; filename=\"directory.tar.gz\"\r\n",
                      true,
                      connection_prop->strfile_stat.st_mtime,
                      connection_prop);
