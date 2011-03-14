@@ -25,6 +25,7 @@
 - Migrated to GNU autotools
 - Now logs HTTP status code for each request
 - Ships qweborf: QT GUI for simple file sharing
+- Truncates files on PUT
 
 0.12.5
 - Fixes DoS occurring with malformed fields in HTTP request

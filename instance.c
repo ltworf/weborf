@@ -39,6 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/un.h>
 #include <errno.h>
 
+
 #include "utils.h"
 #include "myio.h"
 #include "cgi.h"
@@ -388,6 +389,8 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     if (fd<0) {
         return ERR_FILENOTFOUND;
     }
+    
+    ftruncate(fd,content_l);
 
     char* buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
@@ -398,9 +401,9 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
         return ERR_NOMEM;
     }
 
-    int read_,write_;
-    int tot_read=0;
-    int to_read;
+    long long int read_,write_;
+    long long int tot_read=0;
+    long long int to_read;
 
     while ((to_read=(content_l-tot_read)>FILEBUF?FILEBUF:content_l-tot_read)>0) {
         read_=buffer_read(sock,buf,to_read,read_b);
