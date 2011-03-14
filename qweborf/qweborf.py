@@ -39,6 +39,11 @@ class qweborfForm (QtGui.QWidget):
         self.weborf=whelper.weborf_runner(self)
         self.started=False
         
+        if self.weborf.version>= '0.13':
+            self.ui.chkTar.setEnabled(True)
+        else:
+            self.ui.chkTar.setEnabled(False)
+        
         #Listing addresses
         for i in nhelper.getaddrs(self.weborf.ipv6):
             self.ui.cmbAddress.addItem(i,None)
@@ -105,6 +110,8 @@ class qweborfForm (QtGui.QWidget):
             options['write'] = self.ui.chkWrite.isChecked()
         else:
             options['write'] = False
+        
+        options['tar'] = self.ui.chkTar.isChecked()
         
         if self.ui.cmbAddress.currentIndex()==0:
             options['ip']=None
