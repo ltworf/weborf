@@ -50,7 +50,7 @@ syn_queue_t queue;              //Queue for opened sockets
 
 t_thread_info thread_info;
 
-weborf_configuration_t weborf_conf;
+extern weborf_configuration_t weborf_conf;
 
 pthread_attr_t t_attr;          //thread's attributes
 

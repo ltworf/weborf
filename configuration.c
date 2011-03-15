@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "configuration.h"
 #include "types.h"
@@ -31,7 +32,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cachedir.h"
 #include "auth.h"
 
-extern weborf_configuration_t weborf_conf;
+weborf_configuration_t weborf_conf=    {
+    .tar_directory=false,
+    .is_inetd=false,
+    .virtual_host = false,
+    .exec_script = true,
+    .ip = NULL,
+    .port = PORT,
+    .basedir=BASEDIR,
+    .uid = ROOTUID,
+
+#ifdef SEND_MIMETYPES
+    .send_content_type = false,
+#endif
+    };
 
 /**
  * Enables sending mime types in response to GET requests
@@ -145,28 +159,8 @@ static void configuration_set_virtualhost(char *optarg) {
     putenv(virtual);
 }
 
-static void configuration_set_defaults() {
-    weborf_conf.tar_directory=false;
-    weborf_conf.is_inetd=false;
-    weborf_conf.virtual_host = false;
-    weborf_conf.exec_script = true;
-    weborf_conf.ip = NULL;
-    weborf_conf.port = PORT;
-    weborf_conf.basedir=BASEDIR;
-    weborf_conf.uid = ROOTUID;
-
-#ifdef SEND_MIMETYPES
-    weborf_conf.send_content_type = false;
-#endif
-
-
-};
-
-
-}
 
 void configuration_load(int argc, char *argv[]) {
-    configuration_set_defaults();
     configuration_set_default_CGI();
     configuration_set_default_index();
 
