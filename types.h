@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef SEND_MIMETYPES
 #include <magic.h>
 #else
-typedef int magic_t;
+typedef void* magic_t;
 #endif
 
 typedef struct {
