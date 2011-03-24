@@ -63,7 +63,7 @@ class weborf_runner():
             self.logclass.logger(out,self.logclass.DBG_NOTICE)
             self.version=out.split(' ')[1]
         else:
-            self.logclass.logger('Unable to find weborf</font>',self.logclass.DBG_ERROR)
+            self.logclass.logger('Unable to find weborf',self.logclass.DBG_ERROR)
             return False
             
         #Determining if has ipv6 support

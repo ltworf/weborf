@@ -22,9 +22,6 @@ from ctypes import *
 from socket import AF_INET, AF_INET6, AF_PACKET, inet_ntop
 from sys import platform
  
-#
-#http://dionaea.carnivore.it/#support
- 
 def getifaddrs():
     # getifaddr structs
     class ifa_ifu_u(Union):
