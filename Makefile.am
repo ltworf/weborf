@@ -45,7 +45,8 @@ EXTRA_DIST = \
     qweborf/qweborf.py \
     qweborf/qweborf \
     qweborf/qweborf.1 \
-    qweborf/qweborf.desktop
+    qweborf/qweborf.desktop \
+    qweborf.setup.py
  
 dist-hook:
 	rm -rf `find $(distdir)/ -name .svn`

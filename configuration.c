@@ -45,7 +45,7 @@ weborf_configuration_t weborf_conf=    {
 #ifdef SEND_MIMETYPES
     .send_content_type = false,
 #endif
-    };
+};
 
 /**
  * Enables sending mime types in response to GET requests

@@ -31,8 +31,8 @@ Description: init script for weborf
 
 Package: qweborf
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, weborf (>=0.12), python-qt4
+Depends: ${misc:Depends}, ${python:Depends}, weborf (>=0.12), python-qt4 (>=4.7.3)
 Description: Shares files using the HTTP protocol
- Qweborf provides an easy to use interface to share local files using the HTTP
- protocol.
+ Qweborf provides an easy to use graphical interface to share local files using
+ the HTTP protocol.
  It can enable writing on the server, webdav and authentication.

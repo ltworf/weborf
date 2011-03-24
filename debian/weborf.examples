@@ -1,2 +1,4 @@
 examples/auth.py
 examples/weborf_auth.c
+examples/xinetd.conf
+examples/weborf_auth_dav.c
