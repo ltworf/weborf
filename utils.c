@@ -200,7 +200,7 @@ void help() {
            "  -m, --mime    sends content type header to clients\n"
            "  -p, --port    followed by port number to listen\n"
            "  -T  --inetd   must be specified when using weborf with inetd or xinetd\n"
-           "  -t  --tar     will send the directories as .tar.gz files"
+           "  -t  --tar     will send the directories as .tar.gz files\n"
            "  -u,           followed by a valid uid\n"
            "                If started by root weborf will use this user to read files and execute scripts\n"
            "  -V, --virtual list of virtualhosts in the form host=basedir, comma-separated\n"
