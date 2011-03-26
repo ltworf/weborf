@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>532</width>
-    <height>552</height>
+    <height>536</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -80,58 +80,84 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
-        <widget class="QGroupBox" name="groupBox_2">
-         <property name="title">
-          <string>Connection</string>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <property name="topMargin">
+          <number>0</number>
          </property>
-         <layout class="QFormLayout" name="formLayout_3">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string>Port</string>
-            </property>
-            <property name="buddy">
-             <cstring>spinPort</cstring>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="QSpinBox" name="spinPort">
-            <property name="toolTip">
-             <string>Select the port. It must be free and not blocked by a firewall.</string>
-            </property>
-            <property name="maximum">
-             <number>65536</number>
-            </property>
-            <property name="value">
-             <number>8080</number>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string>Address</string>
-            </property>
-            <property name="buddy">
-             <cstring>cmbAddress</cstring>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QComboBox" name="cmbAddress">
-            <property name="toolTip">
-             <string>Select the IP address to bind. Leave the default value if you don't know what this means.</string>
-            </property>
-            <item>
-             <property name="text">
-              <string>Bind to all</string>
-             </property>
+         <item>
+          <widget class="QGroupBox" name="groupBox_2">
+           <property name="title">
+            <string>Connection</string>
+           </property>
+           <layout class="QFormLayout" name="formLayout_3">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>Port</string>
+              </property>
+              <property name="buddy">
+               <cstring>spinPort</cstring>
+              </property>
+             </widget>
             </item>
-           </widget>
-          </item>
-         </layout>
-        </widget>
+            <item row="0" column="1">
+             <widget class="QSpinBox" name="spinPort">
+              <property name="toolTip">
+               <string>Select the port. It must be free and not blocked by a firewall.</string>
+              </property>
+              <property name="maximum">
+               <number>65536</number>
+              </property>
+              <property name="value">
+               <number>8080</number>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_6">
+              <property name="text">
+               <string>Address</string>
+              </property>
+              <property name="buddy">
+               <cstring>cmbAddress</cstring>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QComboBox" name="cmbAddress">
+              <property name="toolTip">
+               <string>Select the IP address to bind. Leave the default value if you don't know what this means.</string>
+              </property>
+              <item>
+               <property name="text">
+                <string>Bind to all</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_3">
+           <property name="title">
+            <string>Other</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_8">
+            <item>
+             <widget class="QCheckBox" name="chkTar">
+              <property name="toolTip">
+               <string extracomment="If checked, weborf will handle directories sending their content as a .tar.gz file instead of generating a list of the files contained in them"/>
+              </property>
+              <property name="text">
+               <string>Send directories as tar.gz</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox">
@@ -361,15 +387,23 @@
  </widget>
  <tabstops>
   <tabstop>txtPath</tabstop>
+  <tabstop>cmdClearPath</tabstop>
   <tabstop>cmdOpen</tabstop>
+  <tabstop>spinPort</tabstop>
+  <tabstop>cmbAddress</tabstop>
+  <tabstop>chkTar</tabstop>
+  <tabstop>chkDav</tabstop>
+  <tabstop>chkWrite</tabstop>
   <tabstop>chkEnableAuth</tabstop>
   <tabstop>txtUsername</tabstop>
   <tabstop>txtPassword</tabstop>
-  <tabstop>spinPort</tabstop>
-  <tabstop>cmbAddress</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>cmdClearLog</tabstop>
+  <tabstop>cmdAbout</tabstop>
   <tabstop>cmdStart</tabstop>
   <tabstop>cmdStop</tabstop>
   <tabstop>cmdClose</tabstop>
+  <tabstop>txtLog</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -380,8 +414,8 @@
    <slot>stop_sharing()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>375</x>
-     <y>498</y>
+     <x>526</x>
+     <y>495</y>
     </hint>
     <hint type="destinationlabel">
      <x>457</x>
@@ -396,8 +430,8 @@
    <slot>start_sharing()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>120</x>
-     <y>499</y>
+     <x>125</x>
+     <y>495</y>
     </hint>
     <hint type="destinationlabel">
      <x>122</x>
@@ -428,8 +462,8 @@
    <slot>terminate()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>509</x>
-     <y>528</y>
+     <x>513</x>
+     <y>525</y>
     </hint>
     <hint type="destinationlabel">
      <x>528</x>
@@ -492,28 +526,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>178</x>
-     <y>160</y>
+     <x>238</x>
+     <y>181</y>
     </hint>
     <hint type="destinationlabel">
      <x>152</x>
      <y>193</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>chkEnableAuth</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>txtUsername</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>139</x>
-     <y>214</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>128</x>
-     <y>239</y>
     </hint>
    </hints>
   </connection>
@@ -530,6 +548,22 @@
     <hint type="destinationlabel">
      <x>196</x>
      <y>276</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkEnableAuth</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>txtUsername</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>139</x>
+     <y>214</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>128</x>
+     <y>239</y>
     </hint>
    </hints>
   </connection>

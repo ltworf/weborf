@@ -2,7 +2,7 @@
 # Weborf
 # Copyright (C) 2010  Salvo "LtWorf" Tomaselli
 # 
-# Relational is free software: you can redistribute it and/or modify
+# Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
@@ -38,6 +38,7 @@ class weborf_runner():
         self.password=None
         self.ipv6=True
         self._running=False
+        self.version=None
         
         self.weborf=self._test_weborf()
         
@@ -60,8 +61,9 @@ class weborf_runner():
         
         if ret==0:
             self.logclass.logger(out,self.logclass.DBG_NOTICE)
+            self.version=out.split(' ')[1]
         else:
-            self.logclass.logger('Unable to find weborf</font>',self.logclass.DBG_ERROR)
+            self.logclass.logger('Unable to find weborf',self.logclass.DBG_ERROR)
             return False
             
         #Determining if has ipv6 support
@@ -173,14 +175,15 @@ class weborf_runner():
     def __start_weborf(self,options,auth_socket):
         '''Starts a weborf in a subprocess'''
         
-        cmdline=["weborf", "-p",str(options['port']),"-b",options['path'],"-x","-I","....","-a",auth_socket]
+        cmdline=["weborf", "-p",str(options['port']),"-b",str(options['path']),"-x","-I","....","-a",auth_socket]
+        
+        if options['tar']:
+            cmdline.append('--tar')
         
         if options['ip']!=None:
             cmdline.append('-i')
             cmdline.append(options['ip'])
-            self.logclass.logger("weborf -p %d -b %s -x -I .... -a %s -i %s" % (options['port'],options['path'],auth_socket,options['ip']))
-        else:
-            self.logclass.logger("weborf -p %d -b %s -x -I .... -a %s" % (options['port'],options['path'],auth_socket))
+        self.logclass.logger(' '.join(cmdline))
         
         self.child = subprocess.Popen(
                 cmdline

@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include "configuration.h"
 #include "types.h"
@@ -31,7 +32,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cachedir.h"
 #include "auth.h"
 
-extern weborf_configuration_t weborf_conf;
+weborf_configuration_t weborf_conf=    {
+    .tar_directory=false,
+    .is_inetd=false,
+    .virtual_host = false,
+    .exec_script = true,
+    .ip = NULL,
+    .port = PORT,
+    .basedir=BASEDIR,
+    .uid = ROOTUID,
+
+#ifdef SEND_MIMETYPES
+    .send_content_type = false,
+#endif
+};
 
 /**
  * Enables sending mime types in response to GET requests
@@ -145,9 +159,11 @@ static void configuration_set_virtualhost(char *optarg) {
     putenv(virtual);
 }
 
+
 void configuration_load(int argc, char *argv[]) {
     configuration_set_default_CGI();
     configuration_set_default_index();
+
 
     int c; //Identify the readed option
     int option_index = 0;
@@ -170,6 +186,7 @@ void configuration_load(int argc, char *argv[]) {
         {"cache", required_argument, 0, 'C'},
         {"mime", no_argument,0,'m'},
         {"inetd", no_argument,0,'T'},
+        {"tar", no_argument,0,'t'},
         {0, 0, 0, 0}
     };
 
@@ -179,7 +196,7 @@ void configuration_load(int argc, char *argv[]) {
         option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long(argc, argv, "TMmvhp:i:I:u:dxb:a:V:c:C:", long_options,
+        c = getopt_long(argc, argv, "tTMmvhp:i:I:u:dxb:a:V:c:C:", long_options,
                         &option_index);
 
         //If there are no options it continues
@@ -187,6 +204,9 @@ void configuration_load(int argc, char *argv[]) {
             break;
 
         switch (c) {
+        case 't':
+            weborf_conf.tar_directory=true;
+            break;
         case 'T':
             weborf_conf.is_inetd=true;
             break;

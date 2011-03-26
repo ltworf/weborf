@@ -303,7 +303,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     }
 
     int sock=connection_prop->sock;
-    u_dav_details props={0};
+    u_dav_details props= {0};
     props.dav_details.type=1; //I need to avoid the struct to be fully 0 in each case
     int swap_fd; //swap file descriptor
 

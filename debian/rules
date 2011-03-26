@@ -19,7 +19,7 @@ override_dh_installinit:
 
 override_dh_auto_install:
 	pyuic4 qweborf/main.ui > qweborf/main.py
-	python debian/qweborf.setup.py install --root=$(CURDIR)/debian/qweborf
+	python qweborf.setup.py install --root=$(CURDIR)/debian/qweborf
 	dh_auto_install
 
 override_dh_install:

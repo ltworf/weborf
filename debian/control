@@ -20,7 +20,7 @@ Description: Fast and small webserver meant to be run without root privileges
 
 Package: weborf-daemon
 Architecture: all
-Depends: ${misc:Depends}, weborf (>=0.12)
+Depends: ${misc:Depends}, weborf (>=0.13)
 Description: init script for weborf
  Weborf is a configurationless webeserver mainly meant to allow users to
  easily share their directories over the web.
@@ -31,8 +31,9 @@ Description: init script for weborf
 
 Package: qweborf
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, weborf (>=0.12), python-qt4
+Depends: ${misc:Depends}, ${python:Depends}, weborf (>=0.12), python-qt4 (>=4.7.3)
 Description: Shares files using the HTTP protocol
- Qweborf provides an easy to use interface to share local files using the HTTP
- protocol.
- It can enable writing on the server, webdav and authentication.
+ Qweborf provides an easy to use graphical interface to share local files using
+ the HTTP protocol.
+ It can enable writing on the server, webdav, authentication and sending
+ directories as tar.gz.

@@ -3,7 +3,7 @@
 # Weborf
 # Copyright (C) 2010  Salvo "LtWorf" Tomaselli
 # 
-# Relational is free software: you can redistribute it and/or modify
+# Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
@@ -39,6 +39,11 @@ class qweborfForm (QtGui.QWidget):
         self.weborf=whelper.weborf_runner(self)
         self.started=False
         
+        if self.weborf.version>= '0.13':
+            self.ui.chkTar.setEnabled(True)
+        else:
+            self.ui.chkTar.setEnabled(False)
+        
         #Listing addresses
         for i in nhelper.getaddrs(self.weborf.ipv6):
             self.ui.cmbAddress.addItem(i,None)
@@ -47,6 +52,7 @@ class qweborfForm (QtGui.QWidget):
         self.ui.txtPath.setText(self.defaultdir)
             
     def logger(self,data,level=DBG_DEFAULT):
+        '''logs an entry, showing it in the GUI'''
         if level==self.DBG_WARNING:
             data='<font color="orange"><strong>WARNING</strong></font>: %s' % data
         elif level==self.DBG_ERROR:
@@ -70,15 +76,12 @@ class qweborfForm (QtGui.QWidget):
             self.started=False
     def about(self):
         
-        self.logger('<hr>Qweborf 1.0')
-        self.logger('This program comes with ABSOLUTELY NO WARRANTY.')
-        self.logger('This is free software, and you are welcome to redistribute it')
-        self.logger('under certain conditions.')
-        self.logger('For details see the GPLv3 Licese.')
-        self.logger('<a href="http://galileo.dmi.unict.it/wiki/weborf">http://galileo.dmi.unict.it/wiki/weborf</a>')
+        self.logger('<hr><strong>Qweborf 0.13</strong>')
+        self.logger('This program comes with ABSOLUTELY NO WARRANTY.'
+                    ' This is free software, and you are welcome to redistribute it under certain conditions.'
+                    ' For details see the <a href="http://www.gnu.org/licenses/gpl.html">GPLv3 Licese</a>.')
+        self.logger('<a href="http://galileo.dmi.unict.it/wiki/weborf">Homepage</a>')
         self.logger('Salvo \'LtWorf\' Tomaselli <a href="mailto:tiposchi@tiscali.it">&lt;tiposchi@tiscali.it&gt;</a>')
-        self.logger('<hr>')
-
         
     def terminate(self):
         if self.started:
@@ -105,6 +108,8 @@ class qweborfForm (QtGui.QWidget):
             options['write'] = self.ui.chkWrite.isChecked()
         else:
             options['write'] = False
+        
+        options['tar'] = self.ui.chkTar.isChecked()
         
         if self.ui.cmbAddress.currentIndex()==0:
             options['ip']=None

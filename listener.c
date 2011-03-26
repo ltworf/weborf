@@ -50,21 +50,7 @@ syn_queue_t queue;              //Queue for opened sockets
 
 t_thread_info thread_info;
 
-weborf_configuration_t weborf_conf = {
-    .basedir=BASEDIR,
-    .uid = ROOTUID,
-
-#ifdef SEND_MIMETYPES
-    .send_content_type = false,
-#endif
-
-    .is_inetd=false,
-    .virtual_host = false,
-    .exec_script = true,
-    .ip = NULL,
-    .port = PORT,
-};
-
+extern weborf_configuration_t weborf_conf;
 
 pthread_attr_t t_attr;          //thread's attributes
 

@@ -2,7 +2,7 @@
 # Weborf
 # Copyright (C) 2011  Salvo "LtWorf" Tomaselli
 # 
-# Relational is free software: you can redistribute it and/or modify
+# Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
@@ -21,9 +21,6 @@
 from ctypes import *
 from socket import AF_INET, AF_INET6, AF_PACKET, inet_ntop
 from sys import platform
- 
-#
-#http://dionaea.carnivore.it/#support
  
 def getifaddrs():
     # getifaddr structs

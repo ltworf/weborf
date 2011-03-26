@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef SEND_MIMETYPES
 #include <magic.h>
 #else
-typedef int magic_t;
+typedef void* magic_t;
 #endif
 
 typedef struct {
@@ -110,6 +110,7 @@ typedef struct {
     array_ll cgi_paths;         //Paths to cgi binaries
     bool virtual_host;          //True if must check for virtual hosts
     bool exec_script;           //Enable CGI if false
+    bool tar_directory;         //Sends directories compressed into tar-files
     char *ip;                   //IP addr with default value
     char *port;                 //port with default value
 

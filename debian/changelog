@@ -3,8 +3,10 @@ weborf (0.13-1) unstable; urgency=low
   * New upstream release
   * Adds qweborf package, GUI for sharing files with HTTP
   * Uses GNU autotools (Closes: #611528)
+  * Adds libmagic-dev in build-deps
+  * Added more examples
 
- -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sat, 12 Mar 2011 12:46:43 +0100
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sat, 26 Mar 2011 14:44:31 +0100
 
 weborf (0.12.5-1) unstable; urgency=high
 

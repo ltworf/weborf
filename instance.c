@@ -66,6 +66,7 @@ extern pthread_key_t thread_key;            //key for pthread_setspecific
 int request_auth(connection_t *connection_prop);
 void piperr();
 int write_dir(char *real_basedir, connection_t * connection_prop);
+static int tar_send_dir(connection_t* connection_prop);
 static int send_page(buffered_read_t* read_b, connection_t* connection_prop);
 static int send_error_header(int retval, connection_t *connection_prop);
 static int get_or_post(connection_t *connection_prop, string_t post_param);
@@ -389,7 +390,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     if (fd<0) {
         return ERR_FILENOTFOUND;
     }
-    
+
     ftruncate(fd,content_l);
 
     char* buf=malloc(FILEBUF);//Buffer to read from file
@@ -560,6 +561,10 @@ escape:
 static int get_or_post(connection_t *connection_prop, string_t post_param) {
 
     if (S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Requested a directory
+
+        if (weborf_conf.tar_directory) {
+            return tar_send_dir(connection_prop);
+        }
 
         //Requested a directory without ending /
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
@@ -1182,11 +1187,61 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
 }
 
 /**
+This function writes on the specified socket a tar.gz file containing the required
+directory.
+No caching at all is used or is allowed to the clients
+*/
+static int tar_send_dir(connection_t* connection_prop) {
+
+    connection_prop->keep_alive=false;
+
+    char* headers=malloc(HEADBUF);
+
+    if (headers==NULL) return ERR_NOMEM;
+
+
+    //Last char is always '/', i null it so i can use default name
+    connection_prop->strfile[--connection_prop->strfile_len]=0;
+
+    snprintf(headers,HEADBUF ,
+             "Content-Type: application/x-gzip\r\n"
+             "Content-Disposition: attachment; filename=\"%s.tar.gz\"\r\n",
+             strrchr(connection_prop->strfile,'/')+1
+            );
+
+    send_http_header(200,
+                     0,
+                     headers,
+                     true,
+                     -1,
+                     connection_prop);
+
+    free(headers);
+
+    int pid=fork();
+
+    if (pid==0) { //child, executing tar
+        fclose (stdout); //Closing the stdout
+        dup(connection_prop->sock); //Redirects the stdout
+        nice(1); //Reducing priority
+        execlp("tar","tar","-cz",connection_prop->strfile,(char *)0);
+    } else if (pid>0) { //Father, does nothing
+        int status;
+        waitpid(pid,&status,0);
+    } else { //Error
+        return ERR_NOMEM; //Well not enough memory in process table...
+    }
+    return 0;
+}
+
+
+/**
 Function executed when weborf is called from inetd
 will use 0 as socket and exit after.
 It is almost a copy of instance()
 */
 void inetd() {
+
     thread_prop_t thread_prop;  //Server's props
     int bufFull=0;                                  //Amount of buf used
     connection_t connection_prop;                   //Struct to contain properties of the connection
