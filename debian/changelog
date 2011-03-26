@@ -6,7 +6,7 @@ weborf (0.13-1) unstable; urgency=low
   * Adds libmagic-dev in build-deps
   * Added more examples
 
- -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Tue, 15 Mar 2011 15:51:13 +0100
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sat, 26 Mar 2011 14:44:31 +0100
 
 weborf (0.12.5-1) unstable; urgency=high
 
