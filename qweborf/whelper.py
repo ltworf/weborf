@@ -37,6 +37,8 @@ class weborf_runner():
         self.username=None
         self.password=None
         self.ipv6=True
+        self.mime=False
+        self.webdav=True
         self._running=False
         self.version=None
         
@@ -76,15 +78,29 @@ class weborf_runner():
             out=''
             pass
             
-        
-        if 'Compiled for IPv6' in out:
-            self.ipv6=True
+        self._check_capabilities(out)
+        return True
+    def _check_capabilities(self,out):
+        self.ipv6='Compiled for IPv6' in out
+        if self.ipv6:
             self.logclass.logger('Server has IPv6 support',self.logclass.DBG_NOTICE)
         else:
-            self.ipv6=False
             self.logclass.logger('Server lacks IPv6 support',self.logclass.DBG_WARNING)
         
-        return True
+         
+        self.webdav='Has webdav support' in out
+        if self.webdav:
+            self.logclass.logger('Server has webdav support',self.logclass.DBG_NOTICE)
+        else:
+            self.logclass.logger('Server lacks webdav support',self.logclass.DBG_WARNING)
+        
+        self.mime='Has MIME support' in out
+        if self.mime:
+            self.logclass.logger('Server has MIME support',self.logclass.DBG_NOTICE)
+        else:
+            self.logclass.logger('Server lacks MIME support',self.logclass.DBG_WARNING)
+        
+        
     def start(self,options):
         '''Starts weborf,
         returns True if it is correctly started'''
@@ -179,6 +195,9 @@ class weborf_runner():
         
         if options['tar']:
             cmdline.append('--tar')
+        
+        if self.mime:
+            cmdline.append('--mime')
         
         if options['ip']!=None:
             cmdline.append('-i')

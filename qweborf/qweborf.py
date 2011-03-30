@@ -44,6 +44,9 @@ class qweborfForm (QtGui.QWidget):
         else:
             self.ui.chkTar.setEnabled(False)
         
+        self.ui.chkDav.setEnabled(self.weborf.webdav)
+        self.ui.chkWrite.setEnabled(self.weborf.webdav)
+        
         #Listing addresses
         for i in nhelper.getaddrs(self.weborf.ipv6):
             self.ui.cmbAddress.addItem(i,None)
@@ -76,7 +79,7 @@ class qweborfForm (QtGui.QWidget):
             self.started=False
     def about(self):
         
-        self.logger('<hr><strong>Qweborf 0.13</strong>')
+        self.logger('<hr><strong>Qweborf 0.14</strong>')
         self.logger('This program comes with ABSOLUTELY NO WARRANTY.'
                     ' This is free software, and you are welcome to redistribute it under certain conditions.'
                     ' For details see the <a href="http://www.gnu.org/licenses/gpl.html">GPLv3 Licese</a>.')
