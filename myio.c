@@ -39,10 +39,16 @@ file descriptor "to".
 It is possible to use lseek on the descriptors before calling
 this function.
 Will not close any descriptor
+
+Returns
+0 in case of success
+ERR_NOMEM in case it is impossible to allocate the buffers
+ERR_BRKPIPE in case of read/write failure
 */
 int fd_copy(int from, int to, off_t count) {
     char *buf=malloc(FILEBUF);//Buffer to read from file
     int reads,wrote;
+    int retval=0;
 
     if (buf==NULL) {
 #ifdef SERVERDBG
@@ -59,12 +65,13 @@ int fd_copy(int from, int to, off_t count) {
 #ifdef SOCKETDBG
             syslog(LOG_ERR,"Unable to send %s: error writing to the file descriptor",connection_prop->strfile);
 #endif
+            retval=ERR_BRKPIPE;
             break;
         }
     }
 
     free(buf);
-    return 0;
+    return retval;
 }
 
 

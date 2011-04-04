@@ -367,7 +367,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
 
     char a[NBUFFER]; //Buffer for field's value
     int retval;
-    long long int content_l;  //Length of the put data
+    off_t content_l;  //Length of the put data
 
     //Gets the value of content-length header
     bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,strlen("Content-Length"));//14 is content-lenght's len
@@ -393,32 +393,11 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
 
     ftruncate(fd,content_l);
 
-    char* buf=malloc(FILEBUF);//Buffer to read from file
-    if (buf==NULL) {
-#ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
-#endif
-        close(fd);
-        return ERR_NOMEM;
+    int copy_r=fd_copy(sock,fd, content_l);
+    if (copy_r!=0) {
+        retval=copy_r;
     }
 
-    long long int read_,write_;
-    long long int tot_read=0;
-    long long int to_read;
-
-    while ((to_read=(content_l-tot_read)>FILEBUF?FILEBUF:content_l-tot_read)>0) {
-        read_=buffer_read(sock,buf,to_read,read_b);
-        write_=write(fd,buf,read_);
-
-        if (write_!=read_) {
-            retval= ERR_BRKPIPE;
-            break;
-        }
-
-        tot_read+=read_;
-    }
-
-    free(buf);
     close(fd);
 
     return retval;
