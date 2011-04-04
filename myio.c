@@ -165,9 +165,7 @@ Returns 0 on success
 int file_copy(char* source, char* dest) {
     int fd_from=-1;
     int fd_to=-1;
-    ssize_t read_,write_;
     int retval=0;
-    char *buf=NULL;
 
     //Open destination file
     if ((fd_to=open(dest,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR))<0) {
@@ -175,28 +173,22 @@ int file_copy(char* source, char* dest) {
         goto escape;
     }
 
+    //open source file
     if ((fd_from=open(source,O_RDONLY | O_LARGEFILE))<0) {
         retval = ERR_FILENOTFOUND;
         goto escape;
     }
-
-    buf=malloc(FILEBUF);//Buffer to read from file
-    if (buf==NULL) {
-        retval= ERR_NOMEM;
+    
+    //Find size of the source file
+    struct stat stbuf;
+    if (fstat(fd_from,&stbuf)!=0) {
+        retval= ERR_FORBIDDEN;
         goto escape;
     }
-
-    while ((read_=read(fd_from,buf,FILEBUF))>0) {
-        write_=write(fd_to,buf,read_);
-
-        if (write_!=read_) {
-            retval= ERR_BRKPIPE;
-            break;
-        }
-    }
+    
+    retval=fd_copy(fd_from,fd_to,stbuf.st_size);
 
 escape:
-    free(buf);
     if (fd_from>=0) close(fd_from);
     if (fd_to>=0) close(fd_to);
     return retval;
