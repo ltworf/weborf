@@ -152,7 +152,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
 Prints version information
 */
 void version() {
-    printf("Weborf %s\n"
+    printf(NAME " " VERSION "\n"
            "Copyright (C) 2007 Salvo 'LtWorf' Tomaselli.\n"
            "This is free software.  You may redistribute copies of it under the terms of\n"
            "the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n"
@@ -160,7 +160,7 @@ void version() {
 
            "Written by Salvo 'LtWorf' Tomaselli and Salvo Rinaldi.\n"
            "Synchronized queue by Prof. Giuseppe Pappalardo.\n\n"
-           "https://galileo.dmi.unict.it/wiki/weborf/\n", VERSION);
+           "https://galileo.dmi.unict.it/wiki/weborf/\n");
     exit(0);
 }
 
@@ -233,7 +233,7 @@ void moo() {
  * It wants the command line parameters
  * */
 void print_start_disclaimer(int argc, char *argv[]) {
-    printf("Weborf\n"
+    printf(NAME "\n"
            "This program comes with ABSOLUTELY NO WARRANTY.\n"
            "This is free software, and you are welcome to redistribute it\n"
            "under certain conditions.\nFor details see the GPLv3 Licese.\n"

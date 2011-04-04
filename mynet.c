@@ -80,6 +80,11 @@ int net_create_server_socket() {
     return s;
 }
 
+/**
+Binds the socket s and listens to it
+The port and address used are taken from
+weborf_conf
+*/
 void net_bind_and_listen(int s) {
 
 #ifdef IPV6

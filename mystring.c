@@ -49,6 +49,7 @@ void split_get_params(connection_t* connection_prop) {
     }
     connection_prop->page_len=i;
 }
+
 /*void split_get_params(connection_t* connection_prop) {
     char *separator=strstr(connection_prop->page,"?");
 

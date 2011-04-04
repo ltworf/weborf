@@ -31,5 +31,5 @@ s.listen(1)
 while 1:
     conn, addr = s.accept()
     data = conn.recv(4096).split('\r\n')
-    #print data
+    print data
     conn.close()
