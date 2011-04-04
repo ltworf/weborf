@@ -1,3 +1,6 @@
+0.14
+- Simplified code for authentication and removed one memory allocation
+
 0.13
 - Shows last modified column in directory listing (Rev 419)
 - Webdav module can send mimetype
