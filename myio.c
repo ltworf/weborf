@@ -178,14 +178,14 @@ int file_copy(char* source, char* dest) {
         retval = ERR_FILENOTFOUND;
         goto escape;
     }
-    
+
     //Find size of the source file
     struct stat stbuf;
     if (fstat(fd_from,&stbuf)!=0) {
         retval= ERR_FORBIDDEN;
         goto escape;
     }
-    
+
     retval=fd_copy(fd_from,fd_to,stbuf.st_size);
 
 escape:

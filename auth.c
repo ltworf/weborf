@@ -94,7 +94,7 @@ int auth_check_request(connection_t *connection_prop) {
 #else
     int s,len;
     FILE *f;
-    
+
     struct sockaddr_un remote;
     s=socket(AF_UNIX,SOCK_STREAM,0);
 
