@@ -20,6 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "options.h"
 
+
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <ctype.h>
+
+#include "instance.h"
 #include "mystring.h"
 
 /**
