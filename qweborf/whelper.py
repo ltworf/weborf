@@ -206,7 +206,6 @@ class weborf_runner():
         
         self.child = subprocess.Popen(
                 cmdline
-                
                 , bufsize=1024, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         
         self.loglinks(options)
