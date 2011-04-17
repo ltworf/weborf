@@ -62,9 +62,6 @@ int fd_copy(int from, int to, off_t count) {
         count-=reads;
         wrote=write(to,buf,reads);
         if (wrote!=reads) { //Error writing to the descriptor
-#ifdef SOCKETDBG
-            syslog(LOG_ERR,"Unable to send %s: error writing to the file descriptor",connection_prop->strfile);
-#endif
             retval=ERR_BRKPIPE;
             break;
         }
