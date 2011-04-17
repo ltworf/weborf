@@ -25,7 +25,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <signal.h>
 #include <syslog.h>
 #include <string.h>
 #include <strings.h>
@@ -267,8 +266,6 @@ void * instance(void * nulla) {
     int sock=0;                                     //Socket with the client
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
     connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
-
-    signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
 
 #ifdef IPV6
     struct sockaddr_in6 addr;//Local and remote address
@@ -1230,7 +1227,6 @@ void inetd() {
     connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
 
     thread_prop.id=0;
-    signal(SIGPIPE, SIG_IGN);//Ignores SIGPIPE
 
     pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
 

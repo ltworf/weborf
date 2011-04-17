@@ -134,6 +134,7 @@ static void init_signals() {
     //Handle SIGINT and SIGTERM
     signal(SIGINT, quit);
     signal(SIGTERM, quit);
+    signal(SIGPIPE, SIG_IGN);
 
     //Prints queue status with this signal
     signal(SIGUSR1, print_queue_status);
@@ -142,6 +143,7 @@ static void init_signals() {
 int main(int argc, char *argv[]) {
     int s, s1;          //Socket descriptors
 
+    init_signals();
     init_logger();
     init_thread_info();
 
@@ -164,7 +166,7 @@ int main(int argc, char *argv[]) {
     init_thread_attr();
     init_threads(INITIALTHREAD);
     init_thread_shaping();
-    init_signals();
+    
 
     //Infinite cycle, accept connections
     while (1) {
