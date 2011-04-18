@@ -468,7 +468,11 @@ static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
         goto escape;
     }
 
-    connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",connection_prop->basedir,connection_prop->page);//Prepares the string
+    connection_prop->strfile_len = snprintf(connection_prop->strfile,
+                                            URI_LEN,
+                                            "%s%s",
+                                            connection_prop->basedir,
+                                            connection_prop->page);//Prepares the string
 
     if (connection_prop->method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
         post_param.data=NULL;
@@ -508,7 +512,7 @@ static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
     else
         post_param.data=NULL;
 
-    if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY | O_LARGEFILE))<0) {
+    if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY))<0) {
         //File doesn't exist. Must return errorcode
         retval=ERR_FILENOTFOUND;
         goto escape;

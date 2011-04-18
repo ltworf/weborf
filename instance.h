@@ -22,10 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_INSTANCE_H
 #define WEBORF_INSTANCE_H
 
-#ifndef O_LARGEFILE //Needed to compile on Mac, where this doesn't exist
-#define O_LARGEFILE 0
-#endif
-
 #include "types.h"
 #include "buffered_reader.h"
 

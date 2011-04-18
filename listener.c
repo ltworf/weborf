@@ -106,7 +106,7 @@ This function inits the logger.
 Will use syslogd
 */
 static void init_logger() {
-    openlog("weborf", LOG_ODELAY, LOG_DAEMON);
+    openlog(NAME, LOG_ODELAY, LOG_DAEMON);
 #ifdef SERVERDBG
     syslog(LOG_INFO, "Starting server...");
 #endif
@@ -122,7 +122,7 @@ static void init_thread_info() {
 
 static void init_thread_shaping() {
     //Starts the monitoring thread, to close unused threads
-    pthread_t t_id; //Unused var
+    pthread_t t_id;
     pthread_create(&t_id, NULL, t_shape, (void *) NULL);
 }
 
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     init_thread_attr();
     init_threads(INITIALTHREAD);
     init_thread_shaping();
-    
+
 
     //Infinite cycle, accept connections
     while (1) {

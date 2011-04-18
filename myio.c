@@ -171,7 +171,7 @@ int file_copy(char* source, char* dest) {
     }
 
     //open source file
-    if ((fd_from=open(source,O_RDONLY | O_LARGEFILE))<0) {
+    if ((fd_from=open(source,O_RDONLY))<0) {
         retval = ERR_FILENOTFOUND;
         goto escape;
     }
