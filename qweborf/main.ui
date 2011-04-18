@@ -478,7 +478,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>526</x>
-     <y>458</y>
+     <y>495</y>
     </hint>
     <hint type="destinationlabel">
      <x>457</x>
@@ -493,8 +493,8 @@
    <slot>start_sharing()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>130</x>
-     <y>458</y>
+     <x>135</x>
+     <y>495</y>
     </hint>
     <hint type="destinationlabel">
      <x>122</x>
@@ -525,8 +525,8 @@
    <slot>terminate()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>517</x>
-     <y>488</y>
+     <x>521</x>
+     <y>525</y>
     </hint>
     <hint type="destinationlabel">
      <x>528</x>
@@ -593,8 +593,8 @@
      <y>181</y>
     </hint>
     <hint type="destinationlabel">
-     <x>266</x>
-     <y>217</y>
+     <x>378</x>
+     <y>206</y>
     </hint>
    </hints>
   </connection>
@@ -605,12 +605,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>187</x>
-     <y>248</y>
+     <x>183</x>
+     <y>231</y>
     </hint>
     <hint type="destinationlabel">
-     <x>311</x>
-     <y>313</y>
+     <x>424</x>
+     <y>289</y>
     </hint>
    </hints>
   </connection>
@@ -621,12 +621,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>187</x>
-     <y>248</y>
+     <x>183</x>
+     <y>231</y>
     </hint>
     <hint type="destinationlabel">
-     <x>243</x>
-     <y>278</y>
+     <x>356</x>
+     <y>259</y>
     </hint>
    </hints>
   </connection>
@@ -637,12 +637,12 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>486</x>
-     <y>263</y>
+     <x>510</x>
+     <y>260</y>
     </hint>
     <hint type="destinationlabel">
-     <x>411</x>
-     <y>268</y>
+     <x>462</x>
+     <y>259</y>
     </hint>
    </hints>
   </connection>
@@ -653,12 +653,12 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>477</x>
-     <y>300</y>
+     <x>510</x>
+     <y>290</y>
     </hint>
     <hint type="destinationlabel">
-     <x>436</x>
-     <y>300</y>
+     <x>462</x>
+     <y>289</y>
     </hint>
    </hints>
   </connection>

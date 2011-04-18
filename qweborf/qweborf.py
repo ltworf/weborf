@@ -44,8 +44,9 @@ class qweborfForm (QtGui.QWidget):
         else:
             self.ui.chkTar.setEnabled(False)
         
+        '''chkWrite.enabled depends on the status of chkDav. Disabling this
+        it will never become enabled either'''
         self.ui.chkDav.setEnabled(self.weborf.webdav)
-        self.ui.chkWrite.setEnabled(self.weborf.webdav)
         
         #Listing addresses
         for i in nhelper.getaddrs(self.weborf.ipv6):
