@@ -40,6 +40,7 @@ class weborf_runner():
         self.mime=False
         self.webdav=True
         self._running=False
+        self._auth_socket=None          #Path to the authentication unix socket
         self.version=None
         
         self.weborf=self._test_weborf()
@@ -145,7 +146,7 @@ class weborf_runner():
     def __create_auth_socket(self):
         '''Creates a unix socket and returns the path to it'''
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sockname="/tmp/weborf_auth_socket%d.socket" % os.getuid()
+        sockname="/tmp/weborf_auth_socket%d-%d.socket" % (os.getuid(),os.getpid())
         
         try:
             os.remove(sockname)
@@ -153,6 +154,7 @@ class weborf_runner():
             pass
         
         self.socket.bind(sockname)
+        self._auth_socket=sockname
         return sockname
         
     def __listen_auth_socket(self,options):
@@ -270,7 +272,10 @@ class weborf_runner():
         
         self.socket.close() #Closing socket, so the accept will fail and the thread can terminate
         self.listener.stop()
-        
+        try:
+            os.remove(self._auth_socket)
+        except OSError:
+            pass
         return True
 
 class __listener__(QtCore.QThread):
