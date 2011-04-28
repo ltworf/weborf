@@ -203,30 +203,38 @@ static inline int get_props(connection_t* connection_prop,string_t* post_param,u
 This function sends a xml property to the client.
 It can be called only by funcions aware of this xml, because it sends only partial xml.
 
+props:
+file:       file to open
+filename:
+parent:
+
 If the file can't be opened in readonly mode, this function does nothing.
+
+Return value: 0 in case there were no errors in opening the file. Do not expect
+too much error checking from this function.
 */
 static inline int printprops(connection_t *connection_prop,u_dav_details props,char* file,char*filename,bool parent) {
     int sock=connection_prop->sock;
     int p_len;
     struct stat stat_s;
     char buffer[URI_LEN];
-    char escaped_filename[URI_LEN];
-    char escaped_page[URI_LEN];
 
     int file_fd=open(file,O_RDONLY);
-    if (file_fd==-1) return 0;
+    if (file_fd==-1) return 1;
     fstat(file_fd, &stat_s);
 
-    escape_uri(filename,escaped_filename,URI_LEN);
-    escape_uri(connection_prop->page,escaped_page,URI_LEN);
 
     write(sock,"<D:response>\n",13);
 
     {
+        char escaped_filename[URI_LEN];
+        escape_uri(filename,escaped_filename,URI_LEN);
         //Sends href of the resource
         if (parent) {
             p_len=snprintf(buffer,URI_LEN,"<D:href>%s</D:href>",escaped_filename);
         } else {
+            char escaped_page[URI_LEN];
+            escape_uri(connection_prop->page,escaped_page,URI_LEN);
             p_len=snprintf(buffer,URI_LEN,"<D:href>%s%s</D:href>",escaped_page,escaped_filename);
         }
 
@@ -236,38 +244,34 @@ static inline int printprops(connection_t *connection_prop,u_dav_details props,c
     write(sock,"<D:propstat><D:prop>",20);
 
     //Writing properties
-    char prop_buffer[URI_LEN];
 
     if (props.dav_details.getetag) {
-        snprintf(prop_buffer,URI_LEN,"%d",(unsigned int)stat_s.st_mtime);
-        p_len=snprintf(buffer,URI_LEN,"<D:getetag>%s</D:getetag>\n",prop_buffer);
+        p_len=snprintf(buffer,URI_LEN,"<D:getetag>%ld</D:getetag>\n",(long int)stat_s.st_mtime);
         write (sock,buffer,p_len);
 
     }
 
     if (props.dav_details.getcontentlength) {
-        snprintf(prop_buffer,URI_LEN,"%lld",(long long)stat_s.st_size);
-        p_len=snprintf(buffer,URI_LEN,"<D:getcontentlength>%s</D:getcontentlength>\n",prop_buffer);
+        p_len=snprintf(buffer,URI_LEN,"<D:getcontentlength>%llu</D:getcontentlength>\n",(long long unsigned int)stat_s.st_size);
         write (sock,buffer,p_len);
     }
 
     if (props.dav_details.resourcetype) {//Directory or normal file
+        char *out;
         if (S_ISDIR(stat_s.st_mode)) {
-            snprintf(prop_buffer,URI_LEN,"<D:collection/>");
+            out="<D:collection/>";
         } else {
-            prop_buffer[0]=' ';
-            prop_buffer[1]=0;
+            out=" ";
         }
 
-        p_len=snprintf(buffer,URI_LEN,"<D:resourcetype>%s</D:resourcetype>\n",prop_buffer);
+        p_len=snprintf(buffer,URI_LEN,"<D:resourcetype>%s</D:resourcetype>\n",out);
         write (sock,buffer,p_len);
     }
 
     if (props.dav_details.getlastmodified) { //Sends Date
         struct tm ts;
         localtime_r(&stat_s.st_mtime,&ts);
-        strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
-        p_len=snprintf(buffer,URI_LEN,"<D:getlastmodified>%s</D:getlastmodified>\n",prop_buffer);
+        p_len=strftime(buffer,URI_LEN, "<D:getlastmodified>%a, %d %b %Y %H:%M:%S GMT</D:getlastmodified>", &ts);
         write (sock,buffer,p_len);
     }
 
