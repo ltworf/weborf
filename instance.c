@@ -1011,7 +1011,7 @@ string_t read_post_data(connection_t* connection_prop,buffered_read_t* read_b) {
 
     //If there is a value and method is POST
     if (r!=false) { //&& connection_prop->method_id==POST) {
-        long int l=strtol( a , NULL, 0 );
+        long int l=strtoul( a , NULL, 0 );
         if (l<=POST_MAX_SIZE && (res.data=malloc(l))!=NULL) {//Post size is ok and buffer is allocated
             res.len=buffer_read(sock,res.data,l,read_b);
         }
@@ -1032,10 +1032,11 @@ char* get_basedir(char* http_param) {
     char* h=strstr(http_param,"\r\nHost: ");
 
     if (h==NULL) return weborf_conf.basedir;
-
-    h+=8;//Removing "Host:" string
+    
     char* end=strstr(h,"\r");
     if (end==NULL) return weborf_conf.basedir;
+
+    h+=8;//Removing "Host:" string
     end[0]=0;
     result=getenv(h);
     end[0]='\r';
