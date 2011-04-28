@@ -1,10 +1,10 @@
-AC_INIT([weborf], [0.14], [tiposchi@tiscali.it])
+AC_INIT([weborf], [0.14], [tiposchi@tiscali.it],[weborf],[http://galileo.dmi.unict.it/wiki/weborf/])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([queue.c])
 AC_CONFIG_HEADERS([config.h])
 
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror ])
 AM_MAINTAINER_MODE
 
 

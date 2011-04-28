@@ -160,7 +160,7 @@ void version() {
 
            "Written by Salvo 'LtWorf' Tomaselli and Salvo Rinaldi.\n"
            "Synchronized queue by Prof. Giuseppe Pappalardo.\n\n"
-           "https://galileo.dmi.unict.it/wiki/weborf/\n");
+           PACKAGE_URL "\n");
     exit(0);
 }
 
