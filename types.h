@@ -41,7 +41,7 @@ typedef struct {
 } thread_prop_t;
 
 typedef struct {
-    ssize_t len;                //length of the array
+    size_t len;                //length of the array
     char *data[MAXINDEXCOUNT];  //Array containing pointers
     int data_l[MAXINDEXCOUNT];  //Array containing len of strings
 } array_ll;
@@ -70,10 +70,10 @@ typedef struct {
     char *method;               //String version of the http method used
     char *http_param;           //Param string
     char *page;                 //Requested URI
-    ssize_t page_len;           //Lengh of the page string
+    size_t page_len;           //Lengh of the page string
     char *get_params;           //Params in the URI, after the ? char
     char *strfile;              //File on filesystem
-    ssize_t strfile_len;        //Length of string strfile
+    size_t strfile_len;        //Length of string strfile
     struct stat strfile_stat;   //Stat of strfile
     int strfile_fd;             //File descriptor for strfile
     char *basedir;              //Basedir for the host
@@ -82,7 +82,7 @@ typedef struct {
 } connection_t;
 
 typedef struct {
-    ssize_t len;                //length of the string
+    size_t len;                //length of the string
     char *data;                 //Pointer to string
 } string_t;
 
