@@ -44,20 +44,6 @@ This function splits the page name from the GET params.
 It also sets the value for the page_len field
 */
 void split_get_params(connection_t* connection_prop) {
-    int i=0;
-    connection_prop->get_params=NULL;
-    while (connection_prop->page[i]!=0) {
-        if (connection_prop->page[i]=='?') {
-            connection_prop->page[i]=0;
-            connection_prop->get_params=&connection_prop->page[i+1];
-            break;
-        }
-        i++;
-    }
-    connection_prop->page_len=i;
-}
-
-/*void split_get_params(connection_t* connection_prop) {
     char *separator=strstr(connection_prop->page,"?");
 
     if (separator==NULL) {
@@ -71,8 +57,7 @@ void split_get_params(connection_t* connection_prop) {
         connection_prop->page_len=separator-connection_prop->page;
 
     }
-}*/
-
+}
 
 /**
 Replaces escape sequences in the form %HEXCODE with the correct char
@@ -82,21 +67,50 @@ Since after this replace the string will be unchanged or shorter, no
 additional buffer will be needed.
 
 This function is in-place, doesn't create copies but changes the original string.
+
+If the string terminates with an % not followed by the HEXCODE,
+it will set the string as an empty one.
 */
-void replaceEscape(char *string) {
+void replaceEscape(char *o_string) {
     char e_seq[3];
+    char *string=o_string;
+
+
+    size_t o_len=strlen(o_string);
+    unsigned int i_count=0;
+
+
     e_seq[2] = 0;
 
     //Parses the string
     while ((string=strstr(string,"%"))!=NULL) {
+
+        size_t c=o_len- (string-o_string) - (i_count*2);
+
+        if (c<3) { //Safety check
+            goto error;
+        }
+
         e_seq[0] = string[1];
         e_seq[1] = string[2];
 
-        delChar(string, 0, 2);  //Deletes 2 chars from the url
+        //Shortening string of 2 chars
+        c-=2;
+        memmove(string,string+2,c);
+        string[c]=0;
+
 
         //Replaces the 3rd character with the char corresponding to the escape
-        string[0] = strtol(e_seq, NULL, 16);
+        string[0] = strtoul(e_seq, NULL, 16);
+
+        i_count++;  //Counting the iterations, multiply by 2 to know how many chars were removed
+        string++;   //Incrementing pointer, so if the escape was to create a % we don't re-convert it
     }
+
+    return;
+error:
+    o_string[0]='\0';
+    return;
 }
 
 /**
