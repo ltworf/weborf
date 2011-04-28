@@ -1,5 +1,8 @@
 0.14
 - Simplified code for authentication and removed one memory allocation
+- Fastened finding length of URI and splitting GET parameters
+- Fastened escape replacing in URI
+- Doesn't log starting entry when used as inetd
 
 0.13
 - Shows last modified column in directory listing (Rev 419)

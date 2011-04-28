@@ -108,7 +108,8 @@ Will use syslogd
 static void init_logger() {
     openlog(NAME, LOG_ODELAY, LOG_DAEMON);
 #ifdef SERVERDBG
-    syslog(LOG_INFO, "Starting server...");
+    if (!weborf_conf.is_inetd)
+        syslog(LOG_INFO, "Starting server...");
 #endif
 
 }
@@ -131,7 +132,6 @@ static void init_thread_shaping() {
  * and prints the internal status on SIGUSR1
  * */
 static void init_signals() {
-    //Handle SIGINT and SIGTERM
     signal(SIGINT, quit);
     signal(SIGTERM, quit);
     signal(SIGPIPE, SIG_IGN);
@@ -143,11 +143,12 @@ static void init_signals() {
 int main(int argc, char *argv[]) {
     int s, s1;          //Socket descriptors
 
+    configuration_load(argc,argv);
+
     init_signals();
     init_logger();
     init_thread_info();
 
-    configuration_load(argc,argv);
 
     if (weborf_conf.is_inetd) inetd();
 
