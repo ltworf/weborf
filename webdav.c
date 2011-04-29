@@ -333,7 +333,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     }
 
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
-    connection_prop->keep_alive=false;
+    connection_prop->response.keep_alive=false;
     send_http_header(207,0,"Content-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
 
     //Check if exists in cache

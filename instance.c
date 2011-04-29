@@ -118,11 +118,11 @@ static inline void set_connection_props(connection_t *connection_prop) {
     //Setting the connection type, using protocol version
     if (connection_prop->http_param[7]=='1' && connection_prop->http_param[5]=='1') {//Keep alive by default (protocol 1.1)
         connection_prop->protocol_version=HTTP_1_1;
-        connection_prop->keep_alive=(connection && strncmp(a,"close",5)==0)?false:true;
+        connection_prop->response.keep_alive=(connection && strncmp(a,"close",5)==0)?false:true;
     } else {//Not http1.1
         //Constants are set to make this line work
         connection_prop->protocol_version=connection_prop->http_param[7];
-        connection_prop->keep_alive=(connection && strncmp(a,"Keep",4)==0)?true:false;
+        connection_prop->response.keep_alive=(connection && strncmp(a,"Keep",4)==0)?true:false;
     }
 
     modURL(connection_prop->page);//Operations on the url string
@@ -214,12 +214,17 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
         }
 
 #ifdef REQUESTDBG
-        syslog(LOG_INFO,"%s - %d - %s %s",connection_prop->ip_addr,connection_prop->status_code,connection_prop->method,connection_prop->page);
+        syslog(LOG_INFO,
+               "%s - %d - %s %s",
+               connection_prop->ip_addr,
+               connection_prop->response.status_code,
+               connection_prop->method,
+               connection_prop->page);
 #endif
 
 
         //Non pipelined
-        if (connection_prop->keep_alive==false) return;
+        if (connection_prop->response.keep_alive==false) return;
 
     } /* while */
 
@@ -914,7 +919,7 @@ Sends a request for authentication
 int request_auth(connection_t *connection_prop) {
     int sock=connection_prop->sock;
     char * descr = connection_prop->page;
-    connection_prop->status_code=401;
+    connection_prop->response.status_code=401;
 
     //Buffer for both header and page
     char * head=malloc(MAXSCRIPTOUT+HEADBUF);
@@ -956,7 +961,7 @@ Sends an error to the client
 int send_err(connection_t *connection_prop,int err,char* descr) {
     int sock=connection_prop->sock;
 
-    connection_prop->status_code=err; //Sets status code, for the logs
+    connection_prop->response.status_code=err; //Sets status code, for the logs
 
     //Buffer for both header and page
     char * head=malloc(MAXSCRIPTOUT+HEADBUF);
@@ -1092,7 +1097,7 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
     char* h_ptr=head;
     int left_head=HEADBUF;
 
-    connection_prop->status_code=code; //Sets status code, for the logs
+    connection_prop->response.status_code=code; //Sets status code, for the logs
 
     if (head==NULL) {
 #ifdef SERVERDBG
@@ -1108,9 +1113,9 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
     And will send close if keep-alive isn't enabled and protocol is 1.1
     */
     char *connection_header;
-    if (connection_prop->protocol_version!=HTTP_1_1 && connection_prop->keep_alive==true) {
+    if (connection_prop->protocol_version!=HTTP_1_1 && connection_prop->response.keep_alive==true) {
         connection_header="Connection: Keep-Alive\r\n";
-    } else if (connection_prop->protocol_version==HTTP_1_1 && connection_prop->keep_alive==false) {
+    } else if (connection_prop->protocol_version==HTTP_1_1 && connection_prop->response.keep_alive==false) {
         connection_header="Connection: close\r\n";
     } else {
         connection_header="";
@@ -1145,7 +1150,7 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
     }
 #endif
 
-    if (size>0 || (connection_prop->keep_alive==true)) {
+    if (size>0 || (connection_prop->response.keep_alive==true)) {
         //Content length (or entity lenght) and extra headers
         if (content) {
             len_head=snprintf(head,left_head,"Content-Length: %llu\r\n",(unsigned long long int)size);
@@ -1174,7 +1179,7 @@ No caching at all is used or is allowed to the clients
 */
 static int tar_send_dir(connection_t* connection_prop) {
 
-    connection_prop->keep_alive=false;
+    connection_prop->response.keep_alive=false;
 
     char* headers=malloc(HEADBUF);
 

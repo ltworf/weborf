@@ -55,6 +55,17 @@ typedef struct {
     int n_wait_sp, n_wait_dt;
 } syn_queue_t;
 
+typedef struct { 
+    
+    bool keep_alive;            //True if we are using pipelining
+    unsigned int status_code;   //HTTP status code
+} response_t;
+
+typedef struct {
+    
+    
+} request_t;
+
 typedef struct {
     int sock;                   //File descriptor for the socket
 
@@ -64,7 +75,6 @@ typedef struct {
     char ip_addr[INET_ADDRSTRLEN];
 #endif
 
-    bool keep_alive;            //True if we are using pipelining
     short int protocol_version; //See defines like HTTP_something
     int method_id;              //Index of the http method used (GET, POST)
     char *method;               //String version of the http method used
@@ -77,7 +87,8 @@ typedef struct {
     struct stat strfile_stat;   //Stat of strfile
     int strfile_fd;             //File descriptor for strfile
     char *basedir;              //Basedir for the host
-    unsigned int status_code;   //HTTP status code
+    response_t response;
+    request_t request;
 
 } connection_t;
 

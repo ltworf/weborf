@@ -299,7 +299,7 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
         and we continue reading and writing to the socket */
         if (e_reads==MAXSCRIPTOUT+HEADBUF) {
             reads=-1;
-            connection_prop->keep_alive=false;
+            connection_prop->response.keep_alive=false;
         }
 
         /*
