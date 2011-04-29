@@ -283,14 +283,13 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
     }
 
     if (e_reads>0) {//There is output from script
-        unsigned int status; //Standard status
         {
             //Reading if there is another status
             char*s=strstr(header_buf,"Status: ");
             if (s!=NULL) {
-                status=(unsigned int)strtoul( s+8 , NULL, 0 );
+                connection_prop->response.status_code=(unsigned int)strtoul( s+8 , NULL, 0 );
             } else {
-                status=200; //Standard status
+                connection_prop->response.status_code=200; //Standard status
             }
         }
 
@@ -308,7 +307,8 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
         true tells to use Content-Length rather than entity-length
         -1 won't use any ETag, and will eventually use the current time as last-modified
         */
-        send_http_header(status,reads,header_buf,true,-1,connection_prop);
+
+        send_http_header(reads,header_buf,true,-1,connection_prop);
 
         if (reads!=0) {//Sends the page if there is something to send
             write (sock,scrpt_buf,reads);

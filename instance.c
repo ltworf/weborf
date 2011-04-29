@@ -87,7 +87,8 @@ static inline int check_etag(connection_t* connection_prop,char *a) {
         time_t etag=(time_t)strtol(a+1,NULL,0);
         if (connection_prop->strfile_stat.st_mtime==etag) {
             //Browser has the item in its cache, sending 304
-            send_http_header(304,0,NULL,true,etag,connection_prop);
+            connection_prop->response.status_code=304;
+            send_http_header(0,NULL,true,etag,connection_prop);
             return 0;
         }
     }
@@ -450,8 +451,8 @@ static inline int options (connection_t* connection_prop) {
 #else
 #define ALLOWED "Allow: GET,POST,PUT,DELETE,OPTIONS\r\n"
 #endif
-
-    send_http_header(200,0,ALLOWED,true,-1,connection_prop);
+    connection_prop->response.status_code=200;
+    send_http_header(0,ALLOWED,true,-1,connection_prop);
     return 0;
 }
 
@@ -555,7 +556,8 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
-            send_http_header(301,0,head,true,-1,connection_prop);
+            connection_prop->response.status_code=301;
+            send_http_header(0,head,true,-1,connection_prop);
             return 0;
         } else {//Requested directory with "/" Search for index files or list directory
 
@@ -568,7 +570,8 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
                 if (file_exists(connection_prop->strfile)) { //If index exists, redirect to it
                     char head[URI_LEN+12];//12 is the size for the location header
                     snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes[i]);
-                    send_http_header(303,0,head,true,-1,connection_prop);
+                    connection_prop->response.status_code=303;
+                    send_http_header(0,head,true,-1,connection_prop);
                     return 0;
                 }
             }
@@ -634,9 +637,11 @@ static int send_error_header(int retval, connection_t *connection_prop) {
     case ERR_NOAUTH:
         return request_auth(connection_prop);//Sends a request for authentication
     case OK_NOCONTENT:
-        return send_http_header(204,0,NULL,true,-1,connection_prop);
+        connection_prop->response.status_code=204;
+        return send_http_header(0,NULL,true,-1,connection_prop);
     case OK_CREATED:
-        return send_http_header(201,0,NULL,true,-1,connection_prop);
+        connection_prop->response.status_code=201;
+        return send_http_header(0,NULL,true,-1,connection_prop);
     }
     return 0; //Make gcc happy
 
@@ -702,7 +707,8 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
         I tried on reiserfs and the directory's mtime changes too but i didn't
         find any doc about the other filesystems and OS.
         */
-        send_http_header(200,pagelen,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+        connection_prop->response.status_code=200;
+        send_http_header(pagelen,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
         write(sock,html,pagelen);
 
         //Write item in cache
@@ -786,7 +792,7 @@ static inline int write_compressed_file(connection_t* connection_prop ) {
  * a must be a pointer to a buffer large at least RBUFFER+MIMETYPELEN+16
  * */
 static inline unsigned long long int bytes_to_send(connection_t* connection_prop,char *a) {
-    int http_code=200;
+    connection_prop->response.status_code=200;
     errno=0;
     unsigned long long int count;
     char *hbuf=a;
@@ -833,7 +839,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
             to=connection_prop->strfile_stat.st_size-1;
         }
 
-        http_code=206;
+        connection_prop->response.status_code=206;
 
         t=snprintf(hbuf,remain,"Accept-Ranges: bytes\r\nContent-Range: bytes %llu-%llu/%lld\r\n",(unsigned long long int)from,(unsigned long long int)to,(long long int)connection_prop->strfile_stat.st_size);
         hbuf+=t;
@@ -863,7 +869,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
     }
 #endif
 
-    send_http_header(http_code,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+    send_http_header(count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
     return count;
 }
 
@@ -1090,14 +1096,14 @@ This function will automatically take care of generating Connection header when
 needed, according to keep_alive and protocol_version of connection_prop
 
 */
-int send_http_header(int code, unsigned long long int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
+int send_http_header(unsigned long long int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
     int sock=connection_prop->sock;
     int len_head,wrote;
     char *head=malloc(HEADBUF);
     char* h_ptr=head;
     int left_head=HEADBUF;
 
-    connection_prop->response.status_code=code; //Sets status code, for the logs
+
 
     if (head==NULL) {
 #ifdef SERVERDBG
@@ -1121,7 +1127,7 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
         connection_header="";
     }
 
-    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\n%s",code,reason_phrase(code),connection_header);
+    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\n%s",connection_prop->response.status_code,reason_phrase(connection_prop->response.status_code),connection_header);
 
     //This stuff moves the pointer to the buffer forward, and reduces the left space in the buffer itself
     //Next snprintf will append their strings to the buffer, without overwriting.
@@ -1195,8 +1201,8 @@ static int tar_send_dir(connection_t* connection_prop) {
              strrchr(connection_prop->strfile,'/')+1
             );
 
-    send_http_header(200,
-                     0,
+    connection_prop->response.status_code=200;
+    send_http_header(0,
                      headers,
                      true,
                      -1,
