@@ -157,6 +157,6 @@ size of end
 If str ends with end, true is returned
 false otherwise
 */
-bool endsWith(char *str, char *end,ssize_t len_str,ssize_t len_end) {
+bool endsWith(char *str, char *end,size_t len_str,size_t len_end) {
     return strcmp(str+len_str-len_end,end)==0;
 }

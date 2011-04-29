@@ -131,7 +131,7 @@ static inline void cgi_set_SERVER_ADDR_PORT(int sock) {
  * REQUEST_URI   (It is expected that the request is like /blblabla?query and not in two separate locations, ? is expected to be replaced by \0)
  * QUERY_STRING
  * */
-static inline void cgi_set_env_vars(connection_t *connection_prop,char *real_basedir) {
+static inline void cgi_set_env_vars(connection_t *connection_prop) {
 
     //Set CGI needed vars
     setenv("SERVER_SIGNATURE",SIGNATURE,true);
@@ -141,7 +141,7 @@ static inline void cgi_set_env_vars(connection_t *connection_prop,char *real_bas
     setenv("SERVER_NAME", getenv("HTTP_HOST"),true); //TODO for older http version this header might not exist
     setenv("REDIRECT_STATUS","Ciao",true); // Mah.. i'll never understand php, this env var is needed
     setenv("SCRIPT_FILENAME",connection_prop->strfile,true); //This var is needed as well or php say no input file...
-    setenv("DOCUMENT_ROOT",real_basedir,true);
+    setenv("DOCUMENT_ROOT",connection_prop->basedir,true);
     setenv("REMOTE_ADDR",connection_prop->ip_addr,true); //Client's address
     setenv("SCRIPT_NAME",connection_prop->page,true); //Name of the script without complete path
 
@@ -196,7 +196,7 @@ static inline void cgi_child_chdir(connection_t *connection_prop) {
  * Will also set an alarm to try to prevent the script from
  * running forever.
  * */
-static inline void cgi_execute_child(connection_t* connection_prop,string_t* post_param,char * executor,char* real_basedir,int *wpipe,int *ipipe) {
+static inline void cgi_execute_child(connection_t* connection_prop,string_t* post_param,char * executor,int *wpipe,int *ipipe) {
     close (wpipe[0]); //Closes unused end of the pipe
 
     close (STDOUT);
@@ -215,7 +215,7 @@ static inline void cgi_execute_child(connection_t* connection_prop,string_t* pos
 
     cgi_set_http_env_vars(connection_prop->http_param);
     cgi_set_SERVER_ADDR_PORT(connection_prop->sock);
-    cgi_set_env_vars(connection_prop,real_basedir);
+    cgi_set_env_vars(connection_prop);
     cgi_set_env_content_length();
 
     cgi_child_chdir(connection_prop);
@@ -337,7 +337,6 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
 Executes a CGI script with a given interpreter and sends the resulting output
 executor is the path to the binary which will execute the page
 post_param contains the post data sent to the page (if present). This can't be null, but the string pointer inside the struct can be null.
-real_basedir is the basedir (according to the virtualhost)
 connection_prop is the struct containing all the data of the request
 
 exec_page will fork and create pipes with the child.
@@ -345,7 +344,7 @@ The child will clean all the envvars and then set new ones as needed by CGI.
 Then the child will call alarm to set the timeout to its execution, and then will exec the script.
 
 */
-int exec_page(char * executor,string_t* post_param,char* real_basedir,connection_t* connection_prop) {
+int exec_page(char * executor,string_t* post_param,connection_t* connection_prop) {
 #ifdef SENDINGDBG
     syslog(LOG_INFO,"Executing file %s",connection_prop->strfile);
 #endif
@@ -375,7 +374,7 @@ int exec_page(char * executor,string_t* post_param,char* real_basedir,connection
         return ERR_NOMEM;
     } else if (wpid==0) {
         /* never returns */
-        cgi_execute_child(connection_prop,post_param,executor,real_basedir,wpipe,ipipe);
+        cgi_execute_child(connection_prop,post_param,executor,wpipe,ipipe);
     } else { //Father: reads from pipe and sends
         return cgi_waitfor_child(connection_prop,post_param,executor,wpid,wpipe,ipipe);
     }

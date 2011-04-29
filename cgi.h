@@ -29,6 +29,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define STDOUT 1
 #define STDERR 2
 
-int exec_page(char * executor,string_t* post_param,char* real_basedir,connection_t* connection_prop);
+int exec_page(char * executor,string_t* post_param,connection_t* connection_prop);
 
 #endif

@@ -581,7 +581,7 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
             for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
                 f_len=weborf_conf.cgi_paths.data_l[q_];
                 if (endsWith(connection_prop->page+connection_prop->page_len-f_len,weborf_conf.cgi_paths.data[q_],f_len,f_len)) {
-                    return exec_page(weborf_conf.cgi_paths.data[++q_],&post_param,connection_prop->basedir,connection_prop);
+                    return exec_page(weborf_conf.cgi_paths.data[++q_],&post_param,connection_prop);
                 }
             }
         }
