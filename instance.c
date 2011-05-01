@@ -179,16 +179,16 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
         end[2]='\0';//Terminates the header, leaving a final \r\n in it
 
         //Finds out request's kind
-        if (strncmp(buf,"GET",strlen("GET"))==0) connection_prop->method_id=GET;
-        else if (strncmp(buf,"POST",strlen("POST"))==0) connection_prop->method_id=POST;
-        else if (strncmp(buf,"PUT",strlen("PUT"))==0) connection_prop->method_id=PUT;
-        else if (strncmp(buf,"DELETE",strlen("DELETE"))==0) connection_prop->method_id=DELETE;
-        else if (strncmp(buf,"OPTIONS",strlen("OPTIONS"))==0) connection_prop->method_id=OPTIONS;
+        if (strncmp(buf,"GET",strlen("GET"))==0) connection_prop->request.method_id=GET;
+        else if (strncmp(buf,"POST",strlen("POST"))==0) connection_prop->request.method_id=POST;
+        else if (strncmp(buf,"PUT",strlen("PUT"))==0) connection_prop->request.method_id=PUT;
+        else if (strncmp(buf,"DELETE",strlen("DELETE"))==0) connection_prop->request.method_id=DELETE;
+        else if (strncmp(buf,"OPTIONS",strlen("OPTIONS"))==0) connection_prop->request.method_id=OPTIONS;
 #ifdef WEBDAV
-        else if (strncmp(buf,"PROPFIND",strlen("PROPFIND"))==0) connection_prop->method_id=PROPFIND;
-        else if (strncmp(buf,"MKCOL",strlen("MKCOL"))==0) connection_prop->method_id=MKCOL;
-        else if (strncmp(buf,"COPY",strlen("COPY"))==0) connection_prop->method_id=COPY;
-        else if (strncmp(buf,"MOVE",strlen("MOVE"))==0) connection_prop->method_id=MOVE;
+        else if (strncmp(buf,"PROPFIND",strlen("PROPFIND"))==0) connection_prop->request.method_id=PROPFIND;
+        else if (strncmp(buf,"MKCOL",strlen("MKCOL"))==0) connection_prop->request.method_id=MKCOL;
+        else if (strncmp(buf,"COPY",strlen("COPY"))==0) connection_prop->request.method_id=COPY;
+        else if (strncmp(buf,"MOVE",strlen("MOVE"))==0) connection_prop->request.method_id=MOVE;
 #endif
         else goto bad_request;
 
@@ -480,11 +480,11 @@ static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
                                             connection_prop->basedir,
                                             connection_prop->page);//Prepares the string
 
-    if (connection_prop->method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
+    if (connection_prop->request.method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
         post_param.data=NULL;
         post_param.len=0;
 
-        switch (connection_prop->method_id) {
+        switch (connection_prop->request.method_id) {
         case PUT:
             retval=read_file(connection_prop,read_b);
             break;
@@ -513,7 +513,7 @@ static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
         goto escape;
     }
 
-    if (connection_prop->method_id==POST)
+    if (connection_prop->request.method_id==POST)
         post_param=read_post_data(connection_prop,read_b);
     else
         post_param.data=NULL;
@@ -532,7 +532,7 @@ escape:
     free(post_param.data);
 
     //Closing local file previously opened
-    if ((connection_prop->method_id==GET || connection_prop->method_id==POST) && connection_prop->strfile_fd>=0) {
+    if ((connection_prop->request.method_id==GET || connection_prop->request.method_id==POST) && connection_prop->strfile_fd>=0) {
         close(connection_prop->strfile_fd);
     }
 
@@ -1043,7 +1043,7 @@ char* get_basedir(char* http_param) {
     char* h=strstr(http_param,"\r\nHost: ");
 
     if (h==NULL) return weborf_conf.basedir;
-    
+
     char* end=strstr(h,"\r");
     if (end==NULL) return weborf_conf.basedir;
 

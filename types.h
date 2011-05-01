@@ -55,15 +55,16 @@ typedef struct {
     int n_wait_sp, n_wait_dt;
 } syn_queue_t;
 
-typedef struct { 
-    
+typedef struct {
+
     bool keep_alive;            //True if we are using pipelining
     unsigned int status_code;   //HTTP status code
 } response_t;
 
 typedef struct {
-    
-    
+
+    int method_id;              //Index of the http method used (GET, POST)
+
 } request_t;
 
 typedef struct {
@@ -76,7 +77,6 @@ typedef struct {
 #endif
 
     short int protocol_version; //See defines like HTTP_something
-    int method_id;              //Index of the http method used (GET, POST)
     char *method;               //String version of the http method used
     char *http_param;           //Param string
     char *page;                 //Requested URI

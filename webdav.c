@@ -518,13 +518,13 @@ int copy_move(connection_t* connection_prop) {
 
     stat(connection_prop->strfile, &f_prop);
     if (S_ISDIR(f_prop.st_mode)) { //Directory
-        if (connection_prop->method_id==COPY) {
+        if (connection_prop->request.method_id==COPY) {
             retval=dir_copy(connection_prop->strfile,destination);
         } else {//Move
             retval=dir_move(connection_prop->strfile,destination);
         }
     } else { //Normal file
-        if (connection_prop->method_id==COPY) {
+        if (connection_prop->request.method_id==COPY) {
             retval=file_copy(connection_prop->strfile,destination);
         } else {//Move
             retval=file_move(connection_prop->strfile,destination);
