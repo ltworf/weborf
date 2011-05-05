@@ -350,6 +350,7 @@ Auth provider has to check for the file's size and refuse it if it is the case.
 This function will not work if there is no auth provider.
 */
 int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
+    char *content_length="Content-Length";
     int sock=connection_prop->sock;
     if (weborf_conf.authsock==NULL) {
         return ERR_FORBIDDEN;
@@ -360,7 +361,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
         char*header=connection_prop->http_param;
 
         while ((header=strstr(header,"Content-"))!=NULL) {
-            if (strncmp(header,"Content-Length",14)!=0) {
+            if (strncmp(header,conent_length,strlen(content_length))!=0) {
                 return ERR_NOTIMPLEMENTED;
             }
             header++;
@@ -372,11 +373,11 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     size_t content_l;  //Length of the put data
 
     //Gets the value of content-length header
-    bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,strlen("Content-Length"));//14 is content-lenght's len
+    bool r=get_param_value(connection_prop->http_param,content_length, a,NBUFFER,strlen(content_length));
 
 
     if (r!=false) {//If there is no content-lenght returns error
-        content_l=strtoll( a , NULL, 0 );
+        content_l=strtoull( a , NULL, 0 );
     } else {//No data
         return ERR_NODATA;
     }
@@ -392,16 +393,16 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     if (fd<0) {
         return ERR_FILENOTFOUND;
     }
-    
+
     ftruncate(fd,content_l);
-    
-    
+
+
     /*
      * flushing the content of the socket cache to the file.
      * If there is more buffer, limiting the amount of the flush.
      */
     content_l-=buffer_flush_fd(fd,read_b,content_l);
-    
+
     //Normal non-buffered copy from the socket to the file
     int copy_r=fd_copy(sock,fd, content_l);
     if (copy_r!=0) {

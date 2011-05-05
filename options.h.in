@@ -108,6 +108,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //-------------RANGE
 #define __RANGE                 //Enables support to range (partial download)
 
+//-------------Inotify TODO is it too much? not enough?
+#define MTIME_MAX_WATCH_DIRS 1024   
+
 //-------------WEBDAV
 #define WEBDAV                  //Enables webdav support
 #ifdef WEBDAV

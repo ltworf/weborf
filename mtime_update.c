@@ -21,23 +21,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "options.h"
 
+#include <sys/inotify.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+
+#include <dirent.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/inotify.h>
-
-#include <sys/types.h>
-#include <dirent.h>
-
 #include <string.h>
-
-
-
-
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
+
+
+
+
 
 
 
@@ -48,11 +46,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
 
 
-char **paths;
-size_t p_len;
-int fd;
-
 #include "mtime_update.h"
+
+char **paths=NULL;
+size_t p_len=0;
+int fd=-1;
+
 
 
 /**
@@ -75,7 +74,7 @@ static int mtime_watch_dir(char *path) {
      * Adding and deleting aren't important to us.
      */
     int retval=0;
-    int r = inotify_add_watch( fd,path, IN_MODIFY);
+    int r = inotify_add_watch(fd,path, IN_MODIFY);
     if (r==-1 || r>=p_len) return -1;
     paths[r]=path;
 
@@ -110,43 +109,72 @@ static int mtime_watch_dir(char *path) {
     return retval;
 }
 
+
 static void mtime_listener() {
     char buffer[BUF_LEN];
     int length;
-    int i=0;
+    int i;
 
+    for (;;) {
+        
+    printf("waiting events..\n");
     length = read( fd, buffer, BUF_LEN );
+    printf("processing..\n");
 
-    if ( length < 0 ) {
-        perror( "read" );
-    }
+    if ( length <= 0 ) return;
 
+    i=0;
     while ( i < length ) {
         struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
         if ( event->len ) {
-
-            printf("dir %s\n",paths[event->wd]);
-            printf( "The directory %s was deleted.\n", event->name );
+            
+            utime(paths[event->wd],NULL);
         }
         i += EVENT_SIZE + event->len;
+    }
     }
 
 }
 
+/**
+ * Allocates the necessary memory and structures for the use of the mtime_update
+ * module.
+ */
+int mtime_init() {
+    fd = inotify_init();
+    if (fd==-1) return -1;
+    
+    paths=calloc(sizeof(char*),MTIME_MAX_WATCH_DIRS);
+    if (paths==NULL) return -1;
+    p_len=MTIME_MAX_WATCH_DIRS;
+    return 0;
+    
+}
+
+void mtime_free() {
+    int i=0;
+    while (paths[i]!=NULL) {
+        free(paths[i]);
+        inotify_rm_watch(fd,i);
+        i++;
+    }
+    
+    free(paths);
+    close(fd);
+}
+
 int main( int argc, char **argv ) {
     int wd;
-
-    fd = inotify_init();
-    paths=malloc(sizeof(char*)*10000);
-    p_len=10000;
+    
+    mtime_init();
+    
 
     mtime_watch_dir("/tmp/o/");
 
     mtime_listener();
+    mtime_free();
 
 
-    ( void ) inotify_rm_watch( fd, wd );
-    ( void ) close( fd );
 
     exit( 0 );
 }

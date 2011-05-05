@@ -28,10 +28,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "types.h"
 #include "auth.h"
-#include "instance.h"
 #include "base64.h"
+#include "instance.h"
+#include "types.h"
 
 extern weborf_configuration_t weborf_conf;
 

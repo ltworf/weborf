@@ -75,7 +75,7 @@ void init_threads(unsigned int count) {
     static long int id = 1;
     //t_free=MAXTHREAD;
     unsigned int effective=0;
-    
+
 
     pthread_t t_id;//Unused var, thread's system id
 

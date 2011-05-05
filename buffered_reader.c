@@ -124,23 +124,23 @@ size_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
  * This function flushes all the buffered data to a file descriptor.
  * It is possible to limit the amount of data to be copied to the file descriptor.
  * This function is usefull when switching from buffered reads to normal ones.
- * 
+ *
  * dest: destination file descriptor
  * buf: pointer to the buffered_read_t data structure
  * limit: maximum amount of bytes to flush to the file descriptor. To avoid limits
  *     it is sufficient to pass a MAXINT.
- * 
+ *
  * Returns the amount of written data, which might be different than the amount
  * of data previously present on the buffer.
  */
 size_t buffer_flush_fd(int dest, buffered_read_t * buf,size_t limit) {
     size_t available= buf->end - buf->start;
-    
+
     size_t dim = limit<available?limit:available;
-    
+
     size_t count=write(dest,buf->start,dim);
     buf->start +=dim;
-    
+
     return count;
 }
 

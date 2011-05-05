@@ -23,5 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * This file watches for updates in all the directory trees being served by
  * weborf, and updates the mtime of the directories when files are updated,
  * making possible the use of the cache for requests on directories.
- *
+ * 
+ * The mtime_update module is not reentrant or thread safe.
+ * 
  */
+
+int mtime_init();
+void mtime_free();
