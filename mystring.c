@@ -135,7 +135,7 @@ In case deleting of more chars than the string's len itself, the string will be 
 
 This function doesn't create copies but changes the original string.
 */
-void delChar(char *string, int pos, int n) {
+void delChar(char *string, int pos, size_t n) {
     size_t l=strlen(string+pos);
 
     if (l<n) return;

@@ -117,7 +117,7 @@ static void configuration_set_cgi(char *optarg) {
         }
     }
 
-    for (i=0; i<weborf_conf.cgi_paths.len; i++) {
+    for (size_t i=0; i<weborf_conf.cgi_paths.len; i++) {
         weborf_conf.cgi_paths.data_l[i]=strlen(weborf_conf.cgi_paths.data[i]);
     }
 

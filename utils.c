@@ -232,7 +232,7 @@ void moo() {
  * This function prints the start disclaimer on stdout.
  * It wants the command line parameters
  * */
-void print_start_disclaimer(int argc, char *argv[]) {
+void print_start_disclaimer(char *argv[]) {
     printf(NAME "\n"
            "This program comes with ABSOLUTELY NO WARRANTY.\n"
            "This is free software, and you are welcome to redistribute it\n"

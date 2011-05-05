@@ -232,7 +232,7 @@ static inline void cgi_execute_child(connection_t* connection_prop,string_t* pos
 }
 
 
-static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post_param,char * executor,pid_t wpid,int *wpipe,int *ipipe) {
+static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post_param,pid_t wpid,int *wpipe,int *ipipe) {
     int sock=connection_prop->sock;
     //Closing pipes, so if they're empty read is non blocking
     close (wpipe[1]);
@@ -376,7 +376,7 @@ int exec_page(char * executor,string_t* post_param,connection_t* connection_prop
         /* never returns */
         cgi_execute_child(connection_prop,post_param,executor,wpipe,ipipe);
     } else { //Father: reads from pipe and sends
-        return cgi_waitfor_child(connection_prop,post_param,executor,wpid,wpipe,ipipe);
+        return cgi_waitfor_child(connection_prop,post_param,wpid,wpipe,ipipe);
     }
     return 0;
 }

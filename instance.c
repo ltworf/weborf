@@ -393,6 +393,8 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     if (fd<0) {
         return ERR_FILENOTFOUND;
     }
+    
+    //WARNING this is WRONG! Must 1st flush the cached content in read_b, then start fd_copy for the remaining size.
 
     ftruncate(fd,content_l);
 
@@ -584,7 +586,7 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
     } else {//Requested an existing file
         if (weborf_conf.exec_script) { //Scripts enabled
 
-            int q_;
+            size_t q_;
             int f_len;
             for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
                 f_len=weborf_conf.cgi_paths.data_l[q_];

@@ -14,13 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#CC=gcc
+CC=clang
 #DEFS=-Ddebug
 OFLAGS=-O2
 #-pedantic -Wextra
 DEFINES=-D_FILE_OFFSET_BITS=64
 
-CFLAGS=-Wall $(DEFS) $(ARCHFLAGS)  -Wformat -g  $(OFLAGS) $(DEFINES)
+CFLAGS=-Wextra -Wall $(DEFS) $(ARCHFLAGS)  -Wformat -g  $(OFLAGS) $(DEFINES)
+
 LDFLAGS=-lpthread  -lmagic
 
 

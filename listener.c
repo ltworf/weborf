@@ -74,7 +74,8 @@ Specify how many threads start.
 void init_threads(unsigned int count) {
     static long int id = 1;
     //t_free=MAXTHREAD;
-    int effective=0,i;
+    unsigned int effective=0;
+    
 
     pthread_t t_id;//Unused var, thread's system id
 
@@ -83,7 +84,7 @@ void init_threads(unsigned int count) {
     if (thread_info.count + count < MAXTHREAD) {
 
         //Start
-        for (i = 1; i <= count; i++)
+        for (unsigned int i = 1; i <= count; i++)
             if (pthread_create(&t_id, &t_attr, instance, (void *) (id++))==0) effective++;
 
         thread_info.count+=effective; // increases the count of started threads
@@ -152,7 +153,7 @@ int main(int argc, char *argv[]) {
 
     if (weborf_conf.is_inetd) inetd();
 
-    print_start_disclaimer(argc,argv);
+    print_start_disclaimer(argv);
 
     s = net_create_server_socket();
     net_bind_and_listen(s);

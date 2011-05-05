@@ -28,7 +28,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
 void help();
 void version();
 void moo();
-void print_start_disclaimer(int argc, char *argv[]);
+void print_start_disclaimer(char *argv[]);
 bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,ssize_t param_len);
 void daemonize();
 
