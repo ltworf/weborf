@@ -370,7 +370,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
 
     char a[NBUFFER]; //Buffer for field's value
     int retval;
-    off_t content_l;  //Length of the put data
+    size_t content_l;  //Length of the put data
 
     //Gets the value of content-length header
     bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,strlen("Content-Length"));//14 is content-lenght's len
@@ -394,10 +394,16 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
         return ERR_FILENOTFOUND;
     }
     
-    //WARNING this is WRONG! Must 1st flush the cached content in read_b, then start fd_copy for the remaining size.
-
     ftruncate(fd,content_l);
-
+    
+    
+    /*
+     * flushing the content of the socket cache to the file.
+     * If there is more buffer, limiting the amount of the flush.
+     */
+    content_l-=buffer_flush(fd,read_b,content_l);
+    
+    //Normal non-buffered copy from the socket to the file
     int copy_r=fd_copy(sock,fd, content_l);
     if (copy_r!=0) {
         retval=copy_r;

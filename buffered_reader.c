@@ -86,12 +86,12 @@ This function is designed to be similar to a normal read, but it uses an interna
 buffer.
 When the buffer is empty, it will try to fill it.
 An important difference from the normal read is that this function will wait until
-the requested amount of bytes are available, or until the timeout occurs.
+the requested amount of bytes is available, or until the timeout occurs.
 Timeout duration is defined with the READ_TIMEOUT define.
 On some special cases, the read data could be less than the requested one. For example if
 end of file is reached and it is impossible to do further reads.
 */
-ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
+size_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
     ssize_t wrote = 0;              //Count of written bytes
     ssize_t available, needed;      //Available bytes in buffer, and requested bytes remaining
 
@@ -120,6 +120,27 @@ ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
     return wrote;
 }
 
+/**
+ * This function flushes all the buffered data to a file descriptor.
+ * It is possible to limit the amount of data to be copied to the file descriptor.
+ * 
+ * dest: destination file descriptor
+ * buf: pointer to the buffered_read_t data structure
+ * limit: maximum amount of bytes to flush to the file descriptor 
+ * 
+ * Returns the amount of written data
+ */
+size_t buffer_flush(int dest, buffered_read_t * buf,size_t limit) {
+    size_t available= buf->end - buf->start;
+    
+    size_t dim = limit<available?limit:available;
+    
+    size_t count=write(dest,buf->start,dim);
+    buf->start +=dim;
+    
+    return count;
+}
+
 
 /**
  * This function returns how many bytes must be read in order to
@@ -129,7 +150,7 @@ ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
  *
  * If the string needle is not in the buffer then the entire size
  * of the data present in cache will be return.
- * */
+ */
 size_t buffer_strstr(int fd, buffered_read_t * buf, char * needle) {
     if (buf->end - buf->start==0) {
         buffer_fill(fd,buf);
