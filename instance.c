@@ -38,17 +38,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/un.h>
 #include <errno.h>
 
-
-#include "utils.h"
-#include "myio.h"
-#include "cgi.h"
-#include "queue.h"
-#include "mystring.h"
-#include "mime.h"
-#include "instance.h"
-#include "cachedir.h"
-#include "types.h"
 #include "auth.h"
+#include "cachedir.h"
+#include "cgi.h"
+#include "instance.h"
+#include "mime.h"
+#include "myio.h"
+#include "mystring.h"
+#include "queue.h"
+#include "types.h"
+#include "utils.h"
 
 extern syn_queue_t queue;                   //Queue for open sockets
 
@@ -131,7 +130,7 @@ static inline void set_connection_props(connection_t *connection_prop) {
     connection_prop->basedir=get_basedir(connection_prop->http_param);
 }
 
-static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
+static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop) {
     int from;
     int sock=connection_prop->sock;
     char *lasts;//Used by strtok_r
@@ -313,7 +312,7 @@ void * instance(void * nulla) {
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
 #endif
-        handle_requests(buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
+        handle_requests(buf,&read_b,&bufFull,&connection_prop);
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",thread_prop.id);
@@ -401,7 +400,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
      * flushing the content of the socket cache to the file.
      * If there is more buffer, limiting the amount of the flush.
      */
-    content_l-=buffer_flush(fd,read_b,content_l);
+    content_l-=buffer_flush_fd(fd,read_b,content_l);
     
     //Normal non-buffered copy from the socket to the file
     int copy_r=fd_copy(sock,fd, content_l);
@@ -1282,7 +1281,7 @@ void inetd() {
     inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr, INET_ADDRSTRLEN);
 #endif
 
-    handle_requests(buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
+    handle_requests(buf,&read_b,&bufFull,&connection_prop);
     //close(sock);//Closing the socket
     //buffer_reset (&read_b);
 
