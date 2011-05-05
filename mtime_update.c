@@ -152,11 +152,12 @@ int mtime_init() {
 }
 
 void mtime_free() {
-    int i=0;
-    while (paths[i]!=NULL) {
+    for (int i=0;i<MIME_MAX_WATCH_DIRS;i++) {
+        if (paths[i] != NULL) {
         free(paths[i]);
         inotify_rm_watch(fd,i);
-        i++;
+            
+        }
     }
     
     free(paths);
