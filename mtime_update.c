@@ -68,40 +68,45 @@ int fd=-1;
  *
  */
 static int mtime_watch_dir(char *path) {
+    int retval=0;
     /*
      * Watches for IN_MODIFY because that is the only activity on file that
      * doesn't already change directory's mtime.
      * Adding and deleting aren't important to us.
      */
-    int retval=0;
-    int r = inotify_add_watch(fd,path, IN_MODIFY);
+    int r = inotify_add_watch(fd,path, IN_CLOSE_WRITE);
     if (r==-1 || r>=p_len) return -1;
-    paths[r]=path;
+    printf("watching %s %d\n",path,r);
 
     //Recoursive scan
     DIR *dp = opendir(path);
+    if (dp == NULL) {
+        return -1;
+    }
+
+    {
+        char *mfile=malloc(strlen(path)+1);
+        strcpy(mfile,path);
+        paths[r]=mfile;
+    }
     char file[URI_LEN];
 
     struct dirent entry;
     struct dirent *result;
     int return_code;
 
-    if (dp == NULL) {//Error, unable to send because header was already sent
-        return -1;
-    }
 
     for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
         //Avoids dir . and .. but not all hidden files
         if (entry.d_name[0]=='.' && (entry.d_name[1]==0 || (entry.d_name[1]=='.' && entry.d_name[2]==0)))
             continue;
 
-        int psize=snprintf(file,URI_LEN,"%s%s/",path, entry.d_name);
-        char *mfile=malloc(psize+1);
-        strcpy(mfile,file);
-
+        snprintf(file,URI_LEN,"%s%s/",path, entry.d_name);
         struct stat stbuf;
-        if (stat(file,&stbuf)==0 && S_ISDIR(stbuf.st_mode))
-            retval+=mtime_watch_dir(mfile);
+        if (stat(file,&stbuf)==0 && S_ISDIR(stbuf.st_mode)) {
+
+            retval+= mtime_watch_dir(file);
+        }
 
     }
 
@@ -116,22 +121,22 @@ static void mtime_listener() {
     int i;
 
     for (;;) {
-        
-    printf("waiting events..\n");
-    length = read( fd, buffer, BUF_LEN );
-    printf("processing..\n");
 
-    if ( length <= 0 ) return;
+        printf("waiting events..\n");
+        length = read( fd, buffer, BUF_LEN );
+        printf("processing..\n");
 
-    i=0;
-    while ( i < length ) {
-        struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
-        if ( event->len ) {
-            
-            utime(paths[event->wd],NULL);
+        if ( length <= 0 ) return;
+
+        i=0;
+        while ( i < length ) {
+            struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
+            if ( event->len ) {
+                printf("event in %s %d\n",paths[event->wd],event->wd);
+                utime(paths[event->wd],NULL);
+            }
+            i += EVENT_SIZE + event->len;
         }
-        i += EVENT_SIZE + event->len;
-    }
     }
 
 }
@@ -143,39 +148,38 @@ static void mtime_listener() {
 int mtime_init() {
     fd = inotify_init();
     if (fd==-1) return -1;
-    
+
     paths=calloc(sizeof(char*),MTIME_MAX_WATCH_DIRS);
     if (paths==NULL) return -1;
     p_len=MTIME_MAX_WATCH_DIRS;
     return 0;
-    
+
 }
 
 void mtime_free() {
-    for (int i=0;i<MIME_MAX_WATCH_DIRS;i++) {
+    int i;
+    for (i=0; i<MTIME_MAX_WATCH_DIRS; i++) {
         if (paths[i] != NULL) {
-        free(paths[i]);
-        inotify_rm_watch(fd,i);
-            
+            free(paths[i]);
+            inotify_rm_watch(fd,i);
+
         }
     }
-    
+
     free(paths);
     close(fd);
 }
 
 int main( int argc, char **argv ) {
     int wd;
-    
+
     mtime_init();
-    
+
 
     mtime_watch_dir("/tmp/o/");
 
     mtime_listener();
     mtime_free();
-
-
 
     exit( 0 );
 }
