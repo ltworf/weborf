@@ -235,7 +235,7 @@ It works polling the number of free threads and writing an order of termination 
 
 Policies of this function (polling frequence and limit for free threads) are defined in options.h
  */
-void *t_shape(void *nulla) {
+void *t_shape() {
 
     for (;;) {
         sleep(THREADCONTROL);

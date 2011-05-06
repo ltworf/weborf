@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 void init_threads(unsigned int count);
 void quit();
 void print_queue_status();
-void *t_shape(void *nulla);
+void *t_shape();
 void set_authsocket(char *);
 void chn_thread_count(int val);
 void set_new_uid(int uid);
