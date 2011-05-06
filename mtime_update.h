@@ -61,4 +61,6 @@ int mtime_watch_dir(char *path);
 int mtime_spawn_listener();
 int mtime_join_listener();
 void mtime_listener();
+void mtime_set_events(int e) {}
+
 #endif

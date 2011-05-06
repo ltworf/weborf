@@ -20,21 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "options.h"
 
-
-
-
-#ifndef HAVE_INOTIFY_INIT
-
-int mtime_init() { return 0; }
-void mtime_free() {}
-int mtime_watch_dir(char *path) { return 0; }
-int mtime_spawn_listener() { return 0; }
-int mtime_join_listener() { return 0; }
-void mtime_listener() {}
-
-
-#else
-
 #include <sys/inotify.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -246,4 +231,3 @@ void mtime_free() {
 }
 
 */
-#endif
