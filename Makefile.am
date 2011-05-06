@@ -1,4 +1,7 @@
+AM_CFLAGS = -Wextra -Wall
+
 SUBDIRS = cgi_wrapper
+
 
 bin_PROGRAMS = weborf
 weborf_SOURCES = \

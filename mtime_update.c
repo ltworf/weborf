@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
+#include <utime.h>
 
 
 #ifndef HAVE_INOTIFY_INIT
@@ -90,7 +90,7 @@ int mtime_watch_dir(char *path) {
      * Adding and deleting aren't important to us.
      */
     int r = inotify_add_watch(fd,path, m_events);
-    if (r==-1 || r>=p_len) return -1;
+    if (r==-1 || (unsigned int)r>=p_len) return -1;
     printf("watching %s %d\n",path,r);
 
     //Recoursive scan
