@@ -24,32 +24,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * When a file is changed (by default when a file opened for writing is closed)
  * the mtime and atime of the directory containing that file, will be updated
  * to the current time.
- * 
+ *
  * It does not update all the mtimes and atimes recoursively. Just one directory.
- * 
+ *
  * The current implementation only allows one instance of it. But it is not so
  * important to allow different instances because other directory trees can be
  * added for watch.
- * 
+ *
  * It also provides methods for spawning a pthread that will perform the operations
  * in parallel, leaving the main program free to do other tasks.
- * 
+ *
  * It requires inotify support (linux only), otherwise it will compile empty stubs
  * that do nothing at all.
- * 
+ *
  * It is not reentrant.
- * 
+ *
  * EXAMPLE:
  * mtime_init();    //Initializes internal data structures
- * 
- *  
+ *
+ *
  * mtime_watch_dir("/tmp/o/");
  * mtime_watch_dir("/tmp/p/");
- * 
+ *
  * mtime_spawn_listener();  //Starts a thread to update mtimes
- * 
+ *
  * do_something();
- * 
+ *
  * mtime_join_listener();   //Terminates the listening thread
  * mtime_free();
  */

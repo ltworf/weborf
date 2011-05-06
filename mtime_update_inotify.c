@@ -119,7 +119,7 @@ int mtime_watch_dir(char *path) {
 /**
  * Creates a thread to listen to events and modify the mtimes of the
  * related directory.
- * 
+ *
  * NOTE: never launch two threads before first joining, or one of them
  * will not be joinable anymore.
  */
@@ -127,14 +127,14 @@ int mtime_spawn_listener() {
     pthread_attr_t t_attr;
     pthread_attr_init(&t_attr);
     //pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED);
-    
+
     return pthread_create(&thread_id, &t_attr, mtime_listener, (void *)NULL);
 
 }
 
 /**
  * Terminates the thread listening for events
- * 
+ *
  * NOTE: Never try to join a thread before launchin one with
  * mtime_spawn_listener()
  */
@@ -215,7 +215,7 @@ void mtime_free() {
 
     //mtime_listener();
     mtime_spawn_listener();
-    
+
     {
         int i;
         for (i=0;i<40;i++) {
@@ -223,7 +223,7 @@ void mtime_free() {
             sleep(3);
         }
     }
-    
+
     printf("join %d\n",mtime_join_listener());
     mtime_free();
 
