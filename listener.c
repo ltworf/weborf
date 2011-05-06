@@ -73,6 +73,7 @@ Specify how many threads start.
 */
 void init_threads(unsigned int count) {
     static long int id = 1;
+    unsigned int i;
     //t_free=MAXTHREAD;
     unsigned int effective=0;
 
@@ -84,7 +85,7 @@ void init_threads(unsigned int count) {
     if (thread_info.count + count < MAXTHREAD) {
 
         //Start
-        for (unsigned int i = 1; i <= count; i++)
+        for (i = 1; i <= count; i++)
             if (pthread_create(&t_id, &t_attr, instance, (void *) (id++))==0) effective++;
 
         thread_info.count+=effective; // increases the count of started threads

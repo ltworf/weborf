@@ -361,7 +361,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
         char*header=connection_prop->http_param;
 
         while ((header=strstr(header,"Content-"))!=NULL) {
-            if (strncmp(header,conent_length,strlen(content_length))!=0) {
+            if (strncmp(header,content_length,strlen(content_length))!=0) {
                 return ERR_NOTIMPLEMENTED;
             }
             header++;
