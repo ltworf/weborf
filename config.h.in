@@ -198,3 +198,8 @@
 
 /* Define as `fork' if `vfork' does not work. */
 #undef vfork
+
+
+
+/* CUSTOM */
+#define PACKAGE_URL "http://galileo.dmi.unict.it/wiki/weborf/"
