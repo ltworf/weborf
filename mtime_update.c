@@ -23,5 +23,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef HAVE_INOTIFY_INIT
 #include "mtime_update_fake.c"
 #else
-#include "mtime_update_inode.c"
+#include "mtime_update_inotify.c"
 #endif

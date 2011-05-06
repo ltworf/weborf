@@ -37,6 +37,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * It requires inotify support (linux only), otherwise it will compile empty stubs
  * that do nothing at all.
  * 
+ * It is not reentrant.
+ * 
  * EXAMPLE:
  * mtime_init();    //Initializes internal data structures
  * 
@@ -61,6 +63,6 @@ int mtime_watch_dir(char *path);
 int mtime_spawn_listener();
 int mtime_join_listener();
 void mtime_listener();
-void mtime_set_events(int e) {}
+void mtime_set_events(int e);
 
 #endif
