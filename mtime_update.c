@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
-
 #include "options.h"
+
 
 #include <sys/inotify.h>
 #include <sys/stat.h>
@@ -36,19 +36,38 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 
+#ifndef HAVE_INOTIFY_INIT
+
+int mtime_init() { return 0; }
+void mtime_free() {}
+int mtime_watch_dir(char *path) { return 0; }
+int mtime_spawn_listener() { return 0; }
+int mtime_join_listener() { return 0; }
+void mtime_listener() {}
+
+
+#else
 
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
-
 
 #include "mtime_update.h"
 
 char **paths=NULL;
 size_t p_len=0;
 int fd=-1;
-
+int m_events=IN_CLOSE_WRITE;
 pthread_t thread_id;
 
+
+
+/**
+ * Changes the default set of events to listen to.
+ * e is a mask, see man 7 inotify to know what events are allowed
+ */
+void mtime_set_events(int e) {
+    m_events=e;
+}
 
 /**
  * Recoursively adds inotify watches over a directory and its leaves.
@@ -70,7 +89,7 @@ int mtime_watch_dir(char *path) {
      * doesn't already change directory's mtime.
      * Adding and deleting aren't important to us.
      */
-    int r = inotify_add_watch(fd,path, IN_CLOSE_WRITE);
+    int r = inotify_add_watch(fd,path, m_events);
     if (r==-1 || r>=p_len) return -1;
     printf("watching %s %d\n",path,r);
 
@@ -110,7 +129,13 @@ int mtime_watch_dir(char *path) {
     return retval;
 }
 
-
+/**
+ * Creates a thread to listen to events and modify the mtimes of the
+ * related directory.
+ * 
+ * NOTE: never launch two threads before first joining, or one of them
+ * will not be joinable anymore.
+ */
 int mtime_spawn_listener() {
     pthread_attr_t t_attr;
     pthread_attr_init(&t_attr);
@@ -120,13 +145,21 @@ int mtime_spawn_listener() {
 
 }
 
+/**
+ * Terminates the thread listening for events
+ * 
+ * NOTE: Never try to join a thread before launchin one with
+ * mtime_spawn_listener()
+ */
 int mtime_join_listener() {
-    void *res;
     pthread_cancel(thread_id);
-    return pthread_join(thread_id,res);
+    return pthread_join(thread_id,NULL);
 }
 
-
+/**
+ * Listens for events and updates the mtime of the directory containing
+ * the file that generated the event.
+ */
 void mtime_listener() {
     char buffer[BUF_LEN];
     int length;
@@ -134,9 +167,7 @@ void mtime_listener() {
 
     for (;;) {
 
-        printf("waiting events..\n");
         length = read( fd, buffer, BUF_LEN );
-        printf("processing..\n");
 
         if ( length <= 0 ) return;
 
@@ -168,6 +199,10 @@ int mtime_init() {
 
 }
 
+/**
+ * Frees the allocated resources.
+ * Never call this function before 1st allocating the resources.
+ */
 void mtime_free() {
     int i;
     for (i=0; i<MTIME_MAX_WATCH_DIRS; i++) {
@@ -182,28 +217,31 @@ void mtime_free() {
     close(fd);
 }
 
-int main( int argc, char **argv ) {
+/*int main( int argc, char **argv ) {
     int wd;
 
     mtime_init();
 
 
     mtime_watch_dir("/tmp/o/");
+    mtime_watch_dir("/tmp/p/");
 
     //mtime_listener();
     mtime_spawn_listener();
     
     {
         int i;
-        for (i=0;i<100;i++) {
+        for (i=0;i<40;i++) {
             printf("...\n");
             sleep(3);
         }
     }
     
-    mtime_join_listener();
+    printf("join %d\n",mtime_join_listener());
     mtime_free();
 
     exit( 0 );
 }
 
+*/
+#endif

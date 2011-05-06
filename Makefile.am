@@ -11,12 +11,14 @@ weborf_SOURCES = \
     instance.c \
     listener.c \
     mime.c \
+    mtime_update.c \
     myio.c \
     mynet.c \
     mystring.c \
     queue.c \
     utils.c \
     webdav.c
+    
 
 EXTRA_DIST = \
     auth.h \
@@ -32,6 +34,7 @@ EXTRA_DIST = \
     cachedir.h \
     embedded_auth.h \
     listener.h \
+    mtime_update.h \
     myio.h \
     mystring.h \
     queue.h \
