@@ -38,6 +38,8 @@ EXTRA_DIST = \
     embedded_auth.h \
     listener.h \
     mtime_update.h \
+    mtime_update_fake.c \
+    mtime_update_inotify.c \
     myio.h \
     mystring.h \
     queue.h \
