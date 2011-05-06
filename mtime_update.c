@@ -28,16 +28,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <dirent.h>
 #include <errno.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-
-
-
-
-
 
 
 
@@ -52,6 +47,7 @@ char **paths=NULL;
 size_t p_len=0;
 int fd=-1;
 
+pthread_t thread_id;
 
 
 /**
@@ -67,7 +63,7 @@ int fd=-1;
  * Returns 0 in case everything is correct.
  *
  */
-static int mtime_watch_dir(char *path) {
+int mtime_watch_dir(char *path) {
     int retval=0;
     /*
      * Watches for IN_MODIFY because that is the only activity on file that
@@ -115,7 +111,23 @@ static int mtime_watch_dir(char *path) {
 }
 
 
-static void mtime_listener() {
+int mtime_spawn_listener() {
+    pthread_attr_t t_attr;
+    pthread_attr_init(&t_attr);
+    //pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED);
+    
+    return pthread_create(&thread_id, &t_attr, mtime_listener, (void *)NULL);
+
+}
+
+int mtime_join_listener() {
+    void *res;
+    pthread_cancel(thread_id);
+    return pthread_join(thread_id,res);
+}
+
+
+void mtime_listener() {
     char buffer[BUF_LEN];
     int length;
     int i;
@@ -178,66 +190,20 @@ int main( int argc, char **argv ) {
 
     mtime_watch_dir("/tmp/o/");
 
-    mtime_listener();
+    //mtime_listener();
+    mtime_spawn_listener();
+    
+    {
+        int i;
+        for (i=0;i<100;i++) {
+            printf("...\n");
+            sleep(3);
+        }
+    }
+    
+    mtime_join_listener();
     mtime_free();
 
     exit( 0 );
 }
 
-/*int main( int argc, char **argv )
-{
-  int length, i = 0;
-  int fd;
-  int wd;
-  char buffer[BUF_LEN];
-
-  fd = inotify_init();
-
-  if ( fd < 0 ) {
-    perror( "inotify_init" );
-  }
-
-  wd = inotify_add_watch( fd, "/home/salvo/",
-                         IN_MODIFY | IN_CREATE | IN_DELETE );
-  length = read( fd, buffer, BUF_LEN );
-
-  if ( length < 0 ) {
-    perror( "read" );
-  }
-
-  while ( i < length ) {
-    struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
-    if ( event->len ) {
-      if ( event->mask & IN_CREATE ) {
-        if ( event->mask & IN_ISDIR ) {
-          printf( "The directory %s was created.\n", event->name );
-        }
-        else {
-          printf( "The file %s was created.\n", event->name );
-        }
-      }
-      else if ( event->mask & IN_DELETE ) {
-        if ( event->mask & IN_ISDIR ) {
-          printf( "The directory %s was deleted.\n", event->name );
-        }
-        else {
-          printf( "The file %s was deleted.\n", event->name );
-        }
-      }
-      else if ( event->mask & IN_MODIFY ) {
-        if ( event->mask & IN_ISDIR ) {
-          printf( "The directory %s was modified.\n", event->name );
-        }
-        else {
-          printf( "The file %s was modified.\n", event->name );
-        }
-      }
-    }
-    i += EVENT_SIZE + event->len;
-  }
-
-  ( void ) inotify_rm_watch( fd, wd );
-  ( void ) close( fd );
-
-  exit( 0 );
-}*/

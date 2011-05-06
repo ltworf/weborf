@@ -33,5 +33,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int mtime_init();
 void mtime_free();
-
+int mtime_watch_dir(char *path);
+int mtime_spawn_listener();
+int mtime_join_listener();
+void mtime_listener();
 #endif
