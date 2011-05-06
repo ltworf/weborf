@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/stat.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include "dict.h"
 
 #ifdef SEND_MIMETYPES
 #include <magic.h>
@@ -103,6 +104,7 @@ typedef struct {
     unsigned int count;         //thread count
 } t_thread_info;
 
+
 typedef struct {
     char *basedir;
     char* authsock;             //Executable that will authenticate
@@ -120,6 +122,7 @@ typedef struct {
 
     char *indexes[MAXINDEXCOUNT];//List of pointers to index files
     int indexes_l;              //Count of the list
+    dict_t vhosts;         //virtual hosts
 
 } weborf_configuration_t;
 

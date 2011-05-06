@@ -41,6 +41,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "auth.h"
 #include "cachedir.h"
 #include "cgi.h"
+#include "dict.h"
 #include "instance.h"
 #include "mime.h"
 #include "myio.h"
@@ -1052,17 +1053,19 @@ char* get_basedir(char* http_param) {
 
     if (h==NULL) return weborf_conf.basedir;
 
+    h+=strlen("\r\nHost: ");//Removing "Host:" string
+
+
     char* end=strstr(h,"\r");
     if (end==NULL) return weborf_conf.basedir;
 
-    h+=8;//Removing "Host:" string
+
     end[0]=0;
-    result=getenv(h);
+    result=dict_get_key(&(weborf_conf.vhosts),h);
+
     end[0]='\r';
 
-    if (result==NULL) return weborf_conf.basedir; //Reqeusted host doesn't exist
-
-    return result;
+    return result==NULL?weborf_conf.basedir:result;
 }
 
 

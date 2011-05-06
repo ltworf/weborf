@@ -18,10 +18,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
-int mtime_init() { return 0; }
+int mtime_init() {
+    return 0;
+}
 void mtime_free() {}
-int mtime_watch_dir(char *path) { return 0; }
-int mtime_spawn_listener() { return 0; }
-int mtime_join_listener() { return 0; }
+int mtime_watch_dir(char *path) {
+    return 0;
+}
+int mtime_spawn_listener() {
+    return 0;
+}
+int mtime_join_listener() {
+    return 0;
+}
 void mtime_listener() {}
 void mtime_set_events(int e) {}

@@ -70,6 +70,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //Number of index pages allowed to search
 #define MAXINDEXCOUNT 10
 
+#define MAX_VHOST_COUNT 10
+
 //-------------LIMITS
 #define POST_MAX_SIZE 2000000   //Maximum allowed size for POST data
 

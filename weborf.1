@@ -38,6 +38,12 @@ To flush the cache (empty that directory) you must send USR2 signal to the proce
 It is advised to flush the cache on reboot (manually or with kill) because some items might be invalid after a reboot but weborf would not know that.
 
 .TP
+.B \-f, \-\-fastcache
+Has effect only if cache is used. When cache is used, cached elements for directories will be invalidated also if a file within the directory is modified.
+With this option, new content for the directory will be generated only if files are added or removed from the directory.
+When weborf is being used in inetd mode, fastcache is the default.
+
+.TP
 .B \-T, \-\-inetd
 Must be specified when using weborf with inetd or xinetd.
 It will be still necessary to specify the used port, to pass the correct value to the CGI scripts.

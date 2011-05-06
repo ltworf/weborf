@@ -26,11 +26,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdbool.h>
 
+#include "auth.h"
+#include "cachedir.h"
 #include "configuration.h"
+#include "dict.h"
+#include "mtime_update.h"
 #include "types.h"
 #include "utils.h"
-#include "cachedir.h"
-#include "auth.h"
 
 weborf_configuration_t weborf_conf=    {
     .tar_directory=false,
@@ -146,24 +148,48 @@ static void configuration_set_index_list(char *optarg) { //Setting list of index
 static void configuration_set_virtualhost(char *optarg) {
     weborf_conf.virtual_host = true;
 
-    int i = 0;
-    char *virtual = optarg; //1st one points to begin of param
 
-    while (optarg[i++] != 0) { //Reads the string
-        if (optarg[i] == ',') {
-            optarg[i++] = 0; //Nulling the comma
-            putenv(virtual);
-            virtual = &optarg[i];
+    dict_init(&(weborf_conf.vhosts),MAX_VHOST_COUNT);
 
-        }
+    char *saveptr1, *saveptr2;
+    char *item;
+
+    char *key,*value;
+
+    while ((item=strtok_r(optarg,",",&saveptr1))!=NULL) {
+        optarg=NULL;
+
+
+        key=strtok_r(item,"=",&saveptr2);
+        value=strtok_r(NULL,"=",&saveptr2);
+
+        if (key!=NULL && value!=NULL)
+            dict_add_pair(&(weborf_conf.vhosts),key,value);
     }
-    putenv(virtual);
 }
 
+static void configuration_force_cache_correctness(bool cache_correctness) {
+    if (weborf_conf.is_inetd==true || (cache_is_enabled()==false && cache_correctness==false)) return;
+
+    mtime_init();
+    mtime_watch_dir(weborf_conf.basedir);
+
+    //Adding virtualhost dirs
+    if (weborf_conf.virtual_host) {
+        unsigned int i;
+        for (i=0; i<weborf_conf.vhosts.items; i++) {
+            mtime_watch_dir(weborf_conf.vhosts.value[i]);
+        }
+    }
+
+    mtime_spawn_listener();
+
+}
 
 void configuration_load(int argc, char *argv[]) {
     configuration_set_default_CGI();
     configuration_set_default_index();
+    bool cache_correctness=true;
 
 
     int c; //Identify the readed option
@@ -188,6 +214,7 @@ void configuration_load(int argc, char *argv[]) {
         {"mime", no_argument,0,'m'},
         {"inetd", no_argument,0,'T'},
         {"tar", no_argument,0,'t'},
+        {"fastcache", no_argument,0,'f'},
         {0, 0, 0, 0}
     };
 
@@ -197,7 +224,7 @@ void configuration_load(int argc, char *argv[]) {
         option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long(argc, argv, "tTMmvhp:i:I:u:dxb:a:V:c:C:", long_options,
+        c = getopt_long(argc, argv, "ftTMmvhp:i:I:u:dxb:a:V:c:C:", long_options,
                         &option_index);
 
         //If there are no options it continues
@@ -205,6 +232,9 @@ void configuration_load(int argc, char *argv[]) {
             break;
 
         switch (c) {
+        case 'f':
+            cache_correctness=false;
+            break;
         case 't':
             weborf_conf.tar_directory=true;
             break;
@@ -261,4 +291,6 @@ void configuration_load(int argc, char *argv[]) {
         }
 
     }
+
+    configuration_force_cache_correctness(cache_correctness);
 }
