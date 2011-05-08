@@ -169,7 +169,7 @@ static void configuration_set_virtualhost(char *optarg) {
 }
 
 static void configuration_force_cache_correctness(bool cache_correctness) {
-    if (weborf_conf.is_inetd==true || (cache_is_enabled()==false && cache_correctness==false)) return;
+    if (weborf_conf.is_inetd==true || cache_is_enabled()==false || cache_correctness==false) return;
 
     mtime_init();
     mtime_watch_dir(weborf_conf.basedir);

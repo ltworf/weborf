@@ -78,7 +78,7 @@ int mtime_watch_dir(char *path) {
      */
     int r = inotify_add_watch(fd,path, m_events);
     if (r==-1 || (unsigned int)r>=p_len) return -1;
-    printf("watching %s %d\n",path,r);
+    //printf("watching %s %d\n",path,r);
 
     //Recoursive scan
     DIR *dp = opendir(path);
@@ -162,7 +162,6 @@ void mtime_listener() {
         while ( i < length ) {
             struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
             if ( event->len ) {
-                printf("event in %s %d\n",paths[event->wd],event->wd);
                 utime(paths[event->wd],NULL);
             }
             i += EVENT_SIZE + event->len;

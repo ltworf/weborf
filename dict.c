@@ -25,6 +25,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "dict.h"
 
+/**
+ * Initializes the data structure for
+ * the dictionary.
+ *
+ * size: maximum amount of items allowed
+ *
+ * returns 0 in case of correct execution
+ */
 int dict_init(dict_t *dic,size_t size) {
     dic->size=size;
     dic->items=0;
@@ -38,6 +46,11 @@ int dict_init(dict_t *dic,size_t size) {
     return 0;
 }
 
+/**
+ * Frees the memory allocated by the dictionary
+ * It only frees the pointers to the keys and values,
+ * not the keys and values themselves.
+ */
 void dict_free(dict_t *dic) {
     free(dic->key);
     free(dic->value);
@@ -56,6 +69,16 @@ char *dict_get_key(dict_t *dic,char *key) {
     return NULL;
 }
 
+/**
+ * Adds a pair to the dictionary.
+ * The pair will be added, and no check for duplicates
+ * will be performed.
+ *
+ * dict presumes the pointers to the strings will remain valid
+ * no copy is performed.
+ *
+ * returns 0 on correct insertion
+ */
 int dict_add_pair(dict_t *dic,char *key, char *value) {
     if (dic->items>=dic->size) return -1;
 
@@ -64,9 +87,6 @@ int dict_add_pair(dict_t *dic,char *key, char *value) {
 
     dic->items+=1;
 
-    int i;
-    for (i=0; i<dic->items; i++)
-        printf("key %s\tvalue %s\n",dic->key[i],dic->value[i]);
-
     return 0;
 }
+// kate: indent-mode cstyle; space-indent on; indent-width 0;
