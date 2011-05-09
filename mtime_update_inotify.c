@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -40,17 +41,39 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mtime_update.h"
 
-char **paths=NULL;
+char **paths=NULL;              //Array used to store pointers to malloc()ated strings containing watched paths
 size_t p_len=0;
 int fd=-1;
-int m_events=IN_CLOSE_WRITE;
+int m_events=IN_CLOSE_WRITE | IN_CREATE;
 pthread_t thread_id;
 
-
+/**
+  * Returns true if the indicated path exists and is
+  * a directory.
+  * In case it is impossible to stat the path, false
+  * will be returned. But this might just mean that
+  * permissions aren't enough to perform the operation
+  */
+static bool mtime_isdir(char *path) {
+    struct stat stbuf;
+    if (stat(path,&stbuf)==0 && S_ISDIR(stbuf.st_mode))
+        return true;
+    return false;
+}
 
 /**
  * Changes the default set of events to listen to.
- * e is a mask, see man 7 inotify to know what events are allowed
+ * e is a mask, see man 7 inotify to know what events are allowed.
+ * 
+ * By default it watches for IN_CLOSE_WRITE | IN_CREATE.
+ * 
+ * If you change for not watching IN_CREATE, child directories
+ * will not be automatically added for watch.
+ * 
+ * You might want to change IN_CLOSE_WRITE to IN_MODIFY to
+ * have a more correct kind of accesses.
+ * 
+ * Changing the events affects the subsequent calls to mtime_watch_dir
  */
 void mtime_set_events(int e) {
     m_events=e;
@@ -60,6 +83,9 @@ void mtime_set_events(int e) {
  * Recoursively adds inotify watches over a directory and its leaves.
  * Only adds watches to directories and not other kind of files.
  * The caller must ensure that it is being called on a directory.
+ * 
+ * This function can't be called after the thread has been spawned.
+ * That will lead to race conditions.
  *
  * fd: inotify file descriptor used to add the watches
  * path: Path of the directory to watch
@@ -70,7 +96,11 @@ void mtime_set_events(int e) {
  *
  */
 int mtime_watch_dir(char *path) {
+
     int retval=0;
+
+    if (!mtime_isdir(path)) return -1;
+
     /*
      * Watches for IN_MODIFY because that is the only activity on file that
      * doesn't already change directory's mtime.
@@ -104,9 +134,7 @@ int mtime_watch_dir(char *path) {
             continue;
 
         snprintf(file,URI_LEN,"%s%s/",path, entry.d_name);
-        struct stat stbuf;
-        if (stat(file,&stbuf)==0 && S_ISDIR(stbuf.st_mode)) {
-
+        if (mtime_isdir(file)) {
             retval+= mtime_watch_dir(file);
         }
 
@@ -153,16 +181,23 @@ void mtime_listener() {
     int i;
 
     for (;;) {
-
         length = read( fd, buffer, BUF_LEN );
 
         if ( length <= 0 ) return;
 
         i=0;
         while ( i < length ) {
-            struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];
+            struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];            
             if ( event->len ) {
-                utime(paths[event->wd],NULL);
+                if (event->mask & (IN_CREATE | IN_ISDIR)) {
+                    char file[URI_LEN];
+                    snprintf(file,URI_LEN,"%s%s/",paths[event->wd],event->name);
+                    mtime_watch_dir(file);
+                } else {
+                    //Updite time on modifications, because on creation it is already done.
+                    utime(paths[event->wd],NULL);
+                }
+
             }
             i += EVENT_SIZE + event->len;
         }
