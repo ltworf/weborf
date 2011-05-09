@@ -64,15 +64,15 @@ static bool mtime_isdir(char *path) {
 /**
  * Changes the default set of events to listen to.
  * e is a mask, see man 7 inotify to know what events are allowed.
- * 
+ *
  * By default it watches for IN_CLOSE_WRITE | IN_CREATE.
- * 
+ *
  * If you change for not watching IN_CREATE, child directories
  * will not be automatically added for watch.
- * 
+ *
  * You might want to change IN_CLOSE_WRITE to IN_MODIFY to
  * have a more correct kind of accesses.
- * 
+ *
  * Changing the events affects the subsequent calls to mtime_watch_dir
  */
 void mtime_set_events(int e) {
@@ -83,7 +83,7 @@ void mtime_set_events(int e) {
  * Recoursively adds inotify watches over a directory and its leaves.
  * Only adds watches to directories and not other kind of files.
  * The caller must ensure that it is being called on a directory.
- * 
+ *
  * This function can't be called after the thread has been spawned.
  * That will lead to race conditions.
  *
@@ -187,7 +187,7 @@ void mtime_listener() {
 
         i=0;
         while ( i < length ) {
-            struct inotify_event *event = ( struct inotify_event * ) &buffer[ i ];            
+            struct inotify_event *event = (struct inotify_event *) &buffer[i];
             if ( event->len ) {
                 if (event->mask & (IN_CREATE | IN_ISDIR)) {
                     char file[URI_LEN];
