@@ -35,7 +35,9 @@ static char getCode(char c) {
         return c-'0'+52;
     } else if (c=='+')
         return 62;
-    return 63;
+    else if(c=='/')
+        return 63
+    return 0;
         
 }
 
