@@ -60,7 +60,6 @@ void dict_free(dict_t *dic) {
 
 char *dict_get_key(dict_t *dic,char *key) {
     unsigned int i=0;
-    printf("get key %s\n",key);
     while (i < dic->items && dic->key[i]!=NULL) {
         if (strcmp(key,dic->key[i])==0)
             return dic->value[i];
