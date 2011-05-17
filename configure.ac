@@ -1,5 +1,5 @@
 AC_INIT([weborf], [0.14], [tiposchi@tiscali.it],[weborf])
-AC_DEFINE(PACKAGE_URL, "http://galileo.dmi.unict.it/wiki/weborf/")
+AC_DEFINE([PACKAGE_URL], ["http://galileo.dmi.unict.it/wiki/weborf/"],[Define to the home page for this package.])
 
 
 AC_CONFIG_AUX_DIR([build-aux])
