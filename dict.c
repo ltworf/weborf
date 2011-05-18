@@ -88,4 +88,3 @@ int dict_add_pair(dict_t *dic,char *key, char *value) {
 
     return 0;
 }
-// kate: indent-mode cstyle; space-indent on; indent-width 0;

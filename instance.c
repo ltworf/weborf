@@ -46,7 +46,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "mime.h"
 #include "myio.h"
 #include "mystring.h"
-#include "queue.h"
 #include "types.h"
 #include "utils.h"
 
@@ -248,96 +247,6 @@ void change_free_thread(long int id,int free_d, int count_d) {
     syslog(LOG_DEBUG,"There are %d free threads",thread_info.free);
 #endif
     pthread_mutex_unlock(&thread_info.mutex);
-}
-
-/**
-Function executed at the beginning of the thread
-Takes open sockets from the queue and serves the requests
-Doesn't do busy waiting
-*/
-void * instance(void * nulla) {
-    thread_prop_t thread_prop;  //Server's props
-    pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
-
-    //General init of the thread
-    thread_prop.id=(long int)nulla;//Set thread's id
-#ifdef THREADDBG
-    syslog(LOG_DEBUG,"Starting thread %ld",thread_prop.id);
-#endif
-
-    //Vars
-    int bufFull=0;                                  //Amount of buf used
-    connection_t connection_prop;                   //Struct to contain properties of the connection
-    buffered_read_t read_b;                         //Buffer for buffered reader
-    int sock=0;                                     //Socket with the client
-    char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
-    connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
-
-#ifdef IPV6
-    struct sockaddr_in6 addr;//Local and remote address
-    socklen_t addr_l=sizeof(struct sockaddr_in6);
-#else
-    struct sockaddr_in addr;
-    int addr_l=sizeof(struct sockaddr_in);
-#endif
-
-    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
-#ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
-#endif
-        goto release_resources;
-    }
-
-    //Start accepting sockets
-    change_free_thread(thread_prop.id,1,0);
-
-    while (true) {
-        q_get(&queue, &sock);//Gets a socket from the queue
-        change_free_thread(thread_prop.id,-1,0);//Sets this thread as busy
-
-        if (sock<0) { //Was not a socket but a termination order
-            goto release_resources;
-        }
-
-        connection_prop.sock=sock;//Assigned socket into the struct
-
-        //Converting address to string
-#ifdef IPV6
-        getpeername(sock, (struct sockaddr *)&addr, &addr_l);
-        inet_ntop(AF_INET6, &addr.sin6_addr, connection_prop.ip_addr, INET6_ADDRSTRLEN);
-#else
-        getpeername(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
-        inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr, INET_ADDRSTRLEN);
-#endif
-
-#ifdef THREADDBG
-        syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
-#endif
-        handle_requests(buf,&read_b,&bufFull,&connection_prop);
-
-#ifdef THREADDBG
-        syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",thread_prop.id);
-#endif
-
-        close(sock);//Closing the socket
-        buffer_reset (&read_b);
-
-        change_free_thread(thread_prop.id,1,0);//Sets this thread as free
-    }
-
-
-
-release_resources:
-#ifdef THREADDBG
-    syslog(LOG_DEBUG,"Terminating thread %ld",thread_prop.id);
-#endif
-    free(buf);
-    free(connection_prop.strfile);
-    buffer_free(&read_b);
-    mime_release(thread_prop.mime_token);
-    change_free_thread(thread_prop.id,0,-1);//Reduces count of threads
-    pthread_exit(0);
-    return NULL;//Never reached
 }
 
 /**

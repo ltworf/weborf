@@ -39,6 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
 
+#include "cachedir.h"
 #include "mtime_update.h"
 
 char **paths=NULL;              //Array used to store pointers to malloc()ated strings containing watched paths
@@ -194,8 +195,11 @@ void mtime_listener() {
                     snprintf(file,URI_LEN,"%s%s/",paths[event->wd],event->name);
                     mtime_watch_dir(file);
                 } else {
-                    //Updite time on modifications, because on creation it is already done.
-                    utime(paths[event->wd],NULL);
+                    //Update time on modifications, because on creation it is already done.
+                    if (utime(paths[event->wd],NULL)!=0) {
+                        //updating mtime failed, falling back to deleting cache items
+                        cache_clean_element(paths[event->wd]);
+                    }
                 }
 
             }

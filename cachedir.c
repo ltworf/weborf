@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stdlib.h>
 #include <dirent.h>
+#include <string.h>
 #include <syslog.h>
 #include <stdbool.h>
 
@@ -269,3 +270,72 @@ int cache_clear() {
 
 }
 
+/**
+ * compares a filename and a struct stat
+ * if the filename refers to the same element indicated by the struct stat
+ * it returns true
+ * false otherwise
+ */
+static bool cache_element_matches(const char *filename, struct stat *st) {
+    char*saveptr=NULL;
+    
+    char lf[strlen(filename)+1];
+    strcpy(lf,filename);
+    
+    //%u-%llu-%llu-%ld", uprefix,strfile_stat.st_ino,strfile_stat.st_dev,strfile_stat.st_mtime;
+    
+    strtok_r(lf,"-",&saveptr);                    //prefix
+    char *inode=strtok_r(NULL,"-",&saveptr);            //inode
+    char *dev_id=strtok_r(NULL,"-",&saveptr);           //dev_id
+    //strtok_r(filename,"-",&saveptr);                  //mtime
+    
+    if (strtoull(dev_id, NULL, 0)==st->st_dev && strtoull(inode, NULL, 0)==st->st_ino)
+        return true;
+    return false;
+}
+
+/**
+ * Removes all the cached elements related to the path, causing future requests
+ * for the item to be regenerated rather than served from cache.
+ * 
+ * returns 0 in case of success
+ */
+int cache_clean_element (char *path) {
+
+    if (!cachedir) return -1;
+    
+    struct stat st;
+    if (stat(path,&st)!=0) return -1;
+
+    //Empty directory
+    DIR *dp = opendir(cachedir); //Open dir
+    struct dirent entry;
+    struct dirent *result;
+    int return_code;
+    int retval=0;
+
+    if (dp == NULL) {
+        return 1;
+    }
+
+    char*file=malloc(PATH_LEN);//Buffer for path
+    if (file==NULL)
+        return -1;
+
+    //Cycles trough dir's elements
+    for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
+
+        //skips dir . and .. but not all hidden files
+        if (entry.d_name[0]=='.' && (entry.d_name[1]==0 || (entry.d_name[1]=='.' && entry.d_name[2]==0)))
+            continue;
+        
+        if (cache_element_matches(entry.d_name,&st)) {
+                snprintf(file,PATH_LEN,"%s/%s",cachedir, entry.d_name);
+                retval+=unlink(file);
+        }
+    }
+
+    closedir(dp);
+    free(file);
+    return retval;
+}
