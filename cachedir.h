@@ -31,6 +31,6 @@ void cache_store_item(unsigned int uprefix,connection_t* connection_prop, char *
 void cache_init(char *dir);
 int cache_clear();
 bool cache_is_enabled();
-
+int cache_clean_element (char *);
 
 #endif
