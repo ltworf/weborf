@@ -397,19 +397,32 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
 
     ftruncate(fd,content_l);
 
-
-    /*
-     * flushing the content of the socket cache to the file.
-     * If there is more buffer, limiting the amount of the flush.
-     */
-    content_l-=buffer_flush_fd(fd,read_b,content_l);
-
-    //Normal non-buffered copy from the socket to the file
-    int copy_r=fd_copy(sock,fd, content_l);
-    if (copy_r!=0) {
-        retval=copy_r;
+    char* buf=malloc(FILEBUF);//Buffer to read from file
+    if (buf==NULL) {
+#ifdef SERVERDBG
+        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
+#endif
+        close(fd);
+        return ERR_NOMEM;
     }
 
+    long long int read_,write_;
+    long long int tot_read=0;
+    long long int to_read;
+
+    while ((to_read=(content_l-tot_read)>FILEBUF?FILEBUF:content_l-tot_read)>0) {
+        read_=buffer_read(sock,buf,to_read,read_b);
+        write_=write(fd,buf,read_);
+
+        if (write_!=read_) {
+            retval= ERR_BRKPIPE;
+            break;
+        }
+
+        tot_read+=read_;
+    }
+
+    free(buf);
     close(fd);
 
     return retval;
