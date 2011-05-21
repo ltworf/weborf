@@ -21,22 +21,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "options.h"
 
 #include <time.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <pthread.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/un.h>
+#include <sys/wait.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <syslog.h>
 #include <string.h>
 #include <strings.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <sys/un.h>
-#include <errno.h>
+#include <unistd.h>
 
 #include "auth.h"
 #include "cachedir.h"
@@ -131,6 +132,21 @@ static inline void set_connection_props(connection_t *connection_prop) {
     connection_prop->basedir=get_basedir(connection_prop->http_param);
 }
 
+/**
+ * removes TCP_CORK in order to send an incomplete frame if needed
+ * and sets it again to forbid incomplete frames again.
+ * 
+ * it is Linux specific. Does nothing otherwise
+ */
+static inline void s_flush (int sock) {
+#ifdef TCP_CORK
+    int val=0;
+    setsockopt(sock, IPPROTO_TCP, TCP_CORK, (char *)&val, sizeof(val));
+    val=1;
+    setsockopt(sock, IPPROTO_TCP, TCP_CORK, (char *)&val, sizeof(val));
+#endif
+}
+
 static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop) {
     int from;
     int sock=connection_prop->sock;
@@ -141,6 +157,8 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
     char *end;//Pointer to header's end
 
     while (true) { //Infinite cycle to handle all pipelined requests
+        s_flush(sock);
+
         if ((*bufFull)!=0) {
             memset(buf,0,(*bufFull));//Sets to 0 the buffer, only the part used for the previous request in the same connection
             (*bufFull)=0;//bufFull-(end-buf+4);
@@ -406,7 +424,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
         return ERR_NOMEM;
     }
 
-    long long int read_,write_;
+    size_t read_,write_;
     long long int tot_read=0;
     long long int to_read;
 
