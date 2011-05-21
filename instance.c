@@ -135,7 +135,7 @@ static inline void set_connection_props(connection_t *connection_prop) {
 /**
  * removes TCP_CORK in order to send an incomplete frame if needed
  * and sets it again to forbid incomplete frames again.
- * 
+ *
  * it is Linux specific. Does nothing otherwise
  */
 static inline void s_flush (int sock) {
