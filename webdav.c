@@ -23,19 +23,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef WEBDAV
 
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <string.h>
 #include <stdbool.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "webdav.h"
 #include "instance.h"
@@ -508,7 +507,7 @@ int copy_move(connection_t* connection_prop) {
         retval=ERR_FORBIDDEN;
         goto escape;
     }
-    exists=file_exists(destination);
+    exists=(access(destination,R_OK)==0?true:false);
 
     //Checks if the file already exists
     if (check_exists && exists) {

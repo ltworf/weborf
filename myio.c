@@ -71,19 +71,6 @@ int fd_copy(int from, int to, off_t count) {
     return retval;
 }
 
-
-/**
-Returns true if the specified file exists
-*/
-bool file_exists(char *file) {
-    int fp = open(file, O_RDONLY);
-    if (fp >= 0) { // exists
-        close(fp);
-        return true;
-    }
-    return false;
-}
-
 /**
 Deletes a directory and its content.
 This function is something like rm -rf

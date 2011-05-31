@@ -402,7 +402,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     }
 
     //Checks if file already exists or not (needed for response code)
-    if (file_exists(connection_prop->strfile)) {//Resource already existed (No content)
+    if (access(connection_prop->strfile,R_OK | W_OK)==0) {//Resource already existed (No content)
         retval=OK_NOCONTENT;
     } else {//Resource was created (Created)
         retval=OK_CREATED;
@@ -607,7 +607,7 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
             //Cyclyng through the indexes
             for (i=0; i<weborf_conf.indexes_l; i++) {
                 snprintf(index_name,INDEXMAXLEN,"%s",weborf_conf.indexes[i]);//Add INDEX to the url
-                if (file_exists(connection_prop->strfile)) { //If index exists, redirect to it
+                if (access(connection_prop->strfile,R_OK)==0) { //If index exists, redirect to it
                     char head[URI_LEN+12];//12 is the size for the location header
                     snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes[i]);
                     connection_prop->response.status_code=303;
