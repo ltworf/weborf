@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * returns 0 in case of correct execution
  */
-int dict_init(dict_t *dic,size_t size) {
+int dict_init(dict_t *dic,size_t size) {    
     dic->size=size;
     dic->items=0;
     dic->key=calloc(sizeof(char*),size);
@@ -58,6 +58,11 @@ void dict_free(dict_t *dic) {
     dic->items=0;
 }
 
+/**
+ * Returns the pointer to the value corresponding to
+ * the given key.
+ * Returns NULL if the key is not present.
+ */
 char *dict_get_key(dict_t *dic,char *key) {
     unsigned int i=0;
     while (i < dic->items && dic->key[i]!=NULL) {
