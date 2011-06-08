@@ -137,6 +137,8 @@ int file_move(char* source, char* dest) {
         retval=file_copy(source,dest);
         if (retval==0)
             unlink(source);
+        else
+            unlink(dest); //Might not exist, but we don't care
     }
     return retval;
 }

@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
- */
+*/
 
 #include "options.h"
 
@@ -49,13 +49,10 @@ void split_get_params(connection_t* connection_prop) {
     if (separator==NULL) {
         connection_prop->get_params=NULL;
         connection_prop->page_len=strlen(connection_prop->page);
-
     } else {
-
         separator[0]=0;
         connection_prop->get_params=separator+1;
         connection_prop->page_len=separator-connection_prop->page;
-
     }
 }
 

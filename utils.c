@@ -288,15 +288,11 @@ bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,
     val += param_len + 2; //Moves the begin of the string to exclude the name of the field
 
     char *field_end = strstr(val, "\r\n"); //Searches the end of the parameter
-    if (field_end==NULL) {
+    if (field_end==NULL || (field_end - val + 1) >= size) {
         return false;
     }
 
-    if ((field_end - val + 1) < size) { //If the parameter's length is less than buffer's size
-        memcpy(buf, val, field_end - val);
-    } else { //Parameter string is too long for the buffer
-        return false;
-    }
+    memcpy(buf, val, field_end - val);
     buf[field_end - val] = 0; //Ends the string within the destination buffer
 
     return true;

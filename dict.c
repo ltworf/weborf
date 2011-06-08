@@ -33,7 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * returns 0 in case of correct execution
  */
-int dict_init(dict_t *dic,size_t size) {    
+int dict_init(dict_t *dic,size_t size) {
     dic->size=size;
     dic->items=0;
     dic->key=calloc(sizeof(char*),size);
