@@ -127,22 +127,26 @@ static void configuration_set_cgi(char *optarg) {
 }
 
 static void configuration_set_index_list(char *optarg) { //Setting list of indexes
-    int i = 0;
-    weborf_conf.indexes_l = 1; //count of indexes
-    weborf_conf.indexes[0] = optarg; //1st one points to begin of param
-    while (optarg[i++] != 0) { //Reads the string
 
-        if (optarg[i] == ',') {
-            optarg[i++] = 0; //Nulling the comma
-            //Increasing counter and making next item point to char after the comma
-            weborf_conf.indexes[weborf_conf.indexes_l++] = &optarg[i];
+    char *saveptr;
+    
+    if ((weborf_conf.indexes[0]=strtok_r(optarg,",",&saveptr))!=NULL) {
+        weborf_conf.indexes_l = 1; //count of indexes
+        
+        char *token;
+        
+        while ((token=strtok_r(NULL,",",&saveptr))!=NULL) {
+            weborf_conf.indexes[weborf_conf.indexes_l]=token;
+            weborf_conf.indexes_l++;
+            
             if (weborf_conf.indexes_l == MAXINDEXCOUNT) {
-                perror("Too much indexes, change MAXINDEXCOUNT in options.h to allow more");
+                fprintf(stderr,"Too much indexes, change MAXINDEXCOUNT in options.h to allow more.\n");
                 exit(6);
             }
         }
+        
+        
     }
-
 }
 
 static void configuration_set_virtualhost(char *optarg) {
