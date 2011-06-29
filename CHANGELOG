@@ -8,6 +8,7 @@
 - Doesn't rely on envvars to handle virtualhosts
 - Much faster decode64 module, with removed iterations
 - On Linux, will avoid partial frames
+- Refactory of configuration loading, to have faster startup
 
 0.13
 - Shows last modified column in directory listing (Rev 419)

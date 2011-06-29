@@ -104,48 +104,50 @@ static void configuration_set_default_index() {
 }
 
 static void configuration_set_cgi(char *optarg) {
-    int i = 0;
-    weborf_conf.cgi_paths.len = 1; //count of indexes
-    weborf_conf.cgi_paths.data[0] = optarg; //1st one points to begin of param
-    while (optarg[i++] != 0) { //Reads the string
-        if (optarg[i] == ',') {
-            optarg[i++] = 0; //Nulling the comma
-            //Increasing counter and making next item point to char after the comma
-            weborf_conf.cgi_paths.data[weborf_conf.cgi_paths.len++] = &optarg[i];
+
+    char *saveptr;
+    char *token;
+
+    if ((weborf_conf.cgi_paths.data[0]=strtok_r(optarg,",",&saveptr))!=NULL) {
+        weborf_conf.cgi_paths.len = 1; //count of indexes
+        weborf_conf.cgi_paths.data_l[0]=strlen(weborf_conf.cgi_paths.data[0]);
+
+        while ((token=strtok_r(NULL,",",&saveptr))!=NULL) {
+            weborf_conf.cgi_paths.data[weborf_conf.cgi_paths.len]=token;
+            weborf_conf.cgi_paths.data_l[weborf_conf.cgi_paths.len]=strlen(token);
+
+            weborf_conf.cgi_paths.len++;
+
             if (weborf_conf.cgi_paths.len == MAXINDEXCOUNT) {
-                perror("Too much cgis, change MAXINDEXCOUNT in options.h to allow more");
+                fprintf(stderr,"Too much indexes, change MAXINDEXCOUNT in options.h to allow more.\n");
                 exit(6);
             }
         }
-    }
 
-    size_t j;
-    for (j=0; j<weborf_conf.cgi_paths.len; j++) {
-        weborf_conf.cgi_paths.data_l[j]=strlen(weborf_conf.cgi_paths.data[j]);
-    }
 
+    }
 }
 
 static void configuration_set_index_list(char *optarg) { //Setting list of indexes
 
     char *saveptr;
-    
+
     if ((weborf_conf.indexes[0]=strtok_r(optarg,",",&saveptr))!=NULL) {
         weborf_conf.indexes_l = 1; //count of indexes
-        
+
         char *token;
-        
+
         while ((token=strtok_r(NULL,",",&saveptr))!=NULL) {
             weborf_conf.indexes[weborf_conf.indexes_l]=token;
             weborf_conf.indexes_l++;
-            
+
             if (weborf_conf.indexes_l == MAXINDEXCOUNT) {
                 fprintf(stderr,"Too much indexes, change MAXINDEXCOUNT in options.h to allow more.\n");
                 exit(6);
             }
         }
-        
-        
+
+
     }
 }
 

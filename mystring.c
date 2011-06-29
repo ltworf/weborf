@@ -72,10 +72,8 @@ void replaceEscape(char *o_string) {
     char e_seq[3];
     char *string=o_string;
 
-
     size_t o_len=strlen(o_string);
     unsigned int i_count=0;
-
 
     e_seq[2] = 0;
 
