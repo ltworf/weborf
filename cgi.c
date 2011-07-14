@@ -23,6 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/resource.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <arpa/inet.h>
@@ -189,11 +191,24 @@ static inline void cgi_child_chdir(connection_t *connection_prop) {
 }
 
 /**
+ * Sets soft and hard limit for the CPU of the current
+ * process.
+ * the hard limit is soft_limit + 3 seconds.
+ */
+static inline int set_cpu_limit(int soft_limit) {
+       struct rlimit limit;
+       limit.rlim_cur=soft_limit;
+       limit.rlim_max=soft_limit+3;
+       
+       return setrlimit(RLIMIT_CPU, &limit);
+}
+
+/**
  * Closes unused ends of pipes, dups them,
  * sets the correct enviromental variables requested
  * by the CGI protocol and then executes the CGI.
  *
- * Will also set an alarm to try to prevent the script from
+ * Will also set a CPU limit to prevent the script from
  * running forever.
  * */
 static inline void cgi_execute_child(connection_t* connection_prop,string_t* post_param,char * executor,int *wpipe,int *ipipe) {
@@ -219,8 +234,8 @@ static inline void cgi_execute_child(connection_t* connection_prop,string_t* pos
     cgi_set_env_content_length();
 
     cgi_child_chdir(connection_prop);
-
-    alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
+    
+    set_cpu_limit(SCRPT_TIMEOUT); //Sets the timeout for the script
 
     execl(executor,executor,(char *)0);
 #ifdef SERVERDBG

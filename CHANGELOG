@@ -9,6 +9,7 @@
 - Much faster decode64 module, with removed iterations
 - On Linux, will avoid partial frames
 - Refactory of configuration loading, to have faster startup
+- CGI scripts are now terminated for sure when they exceed their limit
 
 0.13
 - Shows last modified column in directory listing (Rev 419)
