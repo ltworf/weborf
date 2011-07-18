@@ -47,14 +47,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define _GNU_SOURCE
 
 syn_queue_t queue;              //Queue for opened sockets
-
 t_thread_info thread_info;
-
 extern weborf_configuration_t weborf_conf;
-
 pthread_attr_t t_attr;          //thread's attributes
-
 pthread_key_t thread_key;            //key for pthread_setspecific
+
+RETSIGTYPE quit();
+RETSIGTYPE print_queue_status();
+
 
 /**
 Sets t_attr to make detached threads
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
 /**
 SIGINT and SIGTERM signal handler
 */
-void quit() {
+RETSIGTYPE quit() {
 #ifdef SERVERDBG
     syslog(LOG_INFO, "Stopping server...");
 #endif
@@ -254,7 +254,7 @@ void *t_shape() {
 Will print the internal status of the queue.
 This function is triggered by SIGUSR1 signal.
 */
-void print_queue_status() {
+RETSIGTYPE print_queue_status() {
 
     //Lock because the values are read many times and it's needed that they have the same value all the times
 

@@ -23,12 +23,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_LISTENER_H
 #define WEBORF_LISTENER_H
 
-
 #define NOMEM 7
 
 void init_threads(unsigned int count);
-void quit();
-void print_queue_status();
 void *t_shape();
 void set_authsocket(char *);
 void chn_thread_count(int val);
