@@ -85,7 +85,6 @@ static inline void cgi_set_http_env_vars(char *http_param) { //Sets Enviroment v
                 break;
             }
         }
-
     }
 }
 
@@ -195,12 +194,12 @@ static inline void cgi_child_chdir(connection_t *connection_prop) {
  * process.
  * the hard limit is soft_limit + 3 seconds.
  */
-static inline int set_cpu_limit(int soft_limit) {
-       struct rlimit limit;
-       limit.rlim_cur=soft_limit;
-       limit.rlim_max=soft_limit+3;
-       
-       return setrlimit(RLIMIT_CPU, &limit);
+static inline int cgi_set_cpu_limit(int soft_limit) {
+    struct rlimit limit;
+    limit.rlim_cur=soft_limit;
+    limit.rlim_max=soft_limit+3;
+
+    return setrlimit(RLIMIT_CPU, &limit);
 }
 
 /**
@@ -234,8 +233,8 @@ static inline void cgi_execute_child(connection_t* connection_prop,string_t* pos
     cgi_set_env_content_length();
 
     cgi_child_chdir(connection_prop);
-    
-    set_cpu_limit(SCRPT_TIMEOUT); //Sets the timeout for the script
+
+    cgi_set_cpu_limit(SCRPT_TIMEOUT); //Sets the timeout for the script
 
     execl(executor,executor,(char *)0);
 #ifdef SERVERDBG
