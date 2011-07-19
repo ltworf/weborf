@@ -45,6 +45,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 char **paths=NULL;              //Array used to store pointers to malloc()ated strings containing watched paths
 size_t p_len=0;
 int fd=-1;
+
+/*
+ * Watches for IN_CLOSE_WRITE because that doesn't change directory's mtime.
+ * Also creating is important, so we can add new dirs to the watch.
+ */
 int m_events=IN_CLOSE_WRITE | IN_CREATE;
 pthread_t thread_id;
 
@@ -102,11 +107,6 @@ int mtime_watch_dir(char *path) {
 
     if (!mtime_isdir(path)) return -1;
 
-    /*
-     * Watches for IN_MODIFY because that is the only activity on file that
-     * doesn't already change directory's mtime.
-     * Adding and deleting aren't important to us.
-     */
     int r = inotify_add_watch(fd,path, m_events);
     if (r==-1 || (unsigned int)r>=p_len) return -1;
     //printf("watching %s %d\n",path,r);
@@ -117,11 +117,7 @@ int mtime_watch_dir(char *path) {
         return -1;
     }
 
-    {
-        char *mfile=malloc(strlen(path)+1);
-        strcpy(mfile,path);
-        paths[r]=mfile;
-    }
+    paths[r]=strdup(path);
     char file[URI_LEN];
 
     struct dirent entry;
