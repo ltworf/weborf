@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <locale.h>
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -144,6 +145,12 @@ static void init_signals() {
 
 int main(int argc, char *argv[]) {
     int s, s1;          //Socket descriptors
+
+#ifdef HAVE_SETLOCALE
+  setlocale(LC_CTYPE, "C");
+#endif
+
+    
 
     configuration_load(argc,argv);
 
