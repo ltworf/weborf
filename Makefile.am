@@ -19,7 +19,6 @@ weborf_SOURCES = \
     myio.c \
     mynet.c \
     mystring.c \
-    queue.c \
     utils.c \
     webdav.c
     
@@ -44,7 +43,6 @@ EXTRA_DIST = \
     mtime_update_inotify.c \
     myio.h \
     mystring.h \
-    queue.h \
     utils.h \
     examples \
     daemon \

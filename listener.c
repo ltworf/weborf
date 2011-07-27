@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -74,9 +75,6 @@ static void init_signals() {
     signal(SIGTERM, quit);
     signal(SIGPIPE, SIG_IGN);
     signal(SIGCHLD, wait_child);
-
-    //Prints queue status with this signal
-    signal(SIGUSR1, print_queue_status);
 }
 
 int main(int argc, char *argv[]) {
@@ -100,13 +98,15 @@ int main(int argc, char *argv[]) {
     while (1) {
         s1 = accept(s, NULL,NULL);
 
-        if (s1 >= 0) { //Adds s1 to the queue
-		int pid=fork();
-		if (pid==0) {
-			close(0);
-			dup(s1);
-			inetd();
-		}
+        if (s1 >= 0) {
+            int pid=fork();
+            if (pid==0) {
+                close(0);
+                dup(s1);
+                inetd();
+            } else {
+                close(s1);
+            }
         }
 
     }
@@ -145,15 +145,7 @@ void set_new_uid(int uid) {
     }
 }
 
-
-/**
-Will print the internal status of the queue.
-This function is triggered by SIGUSR1 signal.
-*/
-void print_queue_status() {
-}
-
 void wait_child() {
     int s;
-//    wait(&s);
+    wait(&s);
 }

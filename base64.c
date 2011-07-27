@@ -38,7 +38,7 @@ static char getCode(char c) {
     else if(c=='/')
         return 63;
     return 0;
-        
+
 }
 
 /**
