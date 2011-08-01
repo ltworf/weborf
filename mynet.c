@@ -35,6 +35,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 extern weborf_configuration_t weborf_conf;
 
+/**
+ * Same as the combination of getperrname and
+ * inet_ntop, will save the string address of the
+ * client for the socket within the buffer.
+ * It expects the buffer to have the correct size.
+ * 
+ * */
+void net_getpeername(int socket,char* buffer) {
+    
+#ifdef IPV6
+    struct sockaddr_in6 addr;
+    socklen_t addr_l=sizeof(struct sockaddr_in6);
+    
+    getpeername(socket, (struct sockaddr *)&addr, &addr_l);
+    inet_ntop(AF_INET6, &addr.sin6_addr, buffer, INET6_ADDRSTRLEN);
+#else
+    struct sockaddr_in addr;
+    socklen_t addr_l=sizeof(struct sockaddr_in);
+    
+    getpeername(socket, (struct sockaddr *)&addr,&addr_l);
+    inet_ntop(AF_INET, &addr.sin_addr, buffer, INET_ADDRSTRLEN);
+#endif
+}
 
 /**
  * Creates the server socket and performs some setsockopt

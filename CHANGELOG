@@ -11,6 +11,7 @@
 - Refactory of configuration loading, to have faster startup
 - CGI scripts are now terminated for sure when they exceed their limit
 - Uses C locale, to avoid problems with non-ascii chars
+- When using --tar on the root directory, suggests a default filename
 
 0.13
 - Shows last modified column in directory listing (Rev 419)

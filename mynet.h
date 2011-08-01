@@ -23,5 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int net_create_server_socket();
 void net_bind_and_listen(int s);
+void net_getpeername(int socket,char* buffer);
 
 #endif

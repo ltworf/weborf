@@ -46,6 +46,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "instance.h"
 #include "mime.h"
 #include "myio.h"
+#include "mynet.h"
 #include "mystring.h"
 #include "queue.h"
 #include "types.h"
@@ -60,7 +61,6 @@ extern weborf_configuration_t weborf_conf;
 extern char* indexes[MAXINDEXCOUNT];        //Array containing index files
 extern int indexes_l;                       //Length of array
 extern pthread_key_t thread_key;            //key for pthread_setspecific
-
 
 
 int request_auth(connection_t *connection_prop);
@@ -291,14 +291,6 @@ void * instance(void * nulla) {
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
     connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
 
-#ifdef IPV6
-    struct sockaddr_in6 addr;//Local and remote address
-    socklen_t addr_l=sizeof(struct sockaddr_in6);
-#else
-    struct sockaddr_in addr;
-    int addr_l=sizeof(struct sockaddr_in);
-#endif
-
     if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
@@ -320,13 +312,7 @@ void * instance(void * nulla) {
         connection_prop.sock=sock;//Assigned socket into the struct
 
         //Converting address to string
-#ifdef IPV6
-        getpeername(sock, (struct sockaddr *)&addr, &addr_l);
-        inet_ntop(AF_INET6, &addr.sin6_addr, connection_prop.ip_addr, INET6_ADDRSTRLEN);
-#else
-        getpeername(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
-        inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr, INET_ADDRSTRLEN);
-#endif
+        net_getpeername(sock,connection_prop.ip_addr);
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
@@ -1236,11 +1222,14 @@ static int tar_send_dir(connection_t* connection_prop) {
 
     //Last char is always '/', i null it so i can use default name
     connection_prop->strfile[--connection_prop->strfile_len]=0;
+    
+    char* dirname=strrchr(connection_prop->strfile,'/')+1;
+    if (strlen(dirname)==0) dirname="directory";
 
     snprintf(headers,HEADBUF ,
              "Content-Type: application/x-gzip\r\n"
              "Content-Disposition: attachment; filename=\"%s.tar.gz\"\r\n",
-             strrchr(connection_prop->strfile,'/')+1
+             dirname
             );
 
     connection_prop->response.status_code=200;
@@ -1255,7 +1244,7 @@ static int tar_send_dir(connection_t* connection_prop) {
     int pid=fork();
 
     if (pid==0) { //child, executing tar
-        fclose (stdout); //Closing the stdout
+        fclose (stdout);
         dup(connection_prop->sock); //Redirects the stdout
         nice(1); //Reducing priority
         execlp("tar","tar","-cz",connection_prop->strfile,(char *)0);
@@ -1263,7 +1252,7 @@ static int tar_send_dir(connection_t* connection_prop) {
         int status;
         waitpid(pid,&status,0);
     } else { //Error
-        return ERR_NOMEM; //Well not enough memory in process table...
+        return ERR_NOMEM; //Not enough memory in process table...
     }
     return 0;
 }
@@ -1276,7 +1265,7 @@ It is almost a copy of instance()
 */
 void inetd() {
 
-    thread_prop_t thread_prop;  //Server's props
+    thread_prop_t thread_prop;                      //Server's props
     int bufFull=0;                                  //Amount of buf used
     connection_t connection_prop;                   //Struct to contain properties of the connection
     buffered_read_t read_b;                         //Buffer for buffered reader
@@ -1292,14 +1281,6 @@ void inetd() {
     syslog(LOG_DEBUG,"Starting from inetd");
 #endif
 
-#ifdef IPV6
-    struct sockaddr_in6 addr;//Local and remote address
-    socklen_t addr_l=sizeof(struct sockaddr_in6);
-#else
-    struct sockaddr_in addr;
-    int addr_l=sizeof(struct sockaddr_in);
-#endif
-
     if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
@@ -1308,13 +1289,7 @@ void inetd() {
     }
 
     //Converting address to string
-#ifdef IPV6
-    getpeername(sock, (struct sockaddr *)&addr, &addr_l);
-    inet_ntop(AF_INET6, &addr.sin6_addr, connection_prop.ip_addr, INET6_ADDRSTRLEN);
-#else
-    getpeername(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
-    inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr, INET_ADDRSTRLEN);
-#endif
+    net_getpeername(sock,connection_prop.ip_addr);
 
     handle_requests(buf,&read_b,&bufFull,&connection_prop);
     //close(sock);//Closing the socket
