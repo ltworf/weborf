@@ -1222,7 +1222,7 @@ static int tar_send_dir(connection_t* connection_prop) {
 
     //Last char is always '/', i null it so i can use default name
     connection_prop->strfile[--connection_prop->strfile_len]=0;
-    
+
     char* dirname=strrchr(connection_prop->strfile,'/')+1;
     if (strlen(dirname)==0) dirname="directory";
 

@@ -142,10 +142,10 @@ int main(int argc, char *argv[]) {
     int s, s1;          //Socket descriptors
 
 #ifdef HAVE_SETLOCALE
-  setlocale(LC_CTYPE, "C");
+    setlocale(LC_CTYPE, "C");
 #endif
 
-    
+
 
     configuration_load(argc,argv);
 
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
     if (weborf_conf.is_inetd) inetd();
 
     print_start_disclaimer(argv);
-    
+
 #ifdef SERVERDBG
     syslog(LOG_INFO, "Starting server...");
 #endif
