@@ -2,13 +2,20 @@ AC_INIT([weborf], [0.14], [tiposchi@tiscali.it],[weborf])
 AC_DEFINE([PACKAGE_URL], ["http://galileo.dmi.unict.it/wiki/weborf/"],[Define to the home page for this package.])
 
 
+
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([queue.c])
 AC_CONFIG_HEADERS([config.h])
 
+AC_CANONICAL_TARGET
+
+AM_CONDITIONAL([TARGET_LINUX],[test $target_os == linux-gnu])
+AM_COND_IF([TARGET_LINUX], [AC_DEFINE([TARGET_LINUX],[1],["Target GNU/LINUX"])])
+
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror ])
 AM_MAINTAINER_MODE
+
 
 
 AC_PROG_CC
