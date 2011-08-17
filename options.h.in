@@ -19,14 +19,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
-#include <unistd.h> //Needed because it defines the _POSIX_IPV6
+
+/* Needed because it defines the _POSIX_IPV6 */
+#include <unistd.h> 
 
 #ifndef WEBORF_OPTIONS_H
 #define WEBORF_OPTIONS_H
 
 #define NAME PACKAGE
-//#define VERSION PACKAGE_VERSION
-#define SIGNATURE NAME "/" VERSION  " (GNU/Linux)"
+
+#ifdef __linux__
+#define OS_NAME "GNU/Linux"
+#elif defined(__GNU__)
+#define OS_NAME "GNU"
+#else
+#ifdef __GNUC__
+#warning unknown OS
+#endif
+#endif
+
+#define SIGNATURE NAME "/" VERSION  " (" OS_NAME ")"
+
 
 //----------System
 #define ROOTUID 0               //Uid for superuser

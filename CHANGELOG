@@ -12,6 +12,8 @@
 - CGI scripts are now terminated for sure when they exceed their limit
 - Uses C locale, to avoid problems with non-ascii chars
 - When using --tar on the root directory, suggests a default filename
+- Sends Accept-Ranges header in response, when content-length is known (David Kalnischkies)
+- Show "GNU/Linux" only on GNU/Linux systems
 
 0.13
 - Shows last modified column in directory listing (Rev 419)

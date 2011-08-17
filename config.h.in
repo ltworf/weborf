@@ -216,9 +216,6 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* "la suca" */
-#undef SUCA
-
 /* "Target GNU/LINUX" */
 #undef TARGET_LINUX
 
