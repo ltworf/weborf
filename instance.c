@@ -867,7 +867,11 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
 
         connection_prop->response.status_code=206;
 
-        t=snprintf(hbuf,remain,"Accept-Ranges: bytes\r\nContent-Range: bytes %llu-%llu/%lld\r\n",(unsigned long long int)from,(unsigned long long int)to,(long long int)connection_prop->strfile_stat.st_size);
+        t=snprintf(hbuf,remain,"Content-Range: bytes %llu-%llu/%lld\r\n",
+                   (unsigned long long int)from,
+                   (unsigned long long int)to,
+                   (long long int)connection_prop->strfile_stat.st_size
+                  );
         hbuf+=t;
         remain-=t;
 
@@ -1188,6 +1192,14 @@ int send_http_header(unsigned long long int size,char* headers,bool content,time
         //Content length (or entity lenght) and extra headers
         if (content) {
             len_head=snprintf(head,left_head,"Content-Length: %llu\r\n",(unsigned long long int)size);
+#ifdef __RANGE
+            if (size != 0) {
+                head+=len_head;
+                left_head-=len_head;
+                len_head=snprintf(head,left_head,"Accept-Ranges: bytes\r\n");
+            }
+#endif
+
         } else {
             len_head=snprintf(head,left_head,"entity-length: %llu\r\n",(unsigned long long int)size);
         }
