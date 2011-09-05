@@ -9,9 +9,6 @@ AC_CONFIG_HEADERS([config.h])
 
 AC_CANONICAL_TARGET
 
-AM_CONDITIONAL([TARGET_LINUX],[test $target_os == linux-gnu])
-AM_COND_IF([TARGET_LINUX], [AC_DEFINE([TARGET_LINUX],[1],["Target GNU/LINUX"])])
-
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror ])
 AM_MAINTAINER_MODE

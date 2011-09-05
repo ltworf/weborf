@@ -35,6 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #else
 #ifdef __GNUC__
 #warning unknown OS
+#define OS_NAME "Unix"
 #endif
 #endif
 
