@@ -185,6 +185,10 @@ void help() {
            "\tHas MIME support\n"
 #endif
 
+#ifdef HAVE_INOTIFY_INIT
+            "\tHas cache correctness support\n"
+#endif
+
            "Default port is        %s\n"
            "Default base directory %s\n"
            "Signature used         %s\n\n", PORT,BASEDIR,SIGNATURE);
