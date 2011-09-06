@@ -67,6 +67,8 @@ init_SCRIPTS = daemon/weborf
 
 sysconf_DATA = weborf.conf
 
+docdir = ${datadir}/doc/${PACKAGE}
+
 dist_doc_DATA = \
     CHANGELOG \
     COPYING \
