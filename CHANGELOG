@@ -14,6 +14,8 @@
 - When using --tar on the root directory, suggests a default filename
 - Sends Accept-Ranges header in response, when content-length is known (David Kalnischkies)
 - Show "GNU/Linux" only on GNU/Linux systems
+- Added an option to print the capabilities of the server (useful for tools like qweborf)
+- Multiple instances of qweborf can operate in the same time
 
 0.13
 - Shows last modified column in directory listing (Rev 419)

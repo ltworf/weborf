@@ -133,12 +133,12 @@ size_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
  * Returns the amount of written data, which might be different than the amount
  * of data previously present on the buffer.
  */
-size_t buffer_flush_fd(int dest, buffered_read_t * buf,size_t limit) {
+ssize_t buffer_flush_fd(int dest, buffered_read_t * buf,size_t limit) {
     size_t available= buf->end - buf->start;
 
     size_t dim = limit<available?limit:available;
 
-    size_t count=write(dest,buf->start,dim);
+    ssize_t count=write(dest,buf->start,dim);
     buf->start +=dim;
 
     return count;

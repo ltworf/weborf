@@ -26,8 +26,6 @@ import sys
 import os
 
 class qweborfForm (QtGui.QWidget):
-    '''This class is the form used for the survey, needed to intercept the events.
-    It also sends the data with http POST to a page hosted on galileo'''
     
     DBG_DEFAULT=0
     DBG_WARNING=1

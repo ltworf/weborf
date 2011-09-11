@@ -165,7 +165,69 @@ void version() {
 }
 
 /**
-Prints command line help
+ * Prints the capabilities/compile time options
+ */
+void capabilities() {
+    printf (
+        NAME "=" VERSION "\n"
+        "signature=" SIGNATURE "\n"
+        "port=" PORT "\n"
+        "index=" INDEX "\n"
+        "basedir=" BASEDIR "\n"
+        "cgi-timeout=%d\n"
+        
+#ifdef IPV6
+           "socket=IPv6\n"
+#else
+           "socket=IPv4\n"
+#endif
+
+#ifdef WEBDAV
+           "webdav=true\n"
+#else
+           "webdav=false\n"
+#endif
+
+#ifdef SEND_MIMETYPES
+           "mime=true\n"
+#else
+           "mime=false\n"
+#endif
+
+#ifdef HAVE_INOTIFY_INIT
+            "cache_correctness=true\n"
+#else
+            "cache_correctness=false\n"
+#endif
+           
+#ifdef __COMPRESSION
+            "compression=true\n"
+#else
+            "compression=false\n"
+#endif
+            
+#ifdef SEND_LAST_MODIFIED_HEADER
+            "last-modified=true\n"
+#else
+            "last-modified=false\n"
+#endif
+
+#ifdef __RANGE
+            "range=true\n"
+#else
+            "range=false\n"
+#endif
+    ,SCRPT_TIMEOUT);
+    
+#ifdef MTIME_MAX_WATCH_DIRS
+    printf("inotify-watch=%d\n",MTIME_MAX_WATCH_DIRS);
+#endif
+    exit(0);
+    
+}
+
+/**
+ * Prints command line help
  */
 void help() {
 
@@ -193,24 +255,25 @@ void help() {
            "Default base directory %s\n"
            "Signature used         %s\n\n", PORT,BASEDIR,SIGNATURE);
 
-    printf("  -a, --auth       followed by absolute path of the program to handle authentication\n"
-           "  -b, --basedir    followed by absolute path of basedir\n"
-           "  -C, --cache      sets the directory to use for cache files\n"
-           "  -c, --cgi        list of cgi files and binary to execute them comma-separated\n"
-           "  -d               run as a daemon\n"
-           "  -f  --fastcache  makes cache less correct but faster (see manpage)"
-           "  -h, --help       display this help and exit\n"
-           "  -I, --index      list of index files, comma-separated\n"
-           "  -i, --ip         followed by IP address to listen (dotted format)\n"
-           "  -m, --mime       sends content type header to clients\n"
-           "  -p, --port       followed by port number to listen\n"
-           "  -T  --inetd      must be specified when using weborf with inetd or xinetd\n"
-           "  -t  --tar        will send the directories as .tar.gz files\n"
-           "  -u,              followed by a valid uid\n"
-           "                   If started by root weborf will use this user to read files and execute scripts\n"
-           "  -V, --virtual    list of virtualhosts in the form host=basedir, comma-separated\n"
-           "  -v, --version    print program version\n"
-           "  -x, --noexec     tells weborf to send each file instead of executing scripts\n\n"
+    printf("  -a, --auth         followed by absolute path of the program to handle authentication\n"
+           "  -B  --capabilities shows the capabilities\n"
+           "  -b, --basedir      followed by absolute path of basedir\n"
+           "  -C, --cache        sets the directory to use for cache files\n"
+           "  -c, --cgi          list of cgi files and binary to execute them comma-separated\n"
+           "  -d                 run as a daemon\n"
+           "  -f  --fastcache    makes cache less correct but faster (see manpage)"
+           "  -h, --help         display this help and exit\n"
+           "  -I, --index        list of index files, comma-separated\n"
+           "  -i, --ip           followed by IP address to listen (dotted format)\n"
+           "  -m, --mime         sends content type header to clients\n"
+           "  -p, --port         followed by port number to listen\n"
+           "  -T  --inetd        must be specified when using weborf with inetd or xinetd\n"
+           "  -t  --tar          will send the directories as .tar.gz files\n"
+           "  -u,                followed by a valid uid\n"
+           "                     If started by root weborf will use this user to read files and execute scripts\n"
+           "  -V, --virtual      list of virtualhosts in the form host=basedir, comma-separated\n"
+           "  -v, --version      print program version\n"
+           "  -x, --noexec       tells weborf to send each file instead of executing scripts\n\n"
 
 
            "Report bugs here https://bugs.launchpad.net/weborf\n"

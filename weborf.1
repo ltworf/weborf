@@ -18,6 +18,10 @@ This manual page documents \fBWeborf\fP's command-line parameters.
 .SS Options:
 
 .TP
+.B \-B, \-\-capabilities
+Shows the capabilities of the server. They might change according to compile-time options.
+
+.TP
 .B \-b, \-\-basedir
 Must be followed by a valid directory. Weborf will use this directory as root directory, and won't send files located in parent dirs. But it is still possible for server\-side scripts to read contents located anywhere on the filesystem. Links are also a workaround to exit from the base directory.
 

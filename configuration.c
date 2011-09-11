@@ -221,6 +221,7 @@ void configuration_load(int argc, char *argv[]) {
         {"inetd", no_argument,0,'T'},
         {"tar", no_argument,0,'t'},
         {"fastcache", no_argument,0,'f'},
+        {"capabilities",no_argument,0,'B'},
         {0, 0, 0, 0}
     };
 
@@ -230,7 +231,7 @@ void configuration_load(int argc, char *argv[]) {
         option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long(argc, argv, "ftTMmvhp:i:I:u:dxb:a:V:c:C:", long_options,
+        c = getopt_long(argc, argv, "BftTMmvhp:i:I:u:dxb:a:V:c:C:", long_options,
                         &option_index);
 
         //If there are no options it continues
@@ -238,6 +239,10 @@ void configuration_load(int argc, char *argv[]) {
             break;
 
         switch (c) {
+            
+        case 'B':
+            capabilities();
+            break;
         case 'f':
             cache_correctness=false;
             break;

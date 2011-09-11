@@ -146,7 +146,9 @@ class weborf_runner():
     def __create_auth_socket(self):
         '''Creates a unix socket and returns the path to it'''
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        sockname="/tmp/weborf_auth_socket%d-%d.socket" % (os.getuid(),os.getpid())
+        #sockname="/tmp/weborf_auth_socket%d-%d.socket" % (os.getuid(),os.getpid())
+        sockname=os.tmpnam()
+        
         
         try:
             os.remove(sockname)
