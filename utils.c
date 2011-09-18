@@ -169,7 +169,8 @@ void version() {
  */
 void capabilities() {
     printf (
-        NAME "=" VERSION "\n"
+        "name=" VERSION "\n"
+        "version=" VERSION "\n"
         "signature=" SIGNATURE "\n"
         "port=" PORT "\n"
         "index=" INDEX "\n"

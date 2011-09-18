@@ -29,6 +29,8 @@ class weborf_runner():
         self.logclass=logfunction
         self.logclass.logger("Software initialized")
         
+        self.__capability={}
+        
         self.child=None
         self.socket=None
         self.listener=None
@@ -36,17 +38,39 @@ class weborf_runner():
         self.methods=[]
         self.username=None
         self.password=None
-        self.ipv6=True
-        self.mime=False
-        self.webdav=True
         self._running=False
         self._auth_socket=None          #Path to the authentication unix socket
-        self.version=None
         
         self.weborf=self._test_weborf()
         
         pass
     
+    def has_capability(self,capability):
+        '''Tells if the server has a specific capability
+        
+        weborf=0.14
+        signature=weborf/0.14 (GNU/Linux)
+        port=8080
+        index=index.html
+        basedir=/var/www
+        cgi-timeout=30
+        socket=IPv6
+        webdav=true
+        mime=true
+        cache_correctness=true
+        compression=false
+        last-modified=false
+        range=true
+        inotify-watch=1024
+        
+        booleans will be returned as booleans, integers as integers and the
+        rest as strings
+        '''
+        
+        if capability in self.__capability:
+            return self.__capability[capability]
+        return False;
+        
     def _test_weborf(self):
         '''Tests if weborf binary is existing.
         It will return true if everything is OK
@@ -55,48 +79,52 @@ class weborf_runner():
         out=""
         
         try:
-            p = subprocess.Popen(["weborf", "-v"], bufsize=1024, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            out=p.stdout.read().split("\n")[0]
+            p = subprocess.Popen(["weborf", "-B"], bufsize=1024, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            out=p.stdout.read().split("\n")
             p.stdin.close()
             ret=p.wait()
         except:
             ret=3
         
         if ret==0:
-            self.logclass.logger(out,self.logclass.DBG_NOTICE)
-            self.version=out.split(' ')[1]
+            self._check_capabilities(out)
+            
+            self.logclass.logger('Weborf %s' % self.has_capability('version'),self.logclass.DBG_NOTICE)
         else:
             self.logclass.logger('Unable to find weborf',self.logclass.DBG_ERROR)
             return False
-            
-        #Determining if has ipv6 support
-        try:
-            p = subprocess.Popen(["weborf", "-h"], bufsize=1024, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            out=p.stdout.read()
-            p.stdin.close()
-            ret=p.wait()
-        except:
-            out=''
-            pass
-            
-        self._check_capabilities(out)
         return True
+        
     def _check_capabilities(self,out):
-        self.ipv6='Compiled for IPv6' in out
-        if self.ipv6:
+        if '' in out:
+            out.remove('')
+            
+        for i in out:
+            print i
+            key,value=i.split('=',2)
+            print key,value
+            
+            #casting...
+            if value=='true':
+                value=True
+            elif value=='false':
+                value=False
+            elif value.isdigit():
+                value=int(value)
+                
+            self.__capability[key]=value
+
+        if self.has_capability('socket')=='IPv6':
             self.logclass.logger('Server has IPv6 support',self.logclass.DBG_NOTICE)
         else:
             self.logclass.logger('Server lacks IPv6 support',self.logclass.DBG_WARNING)
-        
          
-        self.webdav='Has webdav support' in out
-        if self.webdav:
+        if self.has_capability('webdav'):
             self.logclass.logger('Server has webdav support',self.logclass.DBG_NOTICE)
         else:
             self.logclass.logger('Server lacks webdav support',self.logclass.DBG_WARNING)
         
-        self.mime='Has MIME support' in out
-        if self.mime:
+        if self.has_capability('mime'):
             self.logclass.logger('Server has MIME support',self.logclass.DBG_NOTICE)
         else:
             self.logclass.logger('Server lacks MIME support',self.logclass.DBG_WARNING)
@@ -200,7 +228,7 @@ class weborf_runner():
         if options['tar']:
             cmdline.append('--tar')
         
-        if self.mime:
+        if self.has_capability('mime'):
             cmdline.append('--mime')
         
         if options['ip']!=None:
@@ -225,7 +253,7 @@ class weborf_runner():
         if options['ip']==None:
             addrs4=nhelper.getaddrs(False)
             
-            if self.ipv6:
+            if self.has_capability('socket')=='IPv6':
                 addrs6=nhelper.getaddrs(True)
             else:
                 addrs6=tuple()
