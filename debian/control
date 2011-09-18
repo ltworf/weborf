@@ -3,7 +3,7 @@ Section: httpd
 Priority: optional
 Maintainer: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>
 Build-Depends: debhelper (>= 7.0.50~), libmagic-dev (>=5.04~), python, python-support, pyqt4-dev-tools
-Standards-Version: 3.9.1
+Standards-Version: 3.9.2
 Homepage: http://galileo.dmi.unict.it/wiki/weborf/
 
 
@@ -31,7 +31,7 @@ Description: init script for weborf
 
 Package: qweborf
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, weborf (>=0.12), python-qt4 (>=4.7.3)
+Depends: ${misc:Depends}, ${python:Depends}, weborf (>=0.14), python-qt4 (>=4.7.3)
 Description: Shares files using the HTTP protocol
  Qweborf provides an easy to use graphical interface to share local files using
  the HTTP protocol.
