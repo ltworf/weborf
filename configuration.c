@@ -239,7 +239,7 @@ void configuration_load(int argc, char *argv[]) {
             break;
 
         switch (c) {
-            
+
         case 'B':
             capabilities();
             break;

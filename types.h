@@ -29,12 +29,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <netinet/in.h>
 #include "dict.h"
+#include "buffered_reader.h"
 
 #ifdef SEND_MIMETYPES
 #include <magic.h>
 #else
 typedef void* magic_t;
 #endif
+
+typedef struct {
+    size_t len;                //length of the string
+    char *data;                 //Pointer to string
+} string_t;
 
 typedef struct {
     long int id;                //ID of the thread
@@ -91,12 +97,9 @@ typedef struct {
     response_t response;
     request_t request;
 
+    buffered_read_t read_b;     //Buffer for buffered reader
+    string_t buf;               //Buffer to read headers
 } connection_t;
-
-typedef struct {
-    size_t len;                //length of the string
-    char *data;                 //Pointer to string
-} string_t;
 
 typedef struct {
     pthread_mutex_t mutex;      //Mutex to access this struct

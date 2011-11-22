@@ -176,55 +176,55 @@ void capabilities() {
         "index=" INDEX "\n"
         "basedir=" BASEDIR "\n"
         "cgi-timeout=%d\n"
-        
+
 #ifdef IPV6
-           "socket=IPv6\n"
+        "socket=IPv6\n"
 #else
-           "socket=IPv4\n"
+        "socket=IPv4\n"
 #endif
 
 #ifdef WEBDAV
-           "webdav=true\n"
+        "webdav=true\n"
 #else
-           "webdav=false\n"
+        "webdav=false\n"
 #endif
 
 #ifdef SEND_MIMETYPES
-           "mime=true\n"
+        "mime=true\n"
 #else
-           "mime=false\n"
+        "mime=false\n"
 #endif
 
 #ifdef HAVE_INOTIFY_INIT
-            "cache_correctness=true\n"
+        "cache_correctness=true\n"
 #else
-            "cache_correctness=false\n"
+        "cache_correctness=false\n"
 #endif
-           
+
 #ifdef __COMPRESSION
-            "compression=true\n"
+        "compression=true\n"
 #else
-            "compression=false\n"
+        "compression=false\n"
 #endif
-            
+
 #ifdef SEND_LAST_MODIFIED_HEADER
-            "last-modified=true\n"
+        "last-modified=true\n"
 #else
-            "last-modified=false\n"
+        "last-modified=false\n"
 #endif
 
 #ifdef __RANGE
-            "range=true\n"
+        "range=true\n"
 #else
-            "range=false\n"
+        "range=false\n"
 #endif
-    ,SCRPT_TIMEOUT);
-    
+        ,SCRPT_TIMEOUT);
+
 #ifdef MTIME_MAX_WATCH_DIRS
     printf("inotify-watch=%d\n",MTIME_MAX_WATCH_DIRS);
 #endif
     exit(0);
-    
+
 }
 
 /**
@@ -249,7 +249,7 @@ void help() {
 #endif
 
 #ifdef HAVE_INOTIFY_INIT
-            "\tHas cache correctness support\n"
+           "\tHas cache correctness support\n"
 #endif
 
            "Default port is        %s\n"
