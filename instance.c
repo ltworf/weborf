@@ -1263,10 +1263,11 @@ static int tar_send_dir(connection_t* connection_prop) {
     } else if (pid>0) { //Father, does nothing
         int status;
         waitpid(pid,&status,0);
+        return status;
     } else { //Error
         return ERR_NOMEM; //Not enough memory in process table...
     }
-    return 0;
+    
 }
 
 

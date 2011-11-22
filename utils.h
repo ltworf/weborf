@@ -27,6 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bool parent);
 void help();
 void version();
+void capabilities();
 void moo();
 void print_start_disclaimer(char *argv[]);
 bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,ssize_t param_len);

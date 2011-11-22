@@ -1,3 +1,10 @@
+weborf (0.14-1) unstable; urgency=low
+
+  * New upstream release
+  * qweborf needs the lastest version of weborf
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 18 Sep 2011 15:00:22 +0200
+
 weborf (0.13-1) unstable; urgency=low
 
   * New upstream release

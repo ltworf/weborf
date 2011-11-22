@@ -18,6 +18,10 @@ This manual page documents \fBWeborf\fP's command-line parameters.
 .SS Options:
 
 .TP
+.B \-B, \-\-capabilities
+Shows the capabilities of the server. They might change according to compile-time options.
+
+.TP
 .B \-b, \-\-basedir
 Must be followed by a valid directory. Weborf will use this directory as root directory, and won't send files located in parent dirs. But it is still possible for server\-side scripts to read contents located anywhere on the filesystem. Links are also a workaround to exit from the base directory.
 
@@ -130,7 +134,7 @@ Authentication socket doesn't exist or is not a unix socket
 .TP
 
 .B 6
-Too much indexes provided as parameter to \-I or to \-c. Increasing MAXINDEXCOUNT in the file options.h and recompiling can solve the problem. But providing a reasanable amount of index file names would be a better solution.
+Too much indexes provided as parameter to \-I or to \-c. Increasing MAXINDEXCOUNT in the file options.h and recompiling can solve the problem. But providing a reasonable amount of index file names would be a better solution.
 .TP
 
 .B 7

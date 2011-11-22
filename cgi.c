@@ -350,7 +350,8 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
 /**
 Executes a CGI script with a given interpreter and sends the resulting output
 executor is the path to the binary which will execute the page
-post_param contains the post data sent to the page (if present). This can't be null, but the string pointer inside the struct can be null.
+post_param contains the post data sent to the page (if present).
+This can't be null, but the string pointer inside the struct can be null.
 connection_prop is the struct containing all the data of the request
 
 exec_page will fork and create pipes with the child.

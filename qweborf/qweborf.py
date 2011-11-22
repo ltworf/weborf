@@ -26,8 +26,6 @@ import sys
 import os
 
 class qweborfForm (QtGui.QWidget):
-    '''This class is the form used for the survey, needed to intercept the events.
-    It also sends the data with http POST to a page hosted on galileo'''
     
     DBG_DEFAULT=0
     DBG_WARNING=1
@@ -39,17 +37,17 @@ class qweborfForm (QtGui.QWidget):
         self.weborf=whelper.weborf_runner(self)
         self.started=False
         
-        if self.weborf.version>= '0.13':
+        if self.weborf.has_capability('version')>= '0.13':
             self.ui.chkTar.setEnabled(True)
         else:
             self.ui.chkTar.setEnabled(False)
         
         '''chkWrite.enabled depends on the status of chkDav. Disabling this
         it will never become enabled either'''
-        self.ui.chkDav.setEnabled(self.weborf.webdav)
+        self.ui.chkDav.setEnabled(self.weborf.has_capability('webdav'))
         
         #Listing addresses
-        for i in nhelper.getaddrs(self.weborf.ipv6):
+        for i in nhelper.getaddrs(self.weborf.has_capability('socket')=='IPv6'):
             self.ui.cmbAddress.addItem(i,None)
         
         self.defaultdir=str(QtGui.QDesktopServices.storageLocation(QtGui.QDesktopServices.HomeLocation))
