@@ -131,7 +131,7 @@ def getifaddrs():
  
         if name not in result:
             result[name] = {}
- 
+
         sa = sockaddr.from_address(ifa.ifa_addr)
  
         if sa.sa_family not in result[name]:

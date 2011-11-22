@@ -100,9 +100,7 @@ class weborf_runner():
             out.remove('')
             
         for i in out:
-            print i
             key,value=i.split('=',2)
-            print key,value
             
             #casting...
             if value=='true':
