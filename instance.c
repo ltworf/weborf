@@ -147,7 +147,11 @@ static inline void s_flush (int sock) {
 #endif
 }
 
-static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop) {
+static inline void handle_requests(connection_t* connection_prop) {
+    char *buf=connection_prop->buf.data;
+    buffered_read_t* read_b = & connection_prop->read_b;
+    int *bufFull = &(connection_prop->buf.len);
+
     int from;
     int sock=connection_prop->sock;
     char *lasts;//Used by strtok_r
@@ -268,6 +272,24 @@ void change_free_thread(long int id,int free_d, int count_d) {
     pthread_mutex_unlock(&thread_info.mutex);
 }
 
+static inline int thr_init_connect_prop(connection_t *connection_prop) {
+    connection_prop->buf.data = calloc(INBUFFER+1,sizeof(char));
+    connection_prop->buf.len = 0;
+
+    connection_prop->strfile=malloc(URI_LEN);    //buffer for filename
+
+    return buffer_init(&(connection_prop->read_b),BUFFERED_READER_SIZE)!=0 ||
+           connection_prop->buf.data==NULL ||
+           connection_prop->strfile==NULL;
+
+}
+
+static inline void thr_free_connect_prop(connection_t *connection_prop) {
+    free(connection_prop->buf.data);
+    free(connection_prop->strfile);
+    buffer_free(&(connection_prop->read_b));
+}
+
 /**
 Function executed at the beginning of the thread
 Takes open sockets from the queue and serves the requests
@@ -276,6 +298,7 @@ Doesn't do busy waiting
 void * instance(void * nulla) {
     thread_prop_t thread_prop;  //Server's props
     pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
+    connection_t connection_prop;                   //Struct to contain properties of the connection
 
     //General init of the thread
     thread_prop.id=(long int)nulla;//Set thread's id
@@ -283,15 +306,7 @@ void * instance(void * nulla) {
     syslog(LOG_DEBUG,"Starting thread %ld",thread_prop.id);
 #endif
 
-    //Vars
-    int bufFull=0;                                  //Amount of buf used
-    connection_t connection_prop;                   //Struct to contain properties of the connection
-    buffered_read_t read_b;                         //Buffer for buffered reader
-    int sock=0;                                     //Socket with the client
-    char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
-    connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
-
-    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
+    if (mime_init(&thread_prop.mime_token)!=0 || thr_init_connect_prop(&connection_prop)) { //Unable to allocate the buffer
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
 #endif
@@ -302,42 +317,37 @@ void * instance(void * nulla) {
     change_free_thread(thread_prop.id,1,0);
 
     while (true) {
-        q_get(&queue, &sock);//Gets a socket from the queue
+        q_get(&queue, &(connection_prop.sock));//Gets a socket from the queue
         change_free_thread(thread_prop.id,-1,0);//Sets this thread as busy
 
-        if (sock<0) { //Was not a socket but a termination order
+        if (connection_prop.sock<0) { //Was not a socket but a termination order
             goto release_resources;
         }
 
-        connection_prop.sock=sock;//Assigned socket into the struct
-
         //Converting address to string
-        net_getpeername(sock,connection_prop.ip_addr);
+        net_getpeername(connection_prop.sock,connection_prop.ip_addr);
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
 #endif
-        handle_requests(buf,&read_b,&bufFull,&connection_prop);
+        handle_requests(&connection_prop);
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",thread_prop.id);
 #endif
 
-        close(sock);//Closing the socket
-        buffer_reset (&read_b);
+        close(connection_prop.sock);//Closing the socket
+        buffer_reset (&(connection_prop.read_b));
 
         change_free_thread(thread_prop.id,1,0);//Sets this thread as free
     }
-
 
 
 release_resources:
 #ifdef THREADDBG
     syslog(LOG_DEBUG,"Terminating thread %ld",thread_prop.id);
 #endif
-    free(buf);
-    free(connection_prop.strfile);
-    buffer_free(&read_b);
+    thr_free_connect_prop(&connection_prop);
     mime_release(thread_prop.mime_token);
     change_free_thread(thread_prop.id,0,-1);//Reduces count of threads
     pthread_exit(0);
@@ -1260,6 +1270,7 @@ static int tar_send_dir(connection_t* connection_prop) {
         dup(connection_prop->sock); //Redirects the stdout
         nice(1); //Reducing priority
         execlp("tar","tar","-cz",connection_prop->strfile,(char *)0);
+        return ERR_SERVICE_UNAVAILABLE;
     } else if (pid>0) { //Father, does nothing
         int status;
         waitpid(pid,&status,0);
@@ -1267,7 +1278,7 @@ static int tar_send_dir(connection_t* connection_prop) {
     } else { //Error
         return ERR_NOMEM; //Not enough memory in process table...
     }
-    
+
 }
 
 
@@ -1277,44 +1288,32 @@ will use 0 as socket and exit after.
 It is almost a copy of instance()
 */
 void inetd() {
-
-    thread_prop_t thread_prop;                      //Server's props
-    int bufFull=0;                                  //Amount of buf used
-    connection_t connection_prop;                   //Struct to contain properties of the connection
-    buffered_read_t read_b;                         //Buffer for buffered reader
-    int sock=connection_prop.sock=0;                //Socket with the client,using normal file descriptor 0
-    char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
-    connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
-
-    thread_prop.id=0;
-
+    thread_prop_t thread_prop;  //Server's props
     pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
 
-#ifdef THREADDBG
-    syslog(LOG_DEBUG,"Starting from inetd");
-#endif
+    //General init of the thread
+    thread_prop.id=0;
+    connection_t connection_prop;                   //Struct to contain properties of the connection
 
-    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
+
+    if (mime_init(&thread_prop.mime_token)!=0 || thr_init_connect_prop(&connection_prop)) { //Unable to allocate the buffer
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
 #endif
         goto release_resources;
     }
 
-    //Converting address to string
-    net_getpeername(sock,connection_prop.ip_addr);
+    connection_prop.sock=0;
 
-    handle_requests(buf,&read_b,&bufFull,&connection_prop);
-    //close(sock);//Closing the socket
-    //buffer_reset (&read_b);
+    //Converting address to string
+    net_getpeername(connection_prop.sock,connection_prop.ip_addr);
+
+    handle_requests(&connection_prop);
+
+    //close(connection_prop.sock);//Closing the socket
+    //buffer_reset (&(connection_prop.read_b));
+
 
 release_resources:
     exit(0);
-    /* No need to free memory and resources
-    free(buf);
-    free(connection_prop.strfile);
-    buffer_free(&read_b);
-    mime_release(thread_prop.mime_token);
-    */
-    return;
 }
