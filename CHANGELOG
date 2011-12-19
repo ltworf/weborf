@@ -17,6 +17,7 @@
 - Added an option to print the capabilities of the server (useful for tools like qweborf)
 - Multiple instances of qweborf from the same user can operate in the same time
 - qweborf uses the -B option, for an easier parsing
+- qweborf doesn't crash when using miredo
 
 0.13
 - Shows last modified column in directory listing (Rev 419)
