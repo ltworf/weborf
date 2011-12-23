@@ -1,9 +1,14 @@
 weborf (0.14-1) unstable; urgency=low
 
-  * New upstream release
-  * qweborf needs the lastest version of weborf
+  * New upstream release 
 
- -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 18 Sep 2011 15:00:22 +0200
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Fri, 23 Dec 2011 12:05:39 +0100
+
+weborf (0.13-2) unstable; urgency=low
+
+  * Backport fix from upstream: qweborf doesn't crash when miredo is in use
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Mon, 19 Dec 2011 10:54:07 +0100
 
 weborf (0.13-1) unstable; urgency=low
 

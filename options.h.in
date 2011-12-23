@@ -117,7 +117,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define SEND_LAST_MODIFIED_HEADER
 
 #ifdef HAVE_LIBMAGIC
-#define SEND_MIMETYPES          //Enables support to sending the mimetype to the client
+#define SEND_MIMETYPES          //Enables support to send the mimetype to the client
 #endif
 
 
