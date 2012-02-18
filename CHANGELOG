@@ -18,6 +18,7 @@
 - Multiple instances of qweborf from the same user can operate in the same time
 - qweborf uses the -B option, for an easier parsing
 - qweborf doesn't crash when using miredo
+- using pread() instead of emulating it with lseek()
 
 0.13
 - Shows last modified column in directory listing (Rev 419)
