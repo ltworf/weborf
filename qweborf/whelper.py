@@ -87,13 +87,13 @@ class weborf_runner():
             ret=3
         
         if ret==0:
-            self._check_capabilities(out)
-            
+            ret=self._check_capabilities(out)
             self.logclass.logger('Weborf %s' % self.has_capability('version'),self.logclass.DBG_NOTICE)
+            
+            return ret
         else:
             self.logclass.logger('Unable to find weborf',self.logclass.DBG_ERROR)
             return False
-        return True
         
     def _check_capabilities(self,out):
         if '' in out:
@@ -127,6 +127,10 @@ class weborf_runner():
         else:
             self.logclass.logger('Server lacks MIME support',self.logclass.DBG_WARNING)
         
+        if self.has_capability('auth-embedded'):
+            self.logclass.logger('Server has built-in authentication',self.logclass.DBG_ERROR)
+            return False
+        return True
         
     def start(self,options):
         '''Starts weborf,
