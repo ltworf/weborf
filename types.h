@@ -37,6 +37,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 typedef void* magic_t;
 #endif
 
+
+typedef enum {
+    STATUS_WAIT_HEADER,
+    STATUS_READY_TO_SEND,
+    STATUS_END,
+    STATUS_ERR,
+    STATUS_ERR_NO_CONNECTION,
+    STATUS_READY_FOR_NEXT,
+    STATUS_NONE,
+
+} conection_status_e;
+
 typedef struct {
     size_t len;                //length of the string
     char *data;                 //Pointer to string
@@ -87,15 +99,16 @@ typedef struct {
     char *method;               //String version of the http method used
     char *http_param;           //Param string
     char *page;                 //Requested URI
-    size_t page_len;           //Lengh of the page string
+    size_t page_len;            //Lengh of the page string
     char *get_params;           //Params in the URI, after the ? char
     char *strfile;              //File on filesystem
-    size_t strfile_len;        //Length of string strfile
+    size_t strfile_len;         //Length of string strfile
     struct stat strfile_stat;   //Stat of strfile
     int strfile_fd;             //File descriptor for strfile
     char *basedir;              //Basedir for the host
     response_t response;
     request_t request;
+    conection_status_e status;  //Connection status
 
     buffered_read_t read_b;     //Buffer for buffered reader
     string_t buf;               //Buffer to read headers

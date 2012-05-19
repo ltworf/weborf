@@ -53,8 +53,19 @@ void buffer_free(buffered_read_t * buf) {
     free(buf->buffer);
 }
 
-static ssize_t buffer_fill(int fd, buffered_read_t * buf) {
+/**
+ * Fills the buffer.
+ *
+ * RETURN VALUE: how many bytes were copied into the buffer
+ * If it returns 0 it means that the buffer was not empty
+ **/
+ssize_t buffer_fill(int fd, buffered_read_t * buf) {
     ssize_t r;
+
+    if (buf->end - buf->start>0) {
+        printf("we have stuff in \n");
+        return 0;
+    }
 
     buf->start = buf->buffer;
 
@@ -67,9 +78,10 @@ static ssize_t buffer_fill(int fd, buffered_read_t * buf) {
     //If timeout is reached and no input is available
     //will behave like the stream is closed.
     if (poll(monitor, 1, READ_TIMEOUT) == 0) {
-        r = 0;
+        r = -1;
     } else {
         r = read(fd, buf->buffer, buf->size);
+        printf("READ FROM SOCKET %d %d\n",r,buf->size);
     }
 
     if (r <= 0) { //End of the stream
@@ -82,6 +94,24 @@ static ssize_t buffer_fill(int fd, buffered_read_t * buf) {
 }
 
 /**
+ * Same as buffer_read but does not trigger a buffer_fill if
+ * there is not enough data to return.
+ **/
+size_t buffer_read_non_fill(int fd, void *b, size_t count, buffered_read_t * buf) {
+    size_t available= buf->end - buf->start;
+
+    if (available==0) {
+        return 0;
+    } else if (count > available) { //More data in buffer than needed
+        count=available;
+    }
+
+    memcpy(b, buf->start, count);
+    buf->start += count;
+    return count;
+}
+
+/**
 This function is designed to be similar to a normal read, but it uses an internal
 buffer.
 When the buffer is empty, it will try to fill it.
@@ -91,10 +121,10 @@ Timeout duration is defined with the READ_TIMEOUT define.
 On some special cases, the read data could be less than the requested one. For example if
 end of file is reached and it is impossible to do further reads.
 */
-size_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
-    ssize_t wrote = 0;              //Count of written bytes
-    ssize_t available, needed;      //Available bytes in buffer, and requested bytes remaining
-
+size_t buffer_read(int fd, void *b, size_t count, buffered_read_t * buf) {
+    size_t wrote = 0;              //Count of written bytes
+    size_t available, needed;      //Available bytes in buffer, and requested bytes remaining
+#warning "Do not use buffer_read"
 
     while (wrote < count) {
         available = buf->end - buf->start;

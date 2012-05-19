@@ -31,7 +31,9 @@ typedef struct {
 void buffer_reset (buffered_read_t * buf);
 int buffer_init(buffered_read_t * buf, ssize_t size);
 void buffer_free(buffered_read_t * buf);
-size_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf);
+size_t buffer_read(int fd, void *b, size_t count, buffered_read_t * buf);
 size_t buffer_strstr(int fd, buffered_read_t * buf, char * needle);
 ssize_t buffer_flush_fd(int dest, buffered_read_t * buf,size_t limit);
+ssize_t buffer_fill(int fd, buffered_read_t * buf);
+size_t buffer_read_non_fill(int fd, void *b, size_t count, buffered_read_t * buf);
 #endif

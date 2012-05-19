@@ -201,7 +201,7 @@ void capabilities() {
 #else
         "auth-embedded=false\n"
 #endif
-        
+
 #ifdef HAVE_INOTIFY_INIT
         "cache_correctness=true\n"
 #else

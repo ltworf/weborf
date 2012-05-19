@@ -64,12 +64,13 @@ extern pthread_key_t thread_key;            //key for pthread_setspecific
 
 
 int request_auth(connection_t *connection_prop);
-void piperr();
 int write_dir(char *real_basedir, connection_t * connection_prop);
 static int tar_send_dir(connection_t* connection_prop);
 static int send_page(buffered_read_t* read_b, connection_t* connection_prop);
 static int send_error_header(int retval, connection_t *connection_prop);
 static int get_or_post(connection_t *connection_prop, string_t post_param);
+static inline void handle_requests(connection_t* connection_prop);
+static inline void handle_request(connection_t* connection_prop);
 
 /**
 Checks if the required resource has the same date as the one cached in the client.
@@ -147,113 +148,153 @@ static inline void s_flush (int sock) {
 #endif
 }
 
-static inline void handle_requests(connection_t* connection_prop) {
-    char *buf=connection_prop->buf.data;
-    buffered_read_t* read_b = & connection_prop->read_b;
-    int *bufFull = &(connection_prop->buf.len);
+/**
+ * TODO
+ **/
+static inline void handle_request(connection_t* connection_prop) {
 
-    int from;
-    int sock=connection_prop->sock;
-    char *lasts;//Used by strtok_r
+    ssize_t r;
 
+    while(true) {
+        printf(". %d\n",connection_prop->status);
+        switch (connection_prop->status) {
 
-    short int r;//Readed char
-    char *end;//Pointer to header's end
+        case STATUS_WAIT_HEADER:
 
-    while (true) { //Infinite cycle to handle all pipelined requests
-        s_flush(sock);
-
-        if ((*bufFull)!=0) {
-            memset(buf,0,(*bufFull));//Sets to 0 the buffer, only the part used for the previous request in the same connection
-            (*bufFull)=0;//bufFull-(end-buf+4);
-        }
-        from=0;
-
-        while ((end=strstr(buf+from,"\r\n\r"))==NULL) { //Determines if there is a \r\n\r which is an ending sequence
-            //ssize_t rsize=buffer_strstr(sock,read_b,"\r\n\r\n");
-            //r=buffer_read(sock, buf+(*bufFull),rsize+strlen("\r\n\r\n"),read_b);//Reads 2 char and adds to the buffer
-            r=buffer_read(sock, buf+(*bufFull),2,read_b);//Reads 2 char and adds to the buffer
-
-            if (r<=0) { //Connection closed or error
-                return;
+            r=buffer_fill(connection_prop->sock,&(connection_prop->read_b));
+            printf("fill %d\n",r);
+            if (r<0) {
+                connection_prop->status=STATUS_END;
+                break;
             }
-
-            if (!(buf[*bufFull]==10 || buf[*bufFull]==13)) {//Optimization to make strstr parse only the ending part of the string
-                from=(*bufFull);
-            }
-
-            //TODO remove this crap!!
-            //if ((*bufFull)!=0) { //Removes Cr Lf from beginning
-            (*bufFull)+=r;//Sets the end of the user buffer (may contain more than one header)
-            //} else if (buf[*bufFull]!='\n' && buf[*bufFull]!='\r') {
-            //    (*bufFull)+=r;
-            //}
-
-            //Buffer full and still no valid http header
-            if ((*bufFull)>=INBUFFER) goto bad_request;
-
-        }
-
-        if (strstr(buf+from,"\r\n\r\n")==NULL) {//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
-            *bufFull+=buffer_read(sock, buf+*bufFull,1,read_b);//Reads 1 char and adds to the buffer
-        }
-
-        end[2]='\0';//Terminates the header, leaving a final \r\n in it
-
-        //Finds out request's kind
-        if (strncmp(buf,"GET",strlen("GET"))==0) connection_prop->request.method_id=GET;
-        else if (strncmp(buf,"POST",strlen("POST"))==0) connection_prop->request.method_id=POST;
-        else if (strncmp(buf,"PUT",strlen("PUT"))==0) connection_prop->request.method_id=PUT;
-        else if (strncmp(buf,"DELETE",strlen("DELETE"))==0) connection_prop->request.method_id=DELETE;
-        else if (strncmp(buf,"OPTIONS",strlen("OPTIONS"))==0) connection_prop->request.method_id=OPTIONS;
-#ifdef WEBDAV
-        else if (strncmp(buf,"PROPFIND",strlen("PROPFIND"))==0) connection_prop->request.method_id=PROPFIND;
-        else if (strncmp(buf,"MKCOL",strlen("MKCOL"))==0) connection_prop->request.method_id=MKCOL;
-        else if (strncmp(buf,"COPY",strlen("COPY"))==0) connection_prop->request.method_id=COPY;
-        else if (strncmp(buf,"MOVE",strlen("MOVE"))==0) connection_prop->request.method_id=MOVE;
-#endif
-        else goto bad_request;
-
-        connection_prop->method=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
-        connection_prop->page=strtok_r(NULL," ",&lasts);
-        if (connection_prop->page==NULL || connection_prop->method == NULL) goto bad_request;
-
-        connection_prop->http_param=lasts;
-
-
-#ifdef THREADDBG
-        syslog(LOG_INFO,"Requested page: %s to Thread %ld",connection_prop->page,id);
-#endif
-        //Stores the parameters of the request
-        set_connection_props(connection_prop);
-
-        if (send_page(read_b, connection_prop)<0) {
+            handle_requests(connection_prop);
+            break;
+        case STATUS_READY_TO_SEND:
+            //TODO
+            break;
+        case STATUS_READY_FOR_NEXT:
+            memset(
+                connection_prop->buf.data,
+                0,
+                connection_prop->buf.len);
+            connection_prop->buf.len=0;
+            s_flush(connection_prop->sock);
+            connection_prop->status=STATUS_WAIT_HEADER;
+            break;
+        case STATUS_ERR:
+            send_err(connection_prop,400,"Bad request");
+            printf("err\n");
+        case STATUS_ERR_NO_CONNECTION:
+            printf("err no conn\n");
 #ifdef REQUESTDBG
             syslog(LOG_INFO,"%s - FAILED - %s %s",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
 #endif
 
-            close(sock);
-            return;//Unable to send an error
-        }
+        case STATUS_END:
+
+            connection_prop->status=STATUS_NONE;
+            return;
+            break;
+
+        };
+    }
+
+}
+
+static inline void handle_requests(connection_t* connection_prop) {
+    char *buf=connection_prop->buf.data;
+    size_t *buf_len = &(connection_prop->buf.len);
+    buffered_read_t* read_b = & connection_prop->read_b;
+
+    int sock=connection_prop->sock;
+    char *lasts;//Used by strtok_r
+
+    size_t r;//Read bytes
+    char *end;//Pointer to header's end
+    if (*buf_len<18) {
+        r=buffer_read_non_fill(sock, buf+(*buf_len),18-*buf_len,read_b);
+        printf("available %d\n", read_b->end-read_b->start);
+        printf("a %d\n",r);
+        if (r<=0) return;
+        (*buf_len)+=r;//Sets the end of the user buffer (may contain more than one header)
+    }
+
+    while (strstr(buf+(*buf_len)-4,"\r\n\r")==NULL) { //Determines if there is a \r\n\r which is an ending sequence
+        r=buffer_read_non_fill(sock, buf+(*buf_len),2,read_b);
+        if (r<=0) return;
+
+        (*buf_len)+=r;//Sets the end of the user buffer (may contain more than one header)
+
+        //Buffer full and still no valid http header
+        if ((*buf_len)>=INBUFFER)
+            goto bad_request;
+    }
+
+    if (strstr(buf+(*buf_len)-4,"\r\n\r\n")==NULL) {//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
+        r=buffer_read_non_fill(sock, buf+*buf_len,1,read_b);//Reads 1 char and adds to the buffer
+        if (r<=0) return;
+        (*buf_len)++;
+    }
+
+    if ((end=strstr(buf+(*buf_len)-4,"\r\n\r\n"))==NULL)
+        goto bad_request;
+
+    end[2]='\0';//Terminates the header, leaving a final \r\n in it
+
+    //Finds out request's kind
+    if (strncmp(buf,"GET",strlen("GET"))==0) connection_prop->request.method_id=GET;
+    else if (strncmp(buf,"POST",strlen("POST"))==0) connection_prop->request.method_id=POST;
+    else if (strncmp(buf,"PUT",strlen("PUT"))==0) connection_prop->request.method_id=PUT;
+    else if (strncmp(buf,"DELETE",strlen("DELETE"))==0) connection_prop->request.method_id=DELETE;
+    else if (strncmp(buf,"OPTIONS",strlen("OPTIONS"))==0) connection_prop->request.method_id=OPTIONS;
+#ifdef WEBDAV
+    else if (strncmp(buf,"PROPFIND",strlen("PROPFIND"))==0) connection_prop->request.method_id=PROPFIND;
+    else if (strncmp(buf,"MKCOL",strlen("MKCOL"))==0) connection_prop->request.method_id=MKCOL;
+    else if (strncmp(buf,"COPY",strlen("COPY"))==0) connection_prop->request.method_id=COPY;
+    else if (strncmp(buf,"MOVE",strlen("MOVE"))==0) connection_prop->request.method_id=MOVE;
+#endif
+    else goto bad_request;
+
+    connection_prop->method=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
+    connection_prop->page=strtok_r(NULL," ",&lasts);
+    if (connection_prop->page==NULL || connection_prop->method == NULL) goto bad_request;
+
+
+    connection_prop->http_param=lasts;
+
+
+#ifdef THREADDBG
+    syslog(LOG_INFO,"Requested page: %s to Thread %ld",connection_prop->page,id);
+#endif
+    //Stores the parameters of the request
+    set_connection_props(connection_prop);
+
+    if (send_page(read_b, connection_prop)<0) {
+        connection_prop->status=STATUS_ERR_NO_CONNECTION;
+        return;
+    }
 
 #ifdef REQUESTDBG
-        syslog(LOG_INFO,
-               "%s - %d - %s %s",
-               connection_prop->ip_addr,
-               connection_prop->response.status_code,
-               connection_prop->method,
-               connection_prop->page);
+    syslog(LOG_INFO,
+           "%s - %d - %s %s",
+           connection_prop->ip_addr,
+           connection_prop->response.status_code,
+           connection_prop->method,
+           connection_prop->page);
 #endif
 
 
-        //Non pipelined
-        if (connection_prop->response.keep_alive==false) return;
 
-    } /* while */
+    if (connection_prop->response.keep_alive==false) {
+        //Non pipelined
+        connection_prop->status=STATUS_END;
+    } else {
+        connection_prop->status=STATUS_READY_FOR_NEXT;
+    }
+    return;
 
 bad_request:
-    send_err(connection_prop,400,"Bad request");
-    close(sock);
+    connection_prop->status=STATUS_ERR;
     return;
 }
 
@@ -300,6 +341,8 @@ void * instance(void * nulla) {
     pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
     connection_t connection_prop;                   //Struct to contain properties of the connection
 
+
+
     //General init of the thread
     thread_prop.id=(long int)nulla;//Set thread's id
 #ifdef THREADDBG
@@ -330,7 +373,8 @@ void * instance(void * nulla) {
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
 #endif
-        handle_requests(&connection_prop);
+        connection_prop.status=STATUS_READY_FOR_NEXT;
+        handle_request(&connection_prop);
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",thread_prop.id);
@@ -1296,6 +1340,8 @@ void inetd() {
     connection_t connection_prop;                   //Struct to contain properties of the connection
 
 
+
+
     if (mime_init(&thread_prop.mime_token)!=0 || thr_init_connect_prop(&connection_prop)) { //Unable to allocate the buffer
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
@@ -1308,7 +1354,8 @@ void inetd() {
     //Converting address to string
     net_getpeername(connection_prop.sock,connection_prop.ip_addr);
 
-    handle_requests(&connection_prop);
+    connection_prop.status=STATUS_READY_FOR_NEXT;
+    handle_request(&connection_prop);
 
     //close(connection_prop.sock);//Closing the socket
     //buffer_reset (&(connection_prop.read_b));
