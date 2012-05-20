@@ -57,14 +57,16 @@ void buffer_free(buffered_read_t * buf) {
  * Fills the buffer.
  *
  * RETURN VALUE: how many bytes were copied into the buffer
- * If it returns 0 it means that the buffer was not empty
+ * If it returns -1 it means that the buffer was not empty.
+ * 
+ * 0 means connection closed by the peer (or timeout)
  **/
 ssize_t buffer_fill(int fd, buffered_read_t * buf) {
     ssize_t r;
 
     if (buf->end - buf->start>0) {
         printf("we have stuff in \n");
-        return 0;
+        return -1;
     }
 
     buf->start = buf->buffer;
@@ -78,7 +80,7 @@ ssize_t buffer_fill(int fd, buffered_read_t * buf) {
     //If timeout is reached and no input is available
     //will behave like the stream is closed.
     if (poll(monitor, 1, READ_TIMEOUT) == 0) {
-        r = -1;
+        r = 0;
     } else {
         r = read(fd, buf->buffer, buf->size);
         printf("READ FROM SOCKET %d %d\n",r,buf->size);

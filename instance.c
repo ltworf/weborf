@@ -163,7 +163,7 @@ static inline void handle_request(connection_t* connection_prop) {
 
             r=buffer_fill(connection_prop->sock,&(connection_prop->read_b));
             printf("fill %d\n",r);
-            if (r<0) {
+            if (r==0) {
                 connection_prop->status=STATUS_END;
                 break;
             }
