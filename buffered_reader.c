@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 This funcion inits the struct allocating a buffer of the specified size.
 It will return 0 on success and 1 on fail.
 */
-int buffer_init(buffered_read_t * buf, ssize_t size) {
+int buffer_init(buffered_read_t * buf, size_t size) {
     buf->buffer = malloc(sizeof(char) * size);
     buf->size = size;
     buffer_reset(buf);
@@ -58,7 +58,7 @@ void buffer_free(buffered_read_t * buf) {
  *
  * RETURN VALUE: how many bytes were copied into the buffer
  * If it returns -1 it means that the buffer was not empty.
- * 
+ *
  * 0 means connection closed by the peer (or timeout)
  **/
 ssize_t buffer_fill(int fd, buffered_read_t * buf) {

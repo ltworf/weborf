@@ -29,7 +29,7 @@ typedef struct {
 } buffered_read_t;
 
 void buffer_reset (buffered_read_t * buf);
-int buffer_init(buffered_read_t * buf, ssize_t size);
+int buffer_init(buffered_read_t * buf, size_t size);
 void buffer_free(buffered_read_t * buf);
 size_t buffer_read(int fd, void *b, size_t count, buffered_read_t * buf);
 size_t buffer_strstr(int fd, buffered_read_t * buf, char * needle);
