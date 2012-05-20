@@ -65,7 +65,6 @@ ssize_t buffer_fill(int fd, buffered_read_t * buf) {
     ssize_t r;
 
     if (buf->end - buf->start>0) {
-        printf("we have stuff in \n");
         return -1;
     }
 
@@ -83,7 +82,6 @@ ssize_t buffer_fill(int fd, buffered_read_t * buf) {
         r = 0;
     } else {
         r = read(fd, buf->buffer, buf->size);
-        printf("READ FROM SOCKET %d %d\n",r,buf->size);
     }
 
     if (r <= 0) { //End of the stream

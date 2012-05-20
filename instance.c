@@ -156,13 +156,11 @@ static inline void handle_request(connection_t* connection_prop) {
     ssize_t r;
 
     while(true) {
-        printf(". %d\n",connection_prop->status);
         switch (connection_prop->status) {
 
         case STATUS_WAIT_HEADER:
 
             r=buffer_fill(connection_prop->sock,&(connection_prop->read_b));
-            printf("fill %d\n",r);
             if (r==0) {
                 connection_prop->status=STATUS_END;
                 break;
@@ -183,9 +181,9 @@ static inline void handle_request(connection_t* connection_prop) {
             break;
         case STATUS_ERR:
             send_err(connection_prop,400,"Bad request");
-            printf("err\n");
+            return;
+            break;
         case STATUS_ERR_NO_CONNECTION:
-            printf("err no conn\n");
 #ifdef REQUESTDBG
             syslog(LOG_INFO,"%s - FAILED - %s %s",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
 #endif
@@ -213,8 +211,6 @@ static inline void handle_requests(connection_t* connection_prop) {
     char *end;//Pointer to header's end
     if (*buf_len<18) {
         r=buffer_read_non_fill(sock, buf+(*buf_len),18-*buf_len,read_b);
-        printf("available %d\n", read_b->end-read_b->start);
-        printf("a %d\n",r);
         if (r<=0) return;
         (*buf_len)+=r;//Sets the end of the user buffer (may contain more than one header)
     }
@@ -230,14 +226,19 @@ static inline void handle_requests(connection_t* connection_prop) {
             goto bad_request;
     }
 
-    if (strstr(buf+(*buf_len)-4,"\r\n\r\n")==NULL) {//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
+    if ((end=strstr(buf+(*buf_len)-4,"\r\n\r\n"))==NULL) {//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
         r=buffer_read_non_fill(sock, buf+*buf_len,1,read_b);//Reads 1 char and adds to the buffer
         if (r<=0) return;
         (*buf_len)++;
+        
+        if (buf[*buf_len-1]!='\n')
+            goto bad_request;
+        
+        end=&(buf[*buf_len-4]);
+        
     }
 
-    if ((end=strstr(buf+(*buf_len)-4,"\r\n\r\n"))==NULL)
-        goto bad_request;
+    
 
     end[2]='\0';//Terminates the header, leaving a final \r\n in it
 
