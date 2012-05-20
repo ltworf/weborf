@@ -41,11 +41,13 @@ typedef void* magic_t;
 typedef enum {
     STATUS_WAIT_HEADER,
     STATUS_READY_TO_SEND,
+    STATUS_CHECK_AUTH,
     STATUS_END,
     STATUS_ERR,
     STATUS_ERR_NO_CONNECTION,
     STATUS_READY_FOR_NEXT,
     STATUS_NONE,
+    STATUS_PAGE_SENT,
 
 } conection_status_e;
 

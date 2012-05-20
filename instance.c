@@ -66,7 +66,7 @@ extern pthread_key_t thread_key;            //key for pthread_setspecific
 int request_auth(connection_t *connection_prop);
 int write_dir(char *real_basedir, connection_t * connection_prop);
 static int tar_send_dir(connection_t* connection_prop);
-static int send_page(buffered_read_t* read_b, connection_t* connection_prop);
+static int send_page(connection_t* connection_prop);
 static int send_error_header(int retval, connection_t *connection_prop);
 static int get_or_post(connection_t *connection_prop, string_t post_param);
 static inline void handle_requests(connection_t* connection_prop);
@@ -167,8 +167,19 @@ static inline void handle_request(connection_t* connection_prop) {
             }
             handle_requests(connection_prop);
             break;
+        case STATUS_PAGE_SENT:
+#ifdef REQUESTDBG
+            syslog(LOG_INFO,
+                   "%s - %d - %s %s",
+                   connection_prop->ip_addr,
+                   connection_prop->response.status_code,
+                   connection_prop->method,
+                   connection_prop->page);
+#endif
+            connection_prop->status=connection_prop->response.keep_alive ? STATUS_READY_FOR_NEXT: STATUS_END;
+            break;
         case STATUS_READY_TO_SEND:
-            //TODO
+            send_page(connection_prop);
             break;
         case STATUS_READY_FOR_NEXT:
             memset(
@@ -230,15 +241,13 @@ static inline void handle_requests(connection_t* connection_prop) {
         r=buffer_read_non_fill(sock, buf+*buf_len,1,read_b);//Reads 1 char and adds to the buffer
         if (r<=0) return;
         (*buf_len)++;
-        
+
         if (buf[*buf_len-1]!='\n')
             goto bad_request;
-        
-        end=&(buf[*buf_len-4]);
-        
-    }
 
-    
+        end=&(buf[*buf_len-4]);
+
+    }
 
     end[2]='\0';//Terminates the header, leaving a final \r\n in it
 
@@ -260,7 +269,6 @@ static inline void handle_requests(connection_t* connection_prop) {
     connection_prop->page=strtok_r(NULL," ",&lasts);
     if (connection_prop->page==NULL || connection_prop->method == NULL) goto bad_request;
 
-
     connection_prop->http_param=lasts;
 
 
@@ -270,28 +278,8 @@ static inline void handle_requests(connection_t* connection_prop) {
     //Stores the parameters of the request
     set_connection_props(connection_prop);
 
-    if (send_page(read_b, connection_prop)<0) {
-        connection_prop->status=STATUS_ERR_NO_CONNECTION;
-        return;
-    }
-
-#ifdef REQUESTDBG
-    syslog(LOG_INFO,
-           "%s - %d - %s %s",
-           connection_prop->ip_addr,
-           connection_prop->response.status_code,
-           connection_prop->method,
-           connection_prop->page);
-#endif
-
-
-
-    if (connection_prop->response.keep_alive==false) {
-        //Non pipelined
-        connection_prop->status=STATUS_END;
-    } else {
-        connection_prop->status=STATUS_READY_FOR_NEXT;
-    }
+    connection_prop->status=STATUS_READY_TO_SEND;
+        
     return;
 
 bad_request:
@@ -538,10 +526,10 @@ static inline int options (connection_t* connection_prop) {
 }
 
 /**
-This function determines the requested page and sends it
-http_param is a string containing parameters of the HTTP request
-*/
-static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
+ * TODO
+ **/
+static int send_page(connection_t* connection_prop) {
+    buffered_read_t* read_b = &(connection_prop->read_b);
     int retval=0;//Return value after sending the page
     string_t post_param; //Contains POST data
 
@@ -616,6 +604,8 @@ escape:
     if ((connection_prop->request.method_id==GET || connection_prop->request.method_id==POST) && connection_prop->strfile_fd>=0) {
         close(connection_prop->strfile_fd);
     }
+
+    connection_prop->status= retval<0 ? STATUS_ERR_NO_CONNECTION:STATUS_PAGE_SENT;
 
     return send_error_header(retval,connection_prop);
 }
@@ -1283,9 +1273,7 @@ static int tar_send_dir(connection_t* connection_prop) {
     connection_prop->response.keep_alive=false;
 
     char* headers=malloc(HEADBUF);
-
     if (headers==NULL) return ERR_NOMEM;
-
 
     //Last char is always '/', i null it so i can use default name
     connection_prop->strfile[--connection_prop->strfile_len]=0;
@@ -1311,7 +1299,7 @@ static int tar_send_dir(connection_t* connection_prop) {
     int pid=fork();
 
     if (pid==0) { //child, executing tar
-        fclose (stdout);
+        close(1);
         dup(connection_prop->sock); //Redirects the stdout
         nice(1); //Reducing priority
         execlp("tar","tar","-cz",connection_prop->strfile,(char *)0);
@@ -1339,9 +1327,6 @@ void inetd() {
     //General init of the thread
     thread_prop.id=0;
     connection_t connection_prop;                   //Struct to contain properties of the connection
-
-
-
 
     if (mime_init(&thread_prop.mime_token)!=0 || thr_init_connect_prop(&connection_prop)) { //Unable to allocate the buffer
 #ifdef SERVERDBG
