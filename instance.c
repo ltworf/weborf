@@ -334,7 +334,6 @@ Auth provider has to check for the file's size and refuse it if it is the case.
 This function will not work if there is no auth provider.
 */
 int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
-    char *content_length="Content-Length";
     int sock=connection_prop->sock;
     if (weborf_conf.authsock==NULL) {
         return ERR_FORBIDDEN;
@@ -354,15 +353,10 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
 
     char a[NBUFFER]; //Buffer for field's value
     int retval;
-    size_t content_l;  //Length of the put data
-
-    //Gets the value of content-length header
-    bool r=get_param_value(connection_prop->http_param,content_length, a,NBUFFER,strlen(content_length));
+    size_t content_l = http_read_content_length(connection_prop);
 
 
-    if (r!=false) {//If there is no content-lenght returns error
-        content_l=strtoull( a , NULL, 0 );
-    } else {//No data
+    if (content_l==-1) {//If there is no content-lenght returns error
         return ERR_NODATA;
     }
 
@@ -1019,20 +1013,14 @@ string_t read_post_data(connection_t* connection_prop,buffered_read_t* read_b) {
     string_t res;
     res.len=0;
     res.data=NULL;
+    
+    ssize_t content_length = http_read_content_length(connection_prop);
 
-    //Buffer for field's value
-    char a[NBUFFER];
-    //Gets the value
-    char *content_length="Content-Length";
-    bool r=get_param_value(connection_prop->http_param,content_length, a,NBUFFER,strlen(content_length));
-
-    //If there is a value and method is POST
-    if (r!=false) { //&& connection_prop->method_id==POST) {
-        long int l=strtoul( a , NULL, 0 );
-        if (l<=POST_MAX_SIZE && (res.data=malloc(l))!=NULL) {//Post size is ok and buffer is allocated
-            res.len=buffer_read(sock,res.data,l,read_b);
-        }
+    //Post size is ok and buffer is allocated
+    if (content_length>=0 && content_length<=POST_MAX_SIZE && (res.data=malloc(content_length))!=NULL) {
+            res.len=buffer_read(sock,res.data,content_length,read_b);
     }
+    
     return res;
 }
 

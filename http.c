@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "types.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "http.h"
 
@@ -79,4 +80,23 @@ void http_append_header_llu_llu_lld(connection_t * connection_prop, const char* 
     string_t * string = get_string_t(connection_prop);
     char *head=string->data+string->len;
     string->len += snprintf(head,HEADBUF-string->len,s,s1,s2,s3);
+}
+
+
+/**
+ * Reads the Content-Length header
+ * 
+ * returns -1 if the header has an error
+ **/
+ssize_t http_read_content_length(connection_t * connection_prop) {
+    char *content_length="Content-Length";
+    char *val = strstr(connection_prop->http_param, content_length);
+
+    if (val == NULL) { //No such field
+        return -1;
+    }
+
+    //WARNING messing with this line must be done carefully
+    val += strlen(content_length) + 2; //Moves the begin of the string to exclude the name of the field
+    return strtoull(val, NULL, 0);
 }
