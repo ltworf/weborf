@@ -99,31 +99,6 @@ static inline int check_etag(connection_t* connection_prop,char *a) {
 }
 
 /**
-Sets keep_alive and protocol_version fields of connection_t
-*/
-static inline void set_connection_props(connection_t *connection_prop) {
-    char a[12];//Gets the value
-    //Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
-    bool connection=get_param_value(connection_prop->http_param,"Connection", a,sizeof(a),strlen("Connection"));
-
-    connection_prop->response.chunked=false; //Always false by default
-
-    //Setting the connection type, using protocol version
-    if (connection_prop->http_param[7]=='1' && connection_prop->http_param[5]=='1') {//Keep alive by default (protocol 1.1)
-        connection_prop->protocol_version=HTTP_1_1;
-        connection_prop->response.keep_alive=(connection && strncmp(a,"close",5)==0)?false:true;
-    } else {//Not http1.1
-        //Constants are set to make this line work
-        connection_prop->protocol_version=connection_prop->http_param[7];
-        connection_prop->response.keep_alive=(connection && strncmp(a,"Keep",4)==0)?true:false;
-    }
-
-    http_unescape_url(connection_prop->page);//Operations on the url string
-    split_get_params(connection_prop);//Splits URI into page and parameters
-    connection_prop->basedir=get_basedir(connection_prop->http_param);
-}
-
-/**
  * removes TCP_CORK in order to send an incomplete frame if needed
  * and sets it again to forbid incomplete frames again.
  *
@@ -241,15 +216,12 @@ static inline void handle_requests(connection_t* connection_prop) {
     end[2]='\0';//Terminates the header, leaving a final \r\n in it
 
 
-    if (http_set_method_uri(buf,connection_prop)==-1) goto bad_request;
-
-
+    if (http_set_connection_t(buf,connection_prop)==-1) goto bad_request;
 
 #ifdef THREADDBG
     syslog(LOG_INFO,"Requested page: %s to Thread %ld",connection_prop->page,id);
 #endif
-    //Stores the parameters of the request
-    set_connection_props(connection_prop);
+
 
     connection_prop->status=STATUS_READY_TO_SEND;
 
@@ -1079,59 +1051,6 @@ string_t read_post_data(connection_t* connection_prop,buffered_read_t* read_b) {
 }
 
 /**
-This function returns a pointer to a string.
-It will use virtualhost settings to return this string and if no virtualhost is set for that host, it will return
-the default basedir.
-Those string must
-*/
-char* get_basedir(char* http_param) {
-    if (weborf_conf.virtual_host==false) return weborf_conf.basedir;
-
-    char* result;
-    char* h=strstr(http_param,"\r\nHost: ");
-
-    if (h==NULL) return weborf_conf.basedir;
-
-    h+=strlen("\r\nHost: ");//Removing "Host:" string
-
-
-    char* end=strstr(h,"\r");
-    if (end==NULL) return weborf_conf.basedir;
-
-
-    end[0]=0;
-    result=dict_get_key(&(weborf_conf.vhosts),h);
-
-    end[0]='\r';
-
-    return result==NULL?weborf_conf.basedir:result;
-}
-
-
-/**
-This function returns the reason phrase according to the response
-code.
-*/
-static inline char *reason_phrase(int code) {
-    code=code/100;
-
-    switch (code) {
-    case 2:
-        return "OK";
-    case 3:
-        return "Found";
-    case 4:
-        return "Request error";
-    case 5:
-        return "Server error";
-    case 1:
-        return "Received";
-
-    };
-    return "Something is very wrong";
-}
-
-/**
 This function sends a code header to the specified socket
 size is the Content-Length field.
 headers can be NULL or some extra headers to add. Headers must be
@@ -1152,7 +1071,6 @@ int send_http_header(unsigned long long int size,char* headers,bool content,time
     char *head=malloc(HEADBUF);
     char* h_ptr=head;
     int left_head=HEADBUF;
-
 
 
     if (head==NULL) {
@@ -1177,7 +1095,7 @@ int send_http_header(unsigned long long int size,char* headers,bool content,time
         connection_header="";
     }
 
-    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\n%s",connection_prop->response.status_code,reason_phrase(connection_prop->response.status_code),connection_header);
+    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\n%s",connection_prop->response.status_code,http_reason_phrase(connection_prop->response.status_code),connection_header);
 
     //This stuff moves the pointer to the buffer forward, and reduces the left space in the buffer itself
     //Next snprintf will append their strings to the buffer, without overwriting.

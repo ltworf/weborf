@@ -40,23 +40,6 @@ void strToUpper(char *str) {
 }
 
 /**
-This function splits the page name from the GET params.
-It also sets the value for the page_len field
-*/
-void split_get_params(connection_t* connection_prop) {
-    char *separator=strstr(connection_prop->page,"?");
-
-    if (separator==NULL) {
-        connection_prop->get_params=NULL;
-        connection_prop->page_len=strlen(connection_prop->page);
-    } else {
-        separator[0]=0;
-        connection_prop->get_params=separator+1;
-        connection_prop->page_len=separator-connection_prop->page;
-    }
-}
-
-/**
 Replaces escape sequences in the form %HEXCODE with the correct char
 This is used for URLs, after the transformation the URL will probably
 represent a file that exists on filesystem.

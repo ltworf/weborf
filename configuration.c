@@ -50,6 +50,36 @@ weborf_configuration_t weborf_conf=    {
 };
 
 /**
+This function returns a pointer to a string.
+It will use virtualhost settings to return this string and if no virtualhost is set for that host, it will return
+the default basedir.
+Those string must
+*/
+char* configuration_get_basedir(char* http_param) {
+    if (weborf_conf.virtual_host==false) return weborf_conf.basedir;
+
+    char* result;
+    char* h=strstr(http_param,"\r\nHost: ");
+
+    if (h==NULL) return weborf_conf.basedir;
+
+    h+=strlen("\r\nHost: ");//Removing "Host:" string
+
+
+    char* end=strstr(h,"\r");
+    if (end==NULL) return weborf_conf.basedir;
+
+
+    end[0]=0;
+    result=dict_get_key(&(weborf_conf.vhosts),h);
+
+    end[0]='\r';
+
+    return result==NULL?weborf_conf.basedir:result;
+}
+
+
+/**
  * Enables sending mime types in response to GET requests
  * or prints an error and exits if the support was not
  * compiled

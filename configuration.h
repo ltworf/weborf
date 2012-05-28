@@ -25,5 +25,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "options.h"
 
 void configuration_load(int argc, char *argv[]);
+char * configuration_get_basedir(char *http_param);
 
 #endif
