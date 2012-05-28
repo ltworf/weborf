@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "options.h"
 
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
@@ -29,6 +31,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdlib.h>
+
+
+
 
 #include "types.h"
 #include "mynet.h"
@@ -49,7 +54,7 @@ void net_sock_flush (int sock) {
     val=1;
     setsockopt(sock, IPPROTO_TCP, TCP_CORK, (char *)&val, sizeof(val));
 #else
-#warning "NO TCP_CORK"
+#warning "NO TCP CORK"
 #endif
 }
 

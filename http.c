@@ -20,5 +20,63 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "types.h"
 
+#include <stdio.h>
+
 #include "http.h"
 
+static string_t * get_string_t(connection_t * connection_prop);
+
+static string_t * get_string_t(connection_t * connection_prop) {
+    //TODO realloc the header if it's not enough
+    return  & (connection_prop->response.headers);
+
+}
+
+/**
+ * Appends an header
+ *
+ * WARNING: appending string containing things like %d
+ * could result in a security attack. Use str_append_str_safe
+ * in case the content is not sanitized
+ **/
+void http_append_header(connection_t * connection_prop,const char* s) {
+    string_t * string = get_string_t(connection_prop);
+
+    char *head=string->data+string->len;
+
+    string->len += snprintf(head,HEADBUF-string->len,s);
+}
+
+/**
+ * Appends an header
+ **/
+void http_append_header_safe(connection_t * connection_prop,char* s) {
+    string_t * string = get_string_t(connection_prop);
+
+    char *head=string->data+string->len;
+
+    string->len += snprintf(head,HEADBUF-string->len,"%s",s);
+}
+
+/**
+ * Appends an header with a string in it
+ *
+ * WARNING: the header must contain one and only one %s
+ **/
+void http_append_header_str(connection_t * connection_prop,const char* s,char* s1) {
+    string_t * string = get_string_t(connection_prop);
+    char *head=string->data+string->len;
+    string->len += snprintf(head,HEADBUF-string->len,s,s1);
+}
+
+void http_append_header_str_str(connection_t * connection_prop,const char* s,char* s1,char* s2) {
+    string_t * string = get_string_t(connection_prop);
+    char *head=string->data+string->len;
+    string->len += snprintf(head,HEADBUF-string->len,s,s1,s2);
+}
+
+void http_append_header_llu_llu_lld(connection_t * connection_prop, const char* s,unsigned long long int s1, unsigned long long int s2, long long int s3) {
+    string_t * string = get_string_t(connection_prop);
+    char *head=string->data+string->len;
+    string->len += snprintf(head,HEADBUF-string->len,s,s1,s2,s3);
+}

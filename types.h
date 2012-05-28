@@ -112,7 +112,7 @@ typedef struct {
 
     size_t size;                //Size of the response, set to 0 if unknown
     length_header_t size_type;  //Type of the size (content or entity), LENGTH_CONTENT is the default
-
+    string_t headers;           //String for the extra-headers to be added on the flight
 
 } response_t;
 

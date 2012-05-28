@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 
 #include "webdav.h"
+#include "http.h"
 #include "instance.h"
 #include "mime.h"
 #include "myio.h"
@@ -319,10 +320,9 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
         }
 
         if (S_ISDIR(connection_prop->strfile_stat.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
-            char head[URI_LEN+12];//12 is the size for the location header
-            snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
+            http_append_header_str(connection_prop,"Location: %s/\r\n",connection_prop->page);
             connection_prop->response.status_code=301;
-            send_http_header(head,connection_prop);
+            send_http_header(connection_prop);
             return 0;
         }
     } // End redirection
@@ -336,7 +336,8 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     connection_prop->response.keep_alive=false;
     connection_prop->response.status_code=207;
     connection_prop->response.size_type=LENGTH_ENTITY;
-    send_http_header("Content-Type: text/xml; charset=\"utf-8\"\r\n",connection_prop);
+    http_append_header(connection_prop,"Content-Type: text/xml; charset=\"utf-8\"\r\n");
+    send_http_header(connection_prop);
 
     //Check if exists in cache
     if (cache_is_enabled()) {

@@ -92,26 +92,11 @@ static inline int check_etag(connection_t* connection_prop,char *a) {
             //Browser has the item in its cache, sending 304
             connection_prop->response.status_code=304;
             connection_prop->response.timestamp=etag;
-            send_http_header(NULL,connection_prop);
+            send_http_header(connection_prop);
             return 0;
         }
     }
     return 1;
-}
-
-/**
- * removes TCP_CORK in order to send an incomplete frame if needed
- * and sets it again to forbid incomplete frames again.
- *
- * it is Linux specific. Does nothing otherwise
- */
-static inline void s_flush (int sock) {
-#ifdef TCP_CORK
-    int val=0;
-    setsockopt(sock, IPPROTO_TCP, TCP_CORK, (char *)&val, sizeof(val));
-    val=1;
-    setsockopt(sock, IPPROTO_TCP, TCP_CORK, (char *)&val, sizeof(val));
-#endif
 }
 
 /**
@@ -153,7 +138,7 @@ static inline void handle_request(connection_t* connection_prop) {
                 0,
                 connection_prop->buf.len);
             connection_prop->buf.len=0;
-            s_flush(connection_prop->sock);
+            net_sock_flush(connection_prop->sock);
             connection_prop->status=STATUS_WAIT_HEADER;
             break;
         case STATUS_ERR:
@@ -252,10 +237,14 @@ static inline int thr_init_connect_prop(connection_t *connection_prop) {
     connection_prop->buf.data = calloc(INBUFFER+1,sizeof(char));
     connection_prop->buf.len = 0;
 
+    connection_prop->response.headers.data = malloc(HEADBUF);
+    connection_prop->response.headers.len = 0;
+
     connection_prop->strfile=malloc(URI_LEN);    //buffer for filename
 
     return buffer_init(&(connection_prop->read_b),BUFFERED_READER_SIZE)!=0 ||
            connection_prop->buf.data==NULL ||
+           connection_prop->response.headers.data == NULL ||
            connection_prop->strfile==NULL;
 
 }
@@ -263,6 +252,7 @@ static inline int thr_init_connect_prop(connection_t *connection_prop) {
 static inline void thr_free_connect_prop(connection_t *connection_prop) {
     free(connection_prop->buf.data);
     free(connection_prop->strfile);
+    free(connection_prop->response.headers.data);
     buffer_free(&(connection_prop->read_b));
 }
 
@@ -467,7 +457,9 @@ static inline int options (connection_t* connection_prop) {
 #define ALLOWED "Allow: GET,POST,PUT,DELETE,OPTIONS\r\n"
 #endif
     connection_prop->response.status_code=200;
-    send_http_header(ALLOWED,connection_prop);
+    http_append_header(connection_prop,ALLOWED);
+
+    send_http_header(connection_prop);
     return 0;
 }
 
@@ -569,34 +561,32 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
             return tar_send_dir(connection_prop);
         }
 
-        //Requested a directory without ending /
+
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
-            char head[URI_LEN+12];//12 is the size for the location header
-            snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
+            http_append_header_str(connection_prop,"Location: %s/\r\n",connection_prop->page);
             connection_prop->response.status_code=301;
-            send_http_header(head,connection_prop);
+            send_http_header(connection_prop);
             return 0;
-        } else {//Requested directory with "/" Search for index files or list directory
-
-            char* index_name=&connection_prop->strfile[connection_prop->strfile_len];//Pointer to where to write the filename
-            int i;
-
-            //Cyclyng through the indexes
-            for (i=0; i<weborf_conf.indexes_l; i++) {
-                snprintf(index_name,INDEXMAXLEN,"%s",weborf_conf.indexes[i]);//Add INDEX to the url
-                if (access(connection_prop->strfile,R_OK)==0) { //If index exists, redirect to it
-                    char head[URI_LEN+12];//12 is the size for the location header
-                    snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes[i]);
-                    connection_prop->response.status_code=303;
-                    send_http_header(head,connection_prop);
-                    return 0;
-                }
-            }
-
-            connection_prop->strfile[connection_prop->strfile_len]=0; //Removing the index part
-            return write_dir(connection_prop->basedir,connection_prop);
         }
 
+
+        //Cycling index files
+        char* index_name=&connection_prop->strfile[connection_prop->strfile_len];//Pointer to where to write the filename
+        int i;
+
+        //Cyclyng through the indexes
+        for (i=0; i<weborf_conf.indexes_l; i++) {
+            snprintf(index_name,INDEXMAXLEN,"%s",weborf_conf.indexes[i]);//Add INDEX to the url
+            if (access(connection_prop->strfile,R_OK)==0) { //If index exists, redirect to it
+                http_append_header_str_str(connection_prop,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes[i]);
+                connection_prop->response.status_code=303;
+                send_http_header(connection_prop);
+                return 0;
+            }
+        }
+
+        connection_prop->strfile[connection_prop->strfile_len]=0; //Removing the index part
+        return write_dir(connection_prop->basedir,connection_prop);
 
     } else {//Requested an existing file
         if (weborf_conf.exec_script) { //Scripts enabled
@@ -655,10 +645,10 @@ static int send_error_header(int retval, connection_t *connection_prop) {
         return request_auth(connection_prop);//Sends a request for authentication
     case OK_NOCONTENT:
         connection_prop->response.status_code=204;
-        return send_http_header(NULL,connection_prop);
+        return send_http_header(connection_prop);
     case OK_CREATED:
         connection_prop->response.status_code=201;
-        return send_http_header(NULL,connection_prop);
+        return send_http_header(connection_prop);
     }
     return 0; //Make gcc happy
 
@@ -729,7 +719,7 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
         connection_prop->response.size = pagelen;
         connection_prop->response.timestamp = connection_prop->strfile_stat.st_mtime;
 
-        send_http_header(NULL,connection_prop);
+        send_http_header(connection_prop);
         write(sock,html,pagelen);
 
         //Write item in cache
@@ -816,8 +806,6 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
     connection_prop->response.status_code=200;
     errno=0;
     unsigned long long int count;
-    char *hbuf=a;
-    int remain=RBUFFER+MIMETYPELEN+16, t;
     a[0]='\0';
 
 #ifdef __RANGE
@@ -861,24 +849,18 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         }
 
         connection_prop->response.status_code=206;
-
-        t=snprintf(hbuf,remain,"Content-Range: bytes %llu-%llu/%lld\r\n",
-                   (unsigned long long int)from,
-                   (unsigned long long int)to,
-                   (long long int)connection_prop->strfile_stat.st_size
-                  );
-        hbuf+=t;
-        remain-=t;
+        http_append_header_llu_llu_lld(connection_prop,"Content-Range: bytes %llu-%llu/%lld\r\n",
+                                       (unsigned long long int)from,
+                                       (unsigned long long int)to,
+                                       (long long int)connection_prop->strfile_stat.st_size
+                                      );
 
         lseek(connection_prop->strfile_fd,from,SEEK_SET);
         count=to-from+1;
 
     } else //Normal request
 #endif
-    {
-        a[0]=0; //Reset buffer in case it isn't used for headers
         count=connection_prop->strfile_stat.st_size;
-    }
 
 
     //Sending MIME to the client
@@ -887,16 +869,13 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
         const char* mime=mime_get_fd(thread_prop->mime_token,connection_prop->strfile_fd,&(connection_prop->strfile_stat));
 
-        //t=
-        snprintf(hbuf,remain,"Content-Type: %s\r\n",mime);
-        //hbuf+=t;
-        //remain-=t;
+        http_append_header_str(connection_prop,"Content-Type: %s\r\n",mime);
     }
 #endif
 
     connection_prop->response.size=count;
     connection_prop->response.timestamp = connection_prop->strfile_stat.st_mtime;
-    send_http_header(a,connection_prop);
+    send_http_header(connection_prop);
     return count;
 }
 
@@ -1072,7 +1051,7 @@ This function will automatically take care of generating Connection header when
 needed, according to keep_alive and protocol_version of connection_prop
 
 */
-int send_http_header(char* headers,connection_t* connection_prop) {
+int send_http_header(connection_t* connection_prop) {
     int sock=connection_prop->sock;
     unsigned long long int size = connection_prop->response.size;
     time_t timestamp = connection_prop->response.timestamp;
@@ -1090,7 +1069,6 @@ int send_http_header(char* headers,connection_t* connection_prop) {
     int left_head=bsize;
 
     char *connection_header=""; //Contains the "Connection" header
-    char *range_header=""; // Contains the Accept-Range header
 
     if (head==NULL) {
 #ifdef SERVERDBG
@@ -1098,7 +1076,6 @@ int send_http_header(char* headers,connection_t* connection_prop) {
 #endif
         return ERR_NOMEM;
     }
-    if (headers==NULL) headers="";
 
     /*Defines the Connection header
     It will send the connection header if the setting is non-default
@@ -1167,7 +1144,7 @@ int send_http_header(char* headers,connection_t* connection_prop) {
     }
 #endif
 
-    dprintf(sock,"%s%s\r\n",h_ptr,headers);
+    dprintf(sock,"%s%s\r\n",h_ptr, connection_prop->response.headers.data );
     free(h_ptr);
     return 0;
 }
@@ -1190,15 +1167,12 @@ static int tar_send_dir(connection_t* connection_prop) {
     char* dirname=strrchr(connection_prop->strfile,'/')+1;
     if (strlen(dirname)==0) dirname="directory";
 
-    snprintf(headers,HEADBUF ,
-             "Content-Type: application/x-gzip\r\n"
-             "Content-Disposition: attachment; filename=\"%s.tar.gz\"\r\n",
-             dirname
-            );
+    http_append_header(connection_prop,"Content-Type: application/x-gzip\r\n");
+    http_append_header_str(connection_prop,"Content-Disposition: attachment; filename=\"%s.tar.gz\"\r\n",dirname);
 
     connection_prop->response.status_code=200;
     connection_prop->response.size_type=LENGTH_ENTITY;
-    send_http_header(headers,connection_prop);
+    send_http_header(connection_prop);
 
     free(headers);
 

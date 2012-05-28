@@ -34,6 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mystring.h"
 #include "cgi.h"
+#include "http.h"
 #include "types.h"
 #include "instance.h"
 
@@ -325,7 +326,9 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
 
         connection_prop->response.size=reads;
 
-        send_http_header(header_buf,connection_prop);
+        http_append_header_safe(connection_prop,header_buf );
+
+        send_http_header(connection_prop);
 
         if (reads!=0) {//Sends the page if there is something to send
             write (sock,scrpt_buf,reads);

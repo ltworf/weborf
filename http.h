@@ -35,6 +35,12 @@ static inline void http_set_chunked(connection_t * connection_prop);
 static inline int http_set_connection_t(char* header,connection_t * connection_prop);
 static inline char *http_reason_phrase(int code);
 
+void http_append_header_str(connection_t * connection_prop,const char* s,char* s1);
+void http_append_header_str_str(connection_t * connection_prop,const char* s,char* s1,char* s2);
+void http_append_header_safe(connection_t * connection_prop,char* s);
+void http_append_header(connection_t * connection_prop,const char* s);
+void http_append_header_llu_llu_lld(connection_t * connection_prop, const char* s,unsigned long long int s1, unsigned long long int s2, long long int s3);
+
 /**
  * This function returns the reason phrase according to the response
  * code.
@@ -72,6 +78,8 @@ static inline int http_set_connection_t(char* header,connection_t * connection_p
     connection_prop->response.timestamp=-1;
     connection_prop->response.size=0;
     connection_prop->response.size_type=LENGTH_CONTENT;
+    connection_prop->response.headers.len = 0;
+    connection_prop->response.headers.data[0] =0;
 
 
 
