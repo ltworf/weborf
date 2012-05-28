@@ -171,8 +171,7 @@ bool http_read_range(connection_t * connection_prop, size_t *from, size_t *to) {
     //Locating from and to
     //Range: bytes=12323-123401
     char *eq=strstr(val,"=");
-    char *sep=strstr(eq,"-");
-    printf("%s\n",val);
+    char *sep=strstr(val,"-");
     end[0]='\r';
 
     //Invalid data in Range header
