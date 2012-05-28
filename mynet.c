@@ -35,6 +35,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 extern weborf_configuration_t weborf_conf;
 
+
+/**
+ * removes TCP_CORK in order to send an incomplete frame if needed
+ * and sets it again to forbid incomplete frames again.
+ *
+ * it is Linux specific. Does nothing otherwise
+ */
+void net_sock_flush (int sock) {
+#ifdef TCP_CORK
+    int val=0;
+    setsockopt(sock, IPPROTO_TCP, TCP_CORK, (char *)&val, sizeof(val));
+    val=1;
+    setsockopt(sock, IPPROTO_TCP, TCP_CORK, (char *)&val, sizeof(val));
+#else
+#warning "NO TCP_CORK"
+#endif
+}
+
 /**
  * Same as the combination of getperrname and
  * inet_ntop, will save the string address of the
