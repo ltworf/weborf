@@ -109,19 +109,8 @@ The original string post_param->data will be modified.
 */
 static inline int get_props(connection_t* connection_prop,string_t* post_param,u_dav_details *props) {
 
-    {
-        //Determining if it is deep or not
-        //props.deep=false; commented because redoundant
-        char a[4]; //Buffer for field's value
-        //Gets the value of content-length header
-        bool r=get_param_value(connection_prop->http_param,"Depth", a,sizeof(a),strlen("Depth"));
-
-        if (r) {
-            props->dav_details.deep=(a[0]=='1');
-        }
-    }
-
-
+    props->dav_details.deep = http_read_deep(connection_prop);
+    
     char *sprops[MAXPROPCOUNT];   //List of pointers to properties
 
     if (post_param->len==0) {//No specific prop request, sending everything

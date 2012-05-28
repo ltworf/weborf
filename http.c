@@ -101,6 +101,12 @@ ssize_t http_read_content_length(connection_t * connection_prop) {
     return strtoull(val, NULL, 0);
 }
 
+/**
+ * Reads the header If-None-Match
+ * returning a time_t, since weborf uses the mtime as etag
+ * 
+ * returns -1 on error
+ **/
 time_t http_read_if_none_match(connection_t * connection_prop) {
     char *if_none_match="If-None-Match";
     char *val = strstr(connection_prop->http_param, if_none_match);
@@ -112,5 +118,22 @@ time_t http_read_if_none_match(connection_t * connection_prop) {
     //WARNING messing with this line must be done carefully
     val += strlen(if_none_match) + 3; //Moves the begin of the string to exclude the name of the field
     return (time_t)strtol(val,NULL,0);
+    
+}
+
+/**
+ * Reads the Depth header
+ * returns false in all cases except when it begins with '1'
+ **/
+bool http_read_deep(connection_t * connection_prop) {
+    char *depth = "Depth";
+    char *val = strstr(connection_prop->http_param,depth);
+    
+    if (val == NULL) return false;
+    
+    //WARNING messing with this line must be done carefully
+    val += strlen(depth) + 2; //Moves the begin of the string to exclude the name of the field
+    
+    return depth[0]=='1';
     
 }
