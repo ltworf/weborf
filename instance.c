@@ -326,7 +326,6 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
         }
     }
 
-    char a[NBUFFER]; //Buffer for field's value
     int retval;
     size_t content_l = http_read_content_length(connection_prop);
 
