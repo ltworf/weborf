@@ -30,22 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 
-//Request
-#define INVALID -1
-#define GET 0
-#define POST 1
-#define PUT 2
-#define DELETE 3
-#define OPTIONS 8
-
-#ifdef WEBDAV
-#define PROPFIND 4
-#define COPY 5
-#define MOVE 6
-#define MKCOL 7
-#endif
-
-
 #define NO_ACTION -120
 
 //Errors
@@ -68,10 +52,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define OK_CREATED 1
 #define OK_NOCONTENT 2
 
-//Protocol version
-#define HTTP_0_9 57
-#define HTTP_1_0 48
-#define HTTP_1_1 2
+
 
 void inetd();
 void *instance(void *);

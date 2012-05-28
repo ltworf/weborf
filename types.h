@@ -51,6 +51,27 @@ typedef enum {
 
 } conection_status_e;
 
+typedef enum {
+    HTTP_0_9 = 57,
+    HTTP_1_0 = 48,
+    HTTP_1_1 = 2,
+} http_proto_version_t;
+
+typedef enum {
+    INVALID =  -1,
+    GET = 0,
+    POST = 1,
+    PUT = 2,
+    DELETE = 3,
+    OPTIONS = 8,
+
+    //Dav methods
+    PROPFIND = 4,
+    COPY = 5,
+    MOVE = 6,
+    MKCOL = 7,
+} http_method_t;
+
 typedef struct {
     size_t len;                //length of the string
     char *data;                 //Pointer to string
@@ -79,12 +100,13 @@ typedef struct {
 typedef struct {
 
     bool keep_alive;            //True if we are using pipelining
+    bool chunked;               //True if we are using chunked encoding
     unsigned int status_code;   //HTTP status code
 } response_t;
 
 typedef struct {
 
-    int method_id;              //Index of the http method used (GET, POST)
+    http_method_t method_id;              //Index of the http method used (GET, POST)
 
 } request_t;
 
@@ -97,7 +119,7 @@ typedef struct {
     char ip_addr[INET_ADDRSTRLEN];
 #endif
 
-    short int protocol_version; //See defines like HTTP_something
+    http_proto_version_t protocol_version; //HTTP protocol version used
     char *method;               //String version of the http method used
     char *http_param;           //Param string
     char *page;                 //Requested URI

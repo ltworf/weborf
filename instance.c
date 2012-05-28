@@ -43,6 +43,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cachedir.h"
 #include "cgi.h"
 #include "dict.h"
+#include "http.h"
 #include "instance.h"
 #include "mime.h"
 #include "myio.h"
@@ -98,25 +99,14 @@ static inline int check_etag(connection_t* connection_prop,char *a) {
 }
 
 /**
-This function does some changes on the URL.
-The url will never be longer than the original one.
-*/
-static inline void modURL(char* url) {
-    replaceEscape(url);
-
-    //Prevents the use of .. to access the whole filesystem
-    strReplace(url,"../",'\0');
-
-    //TODO AbsoluteURI: Check if the url uses absolute url, and in that case remove the 1st part
-}
-
-/**
 Sets keep_alive and protocol_version fields of connection_t
 */
 static inline void set_connection_props(connection_t *connection_prop) {
     char a[12];//Gets the value
     //Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
     bool connection=get_param_value(connection_prop->http_param,"Connection", a,sizeof(a),strlen("Connection"));
+
+    connection_prop->response.chunked=false; //Always false by default
 
     //Setting the connection type, using protocol version
     if (connection_prop->http_param[7]=='1' && connection_prop->http_param[5]=='1') {//Keep alive by default (protocol 1.1)
@@ -128,7 +118,7 @@ static inline void set_connection_props(connection_t *connection_prop) {
         connection_prop->response.keep_alive=(connection && strncmp(a,"Keep",4)==0)?true:false;
     }
 
-    modURL(connection_prop->page);//Operations on the url string
+    http_unescape_url(connection_prop->page);//Operations on the url string
     split_get_params(connection_prop);//Splits URI into page and parameters
     connection_prop->basedir=get_basedir(connection_prop->http_param);
 }
@@ -216,7 +206,6 @@ static inline void handle_requests(connection_t* connection_prop) {
     buffered_read_t* read_b = & connection_prop->read_b;
 
     int sock=connection_prop->sock;
-    char *lasts;//Used by strtok_r
 
     size_t r;//Read bytes
     char *end;//Pointer to header's end
@@ -251,25 +240,9 @@ static inline void handle_requests(connection_t* connection_prop) {
 
     end[2]='\0';//Terminates the header, leaving a final \r\n in it
 
-    //Finds out request's kind
-    if (strncmp(buf,"GET",strlen("GET"))==0) connection_prop->request.method_id=GET;
-    else if (strncmp(buf,"POST",strlen("POST"))==0) connection_prop->request.method_id=POST;
-    else if (strncmp(buf,"PUT",strlen("PUT"))==0) connection_prop->request.method_id=PUT;
-    else if (strncmp(buf,"DELETE",strlen("DELETE"))==0) connection_prop->request.method_id=DELETE;
-    else if (strncmp(buf,"OPTIONS",strlen("OPTIONS"))==0) connection_prop->request.method_id=OPTIONS;
-#ifdef WEBDAV
-    else if (strncmp(buf,"PROPFIND",strlen("PROPFIND"))==0) connection_prop->request.method_id=PROPFIND;
-    else if (strncmp(buf,"MKCOL",strlen("MKCOL"))==0) connection_prop->request.method_id=MKCOL;
-    else if (strncmp(buf,"COPY",strlen("COPY"))==0) connection_prop->request.method_id=COPY;
-    else if (strncmp(buf,"MOVE",strlen("MOVE"))==0) connection_prop->request.method_id=MOVE;
-#endif
-    else goto bad_request;
 
-    connection_prop->method=strtok_r(buf," ",&lasts);//Must be done to eliminate the request
-    connection_prop->page=strtok_r(NULL," ",&lasts);
-    if (connection_prop->page==NULL || connection_prop->method == NULL) goto bad_request;
+    if (http_set_method_uri(buf,connection_prop)==-1) goto bad_request;
 
-    connection_prop->http_param=lasts;
 
 
 #ifdef THREADDBG
@@ -279,7 +252,7 @@ static inline void handle_requests(connection_t* connection_prop) {
     set_connection_props(connection_prop);
 
     connection_prop->status=STATUS_READY_TO_SEND;
-        
+
     return;
 
 bad_request:

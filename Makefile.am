@@ -12,6 +12,7 @@ weborf_SOURCES = \
     cgi.c \
     configuration.c \
     dict.c \
+    http.c \
     instance.c \
     listener.c \
     mime.c \
@@ -30,6 +31,7 @@ EXTRA_DIST = \
     cgi.h \
     configuration.h \
     dict.h \
+    http.h \
     instance.h \
     mime.h \
     mynet.h \
