@@ -637,11 +637,11 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
     */
     time_t etag = http_read_if_none_match(connection_prop);
     if (connection_prop->strfile_stat.st_mtime==etag) {
-            //Browser has the item in its cache, sending 304
-            connection_prop->response.status_code=304;
-            connection_prop->response.timestamp=etag;
-            send_http_header(connection_prop);
-            return 0;
+        //Browser has the item in its cache, sending 304
+        connection_prop->response.status_code=304;
+        connection_prop->response.timestamp=etag;
+        send_http_header(connection_prop);
+        return 0;
     }
 
     //Tries to send the item from the cache
@@ -775,44 +775,20 @@ static inline int write_compressed_file(connection_t* connection_prop ) {
 static inline unsigned long long int bytes_to_send(connection_t* connection_prop,char *a) {
     connection_prop->response.status_code=200;
     errno=0;
-    unsigned long long int count;
+    size_t count;
     a[0]='\0';
 
 #ifdef __RANGE
-    char *range="Range";
-    char *if_range="If-Range";
 
-    bool range_header=get_param_value(connection_prop->http_param,range,a,RBUFFER,strlen(range));
-    time_t etag=connection_prop->strfile_stat.st_mtime;
+    time_t etag=http_read_if_range(connection_prop);
+    if (etag==-1) etag = connection_prop->strfile_stat.st_mtime;
 
-    //Range header present, seeking for If-Range
-    if (range_header) {
-        char b[RBUFFER]; //Buffer for If-Range
-        if (get_param_value(connection_prop->http_param,if_range,&b[0],sizeof(b),strlen(if_range))) {
-            etag=(time_t)strtol(&b[1],NULL,0);
-        }
-    }
+    size_t from,to;
 
     /*
      * If range header is present and (If-Range has the same etag OR there is no If-Range)
      * */
-    if (range_header && connection_prop->strfile_stat.st_mtime==etag) {//Find if it is a range request 5 is strlen of "range"
-
-        unsigned long long int from,to;
-
-        {
-            //Locating from and to
-            //Range: bytes=12323-123401
-            char *eq, *sep;
-
-            if ((eq=strstr(a,"="))==NULL ||(sep=strstr(eq,"-"))==NULL) {//Invalid data in Range header.
-                errno =ERR_NOTHTTP;
-                return ERR_NOTHTTP;
-            }
-            sep[0]=0;
-            from=strtoll(eq+1,NULL,0);
-            to=strtoll(sep+1,NULL,0);
-        }
+    if (http_read_range(connection_prop,&from,&to) && connection_prop->strfile_stat.st_mtime==etag) {//Find if it is a range request 5 is strlen of "range"
 
         if (to==0) { //If no to is specified, it is to the end of the file
             to=connection_prop->strfile_stat.st_size-1;
@@ -873,12 +849,12 @@ int write_file(connection_t* connection_prop) {
 
     time_t etag = http_read_if_none_match(connection_prop);
     if (connection_prop->strfile_stat.st_mtime==etag) {
-            //Browser has the item in its cache, sending 304
-            connection_prop->response.status_code=304;
-            connection_prop->response.timestamp=etag;
-            send_http_header(connection_prop);
-            return 0;
-        }
+        //Browser has the item in its cache, sending 304
+        connection_prop->response.status_code=304;
+        connection_prop->response.timestamp=etag;
+        send_http_header(connection_prop);
+        return 0;
+    }
 
 #ifdef __COMPRESSION
     {
@@ -995,14 +971,14 @@ string_t read_post_data(connection_t* connection_prop,buffered_read_t* read_b) {
     string_t res;
     res.len=0;
     res.data=NULL;
-    
+
     ssize_t content_length = http_read_content_length(connection_prop);
 
     //Post size is ok and buffer is allocated
     if (content_length>=0 && content_length<=POST_MAX_SIZE && (res.data=malloc(content_length))!=NULL) {
-            res.len=buffer_read(sock,res.data,content_length,read_b);
+        res.len=buffer_read(sock,res.data,content_length,read_b);
     }
-    
+
     return res;
 }
 

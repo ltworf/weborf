@@ -110,7 +110,7 @@ The original string post_param->data will be modified.
 static inline int get_props(connection_t* connection_prop,string_t* post_param,u_dav_details *props) {
 
     props->dav_details.deep = http_read_deep(connection_prop);
-    
+
     char *sprops[MAXPROPCOUNT];   //List of pointers to properties
 
     if (post_param->len==0) {//No specific prop request, sending everything

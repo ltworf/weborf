@@ -85,11 +85,11 @@ void http_append_header_llu_llu_lld(connection_t * connection_prop, const char* 
 
 /**
  * Reads the Content-Length header
- * 
+ *
  * returns -1 if the header has an error
  **/
 ssize_t http_read_content_length(connection_t * connection_prop) {
-    char *content_length="Content-Length";
+    char *content_length="\nContent-Length: ";
     char *val = strstr(connection_prop->http_param, content_length);
 
     if (val == NULL) { //No such field
@@ -97,28 +97,40 @@ ssize_t http_read_content_length(connection_t * connection_prop) {
     }
 
     //WARNING messing with this line must be done carefully
-    val += strlen(content_length) + 2; //Moves the begin of the string to exclude the name of the field
+    val += strlen(content_length); //Moves the begin of the string to exclude the name of the field
     return strtoull(val, NULL, 0);
 }
 
 /**
  * Reads the header If-None-Match
  * returning a time_t, since weborf uses the mtime as etag
- * 
+ *
  * returns -1 on error
  **/
 time_t http_read_if_none_match(connection_t * connection_prop) {
-    char *if_none_match="If-None-Match";
+    char *if_none_match="\nIf-None-Match: ";
     char *val = strstr(connection_prop->http_param, if_none_match);
-    
-    if (val == NULL || val[strlen(if_none_match) + 2]==0) { //No such field
+
+    if (val == NULL || val[strlen(if_none_match)]==0) { //No such field
         return -1;
     }
-    
+
     //WARNING messing with this line must be done carefully
-    val += strlen(if_none_match) + 3; //Moves the begin of the string to exclude the name of the field
+    val += strlen(if_none_match) + 1; //Moves the begin of the string to exclude the name of the field
     return (time_t)strtol(val,NULL,0);
-    
+}
+
+time_t http_read_if_range(connection_t * connection_prop) {
+    char *if_none_match="\nIf-Range: ";
+    char *val = strstr(connection_prop->http_param, if_none_match);
+
+    if (val == NULL || val[strlen(if_none_match)]==0) { //No such field
+        return -1;
+    }
+
+    //WARNING messing with this line must be done carefully
+    val += strlen(if_none_match) + 1; //Moves the begin of the string to exclude the name of the field
+    return (time_t)strtol(val,NULL,0);
 }
 
 /**
@@ -126,14 +138,49 @@ time_t http_read_if_none_match(connection_t * connection_prop) {
  * returns false in all cases except when it begins with '1'
  **/
 bool http_read_deep(connection_t * connection_prop) {
-    char *depth = "Depth";
+    char *depth = "\nDepth: ";
     char *val = strstr(connection_prop->http_param,depth);
-    
+
     if (val == NULL) return false;
-    
+
     //WARNING messing with this line must be done carefully
-    val += strlen(depth) + 2; //Moves the begin of the string to exclude the name of the field
-    
+    val += strlen(depth); //Moves the begin of the string to exclude the name of the field
+
     return depth[0]=='1';
-    
+
+}
+
+/**
+ * Parses the Range header, setting start and end
+ *
+ * the end could be 0 if it was unset by the client
+ *
+ * returns false if the header was not found
+ **/
+bool http_read_range(connection_t * connection_prop, size_t *from, size_t *to) {
+    char *range="\nRange: ";
+
+    char *val = strstr(connection_prop->http_param,range);
+    if (val==NULL) return false;
+
+    val+=strlen(range);
+    char *end = strstr(val,"\r\n");
+    if (end==NULL) return false;
+
+    end[0]=0;
+    //Locating from and to
+    //Range: bytes=12323-123401
+    char *eq=strstr(val,"=");
+    char *sep=strstr(eq,"-");
+    printf("%s\n",val);
+    end[0]='\r';
+
+    //Invalid data in Range header
+    if (eq==NULL ||sep==NULL) return false;
+
+    sep[0]=0;
+    *from=strtoull(eq+1,NULL,0);
+    *to=strtoull(sep+1,NULL,0);
+    sep[0]='-';
+    return true;
 }
