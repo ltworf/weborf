@@ -74,32 +74,6 @@ static inline void handle_requests(connection_t* connection_prop);
 static inline void handle_request(connection_t* connection_prop);
 
 /**
-Checks if the required resource has the same date as the one cached in the client.
-If they are the same, returns 0,
-returns 1 otherwise
-
-If the ETag matches this function will send to the client a 304 response too, so
-if this function returns 0, the HTTP request has been already served.
-
-The char* buffer must be at least RBUFFER bytes (see definitions in options.h)
-*/
-static inline int check_etag(connection_t* connection_prop,char *a) {
-    //Find if it is a range request, 13 is strlen of "if-none-match"
-    char *if_none_match="If-None-Match";
-    if (get_param_value(connection_prop->http_param,if_none_match,a,RBUFFER,strlen(if_none_match))) {
-        time_t etag=(time_t)strtol(a+1,NULL,0);
-        if (connection_prop->strfile_stat.st_mtime==etag) {
-            //Browser has the item in its cache, sending 304
-            connection_prop->response.status_code=304;
-            connection_prop->response.timestamp=etag;
-            send_http_header(connection_prop);
-            return 0;
-        }
-    }
-    return 1;
-}
-
-/**
  * TODO
  **/
 static inline void handle_request(connection_t* connection_prop) {
@@ -343,6 +317,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     {
         char*header=connection_prop->http_param;
 
+        char *content_length="Content-Length";
         while ((header=strstr(header,"Content-"))!=NULL) {
             if (strncmp(header,content_length,strlen(content_length))!=0) {
                 return ERR_NOTIMPLEMENTED;
@@ -661,12 +636,14 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
     since the impact of using ETag for generated directory list is not known
     yet, if ETag goes away, also the following block will have to be deleted
     */
-    {
-        char a[RBUFFER+MIMETYPELEN+16]; //Buffer for if-none-match from header
-        //Check if the resource cached in the client is the same
-        if (check_etag(connection_prop,&a[0])==0) return 0;
+    time_t etag = http_read_if_none_match(connection_prop);
+    if (connection_prop->strfile_stat.st_mtime==etag) {
+            //Browser has the item in its cache, sending 304
+            connection_prop->response.status_code=304;
+            connection_prop->response.timestamp=etag;
+            send_http_header(connection_prop);
+            return 0;
     }
-
 
     //Tries to send the item from the cache
     if (cache_send_item(0,connection_prop)) return 0;
@@ -895,8 +872,14 @@ int write_file(connection_t* connection_prop) {
 
     char a[RBUFFER+MIMETYPELEN+16]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
-    //Check if the resource cached in the client is the same
-    if (check_etag(connection_prop,&a[0])==0) return 0;
+    time_t etag = http_read_if_none_match(connection_prop);
+    if (connection_prop->strfile_stat.st_mtime==etag) {
+            //Browser has the item in its cache, sending 304
+            connection_prop->response.status_code=304;
+            connection_prop->response.timestamp=etag;
+            send_http_header(connection_prop);
+            return 0;
+        }
 
 #ifdef __COMPRESSION
     {

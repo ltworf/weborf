@@ -42,6 +42,7 @@ void http_append_header(connection_t * connection_prop,const char* s);
 void http_append_header_llu_llu_lld(connection_t * connection_prop, const char* s,unsigned long long int s1, unsigned long long int s2, long long int s3);
 
 ssize_t http_read_content_length(connection_t * connection_prop);
+time_t http_read_if_none_match(connection_t * connection_prop);
 
 /**
  * This function returns the reason phrase according to the response

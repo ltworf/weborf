@@ -100,3 +100,17 @@ ssize_t http_read_content_length(connection_t * connection_prop) {
     val += strlen(content_length) + 2; //Moves the begin of the string to exclude the name of the field
     return strtoull(val, NULL, 0);
 }
+
+time_t http_read_if_none_match(connection_t * connection_prop) {
+    char *if_none_match="If-None-Match";
+    char *val = strstr(connection_prop->http_param, if_none_match);
+    
+    if (val == NULL || val[strlen(if_none_match) + 2]==0) { //No such field
+        return -1;
+    }
+    
+    //WARNING messing with this line must be done carefully
+    val += strlen(if_none_match) + 3; //Moves the begin of the string to exclude the name of the field
+    return (time_t)strtol(val,NULL,0);
+    
+}
