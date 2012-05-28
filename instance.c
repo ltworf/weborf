@@ -91,7 +91,8 @@ static inline int check_etag(connection_t* connection_prop,char *a) {
         if (connection_prop->strfile_stat.st_mtime==etag) {
             //Browser has the item in its cache, sending 304
             connection_prop->response.status_code=304;
-            send_http_header(0,NULL,true,etag,connection_prop);
+            connection_prop->response.timestamp=etag;
+            send_http_header(NULL,connection_prop);
             return 0;
         }
     }
@@ -466,7 +467,7 @@ static inline int options (connection_t* connection_prop) {
 #define ALLOWED "Allow: GET,POST,PUT,DELETE,OPTIONS\r\n"
 #endif
     connection_prop->response.status_code=200;
-    send_http_header(0,ALLOWED,true,-1,connection_prop);
+    send_http_header(ALLOWED,connection_prop);
     return 0;
 }
 
@@ -573,7 +574,7 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
             connection_prop->response.status_code=301;
-            send_http_header(0,head,true,-1,connection_prop);
+            send_http_header(head,connection_prop);
             return 0;
         } else {//Requested directory with "/" Search for index files or list directory
 
@@ -587,7 +588,7 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
                     char head[URI_LEN+12];//12 is the size for the location header
                     snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes[i]);
                     connection_prop->response.status_code=303;
-                    send_http_header(0,head,true,-1,connection_prop);
+                    send_http_header(head,connection_prop);
                     return 0;
                 }
             }
@@ -654,10 +655,10 @@ static int send_error_header(int retval, connection_t *connection_prop) {
         return request_auth(connection_prop);//Sends a request for authentication
     case OK_NOCONTENT:
         connection_prop->response.status_code=204;
-        return send_http_header(0,NULL,true,-1,connection_prop);
+        return send_http_header(NULL,connection_prop);
     case OK_CREATED:
         connection_prop->response.status_code=201;
-        return send_http_header(0,NULL,true,-1,connection_prop);
+        return send_http_header(NULL,connection_prop);
     }
     return 0; //Make gcc happy
 
@@ -724,7 +725,11 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
         find any doc about the other filesystems and OS.
         */
         connection_prop->response.status_code=200;
-        send_http_header(pagelen,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+
+        connection_prop->response.size = pagelen;
+        connection_prop->response.timestamp = connection_prop->strfile_stat.st_mtime;
+
+        send_http_header(NULL,connection_prop);
         write(sock,html,pagelen);
 
         //Write item in cache
@@ -889,7 +894,9 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
     }
 #endif
 
-    send_http_header(count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+    connection_prop->response.size=count;
+    connection_prop->response.timestamp = connection_prop->strfile_stat.st_mtime;
+    send_http_header(a,connection_prop);
     return count;
 }
 
@@ -1065,13 +1072,25 @@ This function will automatically take care of generating Connection header when
 needed, according to keep_alive and protocol_version of connection_prop
 
 */
-int send_http_header(unsigned long long int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
+int send_http_header(char* headers,connection_t* connection_prop) {
     int sock=connection_prop->sock;
-    int len_head,wrote;
-    char *head=malloc(HEADBUF);
-    char* h_ptr=head;
-    int left_head=HEADBUF;
+    unsigned long long int size = connection_prop->response.size;
+    time_t timestamp = connection_prop->response.timestamp;
 
+    int len_head;
+    int bsize = strlen(http_reason_phrase(0)) +
+                strlen("Connection: Keep-Alive\r\n")+
+                strlen("HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\n%s") +
+                strlen("Content-Length: %llu\r\n" "Accept-Ranges: bytes\r\n") +
+                strlen("ETag: \"%d\"\r\n") +
+                strlen("Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n")+
+                20; //this magic 20 is spcace for the numeric size
+    char *head=malloc(bsize);
+    char* h_ptr=head;
+    int left_head=bsize;
+
+    char *connection_header=""; //Contains the "Connection" header
+    char *range_header=""; // Contains the Accept-Range header
 
     if (head==NULL) {
 #ifdef SERVERDBG
@@ -1086,21 +1105,44 @@ int send_http_header(unsigned long long int size,char* headers,bool content,time
     Ie: will send keep alive if keep-alive is enabled and protocol is not 1.1
     And will send close if keep-alive isn't enabled and protocol is 1.1
     */
-    char *connection_header;
+
     if (connection_prop->protocol_version!=HTTP_1_1 && connection_prop->response.keep_alive==true) {
         connection_header="Connection: Keep-Alive\r\n";
     } else if (connection_prop->protocol_version==HTTP_1_1 && connection_prop->response.keep_alive==false) {
         connection_header="Connection: close\r\n";
-    } else {
-        connection_header="";
     }
 
-    len_head=snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\n%s",connection_prop->response.status_code,http_reason_phrase(connection_prop->response.status_code),connection_header);
-
+    len_head=snprintf(
+                 head,
+                 HEADBUF,
+                 "HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\n%s",
+                 connection_prop->response.status_code,
+                 http_reason_phrase(connection_prop->response.status_code),
+                 connection_header
+             );
     //This stuff moves the pointer to the buffer forward, and reduces the left space in the buffer itself
     //Next snprintf will append their strings to the buffer, without overwriting.
     head+=len_head;
     left_head-=len_head;
+
+
+    if (size>0 || (connection_prop->response.keep_alive==true)) {
+        const char* length;
+        if (connection_prop->response.size_type==LENGTH_CONTENT) {
+            length="Content-Length: %llu\r\n"
+#ifdef __RANGE
+                   "Accept-Ranges: bytes\r\n"
+#endif
+                   ;
+
+        } else {
+            length = "entity-length: %llu\r\n";
+        }
+
+        len_head=snprintf(head,left_head,length ,(unsigned long long int)size);
+        head+=len_head;
+        left_head-=len_head;
+    }
 
     //Creating ETag and date from timestamp
     if (timestamp!=-1) {
@@ -1114,6 +1156,7 @@ int send_http_header(unsigned long long int size,char* headers,bool content,time
         timestamp=time(NULL);
     }
 
+
     {
         //Sends Date
         struct tm  ts;
@@ -1124,33 +1167,8 @@ int send_http_header(unsigned long long int size,char* headers,bool content,time
     }
 #endif
 
-    if (size>0 || (connection_prop->response.keep_alive==true)) {
-        //Content length (or entity lenght) and extra headers
-        if (content) {
-            len_head=snprintf(head,left_head,"Content-Length: %llu\r\n",(unsigned long long int)size);
-#ifdef __RANGE
-            if (size != 0) {
-                head+=len_head;
-                left_head-=len_head;
-                len_head=snprintf(head,left_head,"Accept-Ranges: bytes\r\n");
-            }
-#endif
-
-        } else {
-            len_head=snprintf(head,left_head,"entity-length: %llu\r\n",(unsigned long long int)size);
-        }
-
-        head+=len_head;
-        left_head-=len_head;
-    }
-
-    len_head=snprintf(head,left_head,"%s\r\n",headers);
-    //head+=len_head; Not necessary because the snprintf was the last one
-    left_head-=len_head;
-
-    wrote=write (sock,h_ptr,HEADBUF-left_head);
+    dprintf(sock,"%s%s\r\n",h_ptr,headers);
     free(h_ptr);
-    if (wrote!=HEADBUF-left_head) return ERR_BRKPIPE;
     return 0;
 }
 
@@ -1179,11 +1197,8 @@ static int tar_send_dir(connection_t* connection_prop) {
             );
 
     connection_prop->response.status_code=200;
-    send_http_header(0,
-                     headers,
-                     true,
-                     -1,
-                     connection_prop);
+    connection_prop->response.size_type=LENGTH_ENTITY;
+    send_http_header(headers,connection_prop);
 
     free(headers);
 

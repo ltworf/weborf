@@ -321,8 +321,11 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
         true tells to use Content-Length rather than entity-length
         -1 won't use any ETag, and will eventually use the current time as last-modified
         */
+        //TODO chuncked
 
-        send_http_header(reads,header_buf,true,-1,connection_prop);
+        connection_prop->response.size=reads;
+
+        send_http_header(header_buf,connection_prop);
 
         if (reads!=0) {//Sends the page if there is something to send
             write (sock,scrpt_buf,reads);

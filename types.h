@@ -52,6 +52,11 @@ typedef enum {
 } conection_status_e;
 
 typedef enum {
+    LENGTH_CONTENT,
+    LENGTH_ENTITY,
+} length_header_t;
+
+typedef enum {
     HTTP_0_9 = 57,
     HTTP_1_0 = 48,
     HTTP_1_1 = 2,
@@ -102,6 +107,13 @@ typedef struct {
     bool keep_alive;            //True if we are using pipelining
     bool chunked;               //True if we are using chunked encoding
     unsigned int status_code;   //HTTP status code
+
+    time_t timestamp;           //Timestamp of the entity, set to -1 if unknown
+
+    size_t size;                //Size of the response, set to 0 if unknown
+    length_header_t size_type;  //Type of the size (content or entity), LENGTH_CONTENT is the default
+
+
 } response_t;
 
 typedef struct {

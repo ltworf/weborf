@@ -67,6 +67,14 @@ static inline char *http_reason_phrase(int code) {
  * returns 0 on success and -1 if no known method was found.
  **/
 static inline int http_set_connection_t(char* header,connection_t * connection_prop) {
+
+    connection_prop->response.chunked=false; //Always false by default
+    connection_prop->response.timestamp=-1;
+    connection_prop->response.size=0;
+    connection_prop->response.size_type=LENGTH_CONTENT;
+
+
+
     char *lasts;
     bool found = true;
 
@@ -131,8 +139,6 @@ static inline int http_set_connection_t(char* header,connection_t * connection_p
         char a[12];
         //Obtains the connection header, writing it into the a buffer, and sets connection=true if the header is present
         bool connection=get_param_value(connection_prop->http_param,"Connection", a,sizeof(a),strlen("Connection"));
-
-        connection_prop->response.chunked=false; //Always false by default
 
         //Setting the connection type, using protocol version
         if (lasts[7]=='1' && lasts[5]=='1') {//Keep alive by default (protocol 1.1)

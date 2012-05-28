@@ -322,7 +322,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
             connection_prop->response.status_code=301;
-            send_http_header(0,head,true,-1,connection_prop);
+            send_http_header(head,connection_prop);
             return 0;
         }
     } // End redirection
@@ -335,7 +335,8 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
     connection_prop->response.keep_alive=false;
     connection_prop->response.status_code=207;
-    send_http_header(0,"Content-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
+    connection_prop->response.size_type=LENGTH_ENTITY;
+    send_http_header("Content-Type: text/xml; charset=\"utf-8\"\r\n",connection_prop);
 
     //Check if exists in cache
     if (cache_is_enabled()) {
