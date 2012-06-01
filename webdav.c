@@ -206,43 +206,36 @@ static inline int printprops(connection_t *connection_prop,u_dav_details props,c
     int sock=connection_prop->sock;
     int p_len;
     struct stat stat_s;
-    char buffer[URI_LEN];
 
     int file_fd=open(file,O_RDONLY);
     if (file_fd==-1) return 1;
     fstat(file_fd, &stat_s);
 
-
-    write(sock,"<D:response>\n",13);
+    dprintf(sock,"<D:response>\n");
 
     {
         char escaped_filename[URI_LEN];
         escape_uri(filename,escaped_filename,URI_LEN);
         //Sends href of the resource
         if (parent) {
-            p_len=snprintf(buffer,URI_LEN,"<D:href>%s</D:href>",escaped_filename);
+            dprintf(sock,"<D:href>%s</D:href>",escaped_filename);
         } else {
             char escaped_page[URI_LEN];
             escape_uri(connection_prop->page,escaped_page,URI_LEN);
-            p_len=snprintf(buffer,URI_LEN,"<D:href>%s%s</D:href>",escaped_page,escaped_filename);
+            dprintf(sock,"<D:href>%s%s</D:href>",escaped_page,escaped_filename);
         }
-
-        write (sock,buffer,p_len);
     }
 
-    write(sock,"<D:propstat><D:prop>",20);
+    dprintf(sock,"<D:propstat><D:prop>");
 
     //Writing properties
 
     if (props.dav_details.getetag) {
-        p_len=snprintf(buffer,URI_LEN,"<D:getetag>%ld</D:getetag>\n",(long int)stat_s.st_mtime);
-        write (sock,buffer,p_len);
-
+        dprintf(sock,"<D:getetag>%ld</D:getetag>\n",(long int)stat_s.st_mtime);
     }
 
     if (props.dav_details.getcontentlength) {
-        p_len=snprintf(buffer,URI_LEN,"<D:getcontentlength>%llu</D:getcontentlength>\n",(long long unsigned int)stat_s.st_size);
-        write (sock,buffer,p_len);
+        dprintf(sock,"<D:getcontentlength>%llu</D:getcontentlength>\n",(long long unsigned int)stat_s.st_size);
     }
 
     if (props.dav_details.resourcetype) {//Directory or normal file
@@ -253,11 +246,11 @@ static inline int printprops(connection_t *connection_prop,u_dav_details props,c
             out=" ";
         }
 
-        p_len=snprintf(buffer,URI_LEN,"<D:resourcetype>%s</D:resourcetype>\n",out);
-        write (sock,buffer,p_len);
+        dprintf(sock,"<D:resourcetype>%s</D:resourcetype>\n",out);
     }
 
     if (props.dav_details.getlastmodified) { //Sends Date
+        char buffer[URI_LEN];
         struct tm ts;
         localtime_r(&stat_s.st_mtime,&ts);
         p_len=strftime(buffer,URI_LEN, "<D:getlastmodified>%a, %d %b %Y %H:%M:%S GMT</D:getlastmodified>", &ts);
@@ -270,14 +263,14 @@ static inline int printprops(connection_t *connection_prop,u_dav_details props,c
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
 
         const char* t=mime_get_fd(thread_prop->mime_token,file_fd,&stat_s);
-        p_len=snprintf(buffer,URI_LEN,"<D:getcontenttype>%s</D:getcontenttype>\n",t);
-        write (sock,buffer,p_len);
+        dprintf(sock,"<D:getcontenttype>%s</D:getcontenttype>\n",t);
     }
 #endif
 
-    write(sock,"</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>",58);
 
-    write(sock,"</D:response>",13);
+    dprintf(sock,"</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>");
+
+    dprintf(sock,"</D:response>");
 
     close(file_fd);
     return 0;
