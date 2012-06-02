@@ -82,14 +82,14 @@ static inline void handle_request(connection_t* connection_prop) {
 
     while(true) {
         switch (connection_prop->status) {
-
-        case STATUS_WAIT_HEADER:
-
+        case STATUS_WAIT_DATA:
             r=buffer_fill(connection_prop->sock,&(connection_prop->read_b));
-            if (r==0) {
+            if (r==0)
                 connection_prop->status=STATUS_END;
-                break;
-            }
+
+            connection_prop->status= connection_prop->status_next;
+            break;
+        case STATUS_WAIT_HEADER:
             handle_requests(connection_prop);
             break;
         case STATUS_PAGE_SENT:
@@ -146,13 +146,13 @@ static inline void handle_requests(connection_t* connection_prop) {
     char *end;//Pointer to header's end
     if (*buf_len<18) {
         r=buffer_read_non_fill(sock, buf+(*buf_len),18-*buf_len,read_b);
-        if (r<=0) return;
+        if (r<=0) goto more_data;
         (*buf_len)+=r;//Sets the end of the user buffer (may contain more than one header)
     }
 
     while (strstr(buf+(*buf_len)-4,"\r\n\r")==NULL) { //Determines if there is a \r\n\r which is an ending sequence
         r=buffer_read_non_fill(sock, buf+(*buf_len),2,read_b);
-        if (r<=0) return;
+        if (r<=0) goto more_data;
 
         (*buf_len)+=r;//Sets the end of the user buffer (may contain more than one header)
 
@@ -163,7 +163,7 @@ static inline void handle_requests(connection_t* connection_prop) {
 
     if ((end=strstr(buf+(*buf_len)-4,"\r\n\r\n"))==NULL) {//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
         r=buffer_read_non_fill(sock, buf+*buf_len,1,read_b);//Reads 1 char and adds to the buffer
-        if (r<=0) return;
+        if (r<=0) goto more_data;
         (*buf_len)++;
 
         if (buf[*buf_len-1]!='\n')
@@ -182,13 +182,16 @@ static inline void handle_requests(connection_t* connection_prop) {
     syslog(LOG_INFO,"Requested page: %s to Thread %ld",connection_prop->page,id);
 #endif
 
-
     connection_prop->status=STATUS_READY_TO_SEND;
 
     return;
 
 bad_request:
     connection_prop->status=STATUS_ERR;
+    return;
+more_data:
+    connection_prop->status_next = STATUS_WAIT_HEADER;
+    connection_prop->status = STATUS_WAIT_DATA;
     return;
 }
 

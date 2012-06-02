@@ -48,6 +48,7 @@ typedef enum {
     STATUS_READY_FOR_NEXT,
     STATUS_NONE,
     STATUS_PAGE_SENT,
+    STATUS_WAIT_DATA,
 
 } conection_status_e;
 
@@ -145,6 +146,7 @@ typedef struct {
     response_t response;
     request_t request;
     conection_status_e status;  //Connection status
+    conection_status_e status_next; //next status
 
     buffered_read_t read_b;     //Buffer for buffered reader
     string_t buf;               //Buffer to read headers
