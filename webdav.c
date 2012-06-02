@@ -347,8 +347,8 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     }
 
     //Sends header of xml response
-    write(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>",39);
-    write(sock,"<D:multistatus xmlns:D=\"DAV:\">",30);
+    dprintf(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
+    dprintf(sock,"<D:multistatus xmlns:D=\"DAV:\">");
 
     //sends props about the requested file
     printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true);
@@ -385,7 +385,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     }
 
     //ends multistatus
-    write(sock,"</D:multistatus>",16);
+    dprintf(sock,"</D:multistatus>");
 
     /*
      * If we were able to get a file descriptor for the cache file, and cache is enabled,
