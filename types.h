@@ -143,6 +143,7 @@ typedef struct {
     struct stat strfile_stat;   //Stat of strfile
     int strfile_fd;             //File descriptor for strfile
     char *basedir;              //Basedir for the host
+    string_t post_data;         //Data of the POST
     response_t response;
     request_t request;
     conection_status_e status;  //Connection status

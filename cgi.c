@@ -211,7 +211,7 @@ static inline int cgi_set_cpu_limit(int soft_limit) {
  * Will also set a CPU limit to prevent the script from
  * running forever.
  * */
-static inline void cgi_execute_child(connection_t* connection_prop,string_t* post_param,char * executor,int *wpipe,int *ipipe) {
+static inline void cgi_execute_child(connection_t* connection_prop,char * executor,int *wpipe,int *ipipe) {
     close (wpipe[0]); //Closes unused end of the pipe
 
     close (STDOUT);
@@ -221,7 +221,7 @@ static inline void cgi_execute_child(connection_t* connection_prop,string_t* pos
     close (STDERR);
 #endif
     //Redirecting standard input only if there is POST data
-    if (post_param->data!=NULL) {//Send post data to script's stdin
+    if (connection_prop->post_data.len>0) {//Send post data to script's stdin
         close(STDIN);
         dup(ipipe[0]);
     }
@@ -247,7 +247,7 @@ static inline void cgi_execute_child(connection_t* connection_prop,string_t* pos
 }
 
 
-static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post_param,pid_t wpid,int *wpipe,int *ipipe) {
+static inline int cgi_waitfor_child(connection_t* connection_prop,pid_t wpid,int *wpipe,int *ipipe) {
     int sock=connection_prop->sock;
     //Closing pipes, so if they're empty read is non blocking
     close (wpipe[1]);
@@ -261,7 +261,7 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for CGI");
 #endif
         close (wpipe[0]);
-        if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
+        if (connection_prop->post_data.len>0) {//Pipe created and used only if there is data to send to the script
             close (ipipe[0]); //Closes unused end of the pipe
             close (ipipe[1]); //Closes the pipe
         }
@@ -270,9 +270,9 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
         return ERR_NOMEM;//Returns if buffer was not allocated
     }
 
-    if (post_param->data!=NULL) {//Pipe created and used only if there is data to send to the script
+    if (connection_prop->post_data.len>0) {//Pipe created and used only if there is data to send to the script
         //Send post data to script's stdin
-        write(ipipe[1],post_param->data,post_param->len);
+        write(ipipe[1],connection_prop->post_data.data,connection_prop->post_data.len);
         close (ipipe[0]); //Closes unused end of the pipe
         close (ipipe[1]); //Closes the pipe
     }
@@ -365,7 +365,7 @@ The child will clean all the envvars and then set new ones as needed by CGI.
 Then the child will call alarm to set the timeout to its execution, and then will exec the script.
 
 */
-int exec_page(char * executor,string_t* post_param,connection_t* connection_prop) {
+int exec_page(char * executor,connection_t* connection_prop) {
 #ifdef SENDINGDBG
     syslog(LOG_INFO,"Executing file %s",connection_prop->strfile);
 #endif
@@ -375,7 +375,7 @@ int exec_page(char * executor,string_t* post_param,connection_t* connection_prop
     int ipipe[2];//Pipe's file descriptor, used to pass POST on script's standard input
 
     //Pipe created and used only if there is POST data to send to the script
-    if (post_param->data!=NULL) {
+    if (connection_prop->post_data.len>0) {
         pipe(ipipe);//Pipe to comunicate with the child
     }
 
@@ -386,7 +386,7 @@ int exec_page(char * executor,string_t* post_param,connection_t* connection_prop
 #ifdef SENDINGDBG
         syslog(LOG_CRIT,"Unable to fork to execute the file %s",connection_prop->strfile);
 #endif
-        if (post_param->data!=NULL) {
+        if (connection_prop->post_data.len>0) {
             close(ipipe[0]);
             close(ipipe[1]);
         }
@@ -395,9 +395,9 @@ int exec_page(char * executor,string_t* post_param,connection_t* connection_prop
         return ERR_NOMEM;
     } else if (wpid==0) {
         /* never returns */
-        cgi_execute_child(connection_prop,post_param,executor,wpipe,ipipe);
+        cgi_execute_child(connection_prop,executor,wpipe,ipipe);
     } else { //Father: reads from pipe and sends
-        return cgi_waitfor_child(connection_prop,post_param,wpid,wpipe,ipipe);
+        return cgi_waitfor_child(connection_prop,wpid,wpipe,ipipe);
     }
     return 0;
 }

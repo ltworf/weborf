@@ -16,10 +16,11 @@
 - Show "GNU/Linux" only on GNU/Linux systems
 - Added an option to print the capabilities of the server (useful for tools like qweborf)
 - Multiple instances of qweborf from the same user can operate in the same time
-- qweborf uses the -B option, for an easier parsing
-- qweborf doesn't crash when using miredo
 - using pread() instead of emulating it with lseek()
-- qweborf checks if weborf supports authentication with socket
+
+- qweborf: checks if weborf supports authentication with socket
+- qweborf: uses the -B option, for an easier parsing
+- qweborf: doesn't crash when using miredo
 
 0.13
 - Shows last modified column in directory listing (Rev 419)

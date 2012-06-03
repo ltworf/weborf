@@ -66,10 +66,11 @@ extern pthread_key_t thread_key;            //key for pthread_setspecific
 
 int request_auth(connection_t *connection_prop);
 int write_dir(char *real_basedir, connection_t * connection_prop);
+void read_post_data(connection_t * connection_prop);
 static int tar_send_dir(connection_t* connection_prop);
 static int send_page(connection_t* connection_prop);
 static int send_error_header(int retval, connection_t *connection_prop);
-static int get_or_post(connection_t *connection_prop, string_t post_param);
+static int get_or_post(connection_t *connection_prop);
 static inline void handle_requests(connection_t* connection_prop);
 static inline void handle_request(connection_t* connection_prop);
 
@@ -330,7 +331,7 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     }
 
     int retval;
-    size_t content_l = http_read_content_length(connection_prop);
+    ssize_t content_l = http_read_content_length(connection_prop);
 
 
     if (content_l==-1) {//If there is no content-lenght returns error
@@ -440,7 +441,6 @@ static inline int options (connection_t* connection_prop) {
 static int send_page(connection_t* connection_prop) {
     buffered_read_t* read_b = &(connection_prop->read_b);
     int retval=0;//Return value after sending the page
-    string_t post_param; //Contains POST data
 
 #ifdef SENDINGDBG
     syslog (LOG_DEBUG,"URL changed into %s",connection_prop->page);
@@ -448,7 +448,6 @@ static int send_page(connection_t* connection_prop) {
 
     if (auth_check_request(connection_prop)!=0) { //If auth is required
         retval = ERR_NOAUTH;
-        post_param.data=NULL;
         goto escape;
     }
 
@@ -458,56 +457,50 @@ static int send_page(connection_t* connection_prop) {
                                             connection_prop->basedir,
                                             connection_prop->page);//Prepares the string
 
-    if (connection_prop->request.method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
-        post_param.data=NULL;
-        post_param.len=0;
+    switch (connection_prop->request.method_id) {
+    case POST:
+        read_post_data(connection_prop);
+    case GET:
 
-        switch (connection_prop->request.method_id) {
-        case PUT:
-            retval=read_file(connection_prop,read_b);
-            break;
-        case DELETE:
-            retval=delete_file(connection_prop);
-            break;
-        case OPTIONS:
-            retval=options(connection_prop);
-            break;
-#ifdef WEBDAV
-        case PROPFIND:
-            //Propfind has data, not strictly post but read_post_data will work
-            post_param=read_post_data(connection_prop,read_b);
-            retval=propfind(connection_prop,&post_param);
-            break;
-        case MKCOL:
-            retval=mkcol(connection_prop);
-            break;
-        case COPY:
-        case MOVE:
-            retval=copy_move(connection_prop);
-            break;
-#endif
+        if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY))<0) {
+            //File doesn't exist. Must return errorcode
+            retval=ERR_FILENOTFOUND;
+            goto escape;
         }
 
-        goto escape;
+        fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
+
+        retval = get_or_post(connection_prop);
+
+        break;
+
+    case PUT:
+        retval=read_file(connection_prop,read_b);
+        break;
+    case DELETE:
+        retval=delete_file(connection_prop);
+        break;
+    case OPTIONS:
+        retval=options(connection_prop);
+        break;
+#ifdef WEBDAV
+    case PROPFIND:
+        //Propfind has data, not strictly post but read_post_data will work
+        read_post_data(connection_prop);
+        retval=propfind(connection_prop);
+        break;
+    case MKCOL:
+        retval=mkcol(connection_prop);
+        break;
+    case COPY:
+    case MOVE:
+        retval=copy_move(connection_prop);
+        break;
+#endif
     }
-
-    if (connection_prop->request.method_id==POST)
-        post_param=read_post_data(connection_prop,read_b);
-    else
-        post_param.data=NULL;
-
-    if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY))<0) {
-        //File doesn't exist. Must return errorcode
-        retval=ERR_FILENOTFOUND;
-        goto escape;
-    }
-
-    fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
-
-    retval = get_or_post(connection_prop,post_param);
 
 escape:
-    free(post_param.data);
+    free(connection_prop->post_data.data);
 
     //Closing local file previously opened
     if ((connection_prop->request.method_id==GET || connection_prop->request.method_id==POST) && connection_prop->strfile_fd>=0) {
@@ -524,7 +517,7 @@ escape:
  * the simple file, and if the request points to a directory it will redirect to
  * the appropriate index file or show the list of the files.
  * */
-static int get_or_post(connection_t *connection_prop, string_t post_param) {
+static int get_or_post(connection_t *connection_prop) {
 
     if (S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Requested a directory
 
@@ -567,7 +560,7 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
             for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
                 f_len=weborf_conf.cgi_paths.data_l[q_];
                 if (endsWith(connection_prop->page+connection_prop->page_len-f_len,weborf_conf.cgi_paths.data[q_],f_len,f_len)) {
-                    return exec_page(weborf_conf.cgi_paths.data[++q_],&post_param,connection_prop);
+                    return exec_page(weborf_conf.cgi_paths.data[++q_],connection_prop);
                 }
             }
         }
@@ -965,24 +958,23 @@ int send_err(connection_t *connection_prop,int err,char* descr) {
 }
 
 /**
-This function reads post data and returns the pointer to the buffer containing the data (if there is any)
-or NULL if there was no data.
-If it doesn't return a null value, the returned pointer must be freed.
-*/
-string_t read_post_data(connection_t* connection_prop,buffered_read_t* read_b) {
+ * This function reads post data and sets it in connection_prop.
+ * If there is too much data, it isn't read, and it will lead to
+ * a failure in the next pipelined request.
+ *
+ * It allocates memory so the post_data.data must be freed
+ **/
+void read_post_data(connection_t* connection_prop) {
+    buffered_read_t* read_b = & (connection_prop->read_b);
     int sock=connection_prop->sock;
-    string_t res;
-    res.len=0;
-    res.data=NULL;
 
     ssize_t content_length = http_read_content_length(connection_prop);
 
     //Post size is ok and buffer is allocated
-    if (content_length>=0 && content_length<=POST_MAX_SIZE && (res.data=malloc(content_length))!=NULL) {
-        res.len=buffer_read(sock,res.data,content_length,read_b);
+    if (content_length>=0 && content_length<=POST_MAX_SIZE && (connection_prop->post_data.data=malloc(content_length))!=NULL) {
+        connection_prop->post_data.len=buffer_read(sock,connection_prop->post_data.data,content_length,read_b);
     }
 
-    return res;
 }
 
 /**

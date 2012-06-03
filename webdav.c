@@ -107,13 +107,13 @@ in this funcion. It will accept many forms of invalid xml.
 
 The original string post_param->data will be modified.
 */
-static inline int get_props(connection_t* connection_prop,string_t* post_param,u_dav_details *props) {
+static inline int get_props(connection_t* connection_prop,u_dav_details *props) {
 
     props->dav_details.deep = http_read_deep(connection_prop);
 
     char *sprops[MAXPROPCOUNT];   //List of pointers to properties
 
-    if (post_param->len==0) {//No specific prop request, sending everything
+    if (connection_prop->post_data.len==0) {//No specific prop request, sending everything
         props->dav_details.getetag=true;
         props->dav_details.getcontentlength=true;
         props->dav_details.resourcetype=true;
@@ -124,13 +124,14 @@ static inline int get_props(connection_t* connection_prop,string_t* post_param,u
     }
 
 //Locates the starting prop tag
-    char*data=strstr(post_param->data,"<D:prop ");
+    char*post=connection_prop->post_data.data;
+    char*data=strstr(post,"<D:prop ");
     if (data==NULL)
-        data=strstr(post_param->data,"<D:prop>");
+        data=strstr(post,"<D:prop>");
     if (data==NULL)
-        data=strstr(post_param->data,"<prop ");
+        data=strstr(post,"<prop ");
     if (data==NULL)
-        data=strstr(post_param->data,"<prop>");
+        data=strstr(post,"<prop>");
 
     if (data==NULL) {
         return ERR_NODATA;
@@ -282,7 +283,7 @@ This function serves a PROPFIND request.
 Can serve both depth and non-depth requests. This funcion works only if
 authentication is enabled.
 */
-int propfind(connection_t* connection_prop,string_t *post_param) {
+int propfind(connection_t* connection_prop) {
     //Forbids the method if no authentication is in use
     if (weborf_conf.authsock==NULL) {
         return ERR_FORBIDDEN;
@@ -309,7 +310,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
         }
     } // End redirection
 
-    int retval=get_props(connection_prop,post_param,&props);//splitting props
+    int retval=get_props(connection_prop,&props);//splitting props
     if (retval!=0) {
         return retval;
     }

@@ -58,7 +58,6 @@ void inetd();
 void *instance(void *);
 int write_file(connection_t * connection_prop);
 int send_err(connection_t *connection_prop,int err,char* descr);
-string_t read_post_data(connection_t * connection_prop, buffered_read_t * read_b);
 int send_http_header(connection_t * connection_prop);
 int delete_file(connection_t* connection_prop);
 int read_file(connection_t* connection_prop,buffered_read_t* read_b);

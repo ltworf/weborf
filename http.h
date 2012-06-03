@@ -87,6 +87,8 @@ static inline int http_set_connection_t(char* header,connection_t * connection_p
     connection_prop->response.size_type=LENGTH_CONTENT;
     connection_prop->response.headers.len = 0;
     connection_prop->response.headers.data[0] =0;
+    connection_prop->post_data.data=NULL;
+    connection_prop->post_data.len=0;
 
 
 
