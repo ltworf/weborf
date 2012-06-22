@@ -6,7 +6,6 @@ Build-Depends: debhelper (>= 7.0.50~), libmagic-dev (>=5.04~), python, python-su
 Standards-Version: 3.9.3
 Homepage: http://galileo.dmi.unict.it/wiki/weborf/
 
-
 Package: weborf
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -16,7 +15,6 @@ Description: Fast and small webserver meant to be run without root privileges
  easily share their directories over the web.
  Has limited support to webdav, allowing its use by GNOME and KDE filemanagers.
  It also supports cgi.
-
 
 Package: weborf-daemon
 Architecture: all
