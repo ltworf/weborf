@@ -169,7 +169,7 @@ static int get_username_password(connection_t *connection_prop,char *username, c
 #ifdef SERVERDBG
         syslog(LOG_ERR,"Unable to accept authentication, buffer is too small");
 #endif
-        return ERR_NOMEM;
+        return HTTP_CODE_SERVICE_UNAVAILABLE;
     }
 
     a[auth_end-auth]=0;

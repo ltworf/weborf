@@ -71,9 +71,9 @@ void net_getpeername(int socket,char* buffer) {
 
     struct sockaddr_storage t_addr;
     socklen_t addr_l=sizeof(t_addr);
-    
+
     getpeername(socket, (struct sockaddr *)&t_addr, &addr_l);
-    
+
     if (t_addr.ss_family==AF_INET) {
         struct sockaddr_in *addr =(struct sockaddr_in *)&t_addr;
         char temp_buffer[INET_ADDRSTRLEN];

@@ -134,7 +134,7 @@ static inline int get_props(connection_t* connection_prop,u_dav_details *props) 
         data=strstr(post,"<prop>");
 
     if (data==NULL) {
-        return ERR_NODATA;
+        return HTTP_CODE_BAD_REQUEST;
     }
     data+=6; //Eliminates the 1st useless tag
 
@@ -145,7 +145,7 @@ static inline int get_props(connection_t* connection_prop,u_dav_details *props) 
             end=strstr(data,"</prop>");
 
         if (end==NULL) {
-            return ERR_NODATA;
+            return HTTP_CODE_BAD_REQUEST;
         }
         end[0]=0;
     }
@@ -160,7 +160,7 @@ static inline int get_props(connection_t* connection_prop,u_dav_details *props) 
 
         //Removes the />
         temp=strstr(sprops[i],"/>");
-        if (temp==NULL) return ERR_NODATA;
+        if (temp==NULL) return HTTP_CODE_BAD_REQUEST;
         temp[0]=0;
 
         //Removing if there are parameters to the node
@@ -282,11 +282,15 @@ This function serves a PROPFIND request.
 
 Can serve both depth and non-depth requests. This funcion works only if
 authentication is enabled.
+
+RETURNS
+true if an header was sent TODO
 */
-int propfind(connection_t* connection_prop) {
+bool propfind(connection_t* connection_prop) {
     //Forbids the method if no authentication is in use
     if (weborf_conf.authsock==NULL) {
-        return ERR_FORBIDDEN;
+        connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
+        return false;
     }
 
     int sock=connection_prop->sock;
@@ -299,20 +303,21 @@ int propfind(connection_t* connection_prop) {
         int stat_r=stat(connection_prop->strfile, &connection_prop->strfile_stat);
 
         if (stat_r!=0) {
-            return ERR_FILENOTFOUND;
+            connection_prop->response.status_code = HTTP_CODE_PAGE_NOT_FOUND;
+            return false;
         }
 
         if (S_ISDIR(connection_prop->strfile_stat.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             http_append_header_str(connection_prop,"Location: %s/\r\n",connection_prop->page);
-            connection_prop->response.status_code=301;
-            send_http_header(connection_prop);
-            return 0;
+            connection_prop->response.status_code=HTTP_CODE_MOVED_PERMANENTLY;
+            return false;
         }
     } // End redirection
 
     int retval=get_props(connection_prop,&props);//splitting props
     if (retval!=0) {
-        return retval;
+        connection_prop->response.status_code=retval;
+        return false;
     }
 
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
@@ -332,7 +337,7 @@ int propfind(connection_t* connection_prop) {
             fd_copy(swap_fd,sock, sb.st_size);
 
             close(swap_fd);
-            return 0;
+            return true;
         } else { //Prepares for storing the item in cache, will be sent afterwards
             //Get file descriptor of cache file
             int cache_fd=cache_get_item_fd_wr(props.int_version,connection_prop);
@@ -363,7 +368,7 @@ int propfind(connection_t* connection_prop) {
 
         if (dp == NULL) {//Error, unable to send because header was already sent
             close(sock);
-            return 0;
+            return true;
         }
 
         for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
@@ -404,21 +409,26 @@ int propfind(connection_t* connection_prop) {
         close(cache_fd);
     }
 
-    return 0;
+    return true;
 }
 
 /**
 This funcion should be named mkdir. But standards writers are weird people.
+
+Returns 0 if the directory was created.
+Never sends anything
 */
 int mkcol(connection_t* connection_prop) {
     if (weborf_conf.authsock==NULL) {
-        return ERR_FORBIDDEN;
+        connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
+        return -1;
     }
 
     int res=mkdir(connection_prop->strfile,S_IRWXU | S_IRWXG | S_IRWXO);
 
     if (res==0) {//Directory created
-        return OK_CREATED;
+        connection_prop->response.status_code = HTTP_CODE_OK_CREATED;
+        return 0;
     }
 
     //Error
@@ -427,21 +437,26 @@ int mkcol(connection_t* connection_prop) {
     case EFAULT:
     case ELOOP:
     case ENAMETOOLONG:
-        return ERR_FORBIDDEN;
+        connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
+        break;
     case ENOMEM:
-        return ERR_SERVICE_UNAVAILABLE;
+        connection_prop->response.status_code = HTTP_CODE_SERVICE_UNAVAILABLE;
+        break;
     case ENOENT:
-        return ERR_CONFLICT;
+        connection_prop->response.status_code = HTTP_CODE_CONFLICT;
+        break;
     case EEXIST:
     case ENOTDIR:
-        return ERR_NOT_ALLOWED;
+        connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
+        break;
     case ENOSPC:
     case EROFS:
     case EPERM:
-        return ERR_INSUFFICIENT_STORAGE;
+        connection_prop->response.status_code = HTTP_CODE_INSUFFICIENT_STORAGE;
+        break;
     }
 
-    return ERR_SERVICE_UNAVAILABLE; //Make gcc happy
+    return -1;
 }
 
 /**
@@ -455,7 +470,8 @@ int copy_move(connection_t* connection_prop) {
 
     char* host=malloc(3*PATH_LEN+12);
     if (host==NULL) {
-        return ERR_NOMEM;
+        connection_prop->response.status_code = HTTP_CODE_SERVICE_UNAVAILABLE;
+        return -1;
     }
     char* dest=host+PATH_LEN;
     char* overwrite=dest+PATH_LEN;
@@ -467,7 +483,7 @@ int copy_move(connection_t* connection_prop) {
     bool overwrite_b=get_param_value(connection_prop->http_param,"Overwrite",overwrite,PATH_LEN,strlen("Overwrite"));
 
     if (host_b && dest_b == false) { //Some important header is missing
-        retval=ERR_NOTHTTP;
+        connection_prop->response.status_code = HTTP_CODE_BAD_REQUEST;
         goto escape;
     }
 
@@ -480,7 +496,7 @@ int copy_move(connection_t* connection_prop) {
 
     dest=strstr(dest,host);
     if (dest==NULL) {//Something is wrong here
-        retval=ERR_NOTHTTP;
+        retval = connection_prop->response.status_code = HTTP_CODE_BAD_REQUEST;
         goto escape;
     }
     dest+=strlen(host);
@@ -489,14 +505,14 @@ int copy_move(connection_t* connection_prop) {
     snprintf(destination,PATH_LEN,"%s%s",connection_prop->basedir,dest);
 
     if (strcmp(connection_prop->strfile,destination)==0) {//same
-        retval=ERR_FORBIDDEN;
+        retval = connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
         goto escape;
     }
     exists=(access(destination,R_OK)==0?true:false);
 
     //Checks if the file already exists
     if (check_exists && exists) {
-        retval=ERR_PRECONDITION_FAILED;
+        connection_prop->response.status_code = HTTP_CODE_PRECONDITION_FAILED;
         goto escape;
     }
 
@@ -516,7 +532,7 @@ int copy_move(connection_t* connection_prop) {
     }
 
     if (retval==0) {
-        retval=exists?OK_NOCONTENT:OK_CREATED;
+        connection_prop->response.status_code = exists? HTTP_CODE_OK_NO_CONTENT:HTTP_CODE_OK_CREATED;
     }
 escape:
     free(host);

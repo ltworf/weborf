@@ -90,8 +90,6 @@ static inline int http_set_connection_t(char* header,connection_t * connection_p
     connection_prop->post_data.data=NULL;
     connection_prop->post_data.len=0;
 
-
-
     char *lasts;
     bool found = true;
 
@@ -190,6 +188,12 @@ static inline int http_set_connection_t(char* header,connection_t * connection_p
     }
 
     connection_prop->basedir=configuration_get_basedir(connection_prop->http_param);
+
+    connection_prop->strfile_len = snprintf(connection_prop->strfile,
+                                            URI_LEN,
+                                            "%s%s",
+                                            connection_prop->basedir,
+                                            connection_prop->page);
 
     return 0;
 }

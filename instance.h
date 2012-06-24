@@ -32,31 +32,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define NO_ACTION -120
 
-//Errors
-#define ERR_PRECONDITION_FAILED -14
-#define ERR_NOT_ALLOWED -13
-#define ERR_INSUFFICIENT_STORAGE -12
-#define ERR_CONFLICT -11
-#define ERR_SERVICE_UNAVAILABLE -10
-#define ERR_FORBIDDEN -9
-#define ERR_NOTIMPLEMENTED -8
-#define ERR_NODATA -7
-#define ERR_NOTHTTP -6
-#define ERR_NOAUTH -5
-#define ERR_SOCKWRITE -4
-#define ERR_NOMEM -3
-#define ERR_FILENOTFOUND -2
-#define ERR_BRKPIPE -1
-
-//Ok
-#define OK_CREATED 1
-#define OK_NOCONTENT 2
-
-
-
 void inetd();
 void *instance(void *);
-int write_file(connection_t * connection_prop);
+bool write_file(connection_t * connection_prop);
 int send_err(connection_t *connection_prop,int err,char* descr);
 int send_http_header(connection_t * connection_prop);
 int delete_file(connection_t* connection_prop);

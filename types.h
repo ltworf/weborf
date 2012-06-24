@@ -37,6 +37,27 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 typedef void* magic_t;
 #endif
 
+typedef enum {
+    HTTP_CODE_INTERNAL_SERVER_ERROR = 500,
+    HTTP_CODE_PAGE_NOT_FOUND = 404,
+    HTTP_CODE_SERVICE_UNAVAILABLE = 503,
+    HTTP_CODE_BAD_REQUEST = 400,
+    HTTP_CODE_FORBIDDEN = 403,
+    HTTP_CODE_NOT_IMPLEMENTED = 501,
+    HTTP_CODE_PRECONDITION_FAILED = 412,
+    HTTP_CODE_CONFLICT = 409,
+    HTTP_CODE_INSUFFICIENT_STORAGE = 507,
+    HTTP_CODE_METHOD_NOT_ALLOWED = 405,
+    HTTP_CODE_OK_NO_CONTENT = 204,
+    HTTP_CODE_PARTIAL_CONTENT = 206,
+    HTTP_CODE_OK_CREATED = 201,
+    HTTP_CODE_OK = 200,
+    HTTP_CODE_MOVED_PERMANENTLY = 301,
+    HTTP_CODE_SEE_OTHER = 303,
+    HTTP_CODE_NOT_MODIFIED = 304,
+    HTTP_CODE_UNAUTHORIZED = 401,
+    HTTP_CODE_DISCONNECTED = 1000,
+} http_response_codes_e;
 
 typedef enum {
     STATUS_WAIT_HEADER,
@@ -49,6 +70,7 @@ typedef enum {
     STATUS_NONE,
     STATUS_PAGE_SENT,
     STATUS_WAIT_DATA,
+    STATUS_SERVE_REQUEST,
 
 } conection_status_e;
 
@@ -107,14 +129,13 @@ typedef struct {
 
     bool keep_alive;            //True if we are using pipelining
     bool chunked;               //True if we are using chunked encoding
-    unsigned int status_code;   //HTTP status code
+    http_response_codes_e status_code;   //HTTP status code
 
     time_t timestamp;           //Timestamp of the entity, set to -1 if unknown
 
     size_t size;                //Size of the response, set to 0 if unknown
     length_header_t size_type;  //Type of the size (content or entity), LENGTH_CONTENT is the default
     string_t headers;           //String for the extra-headers to be added on the flight
-
 } response_t;
 
 typedef struct {
