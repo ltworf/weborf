@@ -116,6 +116,17 @@ static inline void handle_request(connection_t* connection_prop) {
                    connection_prop->page);
 #endif
             connection_prop->status=connection_prop->response.keep_alive ? STATUS_READY_FOR_NEXT: STATUS_END;
+            
+            
+            free(connection_prop->post_data.data);
+            if (connection_prop->strfile_fd>=0) close (connection_prop->strfile_fd);
+            memset(
+                connection_prop->buf.data,
+                0,
+                connection_prop->buf.len);
+            connection_prop->buf.len=0;
+            
+            
             break;
         case STATUS_READY_TO_SEND:
             if (connection_prop->request.method_id == POST || connection_prop->request.method_id == PROPFIND) {
@@ -130,15 +141,9 @@ static inline void handle_request(connection_t* connection_prop) {
             serve_request(connection_prop);
             break;
         case STATUS_READY_FOR_NEXT:
-            memset(
-                connection_prop->buf.data,
-                0,
-                connection_prop->buf.len);
-            connection_prop->buf.len=0;
             net_sock_flush(connection_prop->sock);
             connection_prop->status=STATUS_WAIT_HEADER;
-            free(connection_prop->post_data.data);
-            if (connection_prop->strfile_fd>=0) close (connection_prop->strfile_fd);
+            
             break;
         case STATUS_ERR:
             send_error_header(connection_prop);
@@ -458,7 +463,6 @@ static inline int options (connection_t* connection_prop) {
  * TODO
  **/
 static int serve_request(connection_t* connection_prop) {
-    buffered_read_t* read_b = &(connection_prop->read_b);
     bool header_sent=true;
 
     switch (connection_prop->request.method_id) {
@@ -885,7 +889,7 @@ int request_auth(connection_t *connection_prop) {
 
     char * page =  HTMLHEAD "<H1>Authorization required</H1><p>Authenticate.</p>" HTMLFOOT;
 
-    dprintf(sock,"HTTP/1.1 401 Authorization Required\r\nServer: " SIGNATURE "\r\nContent-Length: %u\r\nWWW-Authenticate: Basic realm=\"%s\"\r\n\r\n%s",strlen(page),descr,page);
+    dprintf(sock,"HTTP/1.1 401 Authorization Required\r\nServer: " SIGNATURE "\r\nContent-Length: %zu\r\nWWW-Authenticate: Basic realm=\"%s\"\r\n\r\n%s",strlen(page),descr,page);
     return 0;
 }
 
@@ -914,7 +918,7 @@ int send_err(connection_t *connection_prop,int err,char* descr) {
     int page_len=snprintf(page,MAXSCRIPTOUT,"%s <H1>Error %d</H1>%s %s",HTMLHEAD,err,descr,HTMLFOOT);
 
     //Prepares the header
-    int head_len = snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n",err,descr ,(int)page_len);
+    int head_len = snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n",err,descr ,page_len);
 
     //Sends the http header
     if (write (sock,head,head_len)!=head_len) {
@@ -969,7 +973,7 @@ needed, according to keep_alive and protocol_version of connection_prop
 */
 int send_http_header(connection_t* connection_prop) {
     int sock=connection_prop->sock;
-    unsigned long long int size = connection_prop->response.size;
+    size_t size = connection_prop->response.size;
     time_t timestamp = connection_prop->response.timestamp;
 
     int len_head;
@@ -1022,17 +1026,17 @@ int send_http_header(connection_t* connection_prop) {
     if (size>0 || (connection_prop->response.keep_alive==true)) {
         const char* length;
         if (connection_prop->response.size_type==LENGTH_CONTENT) {
-            length="Content-Length: %llu\r\n"
+            length="Content-Length: %zu\r\n"
 #ifdef __RANGE
                    "Accept-Ranges: bytes\r\n"
 #endif
                    ;
 
         } else {
-            length = "entity-length: %llu\r\n";
+            length = "entity-length: %zu\r\n";
         }
 
-        len_head=snprintf(head,left_head,length ,(unsigned long long int)size);
+        len_head=snprintf(head,left_head,length ,size);
         head+=len_head;
         left_head-=len_head;
     }
