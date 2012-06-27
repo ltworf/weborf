@@ -260,7 +260,7 @@ class weborf_runner():
             else:
                 addrs6=tuple()
         else:
-            if self.ipv6:
+            if self.has_capability('socket')=='IPv6':
                 #address can be both ipv6 or mapped ipv4
                 if '.' in options['ip']:
                     addrs6=(options['ip'],)
