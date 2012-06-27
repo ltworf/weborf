@@ -75,7 +75,7 @@ static inline void read_req_headers(connection_t* connection_prop);
 static inline void handle_request(connection_t* connection_prop);
 
 static void prepare_put(connection_t *connection_prop);
-static void do_put(connection_t* connection_prop)
+static void do_put(connection_t* connection_prop);
 
 /**
  * TODO
@@ -387,7 +387,7 @@ This function will not work if there is no auth provider.
 */
 static void do_put(connection_t* connection_prop) {
 
-    ssize_t written = buffer_flush_fd(connection_prop->strfile_fd,connection_prop->read_b,connection_prop->response.size);
+    ssize_t written = buffer_flush_fd(connection_prop->strfile_fd,&connection_prop->read_b,connection_prop->response.size);
     connection_prop->response.size -= written;
     
     if (connection_prop->response.size!=0) {
@@ -397,7 +397,7 @@ static void do_put(connection_t* connection_prop) {
         connection_prop->status = STATUS_ERR;
     }
     
-    return retval;
+    return;
 }
 
 /**
