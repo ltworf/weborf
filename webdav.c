@@ -322,7 +322,7 @@ bool propfind(connection_t* connection_prop) {
 
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
     connection_prop->response.keep_alive=false;
-    connection_prop->response.status_code=207;
+    connection_prop->response.status_code=WEBDAV_CODE_MULTISTATUS;
     connection_prop->response.size_type=LENGTH_ENTITY;
     http_append_header(connection_prop,"Content-Type: text/xml; charset=\"utf-8\"\r\n");
     send_http_header(connection_prop);
@@ -358,7 +358,6 @@ bool propfind(connection_t* connection_prop) {
 
     //sends props about the requested file
     printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true);
-
     if (props.dav_details.deep) {//Send children files
         DIR *dp = opendir(connection_prop->strfile); //Open dir
         char file[URI_LEN];
