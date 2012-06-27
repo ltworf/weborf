@@ -74,6 +74,9 @@ static bool get_or_post(connection_t *connection_prop);
 static inline void read_req_headers(connection_t* connection_prop);
 static inline void handle_request(connection_t* connection_prop);
 
+static void prepare_put(connection_t *connection_prop);
+static void do_put(connection_t* connection_prop)
+
 /**
  * TODO
  **/
@@ -120,6 +123,9 @@ static inline void handle_request(connection_t* connection_prop) {
             }
             connection_prop->status = STATUS_SERVE_REQUEST;
             break;
+        case STATUS_PUT_METHOD:
+            do_put(connection_prop);
+            break;
         case STATUS_SERVE_REQUEST:
             serve_request(connection_prop);
             break;
@@ -132,6 +138,7 @@ static inline void handle_request(connection_t* connection_prop) {
             net_sock_flush(connection_prop->sock);
             connection_prop->status=STATUS_WAIT_HEADER;
             free(connection_prop->post_data.data);
+            if (connection_prop->strfile_fd>=0) close (connection_prop->strfile_fd);
             break;
         case STATUS_ERR:
             send_error_header(connection_prop);
@@ -315,6 +322,59 @@ release_resources:
     return NULL;//Never reached
 }
 
+
+/**
+ * Prepares for PUT method, reading the headers, opening the file descriptors
+ **/
+static void prepare_put(connection_t *connection_prop) {
+    if (weborf_conf.authsock==NULL) {
+        connection_prop->response.status_code= HTTP_CODE_FORBIDDEN;
+        return;
+    }
+    
+    //Checking if there is any unsupported Content-* header. In this case return 501 (Not implemented)
+    {
+        char*header=connection_prop->http_param;
+
+        char *content_length="Content-Length";
+        while ((header=strstr(header,"Content-"))!=NULL) {
+            if (strncmp(header,content_length,strlen(content_length))!=0) {
+                connection_prop->response.status_code = HTTP_CODE_NOT_IMPLEMENTED;
+                return;
+            }
+            header++;
+        }
+    }
+    
+    ssize_t content_length = http_read_content_length(connection_prop);
+    
+    if (content_length==-1) { //Error if there is no content-length header
+        connection_prop->response.status_code = HTTP_CODE_BAD_REQUEST;
+        return;
+    }
+    connection_prop->response.size =  content_length;
+
+        //Checks if file already exists or not (needed for response code)
+    if (access(connection_prop->strfile,R_OK | W_OK)==0) {//Resource already existed (No content)
+        connection_prop->response.status_code = HTTP_CODE_OK_NO_CONTENT;
+    } else {//Resource was created (Created)
+        connection_prop->response.status_code = HTTP_CODE_OK_CREATED;
+    }
+    
+    connection_prop->strfile_fd = open(connection_prop->strfile,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR);
+    if (connection_prop->strfile_fd<0) {
+        connection_prop->response.status_code = HTTP_CODE_PAGE_NOT_FOUND;
+        return;
+    }
+    
+    //TODO check for errors
+    ftruncate(connection_prop->strfile_fd,content_length);
+
+    connection_prop->status = STATUS_PUT_METHOD;
+    
+    return;
+}
+
 /**
 This function handles a PUT request.
 
@@ -325,82 +385,18 @@ PUT size has no hardcoded limits.
 Auth provider has to check for the file's size and refuse it if it is the case.
 This function will not work if there is no auth provider.
 */
-int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
-    int sock=connection_prop->sock;
-    if (weborf_conf.authsock==NULL) {
-        connection_prop->response.status_code= HTTP_CODE_FORBIDDEN;
-        return -1;
+static void do_put(connection_t* connection_prop) {
+
+    ssize_t written = buffer_flush_fd(connection_prop->strfile_fd,connection_prop->read_b,connection_prop->response.size);
+    connection_prop->response.size -= written;
+    
+    if (connection_prop->response.size!=0) {
+        connection_prop->status = STATUS_WAIT_DATA;
+        connection_prop->status_next = STATUS_PUT_METHOD;
+    } else {
+        connection_prop->status = STATUS_ERR;
     }
-
-    //Checking if there is any unsupported Content-* header. In this case return 501 (Not implemented)
-    {
-        char*header=connection_prop->http_param;
-
-        char *content_length="Content-Length";
-        while ((header=strstr(header,"Content-"))!=NULL) {
-            if (strncmp(header,content_length,strlen(content_length))!=0) {
-                connection_prop->response.status_code = HTTP_CODE_NOT_IMPLEMENTED;
-                return -1;
-            }
-            header++;
-        }
-    }
-
-    int retval=0;
-    ssize_t content_l = http_read_content_length(connection_prop);
-
-
-    if (content_l==-1) {//If there is no content-lenght returns error
-        connection_prop->response.status_code = HTTP_CODE_BAD_REQUEST;
-        return -1;
-    }
-
-    //Checks if file already exists or not (needed for response code)
-    if (access(connection_prop->strfile,R_OK | W_OK)==0) {//Resource already existed (No content)
-        connection_prop->response.status_code = HTTP_CODE_OK_NO_CONTENT;
-    } else {//Resource was created (Created)
-        connection_prop->response.status_code = HTTP_CODE_OK_CREATED;
-    }
-
-    int fd=open(connection_prop->strfile,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR);
-    if (fd<0) {
-        connection_prop->response.status_code = HTTP_CODE_PAGE_NOT_FOUND;
-        return -1;
-    }
-
-    //TODO check for errors
-    ftruncate(fd,content_l);
-
-    char* buf=malloc(FILEBUF);//Buffer to read from file
-    if (buf==NULL) {
-#ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
-#endif
-        close(fd);
-        connection_prop->response.status_code = HTTP_CODE_INTERNAL_SERVER_ERROR;
-        return -1;
-    }
-
-    size_t read_,write_;
-    long long int tot_read=0;
-    long long int to_read;
-
-    while ((to_read=(content_l-tot_read)>FILEBUF?FILEBUF:content_l-tot_read)>0) {
-        read_=buffer_read(sock,buf,to_read,read_b);
-        write_=write(fd,buf,read_);
-
-        if (write_!=read_) {
-            //TODO
-            retval=-1;// ERR_BRKPIPE;
-            break;
-        }
-
-        tot_read+=read_;
-    }
-
-    free(buf);
-    close(fd);
-
+    
     return retval;
 }
 
@@ -483,9 +479,8 @@ static int serve_request(connection_t* connection_prop) {
         break;
 
     case PUT:
-        read_file(connection_prop,read_b);
-        header_sent = false;
-        break;
+        prepare_put(connection_prop);
+        return 0;
     case DELETE:
         delete_file(connection_prop);
         header_sent = false;
@@ -511,11 +506,6 @@ static int serve_request(connection_t* connection_prop) {
     }
 
 escape:
-    //Closing local file previously opened
-    if ((connection_prop->request.method_id==GET || connection_prop->request.method_id==POST) && connection_prop->strfile_fd>=0) {
-        close(connection_prop->strfile_fd);
-    }
-
     if (!header_sent) {
         connection_prop->status = STATUS_ERR;
     } else {

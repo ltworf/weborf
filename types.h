@@ -71,6 +71,7 @@ typedef enum {
     STATUS_PAGE_SENT,
     STATUS_WAIT_DATA,
     STATUS_SERVE_REQUEST,
+    STATUS_PUT_METHOD,
 
 } conection_status_e;
 

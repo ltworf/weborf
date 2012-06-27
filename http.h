@@ -89,6 +89,7 @@ static inline int http_set_connection_t(char* header,connection_t * connection_p
     connection_prop->response.headers.data[0] =0;
     connection_prop->post_data.data=NULL;
     connection_prop->post_data.len=0;
+    connection_prop->strfile_fd = -1;
 
     char *lasts;
     bool found = true;

@@ -153,7 +153,7 @@ size_t buffer_read(int fd, void *b, size_t count, buffered_read_t * buf) {
 /**
  * This function flushes all the buffered data to a file descriptor.
  * It is possible to limit the amount of data to be copied to the file descriptor.
- * This function is usefull when switching from buffered reads to normal ones.
+ * This function is useful when switching from buffered reads to normal ones.
  *
  * dest: destination file descriptor
  * buf: pointer to the buffered_read_t data structure
