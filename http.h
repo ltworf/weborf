@@ -111,6 +111,7 @@ static inline int http_set_connection_t(char* header,connection_t * connection_p
             break;
         case 'U':
             connection_prop->request.method_id=PUT;
+            break;
 #ifdef WEBDAV
         case 'R':
             connection_prop->request.method_id=PROPFIND;
