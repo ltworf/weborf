@@ -65,7 +65,7 @@ bool cache_send_item(unsigned int uprefix,connection_t* connection_prop) {//Try 
     if (cachedfd==-1)
         return false;
 
-    int oldfd=connection_prop->strfile_fd;
+    close(connection_prop->strfile_fd);
     connection_prop->strfile_fd=cachedfd;
 
     /*
@@ -74,13 +74,7 @@ bool cache_send_item(unsigned int uprefix,connection_t* connection_prop) {//Try 
     */
     fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
 
-    write_file(connection_prop);
-
-    //Restore file descriptor so it can be closed later
-    connection_prop->strfile_fd=oldfd;
-
-    //Closes the cache file descriptor
-    close(cachedfd);
+    prepare_get_file(connection_prop);
 
     return true;
 }

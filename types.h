@@ -73,6 +73,9 @@ typedef enum {
     STATUS_WAIT_DATA,
     STATUS_SERVE_REQUEST,
     STATUS_PUT_METHOD,
+    STATUS_GET_METHOD,
+    STATUS_SEND_HEADERS,
+    STATUS_COPY_FROM_POST_DATA_TO_SOCKET,
 
 } conection_status_e;
 
@@ -171,6 +174,7 @@ typedef struct {
     request_t request;
     conection_status_e status;  //Connection status
     conection_status_e status_next; //next status
+    size_t bytes_to_copy;
 
     buffered_read_t read_b;     //Buffer for buffered reader
     string_t buf;               //Buffer to read headers

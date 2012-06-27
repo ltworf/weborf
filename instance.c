@@ -65,17 +65,20 @@ extern pthread_key_t thread_key;            //key for pthread_setspecific
 
 
 int request_auth(connection_t *connection_prop);
-bool write_dir(char *real_basedir, connection_t * connection_prop);
+static void write_dir(char *real_basedir, connection_t * connection_prop);
 void read_post_data(connection_t * connection_prop);
 static int tar_send_dir(connection_t* connection_prop);
 static int serve_request(connection_t* connection_prop);
 static int send_error_header(connection_t *connection_prop);
-static bool get_or_post(connection_t *connection_prop);
+static void get_or_post(connection_t *connection_prop);
 static inline void read_req_headers(connection_t* connection_prop);
 static inline void handle_request(connection_t* connection_prop);
 
 static void prepare_put(connection_t *connection_prop);
 static void do_put(connection_t* connection_prop);
+static void do_get_file(connection_t* connection_prop);
+static void do_copy_from_post_to_socket(connection_t* connection_prop);
+
 
 /**
  * TODO
@@ -96,11 +99,12 @@ static inline void handle_request(connection_t* connection_prop) {
             }
             break;
         case STATUS_WAIT_DATA:
+            connection_prop->status = connection_prop->status_next;
             r=buffer_fill(connection_prop->sock,&(connection_prop->read_b));
             if (r==0)
                 connection_prop->status=STATUS_END;
 
-            connection_prop->status= connection_prop->status_next;
+
             break;
         case STATUS_WAIT_HEADER:
             // -> STATUS_CHECK_AUTHs
@@ -116,17 +120,12 @@ static inline void handle_request(connection_t* connection_prop) {
                    connection_prop->page);
 #endif
             connection_prop->status=connection_prop->response.keep_alive ? STATUS_READY_FOR_NEXT: STATUS_END;
-            
-            
+
             free(connection_prop->post_data.data);
+            connection_prop->post_data.data=NULL;
             if (connection_prop->strfile_fd>=0) close (connection_prop->strfile_fd);
-            memset(
-                connection_prop->buf.data,
-                0,
-                connection_prop->buf.len);
-            connection_prop->buf.len=0;
-            
-            
+
+
             break;
         case STATUS_READY_TO_SEND:
             if (connection_prop->request.method_id == POST || connection_prop->request.method_id == PROPFIND) {
@@ -137,17 +136,32 @@ static inline void handle_request(connection_t* connection_prop) {
         case STATUS_PUT_METHOD:
             do_put(connection_prop);
             break;
+        case STATUS_GET_METHOD:
+            do_get_file(connection_prop);
+            break;
+        case STATUS_COPY_FROM_POST_DATA_TO_SOCKET:
+            do_copy_from_post_to_socket(connection_prop);
+            break;
         case STATUS_SERVE_REQUEST:
             serve_request(connection_prop);
             break;
         case STATUS_READY_FOR_NEXT:
             net_sock_flush(connection_prop->sock);
+            memset(
+                connection_prop->buf.data,
+                0,
+                connection_prop->buf.len);
+            connection_prop->buf.len=0;
+
             connection_prop->status=STATUS_WAIT_HEADER;
-            
             break;
         case STATUS_ERR:
-            send_error_header(connection_prop);
             connection_prop->status = STATUS_PAGE_SENT;
+            send_error_header(connection_prop);
+            break;
+        case STATUS_SEND_HEADERS:
+            connection_prop->status = connection_prop->status_next;
+            send_error_header(connection_prop);
             break;
         case STATUS_ERR_NO_CONNECTION:
 #ifdef REQUESTDBG
@@ -336,7 +350,7 @@ static void prepare_put(connection_t *connection_prop) {
         connection_prop->response.status_code= HTTP_CODE_FORBIDDEN;
         return;
     }
-    
+
     //Checking if there is any unsupported Content-* header. In this case return 501 (Not implemented)
     {
         char*header=connection_prop->http_param;
@@ -350,33 +364,33 @@ static void prepare_put(connection_t *connection_prop) {
             header++;
         }
     }
-    
+
     ssize_t content_length = http_read_content_length(connection_prop);
-    
+
     if (content_length==-1) { //Error if there is no content-length header
         connection_prop->response.status_code = HTTP_CODE_BAD_REQUEST;
         return;
     }
     connection_prop->response.size =  content_length;
 
-        //Checks if file already exists or not (needed for response code)
+    //Checks if file already exists or not (needed for response code)
     if (access(connection_prop->strfile,R_OK | W_OK)==0) {//Resource already existed (No content)
         connection_prop->response.status_code = HTTP_CODE_OK_NO_CONTENT;
     } else {//Resource was created (Created)
         connection_prop->response.status_code = HTTP_CODE_OK_CREATED;
     }
-    
+
     connection_prop->strfile_fd = open(connection_prop->strfile,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR);
     if (connection_prop->strfile_fd<0) {
         connection_prop->response.status_code = HTTP_CODE_PAGE_NOT_FOUND;
         return;
     }
-    
+
     //TODO check for errors
     ftruncate(connection_prop->strfile_fd,content_length);
 
     connection_prop->status = STATUS_PUT_METHOD;
-    
+
     return;
 }
 
@@ -394,14 +408,14 @@ static void do_put(connection_t* connection_prop) {
 
     ssize_t written = buffer_flush_fd(connection_prop->strfile_fd,&connection_prop->read_b,connection_prop->response.size);
     connection_prop->response.size -= written;
-    
+
     if (connection_prop->response.size!=0) {
         connection_prop->status = STATUS_WAIT_DATA;
         connection_prop->status_next = STATUS_PUT_METHOD;
     } else {
         connection_prop->status = STATUS_ERR;
     }
-    
+
     return;
 }
 
@@ -467,21 +481,10 @@ static int serve_request(connection_t* connection_prop) {
 
     switch (connection_prop->request.method_id) {
     case POST:
-        
+
     case GET:
-        if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY))<0) {
-            //File doesn't exist. Must return errorcode
-            header_sent = false;
-            connection_prop->response.status_code = HTTP_CODE_PAGE_NOT_FOUND;
-            goto escape;
-        }
-
-        fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
-
-        header_sent = get_or_post(connection_prop);
-
-        break;
-
+        get_or_post(connection_prop);
+        return 0;
     case PUT:
         prepare_put(connection_prop);
         return 0;
@@ -528,21 +531,34 @@ escape:
  * true: if an header was sent
  * false: otherwise
  * */
-static bool get_or_post(connection_t *connection_prop) {
+static void get_or_post(connection_t *connection_prop) {
+    if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY))<0) {
+        //File doesn't exist. Must return errorcode
+        connection_prop->response.status_code = HTTP_CODE_PAGE_NOT_FOUND;
+        connection_prop->status = STATUS_ERR;
+        return;
+    }
+
+    //TODO: check fstat result
+    fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
+
 
     if (S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Requested a directory
 
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             http_append_header_str(connection_prop,"Location: %s/\r\n",connection_prop->page);
             connection_prop->response.status_code= HTTP_CODE_MOVED_PERMANENTLY;
-            return false;
-        }
-        
-        if (weborf_conf.tar_directory) {
-            tar_send_dir(connection_prop);
-            return true;
+            connection_prop->status = STATUS_ERR;
+            return;
         }
 
+        //FIXME: re-enable tar_send_dir
+        /*if (weborf_conf.tar_directory) {
+            tar_send_dir(connection_prop);
+            return;
+        }*/
+
+        //TODO:refactory into two functions
         //Cycling index files
         char* index_name=&connection_prop->strfile[connection_prop->strfile_len];//Pointer to where to write the filename
         int i;
@@ -553,16 +569,18 @@ static bool get_or_post(connection_t *connection_prop) {
             if (access(connection_prop->strfile,R_OK)==0) { //If index exists, redirect to it
                 http_append_header_str_str(connection_prop,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes[i]);
                 connection_prop->response.status_code=HTTP_CODE_SEE_OTHER;
-                return false;
+                connection_prop->status = STATUS_ERR;
+                return;
             }
         }
 
         connection_prop->strfile[connection_prop->strfile_len]=0; //Removing the index part
-        return write_dir(connection_prop->basedir,connection_prop);
+        write_dir(connection_prop->basedir,connection_prop);
+        return;
 
     } else {//Requested an existing file
         if (weborf_conf.exec_script) { //Scripts enabled
-
+            //FIXME: refactory CGI
             size_t q_;
             int f_len;
             for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
@@ -574,7 +592,8 @@ static bool get_or_post(connection_t *connection_prop) {
         }
 
         //send normal file, control reaches this point if scripts are disabled or if the filename doesn't trigger CGI
-        return write_file(connection_prop);
+        prepare_get_file(connection_prop);
+        return false;
 
     }
 }
@@ -628,7 +647,7 @@ specified directory.
 
 RETURNS true if header is sent TODO
 */
-bool write_dir(char* real_basedir,connection_t* connection_prop) {
+static void write_dir(char* real_basedir,connection_t* connection_prop) {
     int sock=connection_prop->sock;
 
     /*
@@ -642,12 +661,12 @@ bool write_dir(char* real_basedir,connection_t* connection_prop) {
         //Browser has the item in its cache
         connection_prop->response.status_code = HTTP_CODE_NOT_MODIFIED;
         connection_prop->response.timestamp=etag;
-        return false;
+        connection_prop->status = STATUS_ERR;
+        return;
     }
 
     //Tries to send the item from the cache
-    if (cache_send_item(0,connection_prop)) return true;
-
+    if (cache_send_item(0,connection_prop)) return;
 
     int pagelen;
     bool parent;
@@ -664,18 +683,25 @@ bool write_dir(char* real_basedir,connection_t* connection_prop) {
             parent=true;
     }
 
-    char* html=malloc(MAXSCRIPTOUT);//Memory for the html page
-    if (html==NULL) { //No memory
+    free(connection_prop->post_data.data);
+
+    connection_prop->post_data.data=malloc(MAXSCRIPTOUT);//Memory for the html page
+    if (connection_prop->post_data.data==NULL) { //No memory
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers to list directory");
 #endif
-        return HTTP_CODE_SERVICE_UNAVAILABLE;
+        connection_prop->response.status_code = HTTP_CODE_SERVICE_UNAVAILABLE;
+        connection_prop->status = STATUS_ERR;
+        return;
     }
 
-    if ((pagelen=list_dir (connection_prop,html,MAXSCRIPTOUT,parent))<0) { //Creates the page
-        free(html);//Frees the memory used for the page
-        return HTTP_CODE_PAGE_NOT_FOUND;
+    int r = list_dir (connection_prop,connection_prop->post_data.data,MAXSCRIPTOUT,parent);
+    if (r<0) { //Creates the page
+        connection_prop->response.status_code = HTTP_CODE_PAGE_NOT_FOUND;
+        connection_prop->status = STATUS_ERR;
+        return;
     } else { //If there are no errors sends the page
+        connection_prop->bytes_to_copy = connection_prop->post_data.len = r;
 
         /*WARNING using the directory's mtime here allows better caching and
         the mtime will anyway be changed when files are added or deleted.
@@ -687,37 +713,37 @@ bool write_dir(char* real_basedir,connection_t* connection_prop) {
         */
         connection_prop->response.status_code = HTTP_CODE_OK;
 
-        connection_prop->response.size = pagelen;
+        connection_prop->response.size = connection_prop->post_data.len;
         connection_prop->response.timestamp = connection_prop->strfile_stat.st_mtime;
+        cache_store_item(0,connection_prop,connection_prop->post_data.data,connection_prop->post_data.len);
 
-        send_http_header(connection_prop);
-        write(sock,html,pagelen);
+        connection_prop->status = STATUS_SEND_HEADERS;
+        connection_prop->status_next = STATUS_COPY_FROM_POST_DATA_TO_SOCKET;
 
-        //Write item in cache
-        cache_store_item(0,connection_prop,html,pagelen);
     }
-
-    free(html);//Frees the memory used for the page
-
-    return true;
 }
 
 /**
- * Returns the amount of bytes to send
- * Collaterally, this function seeks the file to the requested position
- * finds out the mimetype
- * sends the header
- *
- * a must be a pointer to a buffer large at least RBUFFER+MIMETYPELEN+16
+ * TODO:
  * */
-static inline unsigned long long int bytes_to_send(connection_t* connection_prop) {
-    connection_prop->response.status_code=HTTP_CODE_OK;
-    errno=0;
+void prepare_get_file(connection_t* connection_prop) {
+
     size_t count;
+
+    time_t etag = http_read_if_none_match(connection_prop);
+    if (connection_prop->strfile_stat.st_mtime==etag) {
+        //Browser has the item in its cache
+        connection_prop->response.status_code = HTTP_CODE_NOT_MODIFIED;
+        connection_prop->response.timestamp=etag;
+        connection_prop->status = STATUS_ERR;
+        return;
+    }
+
+    connection_prop->response.status_code=HTTP_CODE_OK;
 
 #ifdef __RANGE
 
-    time_t etag=http_read_if_range(connection_prop);
+    etag = http_read_if_range(connection_prop);
     if (etag==-1) etag = connection_prop->strfile_stat.st_mtime;
 
     size_t from,to;
@@ -746,8 +772,9 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         count=connection_prop->strfile_stat.st_size;
 
 
-    //Sending MIME to the client
+
 #ifdef SEND_MIMETYPES
+    //Sending MIME to the client
     if (weborf_conf.send_content_type) {
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
         const char* mime=mime_get_fd(thread_prop->mime_token,connection_prop->strfile_fd,&(connection_prop->strfile_stat));
@@ -758,48 +785,57 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
 
     connection_prop->response.size=count;
     connection_prop->response.timestamp = connection_prop->strfile_stat.st_mtime;
-    send_http_header(connection_prop);
-    return count;
+
+    connection_prop->status = STATUS_SEND_HEADERS;
+    connection_prop->status_next = STATUS_GET_METHOD;
+
+    connection_prop->bytes_to_copy = count;
 }
 
 /**
-This function reads a file and writes it to the socket.
-Also sends the http header with the content length header
-same as the file's size.
-There is no limit to file size, and it uses O_LARGEFILE flag
-to send file larger than 4gb. Since this flag isn't available on
-all systems, it will be 0 when compiled on system who doesn't have
-this flag. On those systems it is unpredictable if it will be able to
-send large files or not.
+ * TODO
+ **/
+static void do_get_file(connection_t* connection_prop) {
 
-If the file is larger, it will be sent using write_compressed_file,
-see that function for details.
+    if (connection_prop->bytes_to_copy > 0) {
 
-To work connection_prop.strfile_fd and connection_prop.strfile_stat must be set.
-The file sent is the one specified by strfile_fd, and it will not be closed after.
+        size_t count = connection_prop->bytes_to_copy > TCP_FRAME_SIZE ? TCP_FRAME_SIZE : connection_prop->bytes_to_copy;
+        int r = fd_copy(connection_prop->strfile_fd,connection_prop->sock,count);
 
-RETURNS
-true if an header is sent TODO
-*/
-bool write_file(connection_t* connection_prop) {
-
-    int sock=connection_prop->sock;
-
-    time_t etag = http_read_if_none_match(connection_prop);
-    if (connection_prop->strfile_stat.st_mtime==etag) {
-        //Browser has the item in its cache
-        connection_prop->response.status_code = HTTP_CODE_NOT_MODIFIED;
-        connection_prop->response.timestamp=etag;
-        return false;
+        if (r==0)
+            connection_prop->bytes_to_copy-=count;
+        else
+            connection_prop->status = STATUS_ERR_NO_CONNECTION;
     }
 
-    //Determines how many bytes send, depending on file size and ranges
-    //Also sends the http header
-    unsigned long long int count= bytes_to_send(connection_prop);
+    if (connection_prop->bytes_to_copy==0) {
+        connection_prop->status = STATUS_PAGE_SENT;
+    }
 
-    //Copy file using descriptors; from to and size
-    fd_copy(connection_prop->strfile_fd,sock,count);
-    return true;
+}
+
+/**
+ * TODO: write documentation
+ **/
+static void do_copy_from_post_to_socket(connection_t* connection_prop) {
+
+    if (connection_prop->bytes_to_copy == 0 ) {
+        connection_prop->status = STATUS_PAGE_SENT;
+        return;
+    }
+
+    size_t count = connection_prop->bytes_to_copy > TCP_FRAME_SIZE ? TCP_FRAME_SIZE : connection_prop->bytes_to_copy;
+
+    char* start=connection_prop->post_data.data + (connection_prop->post_data.len - connection_prop->bytes_to_copy);
+
+    ssize_t r = write(connection_prop->sock,start,count);
+    if (r>0) {
+        connection_prop->bytes_to_copy -= r;
+    } else {
+        connection_prop->status = STATUS_ERR_NO_CONNECTION;
+    }
+
+
 }
 
 /**

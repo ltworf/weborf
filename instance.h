@@ -34,9 +34,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void inetd();
 void *instance(void *);
-bool write_file(connection_t * connection_prop);
 int send_err(connection_t *connection_prop,int err,char* descr);
 int send_http_header(connection_t * connection_prop);
 int delete_file(connection_t* connection_prop);
 int read_file(connection_t* connection_prop,buffered_read_t* read_b);
+void prepare_get_file(connection_t* connection_prop);
 #endif
