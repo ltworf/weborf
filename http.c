@@ -146,7 +146,7 @@ bool http_read_deep(connection_t * connection_prop) {
     //WARNING messing with this line must be done carefully
     val += strlen(depth); //Moves the begin of the string to exclude the name of the field
 
-    return depth[0]=='1';
+    return val[0]=='1';
 
 }
 
