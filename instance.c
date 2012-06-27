@@ -532,18 +532,16 @@ static bool get_or_post(connection_t *connection_prop) {
 
     if (S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Requested a directory
 
-        if (weborf_conf.tar_directory) {
-            tar_send_dir(connection_prop);
-            return true;
-        }
-
-
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             http_append_header_str(connection_prop,"Location: %s/\r\n",connection_prop->page);
             connection_prop->response.status_code= HTTP_CODE_MOVED_PERMANENTLY;
             return false;
         }
-
+        
+        if (weborf_conf.tar_directory) {
+            tar_send_dir(connection_prop);
+            return true;
+        }
 
         //Cycling index files
         char* index_name=&connection_prop->strfile[connection_prop->strfile_len];//Pointer to where to write the filename
@@ -577,7 +575,6 @@ static bool get_or_post(connection_t *connection_prop) {
 
         //send normal file, control reaches this point if scripts are disabled or if the filename doesn't trigger CGI
         return write_file(connection_prop);
-
 
     }
 }
@@ -706,69 +703,6 @@ bool write_dir(char* real_basedir,connection_t* connection_prop) {
 }
 
 /**
-Writes a file to the socket, compressing it with gzip.
-Then, since it is not possible to know the size of the compressed file,
-it is not possible to send the size in advance, so it will set keep_alive to false
-(and will seand the header "Connection: close" before) after sending.
-
-sock is the socket
-*/
-#ifdef __COMPRESSION
-static inline int write_compressed_file(connection_t* connection_prop ) {
-    int sock=connection_prop->sock;
-
-    if (
-        connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN &&
-        connection_prop->strfile_stat.st_size<SIZE_COMPRESS_MAX
-    ) { //Using compressed file method instead of sending it raw
-        char *accept;
-        char *end;
-
-        if ((accept=strstr(connection_prop->http_param,"Accept-Encoding:"))!=NULL && (end=strstr(accept,"\r\n"))!=NULL) {
-
-            //Avoid to parse the entire header.
-            end[0]='\0';
-            char* gzip=strstr(accept,"gzip");
-            end[0]='\r';
-
-            if (gzip==NULL) {
-                return NO_ACTION;
-            }
-        }
-    } else { //File size is not in the size range to be compressed
-        return NO_ACTION;
-    }
-
-
-    connection_prop->keep_alive=false;
-    send_http_header(200,
-                     connection_prop->strfile_stat.st_size,
-                     "Content-Encoding: gzip\r\n",
-                     false,
-                     connection_prop->strfile_stat.st_mtime,
-                     connection_prop);
-    int pid=fork();
-
-    if (pid==0) { //child, executing gzip
-        fclose (stdout); //Closing the stdout
-        dup(sock); //Redirects the stdout
-#ifdef GZIPNICE
-        nice(GZIPNICE); //Reducing priority
-#endif
-        execlp("gzip","gzip","-c",connection_prop->strfile,(char *)0);
-
-    } else if (pid>0) { //Father, does nothing
-        int status;
-        waitpid(pid,&status,0);
-    } else { //Error
-        return ERR_NOMEM; //Well not enough memory in process table...
-    }
-    return 0;
-}
-#endif
-
-
-/**
  * Returns the amount of bytes to send
  * Collaterally, this function seeks the file to the requested position
  * finds out the mimetype
@@ -776,11 +710,10 @@ static inline int write_compressed_file(connection_t* connection_prop ) {
  *
  * a must be a pointer to a buffer large at least RBUFFER+MIMETYPELEN+16
  * */
-static inline unsigned long long int bytes_to_send(connection_t* connection_prop,char *a) {
-    connection_prop->response.status_code=200;
+static inline unsigned long long int bytes_to_send(connection_t* connection_prop) {
+    connection_prop->response.status_code=HTTP_CODE_OK;
     errno=0;
     size_t count;
-    a[0]='\0';
 
 #ifdef __RANGE
 
@@ -852,8 +785,6 @@ bool write_file(connection_t* connection_prop) {
 
     int sock=connection_prop->sock;
 
-    char a[RBUFFER+MIMETYPELEN+16]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
-
     time_t etag = http_read_if_none_match(connection_prop);
     if (connection_prop->strfile_stat.st_mtime==etag) {
         //Browser has the item in its cache
@@ -862,17 +793,9 @@ bool write_file(connection_t* connection_prop) {
         return false;
     }
 
-#ifdef __COMPRESSION
-    {
-        //Tryies gzipping and sending the file
-        int c= write_compressed_file(connection_prop);
-        if (c!=NO_ACTION) return c;
-    }
-#endif
-
     //Determines how many bytes send, depending on file size and ranges
     //Also sends the http header
-    unsigned long long int count= bytes_to_send(connection_prop,&a[0]);
+    unsigned long long int count= bytes_to_send(connection_prop);
 
     //Copy file using descriptors; from to and size
     fd_copy(connection_prop->strfile_fd,sock,count);
