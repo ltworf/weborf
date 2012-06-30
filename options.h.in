@@ -106,7 +106,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define CGI_PY "/usr/lib/cgi-bin/weborf_py_wrapper"
 
 //Network
-#define TCP_FRAME_SIZE 4096     //Default size for writes on socket
+#define TCP_FRAME_SIZE 8192     //Default size for writes on socket
 
 //The following header can be disabled to increase a little the speed
 //#define SEND_LAST_MODIFIED_HEADER
