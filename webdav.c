@@ -418,6 +418,8 @@ Returns 0 if the directory was created.
 Never sends anything
 */
 int mkcol(connection_t* connection_prop) {
+    connection_prop->status = STATUS_ERR;
+    
     if (weborf_conf.authsock==NULL) {
         connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
         return -1;
@@ -436,6 +438,8 @@ int mkcol(connection_t* connection_prop) {
     case EFAULT:
     case ELOOP:
     case ENAMETOOLONG:
+    case EEXIST:
+    case ENOTDIR:
         connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
         break;
     case ENOMEM:
@@ -443,10 +447,6 @@ int mkcol(connection_t* connection_prop) {
         break;
     case ENOENT:
         connection_prop->response.status_code = HTTP_CODE_CONFLICT;
-        break;
-    case EEXIST:
-    case ENOTDIR:
-        connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
         break;
     case ENOSPC:
     case EROFS:
@@ -466,6 +466,8 @@ int copy_move(connection_t* connection_prop) {
     bool check_exists=false;
     int retval=0;
     bool exists;
+    
+    connection_prop->status = STATUS_ERR;
 
     char* host=malloc(3*PATH_LEN+12);
     if (host==NULL) {

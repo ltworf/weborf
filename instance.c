@@ -428,6 +428,7 @@ Auth provider has to check if it is allowed to delete the file or not.
 This function will not work if there is no auth provider.
 */
 int delete_file(connection_t* connection_prop) {
+    connection_prop->status = STATUS_ERR;
     int retval;
 
     if (weborf_conf.authsock==NULL) {
@@ -470,6 +471,7 @@ static inline int options (connection_t* connection_prop) {
 #endif
     connection_prop->response.status_code = HTTP_CODE_OK;
     http_append_header(connection_prop,ALLOWED);
+    connection_prop->status = STATUS_ERR;
     return 0;
 }
 
@@ -490,29 +492,24 @@ static int serve_request(connection_t* connection_prop) {
         return 0;
     case DELETE:
         delete_file(connection_prop);
-        header_sent = false;
-        break;
+        return 0;
     case OPTIONS:
         options(connection_prop);
-        header_sent = false;
-        break;
+        return 0;
 #ifdef WEBDAV
     case PROPFIND:
         header_sent=propfind(connection_prop);
         break;
     case MKCOL:
-        header_sent = false;
         mkcol(connection_prop);
-        break;
+        return 0;
     case COPY:
     case MOVE:
-        header_sent = false;
         copy_move(connection_prop);
-        break;
+        return 0;
 #endif
     }
 
-escape:
     if (!header_sent) {
         connection_prop->status = STATUS_ERR;
     } else {
