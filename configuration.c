@@ -129,8 +129,9 @@ static void configuration_set_default_CGI() {
  * Sets the default index file
  * */
 static void configuration_set_default_index() {
-    weborf_conf.indexes[0] = INDEX;
-    weborf_conf.indexes_l = 1;
+    weborf_conf.indexes.data[0] = INDEX;
+    weborf_conf.indexes.data_l[0] = strlen(INDEX);
+    weborf_conf.indexes.len = 1;
 }
 
 static void configuration_set_cgi(char *optarg) {
@@ -162,16 +163,18 @@ static void configuration_set_index_list(char *optarg) { //Setting list of index
 
     char *saveptr;
 
-    if ((weborf_conf.indexes[0]=strtok_r(optarg,",",&saveptr))!=NULL) {
-        weborf_conf.indexes_l = 1; //count of indexes
+    if ((weborf_conf.indexes.data[0]=strtok_r(optarg,",",&saveptr))!=NULL) {
+        weborf_conf.indexes.len = 1; //count of indexes
+        weborf_conf.indexes.data_l[0] = strlen(weborf_conf.indexes.data[0]);
 
         char *token;
 
         while ((token=strtok_r(NULL,",",&saveptr))!=NULL) {
-            weborf_conf.indexes[weborf_conf.indexes_l]=token;
-            weborf_conf.indexes_l++;
+            weborf_conf.indexes.data[weborf_conf.indexes.len]=token;
+            weborf_conf.indexes.data_l[weborf_conf.indexes.len] = strlen(token);
+            weborf_conf.indexes.len++;
 
-            if (weborf_conf.indexes_l == MAXINDEXCOUNT) {
+            if (weborf_conf.indexes.len == MAXINDEXCOUNT) {
                 fprintf(stderr,"Too much indexes, change MAXINDEXCOUNT in options.h to allow more.\n");
                 exit(6);
             }

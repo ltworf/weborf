@@ -202,8 +202,7 @@ typedef struct {
     char *ip;                   //IP addr with default value
     char *port;                 //port with default value
 
-    char *indexes[MAXINDEXCOUNT];//List of pointers to index files
-    int indexes_l;              //Count of the list
+    array_ll indexes;//List of pointers to index files
     dict_t vhosts;         //virtual hosts
 
 } weborf_configuration_t;

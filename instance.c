@@ -561,10 +561,18 @@ static void get_or_post(connection_t *connection_prop) {
         int i;
 
         //Cyclyng through the indexes
-        for (i=0; i<weborf_conf.indexes_l; i++) {
-            snprintf(index_name,INDEXMAXLEN,"%s",weborf_conf.indexes[i]);//Add INDEX to the url
+        for (i=0; i<weborf_conf.indexes.len ; i++) {
+            
+            if (URI_LEN-connection_prop->strfile_len-1 > weborf_conf.indexes.data_l[i]) {
+                memcpy(index_name,weborf_conf.indexes.data[i],weborf_conf.indexes.data_l[i]+1);
+            } else {
+                //TODO log the error for the too long path
+                continue;
+            }
+            
+            
             if (access(connection_prop->strfile,R_OK)==0) { //If index exists, redirect to it
-                http_append_header_str_str(connection_prop,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes[i]);
+                http_append_header_str_str(connection_prop,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes.data[i]);
                 connection_prop->response.status_code=HTTP_CODE_SEE_OTHER;
                 connection_prop->status = STATUS_ERR;
                 return;
