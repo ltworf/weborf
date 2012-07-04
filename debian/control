@@ -30,6 +30,7 @@ Description: init script for weborf
 Package: qweborf
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, weborf (>=0.14), python-qt4 (>=4.7.3)
+Recommends: miniupnpc
 Description: Shares files using the HTTP protocol
  Qweborf provides an easy to use graphical interface to share local files using
  the HTTP protocol.
