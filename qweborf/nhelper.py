@@ -21,6 +21,8 @@
 from ctypes import *
 from socket import AF_INET, AF_INET6, AF_PACKET, inet_ntop
 from sys import platform
+
+import subprocess,re
  
 def getifaddrs():
     # getifaddr structs
@@ -219,7 +221,13 @@ def open_nat(port):
 def externaladdr():
     '''Returns the public IP address.
     none in case of error'''
-    pass
+    p = subprocess.Popen(['external-ip'], bufsize=1024, stdout=subprocess.PIPE)
+    out=p.stdout.readline().strip()
+    ret=p.wait()
+    
+    if re.match(r'[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}',out)==None:
+        return None
+    return out
     
 def printifconfig():
     ifaces=getifaddrs()
