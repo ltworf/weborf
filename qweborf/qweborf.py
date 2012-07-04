@@ -23,7 +23,7 @@ import main
 import whelper
 import nhelper
 import sys
-import os
+import os, os.path
 
 class qweborfForm (QtGui.QWidget):
     
@@ -52,6 +52,9 @@ class qweborfForm (QtGui.QWidget):
         
         self.defaultdir=str(QtGui.QDesktopServices.storageLocation(QtGui.QDesktopServices.HomeLocation))
         self.ui.txtPath.setText(self.defaultdir)
+        
+        #TODO it could be installed in another path
+        self.ui.chkNAT.setVisible(os.path.exists('/usr/bin/external-ip'))
             
     def logger(self,data,level=DBG_DEFAULT):
         '''logs an entry, showing it in the GUI'''
@@ -124,6 +127,12 @@ class qweborfForm (QtGui.QWidget):
             self.ui.tabWidget.setEnabled(False)
             self.started=True
         
+        if self.ui.chkNAT.isChecked() and nhelper.open_nat(options['port']):
+            external_addr=nhelper.externaladdr()
+            if external_addr!=None:
+                url='http://%s:%d/' % (external_addr,options['port'])
+                logentry='Address: <a href="%s">%s</a>' % (url,url)
+                self.logger(logentry)
         
     def select_path(self):
         #filename = QtGui.QFileDialog

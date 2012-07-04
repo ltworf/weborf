@@ -210,7 +210,17 @@ def getaddrs(ipv6=True):
         return l_ipv4+l_ipv6
     else:
         return l_ipv4
-        
+
+def open_nat(port):
+    '''Tries to open a port in the nat device
+    RETURNS: true if the route was created'''
+    pass
+
+def externaladdr():
+    '''Returns the public IP address.
+    none in case of error'''
+    pass
+    
 def printifconfig():
     ifaces=getifaddrs()
     for iface in ifaces:
