@@ -247,7 +247,7 @@ def externaladdr():
     out=p.stdout.readline().strip()
     ret=p.wait()
     
-    if re.match(r'[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}',out)==None:
+    if re.match(r'[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}',out)==None:
         return None
     return out
 
@@ -260,7 +260,7 @@ def get_redirections():
     redirections=[]
     
     for i in out:
-        m=re.match(r'[ ]*([0-9]+)[ ]+(UDP|TCP)[ ]+([0-9]+)->([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}):([0-9]+)[ ]+\'(.*)\' \'\'',i)
+        m=re.match(r'[ ]*([0-9]+)[ ]+(UDP|TCP)[ ]+([0-9]+)->([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):([0-9]+)[ ]+\'(.*)\' \'\'',i)
         if m!=None:
             redirect=m.groups()
             r=Redirection(redirect[4],redirect[2],redirect[3],redirect[1],redirect[5])
