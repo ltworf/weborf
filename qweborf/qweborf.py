@@ -76,13 +76,16 @@ class qweborfForm (QtGui.QWidget):
         pass
                         
     def stop_sharing(self):
+        if self.redirection!=None:
+            self.logger('Removing NAT redirection...')
+            self.app.processEvents()
+            self.redirection.remove_redirection()
         if self.weborf.stop():
             self.ui.cmdStart.setEnabled(True)
             self.ui.cmdStop.setEnabled(False)
             self.ui.tabWidget.setEnabled(True)
             self.started=False
-        if self.redirection!=None:
-            self.redirection.remove_redirection()
+        
     def about(self):
         
         self.logger('<hr><strong>Qweborf 0.14</strong>')
