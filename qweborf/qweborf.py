@@ -127,12 +127,17 @@ class qweborfForm (QtGui.QWidget):
             self.ui.tabWidget.setEnabled(False)
             self.started=True
         
-        if self.ui.chkNAT.isChecked() and nhelper.open_nat(options['port']):
+        if self.ui.chkNAT.isChecked() and self.started==True:
+            self.logger('Trying to use UPnP to open a redirection in the NAT device. Please wait...')
+            
             external_addr=nhelper.externaladdr()
+            self.logger('Public IP address %s' % str(external_addr))
             if external_addr!=None:
-                url='http://%s:%d/' % (external_addr,options['port'])
-                logentry='Address: <a href="%s">%s</a>' % (url,url)
-                self.logger(logentry)
+                redirection=nhelper.open_nat(options['port'])
+                if redirection!=None:
+                    url='http://%s:%d/' % (external_addr,redirection.eport)
+                    logentry='Public address: <a href="%s">%s</a>' % (url,url)
+                    self.logger(logentry)
         
     def select_path(self):
         #filename = QtGui.QFileDialog
