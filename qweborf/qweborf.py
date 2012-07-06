@@ -32,10 +32,12 @@ class qweborfForm (QtGui.QWidget):
     DBG_ERROR=2
     DBG_NOTICE=3
     
-    def setUi(self,ui):
+    def setUi(self,ui,app):
         self.ui=ui
         self.weborf=whelper.weborf_runner(self)
         self.started=False
+        self.app=app
+        self.redirection=None
         
         if self.weborf.has_capability('version')>= '0.13':
             self.ui.chkTar.setEnabled(True)
@@ -79,6 +81,8 @@ class qweborfForm (QtGui.QWidget):
             self.ui.cmdStop.setEnabled(False)
             self.ui.tabWidget.setEnabled(True)
             self.started=False
+        if self.redirection!=None:
+            self.redirection.remove_redirection()
     def about(self):
         
         self.logger('<hr><strong>Qweborf 0.14</strong>')
@@ -126,15 +130,20 @@ class qweborfForm (QtGui.QWidget):
             self.ui.cmdStop.setEnabled(True)
             self.ui.tabWidget.setEnabled(False)
             self.started=True
+            self.redirection=None
         
         if self.ui.chkNAT.isChecked() and self.started==True:
+            self.app.processEvents()
             self.logger('Trying to use UPnP to open a redirection in the NAT device. Please wait...')
-            
+            self.app.processEvents()
             external_addr=nhelper.externaladdr()
+            self.app.processEvents()
             self.logger('Public IP address %s' % str(external_addr))
+            self.app.processEvents()
             if external_addr!=None:
                 redirection=nhelper.open_nat(options['port'])
                 if redirection!=None:
+                    self.redirection=redirection
                     url='http://%s:%d/' % (external_addr,redirection.eport)
                     logentry='Public address: <a href="%s">%s</a>' % (url,url)
                     self.logger(logentry)
@@ -157,7 +166,7 @@ def q_main():
     Form = qweborfForm()
     ui = main.Ui_Form()
     ui.setupUi(Form)
-    Form.setUi(ui)
+    Form.setUi(ui,app)
     Form.show()
     res=app.exec_()
     Form.terminate()
