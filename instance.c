@@ -75,7 +75,7 @@ static inline void handle_request(connection_t* connection_prop);
 
 static void prepare_put(connection_t *connection_prop);
 static void do_put(connection_t* connection_prop);
-static void do_get_file(connection_t* connection_prop);
+static void do_cp_fd_sock_size(connection_t* connection_prop);
 static void do_copy_from_post_to_socket(connection_t* connection_prop);
 
 static void prepare_tar_send_dir(connection_t* connection_prop);
@@ -139,7 +139,7 @@ static inline void handle_request(connection_t* connection_prop) {
             do_put(connection_prop);
             break;
         case STATUS_GET_METHOD:
-            do_get_file(connection_prop);
+            do_cp_fd_sock_size(connection_prop);
             break;
         case STATUS_TAR_DIRECTORY:
             do_tar_send_dir(connection_prop);
@@ -797,9 +797,13 @@ void prepare_get_file(connection_t* connection_prop) {
 }
 
 /**
- * TODO
+ * This function copies (ideally one frame) from strfile_fd
+ * to the socket.
+ * 
+ * it sets the status to STATUS_ERR_NO_CONNECTION on error
+ * or to STATUS_PAGE_SENT on completion
  **/
-static void do_get_file(connection_t* connection_prop) {
+static void do_cp_fd_sock_size(connection_t* connection_prop) {
 
     if (connection_prop->bytes_to_copy > 0) {
 
@@ -815,7 +819,6 @@ static void do_get_file(connection_t* connection_prop) {
     if (connection_prop->bytes_to_copy==0) {
         connection_prop->status = STATUS_PAGE_SENT;
     }
-
 }
 
 /**
@@ -1060,8 +1063,6 @@ static void prepare_tar_send_dir(connection_t* connection_prop) {
 }
 
 static void do_tar_send_dir(connection_t* connection_prop) {
-    
-    
     int pid=detached_fork();
 
     if (pid==0) { //child, executing tar
