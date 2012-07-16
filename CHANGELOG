@@ -21,6 +21,7 @@
 - qweborf: checks if weborf supports authentication with socket
 - qweborf: uses the -B option, for an easier parsing
 - qweborf: doesn't crash when using miredo
+- qweborf: can use UPnP to open external ports in NAT devices
 
 0.13
 - Shows last modified column in directory listing (Rev 419)
