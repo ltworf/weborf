@@ -67,7 +67,6 @@ extern pthread_key_t thread_key;            //key for pthread_setspecific
 int request_auth(connection_t *connection_prop);
 static void write_dir(char *real_basedir, connection_t * connection_prop);
 void read_post_data(connection_t * connection_prop);
-static int tar_send_dir(connection_t* connection_prop);
 static int serve_request(connection_t* connection_prop);
 static int send_error_header(connection_t *connection_prop);
 static void get_or_post(connection_t *connection_prop);
@@ -78,6 +77,9 @@ static void prepare_put(connection_t *connection_prop);
 static void do_put(connection_t* connection_prop);
 static void do_get_file(connection_t* connection_prop);
 static void do_copy_from_post_to_socket(connection_t* connection_prop);
+
+static void prepare_tar_send_dir(connection_t* connection_prop);
+static void do_tar_send_dir(connection_t* connection_prop);
 
 
 /**
@@ -99,11 +101,11 @@ static inline void handle_request(connection_t* connection_prop) {
             }
             break;
         case STATUS_WAIT_DATA:
-            connection_prop->status = connection_prop->status_next;
             r=buffer_fill(connection_prop->sock,&(connection_prop->read_b));
             if (r==0)
                 connection_prop->status=STATUS_END;
-
+            else
+                connection_prop->status = connection_prop->status_next;
 
             break;
         case STATUS_WAIT_HEADER:
@@ -129,7 +131,7 @@ static inline void handle_request(connection_t* connection_prop) {
             break;
         case STATUS_READY_TO_SEND:
             if (connection_prop->request.method_id == POST || connection_prop->request.method_id == PROPFIND) {
-                read_post_data(connection_prop); //TODO
+                read_post_data(connection_prop); //TODO read this data iteratively
             }
             connection_prop->status = STATUS_SERVE_REQUEST;
             break;
@@ -139,7 +141,11 @@ static inline void handle_request(connection_t* connection_prop) {
         case STATUS_GET_METHOD:
             do_get_file(connection_prop);
             break;
+        case STATUS_TAR_DIRECTORY:
+            do_tar_send_dir(connection_prop);
+            break;
         case STATUS_COPY_FROM_POST_DATA_TO_SOCKET:
+            // -> STATUS_PAGE_SENT || STATUS_ERR_NO_CONNECTION
             do_copy_from_post_to_socket(connection_prop);
             break;
         case STATUS_SERVE_REQUEST:
@@ -549,16 +555,15 @@ static void get_or_post(connection_t *connection_prop) {
             return;
         }
 
-        //FIXME: re-enable tar_send_dir
-        /*if (weborf_conf.tar_directory) {
-            tar_send_dir(connection_prop);
+        if (weborf_conf.tar_directory) {
+            prepare_tar_send_dir(connection_prop);
             return;
-        }*/
+        }
 
         //TODO:refactory into two functions
         //Cycling index files
         char* index_name=&connection_prop->strfile[connection_prop->strfile_len];//Pointer to where to write the filename
-        int i;
+        unsigned int i;
 
         //Cyclyng through the indexes
         for (i=0; i<weborf_conf.indexes.len ; i++) {
@@ -598,8 +603,6 @@ static void get_or_post(connection_t *connection_prop) {
 
         //send normal file, control reaches this point if scripts are disabled or if the filename doesn't trigger CGI
         prepare_get_file(connection_prop);
-        return false;
-
     }
 }
 
@@ -647,14 +650,14 @@ static int send_error_header(connection_t *connection_prop) {
 }
 
 /**
-This function writes on the specified socket an html page containing the list of files within the
-specified directory.
-
-RETURNS true if header is sent TODO
-*/
+ * This function creates a directory listing and stores it in the POST data buffer,
+ * then the status is set to:
+ * connection_prop->status = STATUS_SEND_HEADERS;
+ * connection_prop->status_next = STATUS_COPY_FROM_POST_DATA_TO_SOCKET;
+ * 
+ * In case of errors status is set accordingly.
+ **/
 static void write_dir(char* real_basedir,connection_t* connection_prop) {
-    int sock=connection_prop->sock;
-
     /*
     WARNING
     This code checks the ETag and returns if the client has a copy in cache
@@ -673,7 +676,6 @@ static void write_dir(char* real_basedir,connection_t* connection_prop) {
     //Tries to send the item from the cache
     if (cache_send_item(0,connection_prop)) return;
 
-    int pagelen;
     bool parent;
 
     /*
@@ -711,10 +713,7 @@ static void write_dir(char* real_basedir,connection_t* connection_prop) {
         /*WARNING using the directory's mtime here allows better caching and
         the mtime will anyway be changed when files are added or deleted.
 
-        Anyway i couldn't find the proof that it is changed also when files
-        are modified.
-        I tried on reiserfs and the directory's mtime changes too but i didn't
-        find any doc about the other filesystems and OS.
+        Anyway it is not changed also when files are modified.
         */
         connection_prop->response.status_code = HTTP_CODE_OK;
 
@@ -1040,29 +1039,30 @@ No caching at all is used or is allowed to the clients
 
 TODO: fix this
 */
-static int tar_send_dir(connection_t* connection_prop) {
 
+static void prepare_tar_send_dir(connection_t* connection_prop) {
     connection_prop->response.keep_alive=false;
-
-    char* headers=malloc(HEADBUF);
-    if (headers==NULL) return HTTP_CODE_SERVICE_UNAVAILABLE;
 
     //Last char is always '/', i null it so i can use default name
     connection_prop->strfile[--connection_prop->strfile_len]=0;
 
     char* dirname=strrchr(connection_prop->strfile,'/')+1;
     if (strlen(dirname)==0) dirname="directory";
-
+    
     http_append_header(connection_prop,"Content-Type: application/x-gzip\r\n");
     http_append_header_str(connection_prop,"Content-Disposition: attachment; filename=\"%s.tar.gz\"\r\n",dirname);
 
     connection_prop->response.status_code=200;
     connection_prop->response.size_type=LENGTH_ENTITY;
-    send_http_header(connection_prop);
+    
+    connection_prop->status = STATUS_SEND_HEADERS;
+    connection_prop->status_next = STATUS_TAR_DIRECTORY;
+}
 
-    free(headers);
-
-    int pid=fork();
+static void do_tar_send_dir(connection_t* connection_prop) {
+    
+    
+    int pid=detached_fork();
 
     if (pid==0) { //child, executing tar
         close(1);
@@ -1070,12 +1070,8 @@ static int tar_send_dir(connection_t* connection_prop) {
         nice(1); //Reducing priority
         execlp("tar","tar","-cz",connection_prop->strfile,(char *)0);
         return HTTP_CODE_SERVICE_UNAVAILABLE;
-    } else if (pid>0) { //Father, does nothing
-        int status;
-        waitpid(pid,&status,0);
-        return status;
-    } else { //Error
-        return HTTP_CODE_SERVICE_UNAVAILABLE; //Not enough memory in process table...
+    } else { //Father, does nothing
+        connection_prop->status = STATUS_PAGE_SENT;
     }
 
 }

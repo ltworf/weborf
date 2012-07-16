@@ -76,6 +76,7 @@ typedef enum {
     STATUS_GET_METHOD,
     STATUS_SEND_HEADERS,
     STATUS_COPY_FROM_POST_DATA_TO_SOCKET,
+    STATUS_TAR_DIRECTORY,
 
 } conection_status_e;
 
