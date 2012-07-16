@@ -32,5 +32,6 @@ void moo();
 void print_start_disclaimer(char *argv[]);
 bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,ssize_t param_len);
 void daemonize();
+pid_t detached_fork();
 
 #endif

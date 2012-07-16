@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -330,6 +331,30 @@ void daemonize() {
         signal(SIGHUP, SIG_IGN);
     else
         exit(0);
+}
+
+/**
+ * This function generates a detached child that
+ * it is not possible to wait.
+ * 
+ * Return values as the fork (pid_t is a fake id, can't be used)
+ **/
+pid_t detached_fork() {
+    pid_t f1 = fork();
+    pid_t f2;
+    
+    if (f1==0) { //Child process
+        f2=fork();
+        if (f2!=0)
+            exit(0);
+        return 0;
+    } else if (f1>0){ //Father process
+        waitpid(f1,NULL,0);
+        return 1;
+    } else if (f1<0) {
+        return f1;
+    }
+    return -1;
 }
 
 /**
