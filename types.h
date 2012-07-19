@@ -183,7 +183,7 @@ typedef struct {
 
     buffered_read_t read_b;     //Buffer for buffered reader
     string_t buf;               //Buffer to read headers
-    
+
     int fd_to_cgi;              //File descriptor to write to the CGI
     int fd_from_cgi;            //File descriptor to read from the CGI
     string_t cgi_buffer;        //Buffer for the CGI headers

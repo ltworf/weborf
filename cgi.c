@@ -209,17 +209,17 @@ static inline int cgi_set_cpu_limit(int soft_limit) {
 static inline void cgi_dup_descriptors(int *wpipe, int *ipipe) {
     close(wpipe[0]); //Closes unused end of the pipe
     dup2(wpipe[1],1); //Redirects the stdout
-    
-    #ifdef HIDE_CGI_ERRORS
+
+#ifdef HIDE_CGI_ERRORS
     close (2);
-    #endif
-    
+#endif
+
     //Redirecting standard input only if there is POST data
     if (ipipe[0]!=-1) {//Send post data to script's stdin
         dup2(ipipe[0],0);
         close(ipipe[1]);
     }
-    
+
 }
 
 /**
@@ -290,7 +290,7 @@ void cgi_exec_page(char * executor,connection_t* connection_prop) {
         close(ipipe[1]);
         close(wpipe[0]);
         close(wpipe[1]);
-        
+
         connection_prop->response.status_code = HTTP_CODE_SERVICE_UNAVAILABLE;
         return;
     } else if (wpid==0) {
@@ -302,9 +302,9 @@ void cgi_exec_page(char * executor,connection_t* connection_prop) {
         connection_prop->fd_from_cgi = wpipe[0];
         connection_prop->cgi_buffer.data = calloc(HEADBUF+1,1);
         connection_prop->cgi_buffer.len = 0;
-        
+
         http_set_chunked(connection_prop);
-        
+
         //Closing pipes, so if they're empty read is non blocking
         close (wpipe[1]);
         close (ipipe[0]);
@@ -326,49 +326,49 @@ void cgi_exec_page(char * executor,connection_t* connection_prop) {
  **/
 void cgi_wait_headers(connection_t* connection_prop) {
     //TODO this code is slow
-    
+
     char*buffer=connection_prop->cgi_buffer.data;
     char* end = strstr(connection_prop->cgi_buffer.data,"\r\n\r\n");
-    
+
     if (end==NULL) {
         if (HEADBUF-connection_prop->cgi_buffer.len==0)
             goto internal_error;
-        
+
         ssize_t r = read(connection_prop->fd_from_cgi,connection_prop->cgi_buffer.data+connection_prop->cgi_buffer.len,HEADBUF-connection_prop->cgi_buffer.len);
         if (r>=0) {
             connection_prop->cgi_buffer.len+=r;
             return;
-        } else 
+        } else
             goto internal_error;
     }
-    
+
     end[0]=0;
     http_append_header_safe(connection_prop,connection_prop->cgi_buffer.data);
-    
+
     //Reading if there is a status header
     char*s=strstr(buffer,"Status: ");
     if (s!=NULL) {
-                connection_prop->response.status_code=(unsigned int)strtoul( s+strlen("Status: ") , NULL, 0 );
-            } else {
-                connection_prop->response.status_code= HTTP_CODE_OK; //Standard status
-            }
+        connection_prop->response.status_code=(unsigned int)strtoul( s+strlen("Status: ") , NULL, 0 );
+    } else {
+        connection_prop->response.status_code= HTTP_CODE_OK; //Standard status
+    }
 
-            
-                //move the leftover data to the beginning of the buffer
+
+    //move the leftover data to the beginning of the buffer
     memmove(connection_prop->cgi_buffer.data,end+4,connection_prop->cgi_buffer.len- (connection_prop->cgi_buffer.data-end+4)  );
-            
+
     connection_prop->status = STATUS_SEND_HEADERS;
     connection_prop->status_next = STATUS_CGI_FLUSH_HEADER_BUFFER;
-    
-    
-     
-   return;
+
+
+
+    return;
 internal_error:
     connection_prop->response.status_code = HTTP_CODE_INTERNAL_SERVER_ERROR;
-            connection_prop->status = STATUS_ERR;
-            return;
-    
-    
+    connection_prop->status = STATUS_ERR;
+    return;
+
+
 }
 
 /**
