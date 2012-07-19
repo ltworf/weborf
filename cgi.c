@@ -204,6 +204,25 @@ static inline int cgi_set_cpu_limit(int soft_limit) {
 }
 
 /**
+ * TODO
+ **/
+static inline void cgi_dup_descriptors(int *wpipe, int *ipipe) {
+    close(wpipe[0]); //Closes unused end of the pipe
+    dup2(wpipe[1],1); //Redirects the stdout
+    
+    #ifdef HIDE_CGI_ERRORS
+    close (2);
+    #endif
+    
+    //Redirecting standard input only if there is POST data
+    if (ipipe[0]!=-1) {//Send post data to script's stdin
+        dup2(ipipe[0],0);
+        close(ipipe[1]);
+    }
+    
+}
+
+/**
  * Closes unused ends of pipes, dups them,
  * sets the correct enviromental variables requested
  * by the CGI protocol and then executes the CGI.
@@ -211,21 +230,7 @@ static inline int cgi_set_cpu_limit(int soft_limit) {
  * Will also set a CPU limit to prevent the script from
  * running forever.
  * */
-static inline void cgi_execute_child(connection_t* connection_prop,char * executor,int *wpipe,int *ipipe) {
-    close (wpipe[0]); //Closes unused end of the pipe
-
-    close (STDOUT);
-    dup(wpipe[1]); //Redirects the stdout
-
-#ifdef HIDE_CGI_ERRORS
-    close (STDERR);
-#endif
-    //Redirecting standard input only if there is POST data
-    if (connection_prop->post_data.len>0) {//Send post data to script's stdin
-        close(STDIN);
-        dup(ipipe[0]);
-    }
-
+static inline void cgi_execute_child(connection_t* connection_prop,char * executor) {
     environ=NULL; //Clear env vars
 
     cgi_set_http_env_vars(connection_prop->http_param);
@@ -246,114 +251,6 @@ static inline void cgi_execute_child(connection_t* connection_prop,char * execut
 
 }
 
-
-static inline bool cgi_waitfor_child(connection_t* connection_prop,pid_t wpid,int *wpipe,int *ipipe) {
-    int sock=connection_prop->sock;
-    //Closing pipes, so if they're empty read is non blocking
-    close (wpipe[1]);
-
-    //Large buffer, must contain the output of the script
-    char* header_buf=malloc(MAXSCRIPTOUT+HEADBUF);
-
-    if (header_buf==NULL) { //Was unable to allocate the buffer
-        int state;
-#ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers for CGI");
-#endif
-        close (wpipe[0]);
-        if (connection_prop->post_data.len>0) {//Pipe created and used only if there is data to send to the script
-            close (ipipe[0]); //Closes unused end of the pipe
-            close (ipipe[1]); //Closes the pipe
-        }
-        kill(wpid,SIGKILL); //Kills cgi process
-        waitpid (wpid,&state,0); //Removes zombie process
-        connection_prop->response.status_code = HTTP_CODE_SERVICE_UNAVAILABLE;
-        return false;
-    }
-
-    if (connection_prop->post_data.len>0) {//Pipe created and used only if there is data to send to the script
-        //Send post data to script's stdin
-        write(ipipe[1],connection_prop->post_data.data,connection_prop->post_data.len);
-        close (ipipe[0]); //Closes unused end of the pipe
-        close (ipipe[1]); //Closes the pipe
-    }
-
-    {
-        int state;
-        waitpid (wpid,&state,0); //Wait the termination of the script
-    }
-
-    //Reads output of the script
-    int e_reads=read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF);
-
-    //Separating header from contents
-    char* scrpt_buf=strstr(header_buf,"\r\n\r\n");
-    int reads=0;
-    if (scrpt_buf!=NULL) {
-        scrpt_buf+=2;
-        scrpt_buf[0]=0;
-        scrpt_buf=scrpt_buf+2;
-        reads=e_reads - (int)(scrpt_buf-header_buf);//Len of the content
-    } else {//Something went wrong, ignoring the output (it's missing the headers)
-        e_reads=0;
-    }
-
-    if (e_reads>0) {//There is output from script
-        {
-            //Reading if there is another status
-            char*s=strstr(header_buf,"Status: ");
-            if (s!=NULL) {
-                connection_prop->response.status_code=(unsigned int)strtoul( s+8 , NULL, 0 );
-            } else {
-                connection_prop->response.status_code= HTTP_CODE_OK; //Standard status
-            }
-        }
-
-        /* There could be other data, which didn't fit in the buffer,
-        so we set reads to -1 (this will make connection non-keep-alive)
-        and we continue reading and writing to the socket */
-        if (e_reads==MAXSCRIPTOUT+HEADBUF) {
-            reads=-1;
-            connection_prop->response.keep_alive=false;
-        }
-
-        /*
-        Sends header,
-        reads is the size
-        true tells to use Content-Length rather than entity-length
-        -1 won't use any ETag, and will eventually use the current time as last-modified
-        */
-        //TODO chuncked
-
-        connection_prop->response.size=reads;
-
-        http_append_header_safe(connection_prop,header_buf );
-
-        send_http_header(connection_prop);
-
-        if (reads!=0) {//Sends the page if there is something to send
-            write (sock,scrpt_buf,reads);
-        }
-
-        if (reads==-1) {//Reading until the pipe is empty, if it wasn't fully read before
-            e_reads=MAXSCRIPTOUT+HEADBUF;
-            while (e_reads==MAXSCRIPTOUT+HEADBUF) {
-                e_reads=read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF);
-                write (sock,header_buf,e_reads);
-            }
-        }
-
-        //Closing pipe
-        close (wpipe[0]);
-
-    } else {//No output from script, maybe terminated...
-        send_err(connection_prop,500,"Internal server error");
-    }
-
-    free(header_buf);
-    return true;
-}
-
 /**
 Executes a CGI script with a given interpreter and sends the resulting output
 executor is the path to the binary which will execute the page
@@ -367,40 +264,118 @@ The child will clean all the envvars and then set new ones as needed by CGI.
 
 RETURNS true if header was sent TODO
 */
-bool exec_page(char * executor,connection_t* connection_prop) {
+void cgi_exec_page(char * executor,connection_t* connection_prop) {
 #ifdef SENDINGDBG
     syslog(LOG_INFO,"Executing file %s",connection_prop->strfile);
 #endif
 
-    int wpid;//Child's pid
-    int wpipe[2];//Pipe's file descriptor
-    int ipipe[2];//Pipe's file descriptor, used to pass POST on script's standard input
+    pid_t wpid;//Child's pid
+    int wpipe[] = {-1,-1};//Pipe's file descriptor
+    int ipipe[] = {-1,-1};//Pipe's file descriptor, used to pass POST on script's standard input
+    int results=0;
 
     //Pipe created and used only if there is POST data to send to the script
     if (connection_prop->post_data.len>0) {
-        pipe(ipipe);//Pipe to comunicate with the child
+        results+=pipe(ipipe);//Pipe to comunicate with the child
     }
 
     //Pipe to get the output of the child
-    pipe(wpipe);//Pipe to comunicate with the child
+    results+=pipe(wpipe);//Pipe to comunicate with the child
 
-    if ((wpid=fork())<0) { //Error, returns a no memory error
+    if (results!=0 || (wpid=detached_fork())<0) { //Error, returns a no memory error
 #ifdef SENDINGDBG
         syslog(LOG_CRIT,"Unable to fork to execute the file %s",connection_prop->strfile);
 #endif
-        if (connection_prop->post_data.len>0) {
-            close(ipipe[0]);
-            close(ipipe[1]);
-        }
-        close(wpipe[1]);
+        close(ipipe[0]);
+        close(ipipe[1]);
         close(wpipe[0]);
+        close(wpipe[1]);
+        
         connection_prop->response.status_code = HTTP_CODE_SERVICE_UNAVAILABLE;
-        return false;
+        return;
     } else if (wpid==0) {
         /* never returns */
-        cgi_execute_child(connection_prop,executor,wpipe,ipipe);
+        cgi_dup_descriptors(wpipe,ipipe);
+        cgi_execute_child(connection_prop,executor);
     } else { //Father: reads from pipe and sends
-        return cgi_waitfor_child(connection_prop,wpid,wpipe,ipipe);
+        connection_prop->fd_to_cgi = ipipe[1];
+        connection_prop->fd_from_cgi = wpipe[0];
+        connection_prop->cgi_buffer.data = calloc(HEADBUF+1,1);
+        connection_prop->cgi_buffer.len = 0;
+        
+        http_set_chunked(connection_prop);
+        
+        //Closing pipes, so if they're empty read is non blocking
+        close (wpipe[1]);
+        close (ipipe[0]);
+
+        if (connection_prop->post_data.len>0) {
+            connection_prop->status_next = STATUS_CGI_WAIT_HEADER;
+            connection_prop->status = STATUS_CGI_COPY_POST;
+            connection_prop->bytes_to_copy = connection_prop->post_data.len;
+        } else {
+            connection_prop->status = STATUS_CGI_WAIT_HEADER;
+        }
+        return;
     }
-    return false;
+    return;
+}
+
+/**
+ * TODO
+ **/
+void cgi_wait_headers(connection_t* connection_prop) {
+    //TODO this code is slow
+    
+    char*buffer=connection_prop->cgi_buffer.data;
+    char* end = strstr(connection_prop->cgi_buffer.data,"\r\n\r\n");
+    
+    if (end==NULL) {
+        if (HEADBUF-connection_prop->cgi_buffer.len==0)
+            goto internal_error;
+        
+        ssize_t r = read(connection_prop->fd_from_cgi,connection_prop->cgi_buffer.data+connection_prop->cgi_buffer.len,HEADBUF-connection_prop->cgi_buffer.len);
+        if (r>0)
+            connection_prop->cgi_buffer.len+=r;
+        else 
+            goto internal_error;
+    }
+    
+    end[0]=0;
+    http_append_header_safe(connection_prop,connection_prop->cgi_buffer.data);
+    
+    //Reading if there is a status header
+    char*s=strstr(buffer,"Status: ");
+    if (s!=NULL) {
+                connection_prop->response.status_code=(unsigned int)strtoul( s+strlen("Status: ") , NULL, 0 );
+            } else {
+                connection_prop->response.status_code= HTTP_CODE_OK; //Standard status
+            }
+
+            
+                //move the leftover data to the beginning of the buffer
+    memmove(connection_prop->cgi_buffer.data,end+4,connection_prop->cgi_buffer.len- (connection_prop->cgi_buffer.data-end+4)  );
+
+            
+    connection_prop->status = STATUS_SEND_HEADERS;
+    connection_prop->status_next = STATUS_CGI_FLUSH_HEADER_BUFFER;
+    
+    
+     
+   return;
+internal_error:
+    connection_prop->response.status_code = HTTP_CODE_INTERNAL_SERVER_ERROR;
+            connection_prop->status = STATUS_ERR;
+            return;
+    
+    
+}
+
+/**
+ * TODO
+ **/
+void cgi_free_resources(connection_t* connection_prop) {
+    close(connection_prop->fd_from_cgi);
+    close(connection_prop->fd_to_cgi);
+    free(connection_prop->cgi_buffer.data);
 }

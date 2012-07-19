@@ -76,7 +76,8 @@ static inline void handle_request(connection_t* connection_prop);
 static void prepare_put(connection_t *connection_prop);
 static void do_put(connection_t* connection_prop);
 static void do_cp_fd_sock_size(connection_t* connection_prop);
-static void do_copy_from_post_to_socket(connection_t* connection_prop);
+static void do_copy_from_post_to_fd(connection_t* connection_prop,int);
+static void do_cp_fd_sock(connection_t *connection_prop, int fd);
 
 static void prepare_tar_send_dir(connection_t* connection_prop);
 static void do_tar_send_dir(connection_t* connection_prop);
@@ -91,6 +92,7 @@ static inline void handle_request(connection_t* connection_prop) {
 
     while(true) {
         switch (connection_prop->status) {
+            
         case STATUS_CHECK_AUTH:
             // -> STATUS_READY_TO_SEND
             if (auth_check_request(connection_prop)!=0) { //If auth is required
@@ -144,9 +146,28 @@ static inline void handle_request(connection_t* connection_prop) {
         case STATUS_TAR_DIRECTORY:
             do_tar_send_dir(connection_prop);
             break;
+        case STATUS_CGI_COPY_POST:
+            do_copy_from_post_to_fd(connection_prop,connection_prop->fd_to_cgi);
+            break;
+        case STATUS_CGI_WAIT_HEADER:
+            cgi_wait_headers(connection_prop);
+            break;
+        case STATUS_CGI_SEND_CONTENT:
+            do_cp_fd_sock(connection_prop,connection_prop->fd_from_cgi);
+            break; //TODO
+        case STATUS_CGI_FLUSH_HEADER_BUFFER:
+            write(connection_prop->sock,connection_prop->cgi_buffer.data,connection_prop->cgi_buffer.len);
+            connection_prop->status = STATUS_CGI_SEND_CONTENT;
+            connection_prop->status_next = STATUS_CGI_FREE_RESOURCES;
+            break;
+        case STATUS_CGI_FREE_RESOURCES:
+            cgi_free_resources(connection_prop);
+            connection_prop->status = STATUS_PAGE_SENT;
+            break;
         case STATUS_COPY_FROM_POST_DATA_TO_SOCKET:
             // -> STATUS_PAGE_SENT || STATUS_ERR_NO_CONNECTION
-            do_copy_from_post_to_socket(connection_prop);
+            connection_prop->status = STATUS_PAGE_SENT;
+            do_copy_from_post_to_fd(connection_prop,connection_prop->sock);
             break;
         case STATUS_SERVE_REQUEST:
             serve_request(connection_prop);
@@ -175,7 +196,6 @@ static inline void handle_request(connection_t* connection_prop) {
 #endif
 
         case STATUS_END:
-            connection_prop->status=STATUS_NONE;
             return;
             break;
 
@@ -596,7 +616,8 @@ static void get_or_post(connection_t *connection_prop) {
             for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
                 f_len=weborf_conf.cgi_paths.data_l[q_];
                 if (endsWith(connection_prop->page+connection_prop->page_len-f_len,weborf_conf.cgi_paths.data[q_],f_len,f_len)) {
-                    return exec_page(weborf_conf.cgi_paths.data[++q_],connection_prop);
+                    cgi_exec_page(weborf_conf.cgi_paths.data[++q_],connection_prop);
+                    return;
                 }
             }
         }
@@ -822,12 +843,54 @@ static void do_cp_fd_sock_size(connection_t* connection_prop) {
 }
 
 /**
+ * Copies from the specified file descriptor to the socket.
+ * When the read fails it will change the status to status_next.
+ * 
+ * In case of errors status is set to ERR_NO_CONNECTION.
+ * 
+ * If enabled, it will use chunked encoding.
+ **/
+static void do_cp_fd_sock(connection_t *connection_prop, int fd) {
+
+        size_t count = TCP_FRAME_SIZE;
+        void* buf = malloc(count);
+        if (buf==NULL) {
+            connection_prop->status = STATUS_ERR;
+            connection_prop->response.status_code = HTTP_CODE_SERVICE_UNAVAILABLE;
+            return;
+        }
+        
+        ssize_t r = read(fd,buf,count);
+        
+        if (r==0) {//End of the file
+
+            if (connection_prop->response.chunked)
+                dprintf(connection_prop->sock,"0\r\n\r\n");
+            connection_prop->status = connection_prop->status_next;
+            
+        } else if (r>0) {
+            
+            if (connection_prop->response.chunked)
+                dprintf(connection_prop->sock,"%x\r\n",(unsigned int)r);
+            
+            ssize_t w = write(connection_prop->sock,buf,r);
+            
+            if (connection_prop->response.chunked)
+                dprintf(connection_prop->sock,"\r\n");
+            
+            if (w!=r) connection_prop->status = STATUS_ERR_NO_CONNECTION;
+        }
+        
+        free(buf);
+}
+
+/**
  * TODO: write documentation
  **/
-static void do_copy_from_post_to_socket(connection_t* connection_prop) {
+static void do_copy_from_post_to_fd(connection_t* connection_prop,int dest) {
 
     if (connection_prop->bytes_to_copy == 0 ) {
-        connection_prop->status = STATUS_PAGE_SENT;
+        connection_prop->status = connection_prop->status_next;
         return;
     }
 
@@ -835,7 +898,7 @@ static void do_copy_from_post_to_socket(connection_t* connection_prop) {
 
     char* start=connection_prop->post_data.data + (connection_prop->post_data.len - connection_prop->bytes_to_copy);
 
-    ssize_t r = write(connection_prop->sock,start,count);
+    ssize_t r = write(dest,start,count);
     if (r>0) {
         connection_prop->bytes_to_copy -= r;
     } else {
@@ -988,7 +1051,7 @@ int send_http_header(connection_t* connection_prop) {
     head+=len_head;
     left_head-=len_head;
 
-
+    //TODO send header for encoded content when final size is unknown
     if (size>0 || (connection_prop->response.keep_alive==true)) {
         const char* length;
         if (connection_prop->response.size_type==LENGTH_CONTENT) {
@@ -1003,6 +1066,10 @@ int send_http_header(connection_t* connection_prop) {
         }
 
         len_head=snprintf(head,left_head,length ,size);
+        head+=len_head;
+        left_head-=len_head;
+    } else if (connection_prop->response.chunked) {
+        len_head=snprintf(head,left_head,"Transfer-Encoding: chunked\r\n");
         head+=len_head;
         left_head-=len_head;
     }
@@ -1036,13 +1103,16 @@ int send_http_header(connection_t* connection_prop) {
 }
 
 /**
-This function writes on the specified socket a tar.gz file containing the required
-directory.
-No caching at all is used or is allowed to the clients
-
-TODO: fix this
-*/
-
+ * This function prepares the headers to send a directory
+ * as a tar.gz file.
+ * 
+ * It sets the content-disposition to give a default filename to the browsers
+ * and also sets the mimetipe correctly.
+ * 
+ * After that, status is set as follows:
+ * connection_prop->status = STATUS_SEND_HEADERS;
+ * connection_prop->status_next = STATUS_TAR_DIRECTORY;
+ **/
 static void prepare_tar_send_dir(connection_t* connection_prop) {
     connection_prop->response.keep_alive=false;
 
@@ -1062,6 +1132,19 @@ static void prepare_tar_send_dir(connection_t* connection_prop) {
     connection_prop->status_next = STATUS_TAR_DIRECTORY;
 }
 
+/**
+ * This function spawns a child process which will
+ * copy a tar.gz file of the requested directory to the
+ * socket.
+ * 
+ * The function returns immediately, setting status to
+ * STATUS_PAGE_SENT, which will cause the connection
+ * to be closed and resources to be freed since
+ * the keep-alive was set as false in prepare_tar_send_dir
+ * 
+ * The tar command will run in a detached process without
+ * any need to wait for it.
+ **/
 static void do_tar_send_dir(connection_t* connection_prop) {
     int pid=detached_fork();
 
@@ -1070,7 +1153,6 @@ static void do_tar_send_dir(connection_t* connection_prop) {
         dup(connection_prop->sock); //Redirects the stdout
         nice(1); //Reducing priority
         execlp("tar","tar","-cz",connection_prop->strfile,(char *)0);
-        return HTTP_CODE_SERVICE_UNAVAILABLE;
     } else { //Father, does nothing
         connection_prop->status = STATUS_PAGE_SENT;
     }

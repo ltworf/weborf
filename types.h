@@ -68,7 +68,6 @@ typedef enum {
     STATUS_ERR,
     STATUS_ERR_NO_CONNECTION,
     STATUS_READY_FOR_NEXT,
-    STATUS_NONE,
     STATUS_PAGE_SENT,
     STATUS_WAIT_DATA,
     STATUS_SERVE_REQUEST,
@@ -77,6 +76,11 @@ typedef enum {
     STATUS_SEND_HEADERS,
     STATUS_COPY_FROM_POST_DATA_TO_SOCKET,
     STATUS_TAR_DIRECTORY,
+    STATUS_CGI_COPY_POST,
+    STATUS_CGI_WAIT_HEADER,
+    STATUS_CGI_SEND_CONTENT,
+    STATUS_CGI_FREE_RESOURCES,
+    STATUS_CGI_FLUSH_HEADER_BUFFER,
 
 } conection_status_e;
 
@@ -179,6 +183,10 @@ typedef struct {
 
     buffered_read_t read_b;     //Buffer for buffered reader
     string_t buf;               //Buffer to read headers
+    
+    int fd_to_cgi;              //File descriptor to write to the CGI
+    int fd_from_cgi;            //File descriptor to read from the CGI
+    string_t cgi_buffer;        //Buffer for the CGI headers
 } connection_t;
 
 typedef struct {

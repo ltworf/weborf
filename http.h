@@ -35,7 +35,7 @@ static inline void http_set_chunked(connection_t * connection_prop);
 static inline int http_set_connection_t(char* header,connection_t * connection_prop);
 static inline char *http_reason_phrase(int code);
 
-void http_append_header_str(connection_t * connection_prop,const char* s,char* s1);
+void http_append_header_str(connection_t * connection_prop,const char* s,char*);
 void http_append_header_str_str(connection_t * connection_prop,const char* s,char* s1,char* s2);
 void http_append_header_safe(connection_t * connection_prop,char* s);
 void http_append_header(connection_t * connection_prop,const char* s);
