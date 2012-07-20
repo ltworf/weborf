@@ -353,9 +353,8 @@ void cgi_wait_headers(connection_t* connection_prop) {
         connection_prop->response.status_code= HTTP_CODE_OK; //Standard status
     }
 
-
     //move the leftover data to the beginning of the buffer
-    memmove(connection_prop->cgi_buffer.data,end+4,connection_prop->cgi_buffer.len- (connection_prop->cgi_buffer.data-end+4)  );
+    memmove(connection_prop->cgi_buffer.data,end+4,connection_prop->cgi_buffer.len- (end+4-connection_prop->cgi_buffer.data)  );
 
     connection_prop->status = STATUS_SEND_HEADERS;
     connection_prop->status_next = STATUS_CGI_FLUSH_HEADER_BUFFER;
