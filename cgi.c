@@ -342,7 +342,7 @@ void cgi_wait_headers(connection_t* connection_prop) {
             goto internal_error;
     }
 
-    end[0]=0;
+    end[2]=0;
     http_append_header_safe(connection_prop,connection_prop->cgi_buffer.data);
 
     //Reading if there is a status header

@@ -156,7 +156,11 @@ static inline void handle_request(connection_t* connection_prop) {
             do_cp_fd_sock(connection_prop,connection_prop->fd_from_cgi);
             break; //TODO
         case STATUS_CGI_FLUSH_HEADER_BUFFER:
+            if (connection_prop->response.chunked)
+                dprintf(connection_prop->sock,"%x\r\n",connection_prop->cgi_buffer.len);
             write(connection_prop->sock,connection_prop->cgi_buffer.data,connection_prop->cgi_buffer.len);
+            if (connection_prop->response.chunked)
+                dprintf(connection_prop->sock,"\r\n");
             connection_prop->status = STATUS_CGI_SEND_CONTENT;
             connection_prop->status_next = STATUS_CGI_FREE_RESOURCES;
             break;
@@ -861,7 +865,6 @@ static void do_cp_fd_sock(connection_t *connection_prop, int fd) {
     }
 
     ssize_t r = read(fd,buf,count);
-
     if (r==0) {//End of the file
 
         if (connection_prop->response.chunked)
@@ -1033,9 +1036,9 @@ int send_http_header(connection_t* connection_prop) {
     */
 
     if (connection_prop->protocol_version!=HTTP_1_1 && connection_prop->response.keep_alive==true) {
-        connection_header="Connection: Keep-Alive\r\n";
+        http_append_header(connection_prop,"Connection: Keep-Alive\r\n");
     } else if (connection_prop->protocol_version==HTTP_1_1 && connection_prop->response.keep_alive==false) {
-        connection_header="Connection: close\r\n";
+        http_append_header(connection_prop,"Connection: close\r\n");
     }
 
     len_head=snprintf(
@@ -1069,18 +1072,12 @@ int send_http_header(connection_t* connection_prop) {
         head+=len_head;
         left_head-=len_head;
     } else if (connection_prop->response.chunked) {
-        len_head=snprintf(head,left_head,"Transfer-Encoding: chunked\r\n");
-        head+=len_head;
-        left_head-=len_head;
+        http_append_header(connection_prop,"Transfer-Encoding: chunked\r\n");
     }
 
     //Creating ETag and date from timestamp
-    if (timestamp!=-1) {
-        //Sends ETag, if a timestamp is set
-        len_head = snprintf(head,left_head,"ETag: \"%d\"\r\n",(int)timestamp);
-        head+=len_head;
-        left_head-=len_head;
-    }
+    if (timestamp!=-1) 
+        http_append_header_int(connection_prop,"ETag: \"%d\"\r\n",(int)timestamp);
 #ifdef SEND_LAST_MODIFIED_HEADER
     else {//timestamp with now, to be eventually used by Last-Modified
         timestamp=time(NULL);
