@@ -70,6 +70,12 @@ void http_append_header_str(connection_t * connection_prop,const char* s,char* s
     string->len += snprintf(head,HEADBUF-string->len,s,s1);
 }
 
+void http_append_header_int(connection_t * connection_prop,const char* s,int d) {
+    string_t * string = get_string_t(connection_prop);
+    char *head=string->data+string->len;
+    string->len += snprintf(head,HEADBUF-string->len,s,d);
+}
+
 void http_append_header_str_str(connection_t * connection_prop,const char* s,char* s1,char* s2) {
     string_t * string = get_string_t(connection_prop);
     char *head=string->data+string->len;

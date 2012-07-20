@@ -38,6 +38,7 @@ static inline char *http_reason_phrase(int code);
 void http_append_header_str(connection_t * connection_prop,const char* s,char*);
 void http_append_header_str_str(connection_t * connection_prop,const char* s,char* s1,char* s2);
 void http_append_header_safe(connection_t * connection_prop,char* s);
+void http_append_header_int(connection_t * connection_prop,const char* s, int d);
 void http_append_header(connection_t * connection_prop,const char* s);
 void http_append_header_llu_llu_lld(connection_t * connection_prop, const char* s,unsigned long long int s1, unsigned long long int s2, long long int s3);
 
