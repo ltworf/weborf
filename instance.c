@@ -1008,76 +1008,22 @@ int send_http_header(connection_t* connection_prop) {
     size_t size = connection_prop->response.size;
     time_t timestamp = connection_prop->response.timestamp;
 
-    int len_head;
-    int bsize = strlen(http_reason_phrase(0)) +
-                strlen("Connection: Keep-Alive\r\n")+
-                strlen("HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\n%s") +
-                strlen("Content-Length: %llu\r\n" "Accept-Ranges: bytes\r\n") +
-                strlen("ETag: \"%d\"\r\n") +
-                strlen("Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n")+
-                20; //this magic 20 is spcace for the numeric size
-    char *head=malloc(bsize);
-    char* h_ptr=head;
-    int left_head=bsize;
+    http_set_connection_header(connection_prop);
 
-    char *connection_header=""; //Contains the "Connection" header
-
-    if (head==NULL) {
-#ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers");
-#endif
-        return HTTP_CODE_SERVICE_UNAVAILABLE;
-    }
-
-    /*Defines the Connection header
-    It will send the connection header if the setting is non-default
-    Ie: will send keep alive if keep-alive is enabled and protocol is not 1.1
-    And will send close if keep-alive isn't enabled and protocol is 1.1
-    */
-
-    if (connection_prop->protocol_version!=HTTP_1_1 && connection_prop->response.keep_alive==true) {
-        http_append_header(connection_prop,"Connection: Keep-Alive\r\n");
-    } else if (connection_prop->protocol_version==HTTP_1_1 && connection_prop->response.keep_alive==false) {
-        http_append_header(connection_prop,"Connection: close\r\n");
-    }
-
-    len_head=snprintf(
-                 head,
-                 HEADBUF,
-                 "HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\n%s",
-                 connection_prop->response.status_code,
-                 http_reason_phrase(connection_prop->response.status_code),
-                 connection_header
-             );
-    //This stuff moves the pointer to the buffer forward, and reduces the left space in the buffer itself
-    //Next snprintf will append their strings to the buffer, without overwriting.
-    head+=len_head;
-    left_head-=len_head;
-
-    //TODO send header for encoded content when final size is unknown
     if (size>0 || (connection_prop->response.keep_alive==true)) {
-        const char* length;
+        //TODO append these headers where they are created, not here
         if (connection_prop->response.size_type==LENGTH_CONTENT) {
-            length="Content-Length: %zu\r\n"
+            http_append_header_sizet(connection_prop,"Content-Length: %zu\r\n",size);
 #ifdef __RANGE
-                   "Accept-Ranges: bytes\r\n"
+            http_append_header(connection_prop,"Accept-Ranges: bytes\r\n");
 #endif
-                   ;
-
-        } else {
-            length = "entity-length: %zu\r\n";
-        }
-
-        len_head=snprintf(head,left_head,length ,size);
-        head+=len_head;
-        left_head-=len_head;
-    } else if (connection_prop->response.chunked) {
-        http_append_header(connection_prop,"Transfer-Encoding: chunked\r\n");
+        } else
+            http_append_header_sizet(connection_prop,"entity-length: %zu\r\n",size);
     }
 
     //Creating ETag and date from timestamp
-    if (timestamp!=-1) 
-        http_append_header_int(connection_prop,"ETag: \"%d\"\r\n",(int)timestamp);
+    if (timestamp!=-1)
+        http_append_header_d(connection_prop,"ETag: \"%d\"\r\n",(int)timestamp);
 #ifdef SEND_LAST_MODIFIED_HEADER
     else {//timestamp with now, to be eventually used by Last-Modified
         timestamp=time(NULL);
@@ -1088,14 +1034,14 @@ int send_http_header(connection_t* connection_prop) {
         //Sends Date
         struct tm  ts;
         localtime_r((time_t)&timestamp,&ts);
-        len_head = strftime(head,left_head, "Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n", &ts);
-        head+=len_head;
-        left_head-=len_head;
+        http_append_header_struct_tm(connection_prop,"Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n", &ts);
     }
 #endif
 
-    dprintf(sock,"%s%s\r\n",h_ptr, connection_prop->response.headers.data );
-    free(h_ptr);
+    dprintf(sock,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\n" "%s\r\n",
+            connection_prop->response.status_code,
+            http_reason_phrase(connection_prop->response.status_code),
+            connection_prop->response.headers.data);
     return 0;
 }
 

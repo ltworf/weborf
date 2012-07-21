@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "http.h"
 
@@ -52,7 +53,7 @@ void http_append_header(connection_t * connection_prop,const char* s) {
  * Appends an header.
  * Being safe means that the string might contain % sequences and that
  * will not create security problems.
- * 
+ *
  * Use this function with values coming from the outside.
  **/
 void http_append_header_safe(connection_t * connection_prop,char* s) {
@@ -74,7 +75,19 @@ void http_append_header_str(connection_t * connection_prop,const char* s,char* s
     string->len += snprintf(head,HEADBUF-string->len,s,s1);
 }
 
-void http_append_header_int(connection_t * connection_prop,const char* s,int d) {
+void http_append_header_struct_tm(connection_t * connection_prop, const char* s, const struct tm *ts) {
+    string_t * string = get_string_t(connection_prop);
+    char *head=string->data+string->len;
+    string->len += strftime(head,HEADBUF-string->len,s,ts);
+}
+
+void http_append_header_d(connection_t * connection_prop,const char* s,int d) {
+    string_t * string = get_string_t(connection_prop);
+    char *head=string->data+string->len;
+    string->len += snprintf(head,HEADBUF-string->len,s,d);
+}
+
+void http_append_header_sizet(connection_t * connection_prop,const char* s,size_t d) {
     string_t * string = get_string_t(connection_prop);
     char *head=string->data+string->len;
     string->len += snprintf(head,HEADBUF-string->len,s,d);

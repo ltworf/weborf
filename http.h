@@ -38,7 +38,9 @@ static inline char *http_reason_phrase(int code);
 void http_append_header_str(connection_t * connection_prop,const char* s,char*);
 void http_append_header_str_str(connection_t * connection_prop,const char* s,char* s1,char* s2);
 void http_append_header_safe(connection_t * connection_prop,char* s);
-void http_append_header_int(connection_t * connection_prop,const char* s, int d);
+void http_append_header_d(connection_t * connection_prop,const char* s, int d);
+void http_append_header_sizet(connection_t * connection_prop,const char* s, size_t d);
+void http_append_header_struct_tm(connection_t * connection_prop, const char* s, const struct tm *ts);
 void http_append_header(connection_t * connection_prop,const char* s);
 void http_append_header_llu_llu_lld(connection_t * connection_prop, const char* s,unsigned long long int s1, unsigned long long int s2, long long int s3);
 
@@ -47,6 +49,20 @@ time_t http_read_if_none_match(connection_t * connection_prop);
 time_t http_read_if_range(connection_t * connection_prop);
 bool http_read_deep(connection_t * connection_prop);
 bool http_read_range(connection_t * connection_prop, size_t *from, size_t *to);
+
+/**
+ * Defines the Connection header
+ * It will set the connection header if the setting is non-default
+ * Ie: will send keep alive if keep-alive is enabled and protocol is not 1.1
+ * And will send close if keep-alive isn't enabled and protocol is 1.1
+ **/
+static inline void http_set_connection_header(connection_t * connection_prop) {
+    if (connection_prop->protocol_version!=HTTP_1_1 && connection_prop->response.keep_alive==true) {
+        http_append_header(connection_prop,"Connection: Keep-Alive\r\n");
+    } else if (connection_prop->protocol_version==HTTP_1_1 && connection_prop->response.keep_alive==false) {
+        http_append_header(connection_prop,"Connection: close\r\n");
+    }
+}
 
 
 /**
@@ -205,10 +221,13 @@ static inline int http_set_connection_t(char* header,connection_t * connection_p
  * Used when the size of the response is unknown,
  * it tries to set chunked encoding,
  * otherwise it falls back to removing the keep alive.
+ * 
+ * If chuncked is set, the appropriate header is set too
  **/
 static inline void http_set_chunked(connection_t * connection_prop) {
     if (connection_prop->protocol_version == HTTP_1_1) {
         connection_prop->response.chunked=true;
+        http_append_header(connection_prop,"Transfer-Encoding: chunked\r\n");
     } else {
         connection_prop->response.keep_alive=false;
     }
