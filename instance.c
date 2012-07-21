@@ -1010,7 +1010,7 @@ int send_http_header(connection_t* connection_prop) {
 
     http_set_connection_header(connection_prop);
 
-    if (size>0 || (connection_prop->response.keep_alive==true)) {
+    if (size>0 || (connection_prop->response.keep_alive==true && connection_prop->response.chunked==false)) {
         //TODO append these headers where they are created, not here
         if (connection_prop->response.size_type==LENGTH_CONTENT) {
             http_append_header_sizet(connection_prop,"Content-Length: %zu\r\n",size);
