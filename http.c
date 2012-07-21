@@ -49,7 +49,11 @@ void http_append_header(connection_t * connection_prop,const char* s) {
 }
 
 /**
- * Appends an header
+ * Appends an header.
+ * Being safe means that the string might contain % sequences and that
+ * will not create security problems.
+ * 
+ * Use this function with values coming from the outside.
  **/
 void http_append_header_safe(connection_t * connection_prop,char* s) {
     string_t * string = get_string_t(connection_prop);

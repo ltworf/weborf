@@ -17,6 +17,7 @@
 - Added an option to print the capabilities of the server (useful for tools like qweborf)
 - Multiple instances of qweborf from the same user can operate in the same time
 - using pread() instead of emulating it with lseek()
+- support for chunked encoding
 
 - qweborf: checks if weborf supports authentication with socket
 - qweborf: uses the -B option, for an easier parsing
