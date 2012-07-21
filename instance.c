@@ -170,7 +170,7 @@ static inline void handle_request(connection_t* connection_prop) {
             break;
         case STATUS_COPY_FROM_POST_DATA_TO_SOCKET:
             // -> STATUS_PAGE_SENT || STATUS_ERR_NO_CONNECTION
-            connection_prop->status = STATUS_PAGE_SENT;
+            connection_prop->status_next = STATUS_PAGE_SENT;
             do_copy_from_post_to_fd(connection_prop,connection_prop->sock);
             break;
         case STATUS_SERVE_REQUEST:
