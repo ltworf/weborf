@@ -153,7 +153,7 @@ int mtime_spawn_listener() {
     pthread_attr_init(&t_attr);
     //pthread_attr_setdetachstate(&t_attr, PTHREAD_CREATE_DETACHED);
 
-    return pthread_create(&thread_id, &t_attr, mtime_listener, (void *)NULL);
+    return pthread_create(&thread_id, &t_attr, mtime_listener, NULL);
 
 }
 

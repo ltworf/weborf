@@ -69,7 +69,7 @@ void http_append_header_safe(connection_t * connection_prop,char* s) {
  *
  * WARNING: the header must contain one and only one %s
  **/
-void http_append_header_str(connection_t * connection_prop,const char* s,char* s1) {
+void http_append_header_str(connection_t * connection_prop,const char* s,const char* s1) {
     string_t * string = get_string_t(connection_prop);
     char *head=string->data+string->len;
     string->len += snprintf(head,HEADBUF-string->len,s,s1);

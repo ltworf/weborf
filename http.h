@@ -29,13 +29,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utils.h"
 
 #include <string.h>
+#include <time.h>
 
 
 static inline void http_set_chunked(connection_t * connection_prop);
 static inline int http_set_connection_t(char* header,connection_t * connection_prop);
 static inline char *http_reason_phrase(int code);
 
-void http_append_header_str(connection_t * connection_prop,const char* s,char*);
+void http_append_header_str(connection_t * connection_prop,const char* s,const char*);
 void http_append_header_str_str(connection_t * connection_prop,const char* s,char* s1,char* s2);
 void http_append_header_safe(connection_t * connection_prop,char* s);
 void http_append_header_d(connection_t * connection_prop,const char* s, int d);
@@ -101,7 +102,6 @@ static inline int http_set_connection_t(char* header,connection_t * connection_p
     connection_prop->response.chunked=false; //Always false by default
     connection_prop->response.timestamp=-1;
     connection_prop->response.size=0;
-    connection_prop->response.size_type=LENGTH_CONTENT;
     connection_prop->response.headers.len = 0;
     connection_prop->response.headers.data[0] =0;
     connection_prop->post_data.data=NULL;

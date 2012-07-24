@@ -106,6 +106,8 @@ be returned to the client if the xml is not valid. This is not the case
 in this funcion. It will accept many forms of invalid xml.
 
 The original string post_param->data will be modified.
+
+Returns 0 in case of success or the HTTP code error in case of failure
 */
 static inline int get_props(connection_t* connection_prop,u_dav_details *props) {
 
@@ -298,7 +300,7 @@ bool propfind(connection_t* connection_prop) {
     props.dav_details.type=1; //I need to avoid the struct to be fully 0 in each case
     int swap_fd; //swap file descriptor
 
-    {
+    { //TODO this code is duplicated.. should be possible to collapse it in only one place
         //This redirects directory without ending / to directory with the ending /
         int stat_r=stat(connection_prop->strfile, &connection_prop->strfile_stat);
 
@@ -323,7 +325,6 @@ bool propfind(connection_t* connection_prop) {
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
     connection_prop->response.keep_alive=false;
     connection_prop->response.status_code=WEBDAV_CODE_MULTISTATUS;
-    connection_prop->response.size_type=LENGTH_ENTITY;
     http_append_header(connection_prop,"Content-Type: text/xml; charset=\"utf-8\"\r\n");
     send_http_header(connection_prop);
 

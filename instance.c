@@ -157,7 +157,7 @@ static inline void handle_request(connection_t* connection_prop) {
             break; //TODO
         case STATUS_CGI_FLUSH_HEADER_BUFFER:
             if (connection_prop->response.chunked)
-                dprintf(connection_prop->sock,"%x\r\n",connection_prop->cgi_buffer.len);
+                dprintf(connection_prop->sock,"%x\r\n",(unsigned int)connection_prop->cgi_buffer.len);
             write(connection_prop->sock,connection_prop->cgi_buffer.data,connection_prop->cgi_buffer.len);
             if (connection_prop->response.chunked)
                 dprintf(connection_prop->sock,"\r\n");
@@ -401,7 +401,7 @@ static void prepare_put(connection_t *connection_prop) {
         connection_prop->response.status_code = HTTP_CODE_BAD_REQUEST;
         return;
     }
-    connection_prop->response.size =  content_length;
+    connection_prop->bytes_to_copy =  content_length;
 
     //Checks if file already exists or not (needed for response code)
     if (access(connection_prop->strfile,R_OK | W_OK)==0) {//Resource already existed (No content)
@@ -436,10 +436,10 @@ This function will not work if there is no auth provider.
 */
 static void do_put(connection_t* connection_prop) {
 
-    ssize_t written = buffer_flush_fd(connection_prop->strfile_fd,&connection_prop->read_b,connection_prop->response.size);
-    connection_prop->response.size -= written;
+    ssize_t written = buffer_flush_fd(connection_prop->strfile_fd,&connection_prop->read_b,connection_prop->bytes_to_copy);
+    connection_prop->bytes_to_copy -= written;
 
-    if (connection_prop->response.size!=0) {
+    if (connection_prop->bytes_to_copy!=0) {
         connection_prop->status = STATUS_WAIT_DATA;
         connection_prop->status_next = STATUS_PUT_METHOD;
     } else {
@@ -591,14 +591,8 @@ static void get_or_post(connection_t *connection_prop) {
 
         //Cyclyng through the indexes
         for (i=0; i<weborf_conf.indexes.len ; i++) {
-
-            if (URI_LEN-connection_prop->strfile_len-1 > weborf_conf.indexes.data_l[i]) {
-                memcpy(index_name,weborf_conf.indexes.data[i],weborf_conf.indexes.data_l[i]+1);
-            } else {
-                //TODO log the error for the too long path
-                continue;
-            }
-
+            
+            strncat(index_name,weborf_conf.indexes.data[i],URI_LEN-connection_prop->strfile_len-1);
 
             if (access(connection_prop->strfile,R_OK)==0) { //If index exists, redirect to it
                 http_append_header_str_str(connection_prop,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes.data[i]);
@@ -614,7 +608,6 @@ static void get_or_post(connection_t *connection_prop) {
 
     } else {//Requested an existing file
         if (weborf_conf.exec_script) { //Scripts enabled
-            //FIXME: refactory CGI
             size_t q_;
             int f_len;
             for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
@@ -1012,13 +1005,11 @@ int send_http_header(connection_t* connection_prop) {
 
     if (size>0 || (connection_prop->response.keep_alive==true && connection_prop->response.chunked==false)) {
         //TODO append these headers where they are created, not here
-        if (connection_prop->response.size_type==LENGTH_CONTENT) {
+        
             http_append_header_sizet(connection_prop,"Content-Length: %zu\r\n",size);
 #ifdef __RANGE
             http_append_header(connection_prop,"Accept-Ranges: bytes\r\n");
 #endif
-        } else
-            http_append_header_sizet(connection_prop,"entity-length: %zu\r\n",size);
     }
 
     //Creating ETag and date from timestamp
@@ -1057,7 +1048,7 @@ int send_http_header(connection_t* connection_prop) {
  * connection_prop->status_next = STATUS_TAR_DIRECTORY;
  **/
 static void prepare_tar_send_dir(connection_t* connection_prop) {
-    connection_prop->response.keep_alive=false;
+    
 
     //Last char is always '/', i null it so i can use default name
     connection_prop->strfile[--connection_prop->strfile_len]=0;
@@ -1069,7 +1060,7 @@ static void prepare_tar_send_dir(connection_t* connection_prop) {
     http_append_header_str(connection_prop,"Content-Disposition: attachment; filename=\"%s.tar.gz\"\r\n",dirname);
 
     connection_prop->response.status_code=200;
-    connection_prop->response.size_type=LENGTH_ENTITY;
+    connection_prop->response.keep_alive=false;
 
     connection_prop->status = STATUS_SEND_HEADERS;
     connection_prop->status_next = STATUS_TAR_DIRECTORY;
