@@ -300,7 +300,8 @@ bool propfind(connection_t* connection_prop) {
     props.dav_details.type=1; //I need to avoid the struct to be fully 0 in each case
     int swap_fd; //swap file descriptor
 
-    { //TODO this code is duplicated.. should be possible to collapse it in only one place
+    {
+        //TODO this code is duplicated.. should be possible to collapse it in only one place
         //This redirects directory without ending / to directory with the ending /
         int stat_r=stat(connection_prop->strfile, &connection_prop->strfile_stat);
 

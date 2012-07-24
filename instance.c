@@ -591,7 +591,7 @@ static void get_or_post(connection_t *connection_prop) {
 
         //Cyclyng through the indexes
         for (i=0; i<weborf_conf.indexes.len ; i++) {
-            
+
             strncat(index_name,weborf_conf.indexes.data[i],URI_LEN-connection_prop->strfile_len-1);
 
             if (access(connection_prop->strfile,R_OK)==0) { //If index exists, redirect to it
@@ -733,10 +733,10 @@ static void write_dir(char* real_basedir,connection_t* connection_prop) {
 
         Anyway it is not changed also when files are modified.
         */
-        connection_prop->response.status_code = HTTP_CODE_OK;
-
-        connection_prop->response.size = connection_prop->post_data.len;
         connection_prop->response.timestamp = connection_prop->strfile_stat.st_mtime;
+
+        http_append_header_sizet(connection_prop,"Content-Length: %zu\r\n",connection_prop->post_data.len);
+        connection_prop->response.status_code = HTTP_CODE_OK;
         cache_store_item(0,connection_prop,connection_prop->post_data.data,connection_prop->post_data.len);
 
         connection_prop->status = STATUS_SEND_HEADERS;
@@ -805,7 +805,11 @@ void prepare_get_file(connection_t* connection_prop) {
     }
 #endif
 
-    connection_prop->response.size=count;
+    http_append_header_sizet(connection_prop,"Content-Length: %zu\r\n",count);
+#ifdef __RANGE
+    http_append_header(connection_prop,"Accept-Ranges: bytes\r\n");
+#endif
+
     connection_prop->response.timestamp = connection_prop->strfile_stat.st_mtime;
 
     connection_prop->status = STATUS_SEND_HEADERS;
@@ -998,19 +1002,9 @@ needed, according to keep_alive and protocol_version of connection_prop
 */
 int send_http_header(connection_t* connection_prop) {
     int sock=connection_prop->sock;
-    size_t size = connection_prop->response.size;
     time_t timestamp = connection_prop->response.timestamp;
 
     http_set_connection_header(connection_prop);
-
-    if (size>0 || (connection_prop->response.keep_alive==true && connection_prop->response.chunked==false)) {
-        //TODO append these headers where they are created, not here
-        
-            http_append_header_sizet(connection_prop,"Content-Length: %zu\r\n",size);
-#ifdef __RANGE
-            http_append_header(connection_prop,"Accept-Ranges: bytes\r\n");
-#endif
-    }
 
     //Creating ETag and date from timestamp
     if (timestamp!=-1)
@@ -1048,7 +1042,7 @@ int send_http_header(connection_t* connection_prop) {
  * connection_prop->status_next = STATUS_TAR_DIRECTORY;
  **/
 static void prepare_tar_send_dir(connection_t* connection_prop) {
-    
+
 
     //Last char is always '/', i null it so i can use default name
     connection_prop->strfile[--connection_prop->strfile_len]=0;

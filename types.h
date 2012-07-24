@@ -135,10 +135,7 @@ typedef struct {
     bool keep_alive;            //True if we are using pipelining
     bool chunked;               //True if we are using chunked encoding
     http_response_codes_e status_code;   //HTTP status code
-
     time_t timestamp;           //Timestamp of the entity, set to -1 if unknown
-
-    size_t size;                //Size of the response, set to 0 if unknown
     string_t headers;           //String for the extra-headers to be added on the flight
 } response_t;
 

@@ -101,9 +101,8 @@ static inline int http_set_connection_t(char* header,connection_t * connection_p
 
     connection_prop->response.chunked=false; //Always false by default
     connection_prop->response.timestamp=-1;
-    connection_prop->response.size=0;
     connection_prop->response.headers.len = 0;
-    connection_prop->response.headers.data[0] =0;
+    connection_prop->response.headers.data[0] = 0;
     connection_prop->post_data.data=NULL;
     connection_prop->post_data.len=0;
     connection_prop->strfile_fd = -1;
@@ -221,7 +220,7 @@ static inline int http_set_connection_t(char* header,connection_t * connection_p
  * Used when the size of the response is unknown,
  * it tries to set chunked encoding,
  * otherwise it falls back to removing the keep alive.
- * 
+ *
  * If chuncked is set, the appropriate header is set too
  **/
 static inline void http_set_chunked(connection_t * connection_prop) {
