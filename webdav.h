@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "types.h"
 
-bool propfind(connection_t* connection_prop);
+void prepare_propfind(connection_t* connection_prop);
 int mkcol(connection_t* connection_prop);
 int copy_move(connection_t* connection_prop);
 #endif

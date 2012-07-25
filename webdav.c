@@ -205,8 +205,7 @@ If the file can't be opened in readonly mode, this function does nothing.
 Return value: 0 in case there were no errors in opening the file. Do not expect
 too much error checking from this function.
 */
-static inline int printprops(connection_t *connection_prop,u_dav_details props,char* file,char*filename,bool parent) {
-    int sock=connection_prop->sock;
+static inline int printprops(connection_t *connection_prop,u_dav_details props,char* file,char*filename,bool parent,int sock) {
     int p_len;
     struct stat stat_s;
 
@@ -288,78 +287,68 @@ authentication is enabled.
 RETURNS
 true if an header was sent TODO
 */
-bool propfind(connection_t* connection_prop) {
+void prepare_propfind(connection_t* connection_prop) {
     //Forbids the method if no authentication is in use
     if (weborf_conf.authsock==NULL) {
         connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
-        return false;
+        return;
     }
 
-    int sock=connection_prop->sock;
     u_dav_details props= {0};
     props.dav_details.type=1; //I need to avoid the struct to be fully 0 in each case
-    int swap_fd; //swap file descriptor
 
-    {
-        //TODO this code is duplicated.. should be possible to collapse it in only one place
+    { //TODO this code is duplicated.. should be possible to collapse it in only one place
+        
         //This redirects directory without ending / to directory with the ending /
         int stat_r=stat(connection_prop->strfile, &connection_prop->strfile_stat);
 
         if (stat_r!=0) {
             connection_prop->response.status_code = HTTP_CODE_PAGE_NOT_FOUND;
-            return false;
+            return;
         }
 
         if (S_ISDIR(connection_prop->strfile_stat.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             http_append_header_str(connection_prop,"Location: %s/\r\n",connection_prop->page);
             connection_prop->response.status_code=HTTP_CODE_MOVED_PERMANENTLY;
-            return false;
+            return;
         }
     } // End redirection
 
+    int result_fd;
     int retval=get_props(connection_prop,&props);//splitting props
     if (retval!=0) {
         connection_prop->response.status_code=retval;
-        return false;
+        return;
     }
 
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
-    connection_prop->response.keep_alive=false;
+    connection_prop->response.keep_alive=false; //TODO no longer true
     connection_prop->response.status_code=WEBDAV_CODE_MULTISTATUS;
     http_append_header(connection_prop,"Content-Type: text/xml; charset=\"utf-8\"\r\n");
-    send_http_header(connection_prop);
 
+    
+    
+    
     //Check if exists in cache
     if (cache_is_enabled()) {
-        if ((swap_fd=cache_get_item_fd(props.int_version,connection_prop))!=-1) {
-            //Sends the item stored in the cache
-            struct stat sb;
-            fstat(swap_fd,&sb);
-
-            fd_copy(swap_fd,sock, sb.st_size);
-
-            close(swap_fd);
-            return true;
-        } else { //Prepares for storing the item in cache, will be sent afterwards
-            //Get file descriptor of cache file
-            int cache_fd=cache_get_item_fd_wr(props.int_version,connection_prop);
-
-            //If we obtained that descriptor, replace socket with it
-            if (cache_fd!=-1) {
-                swap_fd=sock; //Stores the real socket
-                connection_prop->sock=sock=cache_fd;
-            } else
-                swap_fd=-1;
-        }
-
+        if (cache_send_item(props.int_version,connection_prop))
+            return;
+        
+        result_fd=cache_get_item_fd_wr(props.int_version,connection_prop);
+        
+    } else  { //FIXME
+        char template[] = "/tmp/weborf-dav-XXXXXX";
+        result_fd=mkstemp(template);
     }
-
+    
+    /////////////////////////////////GENERATES THE RESPONSE
+    
     //Sends header of xml response
-    dprintf(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
-    dprintf(sock,"<D:multistatus xmlns:D=\"DAV:\">");
+    dprintf(result_fd,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
+    dprintf(result_fd,"<D:multistatus xmlns:D=\"DAV:\">");
 
     //sends props about the requested file
-    printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true);
+    printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true,result_fd);
     if (props.dav_details.deep) {//Send children files
         DIR *dp = opendir(connection_prop->strfile); //Open dir
         char file[URI_LEN];
@@ -368,8 +357,7 @@ bool propfind(connection_t* connection_prop) {
         int return_code;
 
         if (dp == NULL) {//Error, unable to send because header was already sent
-            close(sock);
-            return true;
+            //FIXME
         }
 
         for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
@@ -385,32 +373,26 @@ bool propfind(connection_t* connection_prop) {
             snprintf(file,URI_LEN,"%s%s", connection_prop->strfile, entry.d_name);
 
             //Sends details about a file
-            printprops(connection_prop,props,file,entry.d_name,false);
+            printprops(connection_prop,props,file,entry.d_name,false,result_fd);
         }
 
         closedir(dp);
     }
 
     //ends multistatus
-    dprintf(sock,"</D:multistatus>");
+    dprintf(result_fd,"</D:multistatus>");
 
-    /*
-     * If we were able to get a file descriptor for the cache file, and cache is enabled,
-     * at this point the XMP has been saved into the cache but not sent to the client,
-     * so now we read from cache and send to the client
-     */
-    if (cache_is_enabled() && swap_fd!=-1) {
-        int cache_fd=sock;
-        connection_prop->sock=sock=swap_fd; //Restore sock to it's value
-
-        off_t prev_pos=lseek(cache_fd,0,SEEK_CUR); //Get size of the file
-        lseek(cache_fd,0,SEEK_SET);          //Set cursor to the beginning
-        fd_copy(cache_fd,sock,prev_pos);     //Send the file
-
-        close(cache_fd);
-    }
-
-    return true;
+    
+    ////////////////// ACTUALLY SENDING THE FILE
+    lseek(result_fd, 0, SEEK_SET); //Reset the file so it can be read again
+    
+    if (connection_prop->strfile_fd!=-1) printf ("ERROR in webdav.c, file descriptor leak\n"); //TODO check correctness
+    //close(connection_prop->strfile_fd);
+    connection_prop->strfile_fd=result_fd;
+    fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
+    prepare_get_file(connection_prop);
+    
+    return;
 }
 
 /**

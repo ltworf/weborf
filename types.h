@@ -58,6 +58,7 @@ typedef enum {
     HTTP_CODE_UNAUTHORIZED = 401,
     WEBDAV_CODE_MULTISTATUS = 207,
     HTTP_CODE_DISCONNECTED = 1000,
+    HTTP_CODE_NONE = 0,
 } http_response_codes_e;
 
 typedef enum {

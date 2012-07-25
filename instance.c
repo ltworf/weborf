@@ -67,7 +67,7 @@ extern pthread_key_t thread_key;            //key for pthread_setspecific
 int request_auth(connection_t *connection_prop);
 static void write_dir(char *real_basedir, connection_t * connection_prop);
 void read_post_data(connection_t * connection_prop);
-static int serve_request(connection_t* connection_prop);
+static void serve_request(connection_t* connection_prop);
 static int send_error_header(connection_t *connection_prop);
 static void get_or_post(connection_t *connection_prop);
 static inline void read_req_headers(connection_t* connection_prop);
@@ -289,6 +289,7 @@ static inline int thr_init_connect_prop(connection_t *connection_prop) {
 
     connection_prop->response.headers.data = malloc(HEADBUF);
     connection_prop->response.headers.len = 0;
+    connection_prop->response.status_code = HTTP_CODE_NONE;
 
     connection_prop->strfile=malloc(URI_LEN);    //buffer for filename
 
@@ -508,44 +509,37 @@ static inline int options (connection_t* connection_prop) {
 /**
  * TODO
  **/
-static int serve_request(connection_t* connection_prop) {
-    bool header_sent=true;
-
+static void serve_request(connection_t* connection_prop) {
     switch (connection_prop->request.method_id) {
     case POST:
 
     case GET:
         get_or_post(connection_prop);
-        return 0;
+        break;
     case PUT:
         prepare_put(connection_prop);
-        return 0;
+        break;
     case DELETE:
         delete_file(connection_prop);
-        return 0;
+        break;
     case OPTIONS:
         options(connection_prop);
-        return 0;
+        break;
 #ifdef WEBDAV
     case PROPFIND:
-        header_sent=propfind(connection_prop);
+        prepare_propfind(connection_prop);
         break;
     case MKCOL:
         mkcol(connection_prop);
-        return 0;
+        break;
     case COPY:
     case MOVE:
         copy_move(connection_prop);
-        return 0;
+        break;
 #endif
     }
 
-    if (!header_sent) {
-        connection_prop->status = STATUS_ERR;
-    } else {
-        connection_prop->status= STATUS_PAGE_SENT;
-    }
-    return 0;
+    return;
 }
 
 /**
@@ -553,10 +547,6 @@ static int serve_request(connection_t* connection_prop) {
  * the simple file, and if the request points to a directory it will redirect to
  * the appropriate index file or show the list of the files.
  *
- * RETURNS:
- *
- * true: if an header was sent
- * false: otherwise
  * */
 static void get_or_post(connection_t *connection_prop) {
     if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY))<0) {
@@ -746,7 +736,11 @@ static void write_dir(char* real_basedir,connection_t* connection_prop) {
 }
 
 /**
- * TODO:
+ * TODO
+ * 
+ * Response code will not be changed unless errors occurs, or it
+ * is already equal to HTTP_CODE_NONE, which is not an HTTP code,
+ * so it will replaced with an HTTP_CODE_OK
  * */
 void prepare_get_file(connection_t* connection_prop) {
 
@@ -761,7 +755,8 @@ void prepare_get_file(connection_t* connection_prop) {
         return;
     }
 
-    connection_prop->response.status_code=HTTP_CODE_OK;
+    if (connection_prop->response.status_code==HTTP_CODE_NONE)
+        connection_prop->response.status_code=HTTP_CODE_OK;
 
 #ifdef __RANGE
 
