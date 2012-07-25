@@ -288,11 +288,6 @@ RETURNS
 true if an header was sent TODO
 */
 void prepare_propfind(connection_t* connection_prop) {
-    //Forbids the method if no authentication is in use
-    if (weborf_conf.authsock==NULL) {
-        connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
-        return;
-    }
 
     u_dav_details props= {0};
     props.dav_details.type=1; //I need to avoid the struct to be fully 0 in each case
@@ -403,11 +398,6 @@ Never sends anything
 */
 int mkcol(connection_t* connection_prop) {
     connection_prop->status = STATUS_ERR;
-
-    if (weborf_conf.authsock==NULL) {
-        connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
-        return -1;
-    }
 
     int res=mkdir(connection_prop->strfile,S_IRWXU | S_IRWXG | S_IRWXO);
 

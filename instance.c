@@ -99,7 +99,12 @@ static inline void handle_request(connection_t* connection_prop) {
                 connection_prop->response.status_code = HTTP_CODE_UNAUTHORIZED;
                 connection_prop->status = STATUS_ERR;
             } else {
-                connection_prop->status = STATUS_READY_TO_SEND;
+                if (connection_prop->request.method_id == GET || connection_prop->request.method_id == POST || connection_prop->request.method_id ==OPTIONS)
+                    connection_prop->status = STATUS_READY_TO_SEND;
+                else {
+                    connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
+                    connection_prop->status = STATUS_ERR;
+                }
             }
             break;
         case STATUS_WAIT_DATA:
@@ -377,10 +382,6 @@ release_resources:
  * Prepares for PUT method, reading the headers, opening the file descriptors
  **/
 static void prepare_put(connection_t *connection_prop) {
-    if (weborf_conf.authsock==NULL) {
-        connection_prop->response.status_code= HTTP_CODE_FORBIDDEN;
-        return;
-    }
 
     //Checking if there is any unsupported Content-* header. In this case return 501 (Not implemented)
     {
@@ -461,11 +462,6 @@ This function will not work if there is no auth provider.
 int delete_file(connection_t* connection_prop) {
     connection_prop->status = STATUS_ERR;
     int retval;
-
-    if (weborf_conf.authsock==NULL) {
-        connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
-        return -1;
-    }
 
     //connection_prop->strfile
     struct stat stat_d;
