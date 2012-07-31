@@ -292,8 +292,9 @@ void prepare_propfind(connection_t* connection_prop) {
     u_dav_details props= {0};
     props.dav_details.type=1; //I need to avoid the struct to be fully 0 in each case
 
-    { //TODO this code is duplicated.. should be possible to collapse it in only one place
-        
+    {
+        //TODO this code is duplicated.. should be possible to collapse it in only one place
+
         //This redirects directory without ending / to directory with the ending /
         int stat_r=stat(connection_prop->strfile, &connection_prop->strfile_stat);
 
@@ -321,23 +322,22 @@ void prepare_propfind(connection_t* connection_prop) {
     connection_prop->response.status_code=WEBDAV_CODE_MULTISTATUS;
     http_append_header(connection_prop,"Content-Type: text/xml; charset=\"utf-8\"\r\n");
 
-    
-    
-    
+
+
+
     //Check if exists in cache
     if (cache_is_enabled()) {
         if (cache_send_item(props.int_version,connection_prop))
             return;
-        
+
         result_fd=cache_get_item_fd_wr(props.int_version,connection_prop);
-        
-    } else  { //FIXME
-        char template[] = "/tmp/weborf-dav-XXXXXX";
-        result_fd=mkstemp(template);
+
+    } else  {
+        result_fd = myio_mktmp();
     }
-    
+
     /////////////////////////////////GENERATES THE RESPONSE
-    
+
     //Sends header of xml response
     dprintf(result_fd,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
     dprintf(result_fd,"<D:multistatus xmlns:D=\"DAV:\">");
@@ -377,16 +377,16 @@ void prepare_propfind(connection_t* connection_prop) {
     //ends multistatus
     dprintf(result_fd,"</D:multistatus>");
 
-    
+
     ////////////////// ACTUALLY SENDING THE FILE
     lseek(result_fd, 0, SEEK_SET); //Reset the file so it can be read again
-    
+
     if (connection_prop->strfile_fd!=-1) printf ("ERROR in webdav.c, file descriptor leak\n"); //TODO check correctness
     //close(connection_prop->strfile_fd);
     connection_prop->strfile_fd=result_fd;
     fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
     prepare_get_file(connection_prop);
-    
+
     return;
 }
 

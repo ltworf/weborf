@@ -273,4 +273,23 @@ escape:
     }
     return retval;
 }
+
+/**
+ * Creates a temporary file, opened for read and write
+ * and returns the file descriptor.
+ *
+ * The file will be deleted immediately after the close()
+ **/
+int myio_mktmp() {
+    int fd;
+
+    char template[] = "/tmp/weborf-temp-XXXXXX"; //TODO use env var for tmp directory
+    fd=mkstemp(template);
+
+    unlink(template);
+
+    return fd;
+
+}
+
 #endif

@@ -94,8 +94,11 @@ static inline void handle_request(connection_t* connection_prop) {
         switch (connection_prop->status) {
 
         case STATUS_CHECK_AUTH:
+            //FIXME for now authorizes anything
+            connection_prop->status = STATUS_READY_TO_SEND;
+            
             // -> STATUS_READY_TO_SEND
-            if (auth_check_request(connection_prop)!=0) { //If auth is required
+            /*if (auth_check_request(connection_prop)!=0) { //If auth is required
                 connection_prop->response.status_code = HTTP_CODE_UNAUTHORIZED;
                 connection_prop->status = STATUS_ERR;
             } else {
@@ -105,7 +108,7 @@ static inline void handle_request(connection_t* connection_prop) {
                     connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
                     connection_prop->status = STATUS_ERR;
                 }
-            }
+            }*/
             break;
         case STATUS_WAIT_DATA:
             r=buffer_fill(connection_prop->sock,&(connection_prop->read_b));
@@ -159,7 +162,7 @@ static inline void handle_request(connection_t* connection_prop) {
             break;
         case STATUS_CGI_SEND_CONTENT:
             do_cp_fd_sock(connection_prop,connection_prop->fd_from_cgi);
-            break; //TODO
+            break;
         case STATUS_CGI_FLUSH_HEADER_BUFFER:
             if (connection_prop->response.chunked)
                 dprintf(connection_prop->sock,"%x\r\n",(unsigned int)connection_prop->cgi_buffer.len);
@@ -391,6 +394,7 @@ static void prepare_put(connection_t *connection_prop) {
         while ((header=strstr(header,"Content-"))!=NULL) {
             if (strncmp(header,content_length,strlen(content_length))!=0) {
                 connection_prop->response.status_code = HTTP_CODE_NOT_IMPLEMENTED;
+                connection_prop->status = STATUS_ERR;
                 return;
             }
             header++;
@@ -523,6 +527,7 @@ static void serve_request(connection_t* connection_prop) {
         break;
 #ifdef WEBDAV
     case PROPFIND:
+        printf("alive\n");
         prepare_propfind(connection_prop);
         break;
     case MKCOL:
@@ -733,7 +738,7 @@ static void write_dir(char* real_basedir,connection_t* connection_prop) {
 
 /**
  * TODO
- * 
+ *
  * Response code will not be changed unless errors occurs, or it
  * is already equal to HTTP_CODE_NONE, which is not an HTTP code,
  * so it will replaced with an HTTP_CODE_OK

@@ -33,6 +33,8 @@ int file_copy(char* source, char* dest);
 int file_move(char* source, char* dest);
 int dir_move (char* source, char* dest);
 int dir_copy (char* source, char* dest);
+
+int myio_mktmp();
 #endif
 
 #endif
