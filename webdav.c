@@ -300,12 +300,14 @@ void prepare_propfind(connection_t* connection_prop) {
 
         if (stat_r!=0) {
             connection_prop->response.status_code = HTTP_CODE_PAGE_NOT_FOUND;
+            connection_prop->status = STATUS_ERR;
             return;
         }
 
         if (S_ISDIR(connection_prop->strfile_stat.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             http_append_header_str(connection_prop,"Location: %s/\r\n",connection_prop->page);
             connection_prop->response.status_code=HTTP_CODE_MOVED_PERMANENTLY;
+            connection_prop->status = STATUS_ERR;
             return;
         }
     } // End redirection
@@ -314,6 +316,7 @@ void prepare_propfind(connection_t* connection_prop) {
     int retval=get_props(connection_prop,&props);//splitting props
     if (retval!=0) {
         connection_prop->response.status_code=retval;
+        connection_prop->status = STATUS_ERR;
         return;
     }
 
@@ -321,8 +324,6 @@ void prepare_propfind(connection_t* connection_prop) {
     connection_prop->response.keep_alive=false; //TODO no longer true
     connection_prop->response.status_code=WEBDAV_CODE_MULTISTATUS;
     http_append_header(connection_prop,"Content-Type: text/xml; charset=\"utf-8\"\r\n");
-
-
 
 
     //Check if exists in cache
@@ -344,7 +345,7 @@ void prepare_propfind(connection_t* connection_prop) {
 
     //sends props about the requested file
     printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true,result_fd);
-    if (props.dav_details.deep) {//Send children files
+    if (props.dav_details.deep && S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Send children files
         DIR *dp = opendir(connection_prop->strfile); //Open dir
         char file[URI_LEN];
         struct dirent entry;
