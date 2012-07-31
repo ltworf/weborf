@@ -25,5 +25,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void prepare_propfind(connection_t* connection_prop);
 int mkcol(connection_t* connection_prop);
-int copy_move(connection_t* connection_prop);
+void copy_move(connection_t* connection_prop);
 #endif

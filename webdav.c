@@ -437,7 +437,7 @@ int mkcol(connection_t* connection_prop) {
 /**
 Webdav method copy.
 */
-int copy_move(connection_t* connection_prop) {
+void copy_move(connection_t* connection_prop) {
     struct stat f_prop; //File's property
     bool check_exists=false;
     int retval=0;
@@ -448,7 +448,7 @@ int copy_move(connection_t* connection_prop) {
     char* host=malloc(3*PATH_LEN+12);
     if (host==NULL) {
         connection_prop->response.status_code = HTTP_CODE_SERVICE_UNAVAILABLE;
-        return -1;
+        return;
     }
     char* dest=host+PATH_LEN;
     char* overwrite=dest+PATH_LEN;
@@ -513,7 +513,7 @@ int copy_move(connection_t* connection_prop) {
     }
 escape:
     free(host);
-    return retval;
+    return;
 }
 
 #endif
