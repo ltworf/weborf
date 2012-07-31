@@ -338,3 +338,33 @@ void configuration_load(int argc, char *argv[]) {
 
     configuration_force_cache_correctness(cache_correctness);
 }
+
+/**
+ * Returns the path of the CGI binary to run in case
+ * it has to be run,
+ * returns NULL if no CGI has to be used for the request
+ **/
+const char * configuration_get_cgi(connection_t * connection_prop) {
+
+    if (weborf_conf.exec_script) { //Scripts enabled
+        size_t q_;
+        int f_len;
+        for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
+
+            f_len=weborf_conf.cgi_paths.data_l[q_];
+
+            if (f_len> connection_prop->page_len)
+                continue;
+
+            int c = strncmp(weborf_conf.cgi_paths.data[q_],
+                            connection_prop->page - f_len + connection_prop->page_len,
+                            f_len);
+
+            if (c==0) {
+                return weborf_conf.cgi_paths.data[++q_];
+            }
+        }
+    }
+
+    return NULL;
+}

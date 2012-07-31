@@ -96,7 +96,7 @@ static inline void handle_request(connection_t* connection_prop) {
         case STATUS_CHECK_AUTH:
             //FIXME for now authorizes anything
             connection_prop->status = STATUS_READY_TO_SEND;
-            
+
             // -> STATUS_READY_TO_SEND
             /*if (auth_check_request(connection_prop)!=0) { //If auth is required
                 connection_prop->response.status_code = HTTP_CODE_UNAUTHORIZED;
@@ -405,6 +405,7 @@ static void prepare_put(connection_t *connection_prop) {
 
     if (content_length==-1) { //Error if there is no content-length header
         connection_prop->response.status_code = HTTP_CODE_BAD_REQUEST;
+        connection_prop->status = STATUS_ERR;
         return;
     }
     connection_prop->bytes_to_copy =  content_length;
@@ -419,6 +420,7 @@ static void prepare_put(connection_t *connection_prop) {
     connection_prop->strfile_fd = open(connection_prop->strfile,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR);
     if (connection_prop->strfile_fd<0) {
         connection_prop->response.status_code = HTTP_CODE_PAGE_NOT_FOUND;
+        connection_prop->status = STATUS_ERR;
         return;
     }
 
@@ -443,6 +445,7 @@ This function will not work if there is no auth provider.
 static void do_put(connection_t* connection_prop) {
 
     ssize_t written = buffer_flush_fd(connection_prop->strfile_fd,&connection_prop->read_b,connection_prop->bytes_to_copy);
+    //TODO check for errors
     connection_prop->bytes_to_copy -= written;
 
     if (connection_prop->bytes_to_copy!=0) {
@@ -527,7 +530,6 @@ static void serve_request(connection_t* connection_prop) {
         break;
 #ifdef WEBDAV
     case PROPFIND:
-        printf("alive\n");
         prepare_propfind(connection_prop);
         break;
     case MKCOL:
@@ -598,20 +600,12 @@ static void get_or_post(connection_t *connection_prop) {
         return;
 
     } else {//Requested an existing file
-        if (weborf_conf.exec_script) { //Scripts enabled
-            size_t q_;
-            int f_len;
-            for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
-                f_len=weborf_conf.cgi_paths.data_l[q_];
-                if (endsWith(connection_prop->page+connection_prop->page_len-f_len,weborf_conf.cgi_paths.data[q_],f_len,f_len)) {
-                    cgi_exec_page(weborf_conf.cgi_paths.data[++q_],connection_prop);
-                    return;
-                }
-            }
+        const char * executor = configuration_get_cgi(connection_prop);
+        if (executor==NULL) {
+            prepare_get_file(connection_prop);
+        } else {
+            cgi_exec_page(executor,connection_prop);
         }
-
-        //send normal file, control reaches this point if scripts are disabled or if the filename doesn't trigger CGI
-        prepare_get_file(connection_prop);
     }
 }
 

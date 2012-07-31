@@ -347,6 +347,7 @@ void prepare_propfind(connection_t* connection_prop) {
     printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true,result_fd);
     if (props.dav_details.deep && S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Send children files
         DIR *dp = opendir(connection_prop->strfile); //Open dir
+        //TODO check result
         char file[URI_LEN];
         struct dirent entry;
         struct dirent *result;
