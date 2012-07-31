@@ -94,21 +94,13 @@ static inline void handle_request(connection_t* connection_prop) {
         switch (connection_prop->status) {
 
         case STATUS_CHECK_AUTH:
-            //FIXME for now authorizes anything
-            connection_prop->status = STATUS_READY_TO_SEND;
-
             // -> STATUS_READY_TO_SEND
-            /*if (auth_check_request(connection_prop)!=0) { //If auth is required
+            if (auth_check_request(connection_prop)!=0) { //If auth is required
                 connection_prop->response.status_code = HTTP_CODE_UNAUTHORIZED;
                 connection_prop->status = STATUS_ERR;
             } else {
-                if (connection_prop->request.method_id == GET || connection_prop->request.method_id == POST || connection_prop->request.method_id ==OPTIONS)
-                    connection_prop->status = STATUS_READY_TO_SEND;
-                else {
-                    connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
-                    connection_prop->status = STATUS_ERR;
-                }
-            }*/
+                connection_prop->status = STATUS_READY_TO_SEND;
+            }
             break;
         case STATUS_WAIT_DATA:
             r=buffer_fill(connection_prop->sock,&(connection_prop->read_b));

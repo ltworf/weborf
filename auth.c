@@ -70,11 +70,25 @@ void auth_set_socket(char *u_socket) {
 
 
 /**
-This function checks if the authentication can be granted or not calling the external program.
-Returns 0 if authorization is granted.
-*/
+ * This function checks if the authentication can be granted or not calling the
+ * external program.
+ *
+ * If no external authentication program is provided, authorizes all GET, POST
+ * and OPTIONS and denies the rest.
+ *
+ * Returns 0 if authorization is granted.
+ **/
 int auth_check_request(connection_t *connection_prop) {
-    if (weborf_conf.authsock==NULL) return 0;
+    if (weborf_conf.authsock==NULL) {
+        switch (connection_prop->request.method_id) {
+            case GET:
+            case POST:
+            case OPTIONS:
+                return 0;
+            default:
+                return -1;
+        }
+    }
 
     char username[PWDLIMIT*2];
     char *password=username; //will be changed if there is a password
