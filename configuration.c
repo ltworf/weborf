@@ -348,7 +348,7 @@ const char * configuration_get_cgi(connection_t * connection_prop) {
 
     if (weborf_conf.exec_script) { //Scripts enabled
         size_t q_;
-        int f_len;
+        size_t f_len;
         for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
 
             f_len=weborf_conf.cgi_paths.data_l[q_];

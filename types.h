@@ -65,6 +65,7 @@ typedef enum {
     STATUS_WAIT_HEADER,
     STATUS_READY_TO_SEND,
     STATUS_CHECK_AUTH,
+    STATUS_INIT_CHECK_AUTH,
     STATUS_END,
     STATUS_ERR,
     STATUS_ERR_NO_CONNECTION,
@@ -119,7 +120,7 @@ typedef struct {
 typedef struct {
     size_t len;                //length of the array
     char *data[MAXINDEXCOUNT];  //Array containing pointers
-    int data_l[MAXINDEXCOUNT];  //Array containing len of strings
+    size_t data_l[MAXINDEXCOUNT];  //Array containing len of strings
 } array_ll;
 
 typedef struct {
