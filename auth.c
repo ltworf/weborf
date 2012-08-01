@@ -107,7 +107,6 @@ int auth_check_request(connection_t *connection_prop) {
                   connection_prop->http_param);
 #else
     int s,len;
-    FILE *f;
 
     struct sockaddr_un remote;
     s=socket(AF_UNIX,SOCK_STREAM,0);
@@ -116,14 +115,11 @@ int auth_check_request(connection_t *connection_prop) {
     strcpy(remote.sun_path, weborf_conf.authsock);
     len = strlen(remote.sun_path) + sizeof(remote.sun_family);
     if (connect(s, (struct sockaddr *)&remote, len) == -1) {//Unable to connect
+        //TODO log the problem
         return -1;
     }
 
-    if ((f=fdopen(s,"r+"))==NULL) {
-        return -1;
-    }
-
-    fprintf(f,
+    dprintf(s,
             "%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",
             connection_prop->page,
             connection_prop->ip_addr,
@@ -133,11 +129,11 @@ int auth_check_request(connection_t *connection_prop) {
             connection_prop->http_param);
 
     char b;
-    if (fread(&b,1,1,f)==0) {//All data written and no output, ok
+    if (read(s,&b,1)==0) {//All data written and no output, ok
         result=0;
     }
 
-    fclose(f);
+    close(s);
 
 #endif
 
