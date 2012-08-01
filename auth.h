@@ -26,5 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void auth_set_socket(char *u_socket);
 int auth_check_request(connection_t* connection_prop);
+void auth_init_check_request(connection_t *connection_prop);
 
 #endif

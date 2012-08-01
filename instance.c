@@ -93,6 +93,12 @@ static inline void handle_request(connection_t* connection_prop) {
     while(true) {
         switch (connection_prop->status) {
 
+        case STATUS_INIT_CHECK_AUTH:
+
+            auth_init_check_request(connection_prop);
+
+            connection_prop->status = STATUS_CHECK_AUTH;
+            break;
         case STATUS_CHECK_AUTH:
             // -> STATUS_READY_TO_SEND
             if (auth_check_request(connection_prop)!=0) { //If auth is required
@@ -111,7 +117,7 @@ static inline void handle_request(connection_t* connection_prop) {
 
             break;
         case STATUS_WAIT_HEADER:
-            // -> STATUS_CHECK_AUTHs
+            // -> STATUS_INIT_CHECK_AUTHs
             read_req_headers(connection_prop);
             break;
         case STATUS_PAGE_SENT:
@@ -254,7 +260,7 @@ static inline void read_req_headers(connection_t* connection_prop) {
     syslog(LOG_INFO,"Requested page: %s to Thread %ld",connection_prop->page,id);
 #endif
 
-    connection_prop->status = STATUS_CHECK_AUTH;
+    connection_prop->status = STATUS_INIT_CHECK_AUTH;
     return;
 
 bad_request:
