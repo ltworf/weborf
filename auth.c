@@ -130,6 +130,8 @@ int auth_check_request(connection_t *connection_prop) {
         }
     }
 
+    int result=-1;
+
 #ifdef EMBEDDED_AUTH
 
     char username[PWDLIMIT*2];
@@ -146,7 +148,6 @@ int auth_check_request(connection_t *connection_prop) {
                   connection_prop->http_param);
 #else
 
-    int result=-1;
     int s=connection_prop->strfile_fd;
 
     char b;
