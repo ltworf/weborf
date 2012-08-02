@@ -270,7 +270,7 @@ void help() {
            "  -C, --cache        sets the directory to use for cache files\n"
            "  -c, --cgi          list of cgi files and binary to execute them comma-separated\n"
            "  -d                 run as a daemon\n"
-           "  -f  --fastcache    makes cache less correct but faster (see manpage)"
+           "  -f  --fastcache    makes cache less correct but faster (see manpage)\n"
            "  -h, --help         display this help and exit\n"
            "  -I, --index        list of index files, comma-separated\n"
            "  -i, --ip           followed by IP address to listen (dotted format)\n"
