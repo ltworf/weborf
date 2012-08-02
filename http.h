@@ -99,6 +99,7 @@ static inline char *http_reason_phrase(int code) {
  **/
 static inline int http_set_connection_t(char* header,connection_t * connection_prop) {
 
+    connection_prop->response.status_code = HTTP_CODE_NONE;
     connection_prop->response.chunked=false; //Always false by default
     connection_prop->response.timestamp=-1;
     connection_prop->response.headers.len = 0;
