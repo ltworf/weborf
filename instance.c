@@ -162,11 +162,13 @@ static inline void handle_request(connection_t* connection_prop) {
             do_cp_fd_sock(connection_prop,connection_prop->fd_from_cgi);
             break;
         case STATUS_CGI_FLUSH_HEADER_BUFFER:
-            if (connection_prop->response.chunked)
-                dprintf(connection_prop->sock,"%x\r\n",(unsigned int)connection_prop->cgi_buffer.len);
-            write(connection_prop->sock,connection_prop->cgi_buffer.data,connection_prop->cgi_buffer.len);
-            if (connection_prop->response.chunked)
-                dprintf(connection_prop->sock,"\r\n");
+            if (connection_prop->cgi_buffer.len>0) {
+                if (connection_prop->response.chunked)
+                    dprintf(connection_prop->sock,"%x\r\n",(unsigned int)connection_prop->cgi_buffer.len);
+                write(connection_prop->sock,connection_prop->cgi_buffer.data,connection_prop->cgi_buffer.len);
+                if (connection_prop->response.chunked)
+                    dprintf(connection_prop->sock,"\r\n");
+            }
             connection_prop->status = STATUS_CGI_SEND_CONTENT;
             connection_prop->status_next = STATUS_CGI_FREE_RESOURCES;
             break;
