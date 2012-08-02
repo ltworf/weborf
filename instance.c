@@ -1033,12 +1033,15 @@ int send_http_header(connection_t* connection_prop) {
  **/
 static void prepare_tar_send_dir(connection_t* connection_prop) {
 
+    char *dirname;
 
     //Last char is always '/', i null it so i can use default name
-    connection_prop->strfile[--connection_prop->strfile_len]=0;
-
-    char* dirname=strrchr(connection_prop->strfile,'/')+1;
-    if (strlen(dirname)==0) dirname="directory";
+    if (connection_prop->strfile_len==1) {
+        dirname="directory";
+    } else {
+        connection_prop->strfile[--connection_prop->strfile_len]=0;
+        dirname=strrchr(connection_prop->strfile,'/')+1;
+    }
 
     http_append_header(connection_prop,"Content-Type: application/x-gzip\r\n");
     http_append_header_str(connection_prop,"Content-Disposition: attachment; filename=\"%s.tar.gz\"\r\n",dirname);
