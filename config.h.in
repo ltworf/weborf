@@ -13,6 +13,18 @@
    */
 #undef HAVE_DIRENT_H
 
+/* Define to 1 if you have the `dup2' function. */
+#undef HAVE_DUP2
+
+/* Define to 1 if you have the `epoll_create' function. */
+#undef HAVE_EPOLL_CREATE
+
+/* Define to 1 if you have the `epoll_ctl' function. */
+#undef HAVE_EPOLL_CTL
+
+/* Define to 1 if you have the `epoll_wait' function. */
+#undef HAVE_EPOLL_WAIT
+
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 

@@ -19,6 +19,7 @@ weborf_SOURCES = \
     mtime_update.c \
     myio.c \
     mynet.c \
+    mypoll.c \
     mystring.c \
     queue.c \
     utils.c \
@@ -45,6 +46,7 @@ EXTRA_DIST = \
     mtime_update_fake.c \
     mtime_update_inotify.c \
     myio.h \
+    mypoll.h \
     mystring.h \
     queue.h \
     utils.h \
