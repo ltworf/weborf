@@ -105,7 +105,9 @@ int arraylist_append(arraylist_t* lst,void* item) {
     
     int index = lst->size;
     int offset = arraylist_offset(lst,index);
-    memccpy(lst->list+offset,item,lst->element);
+    memcpy(lst->list+offset,
+            item,
+            lst->element);
     lst->size++;
     return index;
 }
@@ -124,7 +126,7 @@ void* arraylist_get(arraylist_t*lst, unsigned int index) {
  **/
 void arraylist_remove_last(arraylist_t*lst) {
     lst->size--;
-    arraylist_check_exceeding_space();
+    arraylist_check_exceeding_space(lst);
 }
 
 /**
@@ -133,5 +135,7 @@ void arraylist_remove_last(arraylist_t*lst) {
  * both elements must already exist, the size of the list will not be changed
  **/
 void arraylist_copy_item(arraylist_t*lst,unsigned int src,unsigned int dest) {
-    memccpy(lst->list + arraylist_offset(lst,dest),lst->list + arraylist_offset(lst,src),lst->element);
+    memcpy(lst->list + arraylist_offset(lst,dest),
+            lst->list + arraylist_offset(lst,src),
+            lst->element);
 }
