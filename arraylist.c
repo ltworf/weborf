@@ -75,9 +75,9 @@ static inline int arraylist_offset(arraylist_t*lst,int index) {
  * element: size of the elements of the list
  * suggested_size: initial size, must always be greater than 0
  * 
- * returns true in case of success
+ * returns 0 in case of success
  **/
-bool arraylist_create(arraylist_t* lst, size_t element, size_t suggested_size) {
+int arraylist_create(arraylist_t* lst, size_t element, size_t suggested_size) {
     lst->size=0;
     lst->list = calloc(suggested_size,element);
     lst->storage = suggested_size;

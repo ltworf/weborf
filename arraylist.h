@@ -32,7 +32,7 @@ typedef struct {
     void * list;
 } arraylist_t;
 
-bool arraylist_create(arraylist_t* lst, size_t element, size_t suggested_size);
+int arraylist_create(arraylist_t* lst, size_t element, size_t suggested_size);
 void arraylist_free(arraylist_t* lst);
 int arraylist_append(arraylist_t* lst,void* item);
 void* arraylist_get(arraylist_t*lst, unsigned int index);

@@ -5,6 +5,7 @@ SUBDIRS = cgi_wrapper
 
 bin_PROGRAMS = weborf
 weborf_SOURCES = \
+    arraylist.c \
     auth.c \
     base64.c \
     buffered_reader.c \
@@ -27,6 +28,7 @@ weborf_SOURCES = \
     
 
 EXTRA_DIST = \
+    arraylist.h \
     auth.h \
     buffered_reader.h \
     cgi.h \
