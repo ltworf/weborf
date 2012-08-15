@@ -1,4 +1,4 @@
-AM_CFLAGS = -Wextra -Wall
+AM_CFLAGS = -Wextra -Wall -Winline
 
 SUBDIRS = cgi_wrapper
 
