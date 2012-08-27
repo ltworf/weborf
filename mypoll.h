@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 typedef int poll_t;
 
 
-static inline poll_t (int size) {
+static inline poll_t mypoll_create(int size) {
     return epoll_create(size);
 }
 
