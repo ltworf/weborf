@@ -370,30 +370,47 @@ void * instance(void * nulla) {
                 ev.events = EPOLLIN;
                 ev.data.fd = connection_prop->sock;
                 mypoll_ctl(thread_prop->poll,MYPOLL_CTL_ADD,connection_prop->sock,&ev);
+                
+                printf ("new connection\n");
             }
             
             connection_prop = arraylist_get(&thread_prop->connections,connections_fds[events[n].data.fd]);
+            printf("connection %d status %d\n",connection_prop->sock,connection_prop->status);
             handle_request(connection_prop);
+            printf("->connection %d status %d\n",connection_prop->sock,connection_prop->status);
+            switch (connection_prop->status) {
+                case STATUS_WAIT_HEADER:
+                case STATUS_READY_TO_SEND:
+                case STATUS_CHECK_AUTH:
+                case STATUS_INIT_CHECK_AUTH:
+                case STATUS_ERR:
+                case STATUS_ERR_NO_CONNECTION:
+                case STATUS_READY_FOR_NEXT:
+                case STATUS_PAGE_SENT:
+                case STATUS_WAIT_DATA:
+                case STATUS_SERVE_REQUEST:
+                case STATUS_PUT_METHOD:
+                case STATUS_GET_METHOD:
+                case STATUS_SEND_HEADERS:
+                case STATUS_COPY_FROM_POST_DATA_TO_SOCKET:
+                case STATUS_TAR_DIRECTORY:
+                case STATUS_CGI_COPY_POST:
+                case STATUS_CGI_WAIT_HEADER:
+                case STATUS_CGI_SEND_CONTENT:
+                case STATUS_CGI_FREE_RESOURCES:
+                case STATUS_CGI_FLUSH_HEADER_BUFFER:
+                
+                
+                case STATUS_END:
+                    close(connection_prop->sock);
+                    //FIXME No need to delete it from mypoll, but needs to do something on other future implementations
+                    connection_free(connection_prop);
+                    //TODO remove from the list and fix the connections_fds array;
+                    break;
+            };
             
-            if (connection_prop->status == STATUS_END) {
-                close(connection_prop->sock);
-                //No need to delete it from mypoll
-                connection_free(connection_prop);
-            }
         }
 
-
-        
-
-#ifdef THREADDBG
-        syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
-#endif
-        
-        
-
-#ifdef THREADDBG
-        syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",thread_prop.id);
-#endif
 
     }
 

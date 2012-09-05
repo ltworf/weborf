@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 
 
     weborf_conf.socket = net_create_server_socket();
-    net_bind_and_listen(s);
+    net_bind_and_listen(weborf_conf.socket);
 
     set_new_uid(weborf_conf.uid);
 
@@ -132,7 +132,8 @@ int main(int argc, char *argv[]) {
     init_thread_attr();
     init_threads(INITIALTHREAD);
     
-    return 0;
+    while(1) sleep(12);
+    return 0; //FIXME
 
     //Infinite cycle, accept connections
     while (1) {

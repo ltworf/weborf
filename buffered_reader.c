@@ -74,6 +74,7 @@ ssize_t buffer_fill(int fd, buffered_read_t * buf) {
     struct pollfd monitor[1];
     monitor[0].fd = fd; //File descriptor to monitor
     monitor[0].events = POLLIN; //Monitor on input events
+#warning "remove the poll and do it async"
 
     //Waits the timeout or reads the data.
     //If timeout is reached and no input is available
