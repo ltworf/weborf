@@ -79,17 +79,8 @@ const char* mime_get_fd (magic_t token,int fd,struct stat *sb) {
         */
         char buf[64];
 
-        //Get the current cursor position
-        off_t prev_pos=lseek(fd,0,SEEK_CUR);
-
-        //Set the cursor to the beginning of the file
-        lseek(fd,0,SEEK_SET);
-
         //Reads 64 bytes to determine the type
-        int r=read(fd,&buf,64);
-
-        //Reset the position
-        lseek(fd,prev_pos,SEEK_SET);
+        int r=pread(fd,&buf,64,0);
 
         const char* mime=magic_buffer(token,&buf,r);
 

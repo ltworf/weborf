@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2007  Salvo "LtWorf" Tomaselli
+Copyright (C) 2012  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,20 +18,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
-#ifndef WEBORF_UTILS_H
-#define WEBORF_UTILS_H
+
+#ifndef WEBORF_ARRAYLIST
+#define WEBORF_ARRAYLIST
 
 #include "types.h"
 #include "options.h"
 
-int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bool parent);
-void help();
-void version();
-void capabilities();
-void moo();
-void print_start_disclaimer(char *argv[]);
-bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,ssize_t param_len);
-void daemonize();
-pid_t detached_fork();
+typedef struct {
+    size_t size;
+    size_t storage;
+    size_t element;
+    void * list;
+} arraylist_t;
+
+int arraylist_create(arraylist_t* lst, size_t element, size_t suggested_size);
+void arraylist_free(arraylist_t* lst);
+int arraylist_append(arraylist_t* lst,void* item);
+void* arraylist_get(arraylist_t*lst, unsigned int index);
+void arraylist_remove_last(arraylist_t*lst);
+void arraylist_copy_item(arraylist_t*lst,unsigned int src,unsigned int dest);
+
+/**
+ * Returns the number of elements currently in the list
+ **/
+static inline size_t arraylist_size(arraylist_t* lst) {
+    return lst->size;
+}
+
+
 
 #endif

@@ -26,7 +26,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 int fd_copy(int from, int to, off_t count);
 int dir_remove(char * dir);
-bool file_exists(char *file);
 
 #ifdef WEBDAV
 int dir_move_copy (char* source, char* dest,int method);
@@ -34,6 +33,8 @@ int file_copy(char* source, char* dest);
 int file_move(char* source, char* dest);
 int dir_move (char* source, char* dest);
 int dir_copy (char* source, char* dest);
+
+int myio_mktmp();
 #endif
 
 #endif

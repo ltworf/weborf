@@ -29,6 +29,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define STDOUT 1
 #define STDERR 2
 
-int exec_page(char * executor,string_t* post_param,connection_t* connection_prop);
+void cgi_exec_page(char * executor,connection_t* connection_prop);
+void cgi_free_resources(connection_t* connection_prop);
+void cgi_wait_headers(connection_t* connection_prop);
 
 #endif

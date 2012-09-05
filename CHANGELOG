@@ -1,12 +1,28 @@
 0.14
 - Simplified code for authentication and removed one memory allocation
-- Fastened finding length of URI and splitting GET parameters
-- Fastened escape replacing in URI
+- Increased speed of finding length of URI and splitting GET parameters
+- Increased speed of escape replacing in URI
 - Doesn't log starting entry when used as inetd
-- Cache is correct also if a file is modified and the directory's inode is not affected
+- Cache is correct also if a file is modified and the directory's inode is not affected (Linux only)
 - Allows old mechanism with the option --fastcache
 - Doesn't rely on envvars to handle virtualhosts
 - Much faster decode64 module, with removed iterations
+- On Linux, will avoid partial frames
+- Refactory of configuration loading, to have faster startup
+- CGI scripts are now terminated for sure when they exceed their limit
+- Uses C locale, to avoid problems with non-ascii chars
+- When using --tar on the root directory, suggests a default filename
+- Sends Accept-Ranges header in response, when content-length is known (David Kalnischkies)
+- Show "GNU/Linux" only on GNU/Linux systems
+- Added an option to print the capabilities of the server (useful for tools like qweborf)
+- Multiple instances of qweborf from the same user can operate in the same time
+- using pread() instead of emulating it with lseek()
+- support for chunked encoding
+
+- qweborf: checks if weborf supports authentication with socket
+- qweborf: uses the -B option, for an easier parsing
+- qweborf: doesn't crash when using miredo
+- qweborf: can use UPnP to open external ports in NAT devices
 
 0.13
 - Shows last modified column in directory listing (Rev 419)

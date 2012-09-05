@@ -23,21 +23,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef WEBDAV
 
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <string.h>
 #include <stdbool.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <stdio.h>
+#include <time.h>
+#include <unistd.h>
 
 #include "webdav.h"
+#include "http.h"
 #include "instance.h"
 #include "mime.h"
 #include "myio.h"
@@ -106,25 +106,16 @@ be returned to the client if the xml is not valid. This is not the case
 in this funcion. It will accept many forms of invalid xml.
 
 The original string post_param->data will be modified.
+
+Returns 0 in case of success or the HTTP code error in case of failure
 */
-static inline int get_props(connection_t* connection_prop,string_t* post_param,u_dav_details *props) {
+static inline int get_props(connection_t* connection_prop,u_dav_details *props) {
 
-    {
-        //Determining if it is deep or not
-        //props.deep=false; commented because redoundant
-        char a[4]; //Buffer for field's value
-        //Gets the value of content-length header
-        bool r=get_param_value(connection_prop->http_param,"Depth", a,sizeof(a),strlen("Depth"));
-
-        if (r) {
-            props->dav_details.deep=(a[0]=='1');
-        }
-    }
-
+    props->dav_details.deep = http_read_deep(connection_prop);
 
     char *sprops[MAXPROPCOUNT];   //List of pointers to properties
 
-    if (post_param->len==0) {//No specific prop request, sending everything
+    if (connection_prop->post_data.len==0) {//No specific prop request, sending everything
         props->dav_details.getetag=true;
         props->dav_details.getcontentlength=true;
         props->dav_details.resourcetype=true;
@@ -135,16 +126,17 @@ static inline int get_props(connection_t* connection_prop,string_t* post_param,u
     }
 
 //Locates the starting prop tag
-    char*data=strstr(post_param->data,"<D:prop ");
+    char*post=connection_prop->post_data.data;
+    char*data=strstr(post,"<D:prop ");
     if (data==NULL)
-        data=strstr(post_param->data,"<D:prop>");
+        data=strstr(post,"<D:prop>");
     if (data==NULL)
-        data=strstr(post_param->data,"<prop ");
+        data=strstr(post,"<prop ");
     if (data==NULL)
-        data=strstr(post_param->data,"<prop>");
+        data=strstr(post,"<prop>");
 
     if (data==NULL) {
-        return ERR_NODATA;
+        return HTTP_CODE_BAD_REQUEST;
     }
     data+=6; //Eliminates the 1st useless tag
 
@@ -155,7 +147,7 @@ static inline int get_props(connection_t* connection_prop,string_t* post_param,u
             end=strstr(data,"</prop>");
 
         if (end==NULL) {
-            return ERR_NODATA;
+            return HTTP_CODE_BAD_REQUEST;
         }
         end[0]=0;
     }
@@ -170,7 +162,7 @@ static inline int get_props(connection_t* connection_prop,string_t* post_param,u
 
         //Removes the />
         temp=strstr(sprops[i],"/>");
-        if (temp==NULL) return ERR_NODATA;
+        if (temp==NULL) return HTTP_CODE_BAD_REQUEST;
         temp[0]=0;
 
         //Removing if there are parameters to the node
@@ -213,47 +205,39 @@ If the file can't be opened in readonly mode, this function does nothing.
 Return value: 0 in case there were no errors in opening the file. Do not expect
 too much error checking from this function.
 */
-static inline int printprops(connection_t *connection_prop,u_dav_details props,char* file,char*filename,bool parent) {
-    int sock=connection_prop->sock;
+static inline int printprops(connection_t *connection_prop,u_dav_details props,char* file,char*filename,bool parent,int sock) {
     int p_len;
     struct stat stat_s;
-    char buffer[URI_LEN];
 
     int file_fd=open(file,O_RDONLY);
     if (file_fd==-1) return 1;
     fstat(file_fd, &stat_s);
 
-
-    write(sock,"<D:response>\n",13);
+    dprintf(sock,"<D:response>\n");
 
     {
         char escaped_filename[URI_LEN];
         escape_uri(filename,escaped_filename,URI_LEN);
         //Sends href of the resource
         if (parent) {
-            p_len=snprintf(buffer,URI_LEN,"<D:href>%s</D:href>",escaped_filename);
+            dprintf(sock,"<D:href>%s</D:href>",escaped_filename);
         } else {
             char escaped_page[URI_LEN];
             escape_uri(connection_prop->page,escaped_page,URI_LEN);
-            p_len=snprintf(buffer,URI_LEN,"<D:href>%s%s</D:href>",escaped_page,escaped_filename);
+            dprintf(sock,"<D:href>%s%s</D:href>",escaped_page,escaped_filename);
         }
-
-        write (sock,buffer,p_len);
     }
 
-    write(sock,"<D:propstat><D:prop>",20);
+    dprintf(sock,"<D:propstat><D:prop>");
 
     //Writing properties
 
     if (props.dav_details.getetag) {
-        p_len=snprintf(buffer,URI_LEN,"<D:getetag>%ld</D:getetag>\n",(long int)stat_s.st_mtime);
-        write (sock,buffer,p_len);
-
+        dprintf(sock,"<D:getetag>%ld</D:getetag>\n",(long int)stat_s.st_mtime);
     }
 
     if (props.dav_details.getcontentlength) {
-        p_len=snprintf(buffer,URI_LEN,"<D:getcontentlength>%llu</D:getcontentlength>\n",(long long unsigned int)stat_s.st_size);
-        write (sock,buffer,p_len);
+        dprintf(sock,"<D:getcontentlength>%llu</D:getcontentlength>\n",(long long unsigned int)stat_s.st_size);
     }
 
     if (props.dav_details.resourcetype) {//Directory or normal file
@@ -264,11 +248,11 @@ static inline int printprops(connection_t *connection_prop,u_dav_details props,c
             out=" ";
         }
 
-        p_len=snprintf(buffer,URI_LEN,"<D:resourcetype>%s</D:resourcetype>\n",out);
-        write (sock,buffer,p_len);
+        dprintf(sock,"<D:resourcetype>%s</D:resourcetype>\n",out);
     }
 
     if (props.dav_details.getlastmodified) { //Sends Date
+        char buffer[URI_LEN];
         struct tm ts;
         localtime_r(&stat_s.st_mtime,&ts);
         p_len=strftime(buffer,URI_LEN, "<D:getlastmodified>%a, %d %b %Y %H:%M:%S GMT</D:getlastmodified>", &ts);
@@ -281,14 +265,14 @@ static inline int printprops(connection_t *connection_prop,u_dav_details props,c
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
 
         const char* t=mime_get_fd(thread_prop->mime_token,file_fd,&stat_s);
-        p_len=snprintf(buffer,URI_LEN,"<D:getcontenttype>%s</D:getcontenttype>\n",t);
-        write (sock,buffer,p_len);
+        dprintf(sock,"<D:getcontenttype>%s</D:getcontenttype>\n",t);
     }
 #endif
 
-    write(sock,"</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>",58);
 
-    write(sock,"</D:response>",13);
+    dprintf(sock,"</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>");
+
+    dprintf(sock,"</D:response>");
 
     close(file_fd);
     return 0;
@@ -299,87 +283,78 @@ This function serves a PROPFIND request.
 
 Can serve both depth and non-depth requests. This funcion works only if
 authentication is enabled.
-*/
-int propfind(connection_t* connection_prop,string_t *post_param) {
-    //Forbids the method if no authentication is in use
-    if (weborf_conf.authsock==NULL) {
-        return ERR_FORBIDDEN;
-    }
 
-    int sock=connection_prop->sock;
+RETURNS
+true if an header was sent TODO
+*/
+void prepare_propfind(connection_t* connection_prop) {
+
     u_dav_details props= {0};
     props.dav_details.type=1; //I need to avoid the struct to be fully 0 in each case
-    int swap_fd; //swap file descriptor
 
     {
+        //TODO this code is duplicated.. should be possible to collapse it in only one place
+
         //This redirects directory without ending / to directory with the ending /
         int stat_r=stat(connection_prop->strfile, &connection_prop->strfile_stat);
 
         if (stat_r!=0) {
-            return ERR_FILENOTFOUND;
+            connection_prop->response.status_code = HTTP_CODE_PAGE_NOT_FOUND;
+            connection_prop->status = STATUS_ERR;
+            return;
         }
 
         if (S_ISDIR(connection_prop->strfile_stat.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
-            char head[URI_LEN+12];//12 is the size for the location header
-            snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
-            connection_prop->response.status_code=301;
-            send_http_header(0,head,true,-1,connection_prop);
-            return 0;
+            http_append_header_str(connection_prop,"Location: %s/\r\n",connection_prop->page);
+            connection_prop->response.status_code=HTTP_CODE_MOVED_PERMANENTLY;
+            connection_prop->status = STATUS_ERR;
+            return;
         }
     } // End redirection
 
-    int retval=get_props(connection_prop,post_param,&props);//splitting props
+    int result_fd;
+    int retval=get_props(connection_prop,&props);//splitting props
     if (retval!=0) {
-        return retval;
+        connection_prop->response.status_code=retval;
+        connection_prop->status = STATUS_ERR;
+        return;
     }
 
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
-    connection_prop->response.keep_alive=false;
-    connection_prop->response.status_code=207;
-    send_http_header(0,"Content-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
+    connection_prop->response.keep_alive=false; //TODO no longer true
+    connection_prop->response.status_code=WEBDAV_CODE_MULTISTATUS;
+    http_append_header(connection_prop,"Content-Type: text/xml; charset=\"utf-8\"\r\n");
+
 
     //Check if exists in cache
     if (cache_is_enabled()) {
-        if ((swap_fd=cache_get_item_fd(props.int_version,connection_prop))!=-1) {
-            //Sends the item stored in the cache
-            struct stat sb;
-            fstat(swap_fd,&sb);
+        if (cache_send_item(props.int_version,connection_prop))
+            return;
 
-            fd_copy(swap_fd,sock, sb.st_size);
+        result_fd=cache_get_item_fd_wr(props.int_version,connection_prop);
 
-            close(swap_fd);
-            return 0;
-        } else { //Prepares for storing the item in cache, will be sent afterwards
-            //Get file descriptor of cache file
-            int cache_fd=cache_get_item_fd_wr(props.int_version,connection_prop);
-
-            //If we obtained that descriptor, replace socket with it
-            if (cache_fd!=-1) {
-                swap_fd=sock; //Stores the real socket
-                connection_prop->sock=sock=cache_fd;
-            } else
-                swap_fd=-1;
-        }
-
+    } else  {
+        result_fd = myio_mktmp();
     }
 
+    /////////////////////////////////GENERATES THE RESPONSE
+
     //Sends header of xml response
-    write(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>",39);
-    write(sock,"<D:multistatus xmlns:D=\"DAV:\">",30);
+    dprintf(result_fd,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
+    dprintf(result_fd,"<D:multistatus xmlns:D=\"DAV:\">");
 
     //sends props about the requested file
-    printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true);
-
-    if (props.dav_details.deep) {//Send children files
+    printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true,result_fd);
+    if (props.dav_details.deep && S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Send children files
         DIR *dp = opendir(connection_prop->strfile); //Open dir
+        //TODO check result
         char file[URI_LEN];
         struct dirent entry;
         struct dirent *result;
         int return_code;
 
         if (dp == NULL) {//Error, unable to send because header was already sent
-            close(sock);
-            return 0;
+            //FIXME
         }
 
         for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
@@ -395,46 +370,42 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
             snprintf(file,URI_LEN,"%s%s", connection_prop->strfile, entry.d_name);
 
             //Sends details about a file
-            printprops(connection_prop,props,file,entry.d_name,false);
+            printprops(connection_prop,props,file,entry.d_name,false,result_fd);
         }
 
         closedir(dp);
     }
 
     //ends multistatus
-    write(sock,"</D:multistatus>",16);
+    dprintf(result_fd,"</D:multistatus>");
 
-    /*
-     * If we were able to get a file descriptor for the cache file, and cache is enabled,
-     * at this point the XMP has been saved into the cache but not sent to the client,
-     * so now we read from cache and send to the client
-     */
-    if (cache_is_enabled() && swap_fd!=-1) {
-        int cache_fd=sock;
-        connection_prop->sock=sock=swap_fd; //Restore sock to it's value
 
-        off_t prev_pos=lseek(cache_fd,0,SEEK_CUR); //Get size of the file
-        lseek(cache_fd,0,SEEK_SET);          //Set cursor to the beginning
-        fd_copy(cache_fd,sock,prev_pos);     //Send the file
+    ////////////////// ACTUALLY SENDING THE FILE
+    lseek(result_fd, 0, SEEK_SET); //Reset the file so it can be read again
 
-        close(cache_fd);
-    }
+    if (connection_prop->strfile_fd!=-1) printf ("ERROR in webdav.c, file descriptor leak\n"); //TODO check correctness
+    //close(connection_prop->strfile_fd);
+    connection_prop->strfile_fd=result_fd;
+    fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
+    prepare_get_file(connection_prop);
 
-    return 0;
+    return;
 }
 
 /**
 This funcion should be named mkdir. But standards writers are weird people.
+
+Returns 0 if the directory was created.
+Never sends anything
 */
 int mkcol(connection_t* connection_prop) {
-    if (weborf_conf.authsock==NULL) {
-        return ERR_FORBIDDEN;
-    }
+    connection_prop->status = STATUS_ERR;
 
     int res=mkdir(connection_prop->strfile,S_IRWXU | S_IRWXG | S_IRWXO);
 
     if (res==0) {//Directory created
-        return OK_CREATED;
+        connection_prop->response.status_code = HTTP_CODE_OK_CREATED;
+        return 0;
     }
 
     //Error
@@ -443,35 +414,41 @@ int mkcol(connection_t* connection_prop) {
     case EFAULT:
     case ELOOP:
     case ENAMETOOLONG:
-        return ERR_FORBIDDEN;
-    case ENOMEM:
-        return ERR_SERVICE_UNAVAILABLE;
-    case ENOENT:
-        return ERR_CONFLICT;
     case EEXIST:
     case ENOTDIR:
-        return ERR_NOT_ALLOWED;
+        connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
+        break;
+    case ENOMEM:
+        connection_prop->response.status_code = HTTP_CODE_SERVICE_UNAVAILABLE;
+        break;
+    case ENOENT:
+        connection_prop->response.status_code = HTTP_CODE_CONFLICT;
+        break;
     case ENOSPC:
     case EROFS:
     case EPERM:
-        return ERR_INSUFFICIENT_STORAGE;
+        connection_prop->response.status_code = HTTP_CODE_INSUFFICIENT_STORAGE;
+        break;
     }
 
-    return ERR_SERVICE_UNAVAILABLE; //Make gcc happy
+    return -1;
 }
 
 /**
 Webdav method copy.
 */
-int copy_move(connection_t* connection_prop) {
+void copy_move(connection_t* connection_prop) {
     struct stat f_prop; //File's property
     bool check_exists=false;
     int retval=0;
     bool exists;
 
+    connection_prop->status = STATUS_ERR;
+
     char* host=malloc(3*PATH_LEN+12);
     if (host==NULL) {
-        return ERR_NOMEM;
+        connection_prop->response.status_code = HTTP_CODE_SERVICE_UNAVAILABLE;
+        return;
     }
     char* dest=host+PATH_LEN;
     char* overwrite=dest+PATH_LEN;
@@ -483,7 +460,7 @@ int copy_move(connection_t* connection_prop) {
     bool overwrite_b=get_param_value(connection_prop->http_param,"Overwrite",overwrite,PATH_LEN,strlen("Overwrite"));
 
     if (host_b && dest_b == false) { //Some important header is missing
-        retval=ERR_NOTHTTP;
+        connection_prop->response.status_code = HTTP_CODE_BAD_REQUEST;
         goto escape;
     }
 
@@ -496,7 +473,7 @@ int copy_move(connection_t* connection_prop) {
 
     dest=strstr(dest,host);
     if (dest==NULL) {//Something is wrong here
-        retval=ERR_NOTHTTP;
+        retval = connection_prop->response.status_code = HTTP_CODE_BAD_REQUEST;
         goto escape;
     }
     dest+=strlen(host);
@@ -505,14 +482,14 @@ int copy_move(connection_t* connection_prop) {
     snprintf(destination,PATH_LEN,"%s%s",connection_prop->basedir,dest);
 
     if (strcmp(connection_prop->strfile,destination)==0) {//same
-        retval=ERR_FORBIDDEN;
+        retval = connection_prop->response.status_code = HTTP_CODE_FORBIDDEN;
         goto escape;
     }
-    exists=file_exists(destination);
+    exists=(access(destination,R_OK)==0?true:false);
 
     //Checks if the file already exists
     if (check_exists && exists) {
-        retval=ERR_PRECONDITION_FAILED;
+        connection_prop->response.status_code = HTTP_CODE_PRECONDITION_FAILED;
         goto escape;
     }
 
@@ -532,11 +509,11 @@ int copy_move(connection_t* connection_prop) {
     }
 
     if (retval==0) {
-        retval=exists?OK_NOCONTENT:OK_CREATED;
+        connection_prop->response.status_code = exists? HTTP_CODE_OK_NO_CONTENT:HTTP_CODE_OK_CREATED;
     }
 escape:
     free(host);
-    return retval;
+    return;
 }
 
 #endif

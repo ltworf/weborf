@@ -16,9 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
- */
+*/
 
 #include "options.h"
+#include "types.h"
 
 
 #include <string.h>
@@ -40,26 +41,6 @@ void strToUpper(char *str) {
 }
 
 /**
-This function splits the page name from the GET params.
-It also sets the value for the page_len field
-*/
-void split_get_params(connection_t* connection_prop) {
-    char *separator=strstr(connection_prop->page,"?");
-
-    if (separator==NULL) {
-        connection_prop->get_params=NULL;
-        connection_prop->page_len=strlen(connection_prop->page);
-
-    } else {
-
-        separator[0]=0;
-        connection_prop->get_params=separator+1;
-        connection_prop->page_len=separator-connection_prop->page;
-
-    }
-}
-
-/**
 Replaces escape sequences in the form %HEXCODE with the correct char
 This is used for URLs, after the transformation the URL will probably
 represent a file that exists on filesystem.
@@ -75,10 +56,8 @@ void replaceEscape(char *o_string) {
     char e_seq[3];
     char *string=o_string;
 
-
     size_t o_len=strlen(o_string);
     unsigned int i_count=0;
-
 
     e_seq[2] = 0;
 

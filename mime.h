@@ -30,4 +30,13 @@ int mime_init(magic_t *token);
 void mime_release(magic_t token);
 const char* mime_get_fd (magic_t token,int fd,struct stat *sb);
 
+/* This is to support old versions of libmagic that do not define
+ * MAGIC_MIME_TYPE
+ */
+#ifdef SEND_MIMETYPES
+#ifndef MAGIC_MIME_TYPE
+#define MAGIC_MIME_TYPE MAGIC_MIME
+#endif
+#endif
+
 #endif

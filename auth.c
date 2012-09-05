@@ -70,30 +70,20 @@ void auth_set_socket(char *u_socket) {
 
 
 /**
-This function checks if the authentication can be granted or not calling the external program.
-Returns 0 if authorization is granted.
-*/
-int auth_check_request(connection_t *connection_prop) {
-    if (weborf_conf.authsock==NULL) return 0;
+ * TODO
+ **/
+void auth_init_check_request(connection_t *connection_prop) {
+    if (weborf_conf.authsock==NULL)
+        return;
 
+#ifndef EMBEDDED_AUTH
     char username[PWDLIMIT*2];
     char *password=username; //will be changed if there is a password
 
     if (get_username_password(connection_prop,username,&password)!=0)
-        return -1;
+        return;
 
-    int result=-1;
-
-#ifdef EMBEDDED_AUTH
-    result=c_auth(connection_prop->page,
-                  connection_prop->ip_addr,
-                  connection_prop->method,
-                  username,
-                  password,
-                  connection_prop->http_param);
-#else
     int s,len;
-    FILE *f;
 
     struct sockaddr_un remote;
     s=socket(AF_UNIX,SOCK_STREAM,0);
@@ -102,14 +92,11 @@ int auth_check_request(connection_t *connection_prop) {
     strcpy(remote.sun_path, weborf_conf.authsock);
     len = strlen(remote.sun_path) + sizeof(remote.sun_family);
     if (connect(s, (struct sockaddr *)&remote, len) == -1) {//Unable to connect
-        return -1;
+        //TODO log the problem
+        exit(5);
     }
 
-    if ((f=fdopen(s,"r+"))==NULL) {
-        return -1;
-    }
-
-    fprintf(f,
+    dprintf(s,
             "%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n%s\r\n",
             connection_prop->page,
             connection_prop->ip_addr,
@@ -117,13 +104,59 @@ int auth_check_request(connection_t *connection_prop) {
             username,
             password,
             connection_prop->http_param);
+    
+    connection_prop->strfile_fd =s;
+#endif
+}
+
+/**
+ * This function checks if the authentication can be granted or not calling the
+ * external program.
+ *
+ * If no external authentication program is provided, authorizes all GET, POST
+ * and OPTIONS and denies the rest.
+ *
+ * Returns 0 if authorization is granted.
+ **/
+int auth_check_request(connection_t *connection_prop) {
+    if (weborf_conf.authsock==NULL) {
+        switch (connection_prop->request.method_id) {
+        case GET:
+        case POST:
+        case OPTIONS:
+            return 0;
+        default:
+            return -1;
+        }
+    }
+
+    int result=-1;
+
+#ifdef EMBEDDED_AUTH
+
+    char username[PWDLIMIT*2];
+    char *password=username; //will be changed if there is a password
+
+    if (get_username_password(connection_prop,username,&password)!=0)
+        return -1;
+
+    result=c_auth(connection_prop->page,
+                  connection_prop->ip_addr,
+                  connection_prop->method,
+                  username,
+                  password,
+                  connection_prop->http_param);
+#else
+
+    int s=connection_prop->strfile_fd;
 
     char b;
-    if (fread(&b,1,1,f)==0) {//All data written and no output, ok
+    if (read(s,&b,1)==0) {//All data written and no output, ok
         result=0;
     }
 
-    fclose(f);
+    close(s);
+    connection_prop->strfile_fd=-1;
 
 #endif
 
@@ -169,7 +202,7 @@ static int get_username_password(connection_t *connection_prop,char *username, c
 #ifdef SERVERDBG
         syslog(LOG_ERR,"Unable to accept authentication, buffer is too small");
 #endif
-        return ERR_NOMEM;
+        return HTTP_CODE_SERVICE_UNAVAILABLE;
     }
 
     a[auth_end-auth]=0;

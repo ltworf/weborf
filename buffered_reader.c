@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 This funcion inits the struct allocating a buffer of the specified size.
 It will return 0 on success and 1 on fail.
 */
-int buffer_init(buffered_read_t * buf, ssize_t size) {
+int buffer_init(buffered_read_t * buf, size_t size) {
     buf->buffer = malloc(sizeof(char) * size);
     buf->size = size;
     buffer_reset(buf);
@@ -53,8 +53,20 @@ void buffer_free(buffered_read_t * buf) {
     free(buf->buffer);
 }
 
-static ssize_t buffer_fill(int fd, buffered_read_t * buf) {
+/**
+ * Fills the buffer.
+ *
+ * RETURN VALUE: how many bytes were copied into the buffer
+ * If it returns -1 it means that the buffer was not empty.
+ *
+ * 0 means connection closed by the peer (or timeout)
+ **/
+ssize_t buffer_fill(int fd, buffered_read_t * buf) {
     ssize_t r;
+
+    if (buf->end - buf->start>0) {
+        return -1;
+    }
 
     buf->start = buf->buffer;
 
@@ -82,6 +94,24 @@ static ssize_t buffer_fill(int fd, buffered_read_t * buf) {
 }
 
 /**
+ * Same as buffer_read but does not trigger a buffer_fill if
+ * there is not enough data to return.
+ **/
+size_t buffer_read_non_fill(int fd, void *b, size_t count, buffered_read_t * buf) {
+    size_t available= buf->end - buf->start;
+
+    if (available==0) {
+        return 0;
+    } else if (count > available) { //More data in buffer than needed
+        count=available;
+    }
+
+    memcpy(b, buf->start, count);
+    buf->start += count;
+    return count;
+}
+
+/**
 This function is designed to be similar to a normal read, but it uses an internal
 buffer.
 When the buffer is empty, it will try to fill it.
@@ -91,10 +121,10 @@ Timeout duration is defined with the READ_TIMEOUT define.
 On some special cases, the read data could be less than the requested one. For example if
 end of file is reached and it is impossible to do further reads.
 */
-size_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
-    ssize_t wrote = 0;              //Count of written bytes
-    ssize_t available, needed;      //Available bytes in buffer, and requested bytes remaining
-
+size_t buffer_read(int fd, void *b, size_t count, buffered_read_t * buf) {
+    size_t wrote = 0;              //Count of written bytes
+    size_t available, needed;      //Available bytes in buffer, and requested bytes remaining
+#warning "Do not use buffer_read"
 
     while (wrote < count) {
         available = buf->end - buf->start;
@@ -123,7 +153,7 @@ size_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
 /**
  * This function flushes all the buffered data to a file descriptor.
  * It is possible to limit the amount of data to be copied to the file descriptor.
- * This function is usefull when switching from buffered reads to normal ones.
+ * This function is useful when switching from buffered reads to normal ones.
  *
  * dest: destination file descriptor
  * buf: pointer to the buffered_read_t data structure
@@ -133,12 +163,12 @@ size_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
  * Returns the amount of written data, which might be different than the amount
  * of data previously present on the buffer.
  */
-size_t buffer_flush_fd(int dest, buffered_read_t * buf,size_t limit) {
+ssize_t buffer_flush_fd(int dest, buffered_read_t * buf,size_t limit) {
     size_t available= buf->end - buf->start;
 
     size_t dim = limit<available?limit:available;
 
-    size_t count=write(dest,buf->start,dim);
+    ssize_t count=write(dest,buf->start,dim);
     buf->start +=dim;
 
     return count;

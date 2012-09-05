@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_INSTANCE_H
 #define WEBORF_INSTANCE_H
 
+
 #include "types.h"
 #include "buffered_reader.h"
 
@@ -29,57 +30,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "webdav.h"
 #endif
 
-
-//Request
-#define INVALID -1
-#define GET 0
-#define POST 1
-#define PUT 2
-#define DELETE 3
-#define OPTIONS 8
-
-#ifdef WEBDAV
-#define PROPFIND 4
-#define COPY 5
-#define MOVE 6
-#define MKCOL 7
-#endif
+#include "mypoll.h"
+#include "arraylist.h"
 
 
-#define NO_ACTION -120
-
-//Errors
-#define ERR_PRECONDITION_FAILED -14
-#define ERR_NOT_ALLOWED -13
-#define ERR_INSUFFICIENT_STORAGE -12
-#define ERR_CONFLICT -11
-#define ERR_SERVICE_UNAVAILABLE -10
-#define ERR_FORBIDDEN -9
-#define ERR_NOTIMPLEMENTED -8
-#define ERR_NODATA -7
-#define ERR_NOTHTTP -6
-#define ERR_NOAUTH -5
-#define ERR_SOCKWRITE -4
-#define ERR_NOMEM -3
-#define ERR_FILENOTFOUND -2
-#define ERR_BRKPIPE -1
-
-//Ok
-#define OK_CREATED 1
-#define OK_NOCONTENT 2
-
-//Protocol version
-#define HTTP_0_9 57
-#define HTTP_1_0 48
-#define HTTP_1_1 2
+typedef struct {
+    magic_t mime_token;         //Token for libmagic
+    poll_t poll;                //Token for epoll/whatever
+    arraylist_t connections;    //
+} thread_prop_t;
 
 void inetd();
 void *instance(void *);
-int write_file(connection_t * connection_prop);
-int send_err(connection_t *connection_prop,int err,char* descr);
-string_t read_post_data(connection_t * connection_prop, buffered_read_t * read_b);
-char *get_basedir(char *http_param);
-int send_http_header(unsigned long long int size, char *headers, bool content, time_t timestamp, connection_t * connection_prop);
-int delete_file(connection_t* connection_prop);
-int read_file(connection_t* connection_prop,buffered_read_t* read_b);
+void prepare_get_file(connection_t* connection_prop);
+
+
+
 #endif

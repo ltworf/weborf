@@ -14,9 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-CC=clang
+CC=gcc
 #DEFS=-Ddebug
-OFLAGS=-O2
+OFLAGS=-O2 -flto
 #-pedantic -Wextra
 DEFINES=-D_FILE_OFFSET_BITS=64
 
@@ -51,7 +51,7 @@ combined:
 cgi:
 	cd cgi_wrapper; make
 
-debug: dict.o cgi.o listener.o queue.o configuration.o auth.o mynet.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o mime.o cachedir.o myio.o mtime_update.o
+debug: dict.o cgi.o listener.o queue.o configuration.o auth.o mynet.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o mime.o cachedir.o myio.o mtime_update.o http.o
 	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o weborf
 
 clean: 

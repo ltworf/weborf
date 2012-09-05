@@ -1,3 +1,26 @@
+weborf (0.14-1) unstable; urgency=low
+
+  * New upstream release
+  * qweborf recommends miniupnpc
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Fri, 22 Jun 2012 23:03:44 +0200
+
+weborf (0.13-3) unstable; urgency=low
+
+  * Fixed typo in the description (Closes: #677083)
+  * Correctly handles IPv4 clients in log files when started by
+    xinetd (Closes: #601253)
+  * Updated Standards-Version
+  * Build-depends on hardening-wrapper
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 21 Jun 2012 17:35:43 +0200
+
+weborf (0.13-2) unstable; urgency=low
+
+  * Backport fix from upstream: qweborf doesn't crash when miredo is in use
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Mon, 19 Dec 2011 10:54:07 +0100
+
 weborf (0.13-1) unstable; urgency=low
 
   * New upstream release

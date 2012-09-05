@@ -42,8 +42,8 @@ Will not close any descriptor
 
 Returns
 0 in case of success
-ERR_NOMEM in case it is impossible to allocate the buffers
-ERR_BRKPIPE in case of read/write failure
+-1 in case it is impossible to allocate the buffers
+-2 in case of read/write failure
 */
 int fd_copy(int from, int to, off_t count) {
     char *buf=malloc(FILEBUF);//Buffer to read from file
@@ -54,7 +54,7 @@ int fd_copy(int from, int to, off_t count) {
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers");
 #endif
-        return ERR_NOMEM;//If no memory is available
+        return -1;//If no memory is available
     }
 
     //Sends file
@@ -62,26 +62,13 @@ int fd_copy(int from, int to, off_t count) {
         count-=reads;
         wrote=write(to,buf,reads);
         if (wrote!=reads) { //Error writing to the descriptor
-            retval=ERR_BRKPIPE;
+            retval=-2;
             break;
         }
     }
 
     free(buf);
     return retval;
-}
-
-
-/**
-Returns true if the specified file exists
-*/
-bool file_exists(char *file) {
-    int fp = open(file, O_RDONLY);
-    if (fp >= 0) { // exists
-        close(fp);
-        return true;
-    }
-    return false;
 }
 
 /**
@@ -117,7 +104,7 @@ int dir_remove(char * dir) {
 
     char*file=malloc(PATH_LEN);//Buffer for path
     if (file==NULL)
-        return ERR_NOMEM;
+        return HTTP_CODE_SERVICE_UNAVAILABLE;
 
     //Cycles trough dir's elements
     for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
@@ -150,6 +137,8 @@ int file_move(char* source, char* dest) {
         retval=file_copy(source,dest);
         if (retval==0)
             unlink(source);
+        else
+            unlink(dest); //Might not exist, but we don't care
     }
     return retval;
 }
@@ -166,20 +155,20 @@ int file_copy(char* source, char* dest) {
 
     //Open destination file
     if ((fd_to=open(dest,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR))<0) {
-        retval=ERR_FORBIDDEN;
+        retval=HTTP_CODE_FORBIDDEN;
         goto escape;
     }
 
     //open source file
     if ((fd_from=open(source,O_RDONLY))<0) {
-        retval = ERR_FILENOTFOUND;
+        retval = HTTP_CODE_PAGE_NOT_FOUND;
         goto escape;
     }
 
     //Find size of the source file
     struct stat stbuf;
     if (fstat(fd_from,&stbuf)!=0) {
-        retval= ERR_FORBIDDEN;
+        retval= HTTP_CODE_FORBIDDEN;
         goto escape;
     }
 
@@ -231,7 +220,7 @@ int dir_move_copy (char* source, char* dest,int method) {
     int retval=0;
 
     if (mkdir(dest,S_IRWXU | S_IRWXG | S_IRWXO)!=0) {//Attemps to create destination directory
-        return ERR_FORBIDDEN;
+        return HTTP_CODE_FORBIDDEN;
     }
 
     DIR *dp = opendir(source); //Open dir
@@ -241,12 +230,12 @@ int dir_move_copy (char* source, char* dest,int method) {
 
 
     if (dp == NULL) {
-        return ERR_FILENOTFOUND;
+        return HTTP_CODE_PAGE_NOT_FOUND;
     }
 
     char*src_file=malloc(PATH_LEN*2);//Buffer for path
     if (src_file==NULL)
-        return ERR_NOMEM;
+        return HTTP_CODE_SERVICE_UNAVAILABLE;
     char* dest_file=src_file+PATH_LEN;
 
     //Cycles trough dir's elements
@@ -284,4 +273,23 @@ escape:
     }
     return retval;
 }
+
+/**
+ * Creates a temporary file, opened for read and write
+ * and returns the file descriptor.
+ *
+ * The file will be deleted immediately after the close()
+ **/
+int myio_mktmp() {
+    int fd;
+
+    char template[] = "/tmp/weborf-temp-XXXXXX"; //TODO use env var for tmp directory
+    fd=mkstemp(template);
+
+    unlink(template);
+
+    return fd;
+
+}
+
 #endif

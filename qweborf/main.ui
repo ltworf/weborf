@@ -79,6 +79,16 @@
            </item>
           </layout>
          </item>
+         <item row="1" column="1">
+          <widget class="QCheckBox" name="chkNAT">
+           <property name="toolTip">
+            <string>If checked, QWeborf will try to use UPnP to instruct the NAT device to open an external port to allow connections from Internet</string>
+           </property>
+           <property name="text">
+            <string>Try to share outside LAN</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
       </layout>

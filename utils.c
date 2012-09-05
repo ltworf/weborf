@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -38,6 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mystring.h"
 #include "utils.h"
+#include "embedded_auth.h"
 
 /**
 This function reads the directory dir, putting inside the html string an html
@@ -66,7 +68,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     }
 
     //Specific header table)
-    pagesize=printf_s=snprintf(html+pagesize,maxsize,"%s<table><tr><td></td><td>Name</td><td>Size</td><td>Last Modified</td></tr>",HTMLHEAD);
+    pagesize=printf_s=snprintf(html,maxsize,"%s<table><tr><td></td><td>Name</td><td>Size</td><td>Last Modified</td></tr>",HTMLHEAD);
     maxsize-=printf_s;
 
     //Cycles trough dir's elements
@@ -165,7 +167,76 @@ void version() {
 }
 
 /**
-Prints command line help
+ * Prints the capabilities/compile time options
+ */
+void capabilities() {
+    printf (
+        "name=" VERSION "\n"
+        "version=" VERSION "\n"
+        "signature=" SIGNATURE "\n"
+        "port=" PORT "\n"
+        "index=" INDEX "\n"
+        "basedir=" BASEDIR "\n"
+        "cgi-timeout=%d\n"
+
+#ifdef IPV6
+        "socket=IPv6\n"
+#else
+        "socket=IPv4\n"
+#endif
+
+#ifdef WEBDAV
+        "webdav=true\n"
+#else
+        "webdav=false\n"
+#endif
+
+#ifdef SEND_MIMETYPES
+        "mime=true\n"
+#else
+        "mime=false\n"
+#endif
+
+#ifdef EMBEDDED_AUTH
+        "auth-embedded=true\n"
+#else
+        "auth-embedded=false\n"
+#endif
+
+#ifdef HAVE_INOTIFY_INIT
+        "cache_correctness=true\n"
+#else
+        "cache_correctness=false\n"
+#endif
+
+#ifdef __COMPRESSION
+        "compression=true\n"
+#else
+        "compression=false\n"
+#endif
+
+#ifdef SEND_LAST_MODIFIED_HEADER
+        "last-modified=true\n"
+#else
+        "last-modified=false\n"
+#endif
+
+#ifdef __RANGE
+        "range=true\n"
+#else
+        "range=false\n"
+#endif
+        ,SCRPT_TIMEOUT);
+
+#ifdef MTIME_MAX_WATCH_DIRS
+    printf("inotify-watch=%d\n",MTIME_MAX_WATCH_DIRS);
+#endif
+    exit(0);
+
+}
+
+/**
+ * Prints command line help
  */
 void help() {
 
@@ -185,28 +256,33 @@ void help() {
            "\tHas MIME support\n"
 #endif
 
+#ifdef HAVE_INOTIFY_INIT
+           "\tHas cache correctness support\n"
+#endif
+
            "Default port is        %s\n"
            "Default base directory %s\n"
            "Signature used         %s\n\n", PORT,BASEDIR,SIGNATURE);
 
-    printf("  -a, --auth       followed by absolute path of the program to handle authentication\n"
-           "  -b, --basedir    followed by absolute path of basedir\n"
-           "  -C, --cache      sets the directory to use for cache files\n"
-           "  -c, --cgi        list of cgi files and binary to execute them comma-separated\n"
-           "  -d               run as a daemon\n"
-           "  -f  --fastcache  makes cache less correct but faster (see manpage)"
-           "  -h, --help       display this help and exit\n"
-           "  -I, --index      list of index files, comma-separated\n"
-           "  -i, --ip         followed by IP address to listen (dotted format)\n"
-           "  -m, --mime       sends content type header to clients\n"
-           "  -p, --port       followed by port number to listen\n"
-           "  -T  --inetd      must be specified when using weborf with inetd or xinetd\n"
-           "  -t  --tar        will send the directories as .tar.gz files\n"
-           "  -u,              followed by a valid uid\n"
-           "                   If started by root weborf will use this user to read files and execute scripts\n"
-           "  -V, --virtual    list of virtualhosts in the form host=basedir, comma-separated\n"
-           "  -v, --version    print program version\n"
-           "  -x, --noexec     tells weborf to send each file instead of executing scripts\n\n"
+    printf("  -a, --auth         followed by absolute path of the program to handle authentication\n"
+           "  -B  --capabilities shows the capabilities\n"
+           "  -b, --basedir      followed by absolute path of basedir\n"
+           "  -C, --cache        sets the directory to use for cache files\n"
+           "  -c, --cgi          list of cgi files and binary to execute them comma-separated\n"
+           "  -d                 run as a daemon\n"
+           "  -f  --fastcache    makes cache less correct but faster (see manpage)\n"
+           "  -h, --help         display this help and exit\n"
+           "  -I, --index        list of index files, comma-separated\n"
+           "  -i, --ip           followed by IP address to listen (dotted format)\n"
+           "  -m, --mime         sends content type header to clients\n"
+           "  -p, --port         followed by port number to listen\n"
+           "  -T  --inetd        must be specified when using weborf with inetd or xinetd\n"
+           "  -t  --tar          will send the directories as .tar.gz files\n"
+           "  -u,                followed by a valid uid\n"
+           "                     If started by root weborf will use this user to read files and execute scripts\n"
+           "  -V, --virtual      list of virtualhosts in the form host=basedir, comma-separated\n"
+           "  -v, --version      print program version\n"
+           "  -x, --noexec       tells weborf to send each file instead of executing scripts\n\n"
 
 
            "Report bugs here https://bugs.launchpad.net/weborf\n"
@@ -258,6 +334,30 @@ void daemonize() {
 }
 
 /**
+ * This function generates a detached child that
+ * it is not possible to wait.
+ *
+ * Return values as the fork (pid_t is a fake id, can't be used)
+ **/
+pid_t detached_fork() {
+    pid_t f1 = fork();
+    pid_t f2;
+
+    if (f1==0) { //Child process
+        f2=fork();
+        if (f2!=0)
+            exit(0);
+        return 0;
+    } else if (f1>0) { //Father process
+        waitpid(f1,NULL,0);
+        return 1;
+    } else if (f1<0) {
+        return f1;
+    }
+    return -1;
+}
+
+/**
 This function retrieves the value of an http field within the header
 http_param is the string containing the header
 parameter is the searched parameter
@@ -288,15 +388,11 @@ bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,
     val += param_len + 2; //Moves the begin of the string to exclude the name of the field
 
     char *field_end = strstr(val, "\r\n"); //Searches the end of the parameter
-    if (field_end==NULL) {
+    if (field_end==NULL || (field_end - val + 1) >= size) {
         return false;
     }
 
-    if ((field_end - val + 1) < size) { //If the parameter's length is less than buffer's size
-        memcpy(buf, val, field_end - val);
-    } else { //Parameter string is too long for the buffer
-        return false;
-    }
+    memcpy(buf, val, field_end - val);
     buf[field_end - val] = 0; //Ends the string within the destination buffer
 
     return true;

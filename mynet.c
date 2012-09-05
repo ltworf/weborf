@@ -20,6 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "options.h"
 
 #include <arpa/inet.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdio.h>
@@ -30,11 +32,65 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <stdlib.h>
 
+
+
+
 #include "types.h"
 #include "mynet.h"
 
 extern weborf_configuration_t weborf_conf;
 
+
+/**
+ * removes TCP_CORK in order to send an incomplete frame if needed
+ * and sets it again to forbid incomplete frames again.
+ *
+ * it is Linux specific. Does nothing otherwise
+ */
+void net_sock_flush (int sock) {
+#ifdef TCP_CORK
+    int val=0;
+    setsockopt(sock, IPPROTO_TCP, TCP_CORK, (char *)&val, sizeof(val));
+    val=1;
+    setsockopt(sock, IPPROTO_TCP, TCP_CORK, (char *)&val, sizeof(val));
+#else
+#warning "NO TCP CORK"
+#endif
+}
+
+/**
+ * Same as the combination of getperrname and
+ * inet_ntop, will save the string address of the
+ * client for the socket within the buffer.
+ * It expects the buffer to have the correct size.
+ *
+ * */
+void net_getpeername(int socket,char* buffer) {
+
+#ifdef IPV6
+
+    struct sockaddr_storage t_addr;
+    socklen_t addr_l=sizeof(t_addr);
+
+    getpeername(socket, (struct sockaddr *)&t_addr, &addr_l);
+
+    if (t_addr.ss_family==AF_INET) {
+        struct sockaddr_in *addr =(struct sockaddr_in *)&t_addr;
+        char temp_buffer[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &(addr->sin_addr), temp_buffer, INET_ADDRSTRLEN);
+        snprintf(buffer,INET6_ADDRSTRLEN,"::ffff:%s",temp_buffer);
+    } else {
+        struct sockaddr_in6 *addr =(struct sockaddr_in6 *)&t_addr;
+        inet_ntop(AF_INET6, &(addr->sin6_addr), buffer, INET6_ADDRSTRLEN);
+    }
+#else
+    struct sockaddr_in addr;
+    socklen_t addr_l=sizeof(struct sockaddr_in);
+
+    getpeername(socket, (struct sockaddr *)&addr,&addr_l);
+    inet_ntop(AF_INET, &addr.sin_addr, buffer, INET_ADDRSTRLEN);
+#endif
+}
 
 /**
  * Creates the server socket and performs some setsockopt

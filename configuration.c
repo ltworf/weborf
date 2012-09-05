@@ -50,6 +50,36 @@ weborf_configuration_t weborf_conf=    {
 };
 
 /**
+This function returns a pointer to a string.
+It will use virtualhost settings to return this string and if no virtualhost is set for that host, it will return
+the default basedir.
+Those string must
+*/
+char* configuration_get_basedir(char* http_param) {
+    if (weborf_conf.virtual_host==false) return weborf_conf.basedir;
+
+    char* result;
+    char* h=strstr(http_param,"\r\nHost: ");
+
+    if (h==NULL) return weborf_conf.basedir;
+
+    h+=strlen("\r\nHost: ");//Removing "Host:" string
+
+
+    char* end=strstr(h,"\r");
+    if (end==NULL) return weborf_conf.basedir;
+
+
+    end[0]=0;
+    result=dict_get_key(&(weborf_conf.vhosts),h);
+
+    end[0]='\r';
+
+    return result==NULL?weborf_conf.basedir:result;
+}
+
+
+/**
  * Enables sending mime types in response to GET requests
  * or prints an error and exits if the support was not
  * compiled
@@ -99,50 +129,59 @@ static void configuration_set_default_CGI() {
  * Sets the default index file
  * */
 static void configuration_set_default_index() {
-    weborf_conf.indexes[0] = INDEX;
-    weborf_conf.indexes_l = 1;
+    weborf_conf.indexes.data[0] = INDEX;
+    weborf_conf.indexes.data_l[0] = strlen(INDEX);
+    weborf_conf.indexes.len = 1;
 }
 
 static void configuration_set_cgi(char *optarg) {
-    int i = 0;
-    weborf_conf.cgi_paths.len = 1; //count of indexes
-    weborf_conf.cgi_paths.data[0] = optarg; //1st one points to begin of param
-    while (optarg[i++] != 0) { //Reads the string
-        if (optarg[i] == ',') {
-            optarg[i++] = 0; //Nulling the comma
-            //Increasing counter and making next item point to char after the comma
-            weborf_conf.cgi_paths.data[weborf_conf.cgi_paths.len++] = &optarg[i];
+
+    char *saveptr;
+    char *token;
+
+    if ((weborf_conf.cgi_paths.data[0]=strtok_r(optarg,",",&saveptr))!=NULL) {
+        weborf_conf.cgi_paths.len = 1; //count of indexes
+        weborf_conf.cgi_paths.data_l[0]=strlen(weborf_conf.cgi_paths.data[0]);
+
+        while ((token=strtok_r(NULL,",",&saveptr))!=NULL) {
+            weborf_conf.cgi_paths.data[weborf_conf.cgi_paths.len]=token;
+            weborf_conf.cgi_paths.data_l[weborf_conf.cgi_paths.len]=strlen(token);
+
+            weborf_conf.cgi_paths.len++;
+
             if (weborf_conf.cgi_paths.len == MAXINDEXCOUNT) {
-                perror("Too much cgis, change MAXINDEXCOUNT in options.h to allow more");
+                fprintf(stderr,"Too much indexes, change MAXINDEXCOUNT in options.h to allow more.\n");
                 exit(6);
             }
         }
-    }
 
-    size_t j;
-    for (j=0; j<weborf_conf.cgi_paths.len; j++) {
-        weborf_conf.cgi_paths.data_l[j]=strlen(weborf_conf.cgi_paths.data[j]);
-    }
 
+    }
 }
 
 static void configuration_set_index_list(char *optarg) { //Setting list of indexes
-    int i = 0;
-    weborf_conf.indexes_l = 1; //count of indexes
-    weborf_conf.indexes[0] = optarg; //1st one points to begin of param
-    while (optarg[i++] != 0) { //Reads the string
 
-        if (optarg[i] == ',') {
-            optarg[i++] = 0; //Nulling the comma
-            //Increasing counter and making next item point to char after the comma
-            weborf_conf.indexes[weborf_conf.indexes_l++] = &optarg[i];
-            if (weborf_conf.indexes_l == MAXINDEXCOUNT) {
-                perror("Too much indexes, change MAXINDEXCOUNT in options.h to allow more");
+    char *saveptr;
+
+    if ((weborf_conf.indexes.data[0]=strtok_r(optarg,",",&saveptr))!=NULL) {
+        weborf_conf.indexes.len = 1; //count of indexes
+        weborf_conf.indexes.data_l[0] = strlen(weborf_conf.indexes.data[0]);
+
+        char *token;
+
+        while ((token=strtok_r(NULL,",",&saveptr))!=NULL) {
+            weborf_conf.indexes.data[weborf_conf.indexes.len]=token;
+            weborf_conf.indexes.data_l[weborf_conf.indexes.len] = strlen(token);
+            weborf_conf.indexes.len++;
+
+            if (weborf_conf.indexes.len == MAXINDEXCOUNT) {
+                fprintf(stderr,"Too much indexes, change MAXINDEXCOUNT in options.h to allow more.\n");
                 exit(6);
             }
         }
-    }
 
+
+    }
 }
 
 static void configuration_set_virtualhost(char *optarg) {
@@ -215,6 +254,7 @@ void configuration_load(int argc, char *argv[]) {
         {"inetd", no_argument,0,'T'},
         {"tar", no_argument,0,'t'},
         {"fastcache", no_argument,0,'f'},
+        {"capabilities",no_argument,0,'B'},
         {0, 0, 0, 0}
     };
 
@@ -224,7 +264,7 @@ void configuration_load(int argc, char *argv[]) {
         option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long(argc, argv, "ftTMmvhp:i:I:u:dxb:a:V:c:C:", long_options,
+        c = getopt_long(argc, argv, "BftTMmvhp:i:I:u:dxb:a:V:c:C:", long_options,
                         &option_index);
 
         //If there are no options it continues
@@ -232,6 +272,10 @@ void configuration_load(int argc, char *argv[]) {
             break;
 
         switch (c) {
+
+        case 'B':
+            capabilities();
+            break;
         case 'f':
             cache_correctness=false;
             break;
@@ -293,4 +337,34 @@ void configuration_load(int argc, char *argv[]) {
     }
 
     configuration_force_cache_correctness(cache_correctness);
+}
+
+/**
+ * Returns the path of the CGI binary to run in case
+ * it has to be run,
+ * returns NULL if no CGI has to be used for the request
+ **/
+const char * configuration_get_cgi(connection_t * connection_prop) {
+
+    if (weborf_conf.exec_script) { //Scripts enabled
+        size_t q_;
+        size_t f_len;
+        for (q_=0; q_<weborf_conf.cgi_paths.len; q_+=2) { //Check if it is a CGI script
+
+            f_len=weborf_conf.cgi_paths.data_l[q_];
+
+            if (f_len> connection_prop->page_len)
+                continue;
+
+            int c = strncmp(weborf_conf.cgi_paths.data[q_],
+                            connection_prop->page - f_len + connection_prop->page_len,
+                            f_len);
+
+            if (c==0) {
+                return weborf_conf.cgi_paths.data[++q_];
+            }
+        }
+    }
+
+    return NULL;
 }

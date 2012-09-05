@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2007  Salvo "LtWorf" Tomaselli
+Copyright (C) 2007  Giuseppe Pappalardo
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,20 +15,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-@author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 @author Giuseppe Pappalardo <pappalardo@dmi.unict.it>
+@author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
+ */
 
-*/
+#ifndef WEBORF_QUEUE_H
+#define WEBORF_QUEUE_H
 
-#ifndef WEBORF_LISTENER_H
-#define WEBORF_LISTENER_H
+#include "types.h"
 
-#define NOMEM 7
+int q_init(syn_queue_t * q, int size);
 
-void init_threads(unsigned int count);
-void *t_shape();
-void set_authsocket(char *);
-void chn_thread_count(int val);
-void set_new_uid(int uid);
+int q_put(syn_queue_t * q, int val);
+int q_get(syn_queue_t * q, int *val);
+
+void q_free(syn_queue_t * q);
 
 #endif
