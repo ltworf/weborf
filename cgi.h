@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "options.h"
 #include "types.h"
+#include "connection_types.h"
 
 #define STDIN 0
 #define STDOUT 1

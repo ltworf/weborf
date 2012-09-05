@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "types.h"
 #include "options.h"
+#include "connection_types.h"
 
 int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bool parent);
 void help();

@@ -12,6 +12,7 @@ weborf_SOURCES = \
     cachedir.c \
     cgi.c \
     configuration.c \
+    connection.c \
     dict.c \
     http.c \
     instance.c \
@@ -33,6 +34,8 @@ EXTRA_DIST = \
     buffered_reader.h \
     cgi.h \
     configuration.h \
+    connection.h \
+    connection_types.h \
     dict.h \
     http.h \
     instance.h \

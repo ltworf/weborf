@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 #include "types.h"
+#include "connection_types.h"
 
 bool cache_send_item(unsigned int uprefix,connection_t* connection_prop);
 int cache_get_item_fd(unsigned int uprefix,connection_t* connection_prop);

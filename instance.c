@@ -42,6 +42,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "auth.h"
 #include "cachedir.h"
 #include "cgi.h"
+#include "connection.h"
 #include "dict.h"
 #include "http.h"
 #include "instance.h"
@@ -54,8 +55,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utils.h"
 
 extern syn_queue_t queue;                   //Queue for open sockets
-
-extern t_thread_info thread_info;
 
 extern weborf_configuration_t weborf_conf;
 
@@ -97,7 +96,6 @@ static inline void handle_request(connection_t* connection_prop) {
 
     ssize_t r;
 
-    while(true) {
         switch (connection_prop->status) {
 
         case STATUS_INIT_CHECK_AUTH:
@@ -219,7 +217,7 @@ static inline void handle_request(connection_t* connection_prop) {
             break;
 
         };
-    }
+    
 
 }
 
@@ -284,45 +282,6 @@ more_data:
 }
 
 /**
-Set thread with id as free
-*/
-void change_free_thread(int free_d, int count_d) {
-    pthread_mutex_lock(&thread_info.mutex);
-
-    thread_info.free+=free_d;
-    thread_info.count+=count_d;
-
-#ifdef THREADDBG
-    syslog(LOG_DEBUG,"There are %d free threads",thread_info.free);
-#endif
-    pthread_mutex_unlock(&thread_info.mutex);
-}
-
-static inline int thr_init_connect_prop(connection_t *connection_prop) {
-    connection_prop->buf.data = calloc(INBUFFER+1,sizeof(char));
-    connection_prop->buf.len = 0;
-
-    connection_prop->response.headers.data = malloc(HEADBUF);
-    connection_prop->response.headers.len = 0;
-    connection_prop->response.status_code = HTTP_CODE_NONE;
-
-    connection_prop->strfile=malloc(URI_LEN);    //buffer for filename
-
-    return buffer_init(&(connection_prop->read_b),BUFFERED_READER_SIZE)!=0 ||
-           connection_prop->buf.data==NULL ||
-           connection_prop->response.headers.data == NULL ||
-           connection_prop->strfile==NULL;
-
-}
-
-static inline void thr_free_connect_prop(connection_t *connection_prop) {
-    free(connection_prop->buf.data);
-    free(connection_prop->strfile);
-    free(connection_prop->response.headers.data);
-    buffer_free(&(connection_prop->read_b));
-}
-
-/**
  * Initializes data structures for the thread
  * 
  * returns 0 in case of success
@@ -330,9 +289,10 @@ static inline void thr_free_connect_prop(connection_t *connection_prop) {
 static inline int init_thread() {
     thread_prop_t thread_prop;  //Server's props
     pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
-    thread_prop.poll = mypoll_create(1);
+    thread_prop.poll = mypoll_create(1); //TODO check that value
     
-    bool list_r = arraylist_create(&(thread_prop.connections),sizeof(connection_t),1);
+    
+    bool list_r = arraylist_create(&(thread_prop.connections),sizeof(void*),1);
     
     #ifdef THREADDBG
     syslog(LOG_DEBUG,"Starting thread");
@@ -348,12 +308,16 @@ static inline int init_thread() {
 static void release_thread() {
     thread_prop_t * thread_prop = get_thread_prop();
     mime_release(thread_prop->mime_token);
+    mypoll_destroy(thread_prop->poll);
     
+    
+    //FIXME this has to be seriously reviewed
+#warning "review this code!"
     connection_t * item;
     arraylist_t * list = &(thread_prop->connections);
     while (arraylist_size(list)>0) {
         item = arraylist_get(list,arraylist_size(list)-1); //last element
-        thr_free_connect_prop(item);
+        connection_free(item);
         arraylist_remove_last(list);
     }
 }
@@ -366,6 +330,7 @@ Doesn't do busy waiting
 void * instance(void * nulla) {
     
     //General init of the thread
+    static int connections_fds[1024];
     
     if (init_thread()!=0) { //Unable to allocate the buffer
 #ifdef SERVERDBG
@@ -374,38 +339,62 @@ void * instance(void * nulla) {
         goto release_resources;
     }
 
-    //Start accepting sockets
-    change_free_thread(1,0);
+    thread_prop_t * thread_prop = get_thread_prop();
     
-    //FIXME use the array
-    connection_t connection_prop;
-    thr_init_connect_prop(&connection_prop);
+    #define MAX_EVENTS 10
+    struct epoll_event ev, events[MAX_EVENTS];
+    
 
+    
+    //FIXME only one thread should do this
+    ev.events = EPOLLIN;
+    ev.data.fd = weborf_conf.socket;
+    mypoll_ctl(thread_prop->poll,MYPOLL_CTL_ADD,weborf_conf.socket,&ev);
+    
     while (true) {
-        q_get(&queue, &(connection_prop.sock));//Gets a socket from the queue
-        change_free_thread(-1,0);//Sets this thread as busy
-
-        if (connection_prop.sock<0) { //Was not a socket but a termination order
-            goto release_resources;
+        int nfds = mypoll_wait(thread_prop->poll, events, MAX_EVENTS, -1); //FIXME i need a timeout here
+        int n;
+        for (n = 0; n < nfds; ++n) {
+            connection_t *connection_prop;
+            
+            if (events[n].data.fd == weborf_conf.socket) {
+                //New connection
+                connection_prop = connection_getnew();
+                connection_prop->sock = accept(weborf_conf.socket, NULL,NULL);
+                //FIXME race condition, accept should be non-blocking and its return value has to be checked
+                net_getpeername(connection_prop->sock,connection_prop->ip_addr);
+                connection_prop->status=STATUS_READY_FOR_NEXT;
+                
+                connections_fds[connection_prop->sock] = arraylist_append(&thread_prop->connections,connection_prop);
+                
+                ev.events = EPOLLIN;
+                ev.data.fd = connection_prop->sock;
+                mypoll_ctl(thread_prop->poll,MYPOLL_CTL_ADD,connection_prop->sock,&ev);
+            }
+            
+            connection_prop = arraylist_get(&thread_prop->connections,connections_fds[events[n].data.fd]);
+            handle_request(connection_prop);
+            
+            if (connection_prop->status == STATUS_END) {
+                close(connection_prop->sock);
+                //No need to delete it from mypoll
+                connection_free(connection_prop);
+            }
         }
 
-        //Converting address to string
-        net_getpeername(connection_prop.sock,connection_prop.ip_addr);
+
+        
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
 #endif
-        connection_prop.status=STATUS_READY_FOR_NEXT;
-        handle_request(&connection_prop);
+        
+        
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",thread_prop.id);
 #endif
 
-        close(connection_prop.sock);//Closing the socket
-        buffer_reset (&(connection_prop.read_b));
-
-        change_free_thread(1,0);//Sets this thread as free
     }
 
 
@@ -414,10 +403,6 @@ release_resources:
     syslog(LOG_DEBUG,"Terminating thread");
 #endif
     release_thread();
-    
-#warning "remove the following, has to be done in the list"
-    thr_free_connect_prop(&connection_prop); 
-    change_free_thread(0,-1);//Reduces count of threads
     pthread_exit(0);
     return NULL;//Never reached
 }
@@ -1129,29 +1114,7 @@ will use 0 as socket and exit after.
 It is almost a copy of instance()
 */
 void inetd() {
-    thread_prop_t thread_prop;  //Server's props
-    pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
-
-    //General init of the thread
-    connection_t connection_prop;                   //Struct to contain properties of the connection
-
-    if (mime_init(&thread_prop.mime_token)!=0 || thr_init_connect_prop(&connection_prop)) { //Unable to allocate the buffer
-#ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
-#endif
-        goto release_resources;
-    }
-
-    connection_prop.sock=0;
-
-    //Converting address to string
-    net_getpeername(connection_prop.sock,connection_prop.ip_addr);
-
-    connection_prop.status=STATUS_READY_FOR_NEXT;
-    handle_request(&connection_prop);
-
-    //close(connection_prop.sock);//Closing the socket
-    //buffer_reset (&(connection_prop.read_b));
+    //FIXME rewrite all of this
 
 
 release_resources:

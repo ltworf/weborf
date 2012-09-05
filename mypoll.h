@@ -31,17 +31,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef int poll_t;
 
+typedef enum {
+    MYPOLL_CTL_ADD = EPOLL_CTL_ADD,
+    MYPOLL_CTL_MOD = EPOLL_CTL_MOD,
+    MYPOLL_CTL_DEL = EPOLL_CTL_DEL,
+} mypoll_op_e;
+
+
 
 static inline poll_t mypoll_create(int size) {
     return epoll_create(size);
 }
 
-static inline int mypoll_ctl(poll_t epfd, int op, int fd, struct epoll_event *event) {
+static inline int mypoll_ctl(poll_t epfd, mypoll_op_e op, int fd, struct epoll_event *event) {
     return epoll_ctl(epfd, op, fd, event);
 }
 
 static inline int mypoll_wait(poll_t epfd, struct epoll_event *events, int maxevents, int timeout) {
     return epoll_wait(epfd, events, maxevents, timeout);
+}
+
+static inline void mypoll_destroy(poll_t e) {
+    close(e);
 }
 
 #else
