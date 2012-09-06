@@ -26,6 +26,7 @@ AC_CHECK_HEADERS([sys/resource.h locale.h])
 AC_CHECK_FUNCS([alarm inet_ntoa localtime_r memmove memset mkdir putenv rmdir setenv socket strstr strtol strtoul strtoull ftruncate strrchr utime setrlimit])
 AC_CHECK_FUNCS([inotify_init setlocale strdup pread dup2])
 AC_CHECK_FUNCS([epoll_create epoll_ctl epoll_wait])
+AC_CHECK_FUNCS([dprintf])
 
 
 
@@ -47,6 +48,7 @@ AC_HEADER_STDBOOL
 AC_TYPE_OFF_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
+AC_TYPE_UINT32_T
 AC_TYPE_UID_T
 AC_FUNC_FORK
 AC_FUNC_MALLOC
