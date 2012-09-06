@@ -55,6 +55,25 @@ static inline void mypoll_destroy(poll_t e) {
     close(e);
 }
 
+/**
+ * Adds a watch for the given events
+ **/
+static inline int mypoll_add(poll_t epfd, int fd, uint32_t events) {
+    struct epoll_event ev;
+    
+    ev.events = events;
+    ev.data.fd = fd;
+    return mypoll_ctl(epfd,MYPOLL_CTL_ADD,fd,&ev);
+}
+
+/**
+ * Removes a watch for the given fd in the poll
+ **/
+static inline int mypoll_del(poll_t epfd, int fd) {
+    struct epoll_event ev; //Bug in old kernels
+    return mypoll_ctl(epfd,MYPOLL_CTL_DEL,fd,&ev);
+}
+
 #else
 //FIXME
 #warning "epoll wrapper Not yet implemented" 
