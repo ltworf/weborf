@@ -48,27 +48,27 @@ typedef enum {
 } http_response_codes_e;
 
 typedef enum {
-    STATUS_WAIT_HEADER,
-    STATUS_READY_TO_SEND,
-    STATUS_CHECK_AUTH,
-    STATUS_INIT_CHECK_AUTH,
-    STATUS_END,
-    STATUS_ERR,
-    STATUS_ERR_NO_CONNECTION,
-    STATUS_READY_FOR_NEXT,
-    STATUS_PAGE_SENT,
-    STATUS_WAIT_DATA,
-    STATUS_SERVE_REQUEST,
-    STATUS_PUT_METHOD,
-    STATUS_GET_METHOD,
-    STATUS_SEND_HEADERS,
-    STATUS_COPY_FROM_POST_DATA_TO_SOCKET,
-    STATUS_TAR_DIRECTORY,
-    STATUS_CGI_COPY_POST,
-    STATUS_CGI_WAIT_HEADER,
-    STATUS_CGI_SEND_CONTENT,
-    STATUS_CGI_FREE_RESOURCES,
-    STATUS_CGI_FLUSH_HEADER_BUFFER,
+    STATUS_WAIT_HEADER,                         //No fd
+    STATUS_READY_TO_SEND,                       //sock readable
+    STATUS_CHECK_AUTH,                          //strfile_fd readable
+    STATUS_INIT_CHECK_AUTH,                     //can connect to weborf_conf.authsock
+    STATUS_END,                                 //close sock and free structure
+    STATUS_ERR,                                 //sock writable
+    STATUS_ERR_NO_CONNECTION,                   //close sock and free structure
+    STATUS_READY_FOR_NEXT,                      //sock writable
+    STATUS_PAGE_SENT,                           //closing strfile_fd if >=0
+    STATUS_WAIT_DATA,                           //sock readable
+    STATUS_SERVE_REQUEST,                       //No fd
+    STATUS_PUT_METHOD,                          //strfile_fd writable
+    STATUS_GET_METHOD,                          //strfile_fd readable, sock writable
+    STATUS_SEND_HEADERS,                        //sock writable
+    STATUS_COPY_FROM_POST_DATA_TO_SOCKET,       //sock writable
+    STATUS_TAR_DIRECTORY,                       //sock writable
+    STATUS_CGI_COPY_POST,                       //fd_to_cgi writable
+    STATUS_CGI_WAIT_HEADER,                     //fd_from_cgi readable
+    STATUS_CGI_SEND_CONTENT,                    //fd_from_cgi readable, sock writable
+    STATUS_CGI_FREE_RESOURCES,                  //No fd
+    STATUS_CGI_FLUSH_HEADER_BUFFER,             //sock writable
 
 } conection_status_e;
 
@@ -120,6 +120,7 @@ typedef struct {
     int fd_to_cgi;              //File descriptor to write to the CGI
     int fd_from_cgi;            //File descriptor to read from the CGI
     string_t cgi_buffer;        //Buffer for the CGI headers
+    time_t accessed;            //Used to keep track of when the connection was last used
 } connection_t;
 
 
