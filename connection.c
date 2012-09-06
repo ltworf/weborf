@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "options.h"
 
 #include <stdlib.h>
+#include <time.h>
 
 #include "buffered_reader.h"
 #include "connection.h"
@@ -58,6 +59,9 @@ connection_t* connection_getnew() {
             connection_free(connection_prop);
             return NULL;
            }
+    
+    connection_prop->accessed = time(NULL);
+    
     return connection_prop;
 
 }
