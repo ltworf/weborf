@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
     //Starts the 1st group of threads
     init_thread_attr();
     init_threads(INITIALTHREAD);
-    
+
     while(1) sleep(12);
     return 0; //FIXME
 

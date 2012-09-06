@@ -104,7 +104,7 @@ void auth_init_check_request(connection_t *connection_prop) {
             username,
             password,
             connection_prop->http_param);
-    
+
     connection_prop->strfile_fd =s;
 #endif
 }

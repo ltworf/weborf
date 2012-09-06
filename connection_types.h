@@ -70,7 +70,7 @@ typedef enum {
     STATUS_CGI_FREE_RESOURCES,                  //No fd
     STATUS_CGI_FLUSH_HEADER_BUFFER,             //sock writable
 
-} conection_status_e;
+} connection_status_e;
 
 typedef enum {
     HTTP_0_9 = 57,
@@ -110,8 +110,8 @@ typedef struct {
     string_t post_data;         //Data of the POST
     response_t response;
     request_t request;
-    conection_status_e status;  //Connection status
-    conection_status_e status_next; //next status
+    connection_status_e status;  //Connection status
+    connection_status_e status_next; //next status
     size_t bytes_to_copy;
 
     buffered_read_t read_b;     //Buffer for buffered reader

@@ -96,128 +96,128 @@ static inline void handle_request(connection_t* connection_prop) {
 
     ssize_t r;
 
-        switch (connection_prop->status) {
+    switch (connection_prop->status) {
 
-        case STATUS_INIT_CHECK_AUTH:
+    case STATUS_INIT_CHECK_AUTH:
 
-            auth_init_check_request(connection_prop);
+        auth_init_check_request(connection_prop);
 
-            connection_prop->status = STATUS_CHECK_AUTH;
-            break;
-        case STATUS_CHECK_AUTH:
-            // -> STATUS_READY_TO_SEND
-            if (auth_check_request(connection_prop)!=0) { //If auth is required
-                connection_prop->response.status_code = HTTP_CODE_UNAUTHORIZED;
-                connection_prop->status = STATUS_ERR;
-            } else {
-                connection_prop->status = STATUS_READY_TO_SEND;
-            }
-            break;
-        case STATUS_WAIT_DATA:
-            r=buffer_fill(connection_prop->sock,&(connection_prop->read_b));
-            if (r==0)
-                connection_prop->status=STATUS_END;
-            else
-                connection_prop->status = connection_prop->status_next;
-
-            break;
-        case STATUS_WAIT_HEADER:
-            // -> STATUS_INIT_CHECK_AUTHs
-            read_req_headers(connection_prop);
-            break;
-        case STATUS_PAGE_SENT:
-#ifdef REQUESTDBG
-            syslog(LOG_INFO,
-                   "%s - %d - %s %s",
-                   connection_prop->ip_addr,
-                   connection_prop->response.status_code,
-                   connection_prop->method,
-                   connection_prop->page);
-#endif
-            connection_prop->status=connection_prop->response.keep_alive ? STATUS_READY_FOR_NEXT: STATUS_END;
-
-            free(connection_prop->post_data.data);
-            connection_prop->post_data.data=NULL;
-            if (connection_prop->strfile_fd>=0) close (connection_prop->strfile_fd);
-
-
-            break;
-        case STATUS_READY_TO_SEND:
-            if (connection_prop->request.method_id == POST || connection_prop->request.method_id == PROPFIND) {
-                read_post_data(connection_prop); //TODO read this data iteratively
-            }
-            connection_prop->status = STATUS_SERVE_REQUEST;
-            break;
-        case STATUS_PUT_METHOD:
-            do_put(connection_prop);
-            break;
-        case STATUS_GET_METHOD:
-            do_cp_fd_sock_size(connection_prop);
-            break;
-        case STATUS_TAR_DIRECTORY:
-            do_tar_send_dir(connection_prop);
-            break;
-        case STATUS_CGI_COPY_POST:
-            do_copy_from_post_to_fd(connection_prop,connection_prop->fd_to_cgi);
-            break;
-        case STATUS_CGI_WAIT_HEADER:
-            cgi_wait_headers(connection_prop);
-            break;
-        case STATUS_CGI_SEND_CONTENT:
-            do_cp_fd_sock(connection_prop,connection_prop->fd_from_cgi);
-            break;
-        case STATUS_CGI_FLUSH_HEADER_BUFFER:
-            if (connection_prop->cgi_buffer.len>0) {
-                if (connection_prop->response.chunked)
-                    dprintf(connection_prop->sock,"%x\r\n",(unsigned int)connection_prop->cgi_buffer.len);
-                write(connection_prop->sock,connection_prop->cgi_buffer.data,connection_prop->cgi_buffer.len);
-                if (connection_prop->response.chunked)
-                    dprintf(connection_prop->sock,"\r\n");
-            }
-            connection_prop->status = STATUS_CGI_SEND_CONTENT;
-            connection_prop->status_next = STATUS_CGI_FREE_RESOURCES;
-            break;
-        case STATUS_CGI_FREE_RESOURCES:
-            cgi_free_resources(connection_prop);
-            connection_prop->status = STATUS_PAGE_SENT;
-            break;
-        case STATUS_COPY_FROM_POST_DATA_TO_SOCKET:
-            // -> STATUS_PAGE_SENT || STATUS_ERR_NO_CONNECTION
-            connection_prop->status_next = STATUS_PAGE_SENT;
-            do_copy_from_post_to_fd(connection_prop,connection_prop->sock);
-            break;
-        case STATUS_SERVE_REQUEST:
-            serve_request(connection_prop);
-            break;
-        case STATUS_READY_FOR_NEXT:
-            net_sock_flush(connection_prop->sock);
-            memset(
-                connection_prop->buf.data,
-                0,
-                connection_prop->buf.len);
-            connection_prop->buf.len=0;
-
-            connection_prop->status=STATUS_WAIT_HEADER;
-            break;
-        case STATUS_ERR:
-            connection_prop->status = STATUS_PAGE_SENT;
-            send_error_header(connection_prop);
-            break;
-        case STATUS_SEND_HEADERS:
+        connection_prop->status = STATUS_CHECK_AUTH;
+        break;
+    case STATUS_CHECK_AUTH:
+        // -> STATUS_READY_TO_SEND
+        if (auth_check_request(connection_prop)!=0) { //If auth is required
+            connection_prop->response.status_code = HTTP_CODE_UNAUTHORIZED;
+            connection_prop->status = STATUS_ERR;
+        } else {
+            connection_prop->status = STATUS_READY_TO_SEND;
+        }
+        break;
+    case STATUS_WAIT_DATA:
+        r=buffer_fill(connection_prop->sock,&(connection_prop->read_b));
+        if (r==0)
+            connection_prop->status=STATUS_END;
+        else
             connection_prop->status = connection_prop->status_next;
-            send_error_header(connection_prop);
-            break;
-        case STATUS_ERR_NO_CONNECTION:
+
+        break;
+    case STATUS_WAIT_HEADER:
+        // -> STATUS_INIT_CHECK_AUTHs
+        read_req_headers(connection_prop);
+        break;
+    case STATUS_PAGE_SENT:
 #ifdef REQUESTDBG
-            syslog(LOG_INFO,"%s - FAILED - %s %s",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
+        syslog(LOG_INFO,
+               "%s - %d - %s %s",
+               connection_prop->ip_addr,
+               connection_prop->response.status_code,
+               connection_prop->method,
+               connection_prop->page);
+#endif
+        connection_prop->status=connection_prop->response.keep_alive ? STATUS_READY_FOR_NEXT: STATUS_END;
+
+        free(connection_prop->post_data.data);
+        connection_prop->post_data.data=NULL;
+        if (connection_prop->strfile_fd>=0) close (connection_prop->strfile_fd);
+
+
+        break;
+    case STATUS_READY_TO_SEND:
+        if (connection_prop->request.method_id == POST || connection_prop->request.method_id == PROPFIND) {
+            read_post_data(connection_prop); //TODO read this data iteratively
+        }
+        connection_prop->status = STATUS_SERVE_REQUEST;
+        break;
+    case STATUS_PUT_METHOD:
+        do_put(connection_prop);
+        break;
+    case STATUS_GET_METHOD:
+        do_cp_fd_sock_size(connection_prop);
+        break;
+    case STATUS_TAR_DIRECTORY:
+        do_tar_send_dir(connection_prop);
+        break;
+    case STATUS_CGI_COPY_POST:
+        do_copy_from_post_to_fd(connection_prop,connection_prop->fd_to_cgi);
+        break;
+    case STATUS_CGI_WAIT_HEADER:
+        cgi_wait_headers(connection_prop);
+        break;
+    case STATUS_CGI_SEND_CONTENT:
+        do_cp_fd_sock(connection_prop,connection_prop->fd_from_cgi);
+        break;
+    case STATUS_CGI_FLUSH_HEADER_BUFFER:
+        if (connection_prop->cgi_buffer.len>0) {
+            if (connection_prop->response.chunked)
+                dprintf(connection_prop->sock,"%x\r\n",(unsigned int)connection_prop->cgi_buffer.len);
+            write(connection_prop->sock,connection_prop->cgi_buffer.data,connection_prop->cgi_buffer.len);
+            if (connection_prop->response.chunked)
+                dprintf(connection_prop->sock,"\r\n");
+        }
+        connection_prop->status = STATUS_CGI_SEND_CONTENT;
+        connection_prop->status_next = STATUS_CGI_FREE_RESOURCES;
+        break;
+    case STATUS_CGI_FREE_RESOURCES:
+        cgi_free_resources(connection_prop);
+        connection_prop->status = STATUS_PAGE_SENT;
+        break;
+    case STATUS_COPY_FROM_POST_DATA_TO_SOCKET:
+        // -> STATUS_PAGE_SENT || STATUS_ERR_NO_CONNECTION
+        connection_prop->status_next = STATUS_PAGE_SENT;
+        do_copy_from_post_to_fd(connection_prop,connection_prop->sock);
+        break;
+    case STATUS_SERVE_REQUEST:
+        serve_request(connection_prop);
+        break;
+    case STATUS_READY_FOR_NEXT:
+        net_sock_flush(connection_prop->sock);
+        memset(
+            connection_prop->buf.data,
+            0,
+            connection_prop->buf.len);
+        connection_prop->buf.len=0;
+
+        connection_prop->status=STATUS_WAIT_HEADER;
+        break;
+    case STATUS_ERR:
+        connection_prop->status = STATUS_PAGE_SENT;
+        send_error_header(connection_prop);
+        break;
+    case STATUS_SEND_HEADERS:
+        connection_prop->status = connection_prop->status_next;
+        send_error_header(connection_prop);
+        break;
+    case STATUS_ERR_NO_CONNECTION:
+#ifdef REQUESTDBG
+        syslog(LOG_INFO,"%s - FAILED - %s %s",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
 #endif
 
-        case STATUS_END:
-            return;
-            break;
+    case STATUS_END:
+        return;
+        break;
 
-        };
-    
+    };
+
 
 }
 
@@ -283,23 +283,23 @@ more_data:
 
 /**
  * Initializes data structures for the thread
- * 
+ *
  * returns 0 in case of success
  **/
 static inline int init_thread() {
     thread_prop_t thread_prop;  //Server's props
     pthread_setspecific(thread_key, (void *)&thread_prop); //Set thread_prop as thread variable
     thread_prop.poll = mypoll_create(1); //TODO check that value
-    
-    
+
+
     bool list_r = arraylist_create(&(thread_prop.connections),sizeof(void*),1);
-    
-    #ifdef THREADDBG
+
+#ifdef THREADDBG
     syslog(LOG_DEBUG,"Starting thread");
-    #endif
-    
+#endif
+
     int mime_r = mime_init(&thread_prop.mime_token);
-    
+
     if ((mime_r & list_r) != 0)
         return 1;
     return 0;
@@ -309,8 +309,8 @@ static void release_thread() {
     thread_prop_t * thread_prop = get_thread_prop();
     mime_release(thread_prop->mime_token);
     mypoll_destroy(thread_prop->poll);
-    
-    
+
+
     //FIXME this has to be seriously reviewed
 #warning "review this code!"
     connection_t * item;
@@ -328,10 +328,10 @@ Takes open sockets from the queue and serves the requests
 Doesn't do busy waiting
 */
 void * instance(void * nulla) {
-    
+
     //General init of the thread
     static int connections_fds[1024];
-    
+
     if (init_thread()!=0) { //Unable to allocate the buffer
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
@@ -340,23 +340,20 @@ void * instance(void * nulla) {
     }
 
     thread_prop_t * thread_prop = get_thread_prop();
-    
-    #define MAX_EVENTS 10
-    struct epoll_event ev, events[MAX_EVENTS];
-    
 
-    
+#define MAX_EVENTS 10
+    struct epoll_event events[MAX_EVENTS];
+
+
     //FIXME only one thread should do this
-    ev.events = EPOLLIN;
-    ev.data.fd = weborf_conf.socket;
-    mypoll_ctl(thread_prop->poll,MYPOLL_CTL_ADD,weborf_conf.socket,&ev);
-    
+    mypoll_add(thread_prop->poll,weborf_conf.socket,EPOLLIN);
+
     while (true) {
         int nfds = mypoll_wait(thread_prop->poll, events, MAX_EVENTS, -1); //FIXME i need a timeout here
         int n;
         for (n = 0; n < nfds; ++n) {
             connection_t *connection_prop;
-            
+
             if (events[n].data.fd == weborf_conf.socket) {
                 //New connection
                 connection_prop = connection_getnew();
@@ -364,51 +361,82 @@ void * instance(void * nulla) {
                 //FIXME race condition, accept should be non-blocking and its return value has to be checked
                 net_getpeername(connection_prop->sock,connection_prop->ip_addr);
                 connection_prop->status=STATUS_READY_FOR_NEXT;
-                
+
                 connections_fds[connection_prop->sock] = arraylist_append(&thread_prop->connections,connection_prop);
-                
-                ev.events = EPOLLIN;
-                ev.data.fd = connection_prop->sock;
-                mypoll_ctl(thread_prop->poll,MYPOLL_CTL_ADD,connection_prop->sock,&ev);
-                
+
                 printf ("new connection\n");
             }
-            
+
             connection_prop = arraylist_get(&thread_prop->connections,connections_fds[events[n].data.fd]);
-            printf("connection %d status %d\n",connection_prop->sock,connection_prop->status);
+            connection_status_e old_status = connection_prop->status;
             handle_request(connection_prop);
-            printf("->connection %d status %d\n",connection_prop->sock,connection_prop->status);
+            printf("->connection %d old status %d, status \n",connection_prop->sock,old_status,connection_prop->status);
+
+            if (connection_prop->status == old_status) {
+                continue;
+            }
+
             switch (connection_prop->status) {
-                case STATUS_WAIT_HEADER:
-                case STATUS_READY_TO_SEND:
-                case STATUS_CHECK_AUTH:
-                case STATUS_INIT_CHECK_AUTH:
-                case STATUS_ERR:
-                case STATUS_ERR_NO_CONNECTION:
-                case STATUS_READY_FOR_NEXT:
-                case STATUS_PAGE_SENT:
-                case STATUS_WAIT_DATA:
-                case STATUS_SERVE_REQUEST:
-                case STATUS_PUT_METHOD:
-                case STATUS_GET_METHOD:
-                case STATUS_SEND_HEADERS:
-                case STATUS_COPY_FROM_POST_DATA_TO_SOCKET:
-                case STATUS_TAR_DIRECTORY:
-                case STATUS_CGI_COPY_POST:
-                case STATUS_CGI_WAIT_HEADER:
-                case STATUS_CGI_SEND_CONTENT:
-                case STATUS_CGI_FREE_RESOURCES:
-                case STATUS_CGI_FLUSH_HEADER_BUFFER:
-                
-                
-                case STATUS_END:
-                    close(connection_prop->sock);
-                    //FIXME No need to delete it from mypoll, but needs to do something on other future implementations
-                    connection_free(connection_prop);
-                    //TODO remove from the list and fix the connections_fds array;
-                    break;
+            case STATUS_WAIT_HEADER:                         //No fd
+            case STATUS_SERVE_REQUEST:                       //No fd
+            case STATUS_CGI_FREE_RESOURCES:                  //No fd
+            case STATUS_INIT_CHECK_AUTH:                     //can connect to weborf_conf.authsock
+                break;
+
+            case STATUS_READY_TO_SEND:                       //sock readable
+            case STATUS_WAIT_DATA:
+                mypoll_add(thread_prop->poll,connection_prop->sock,EPOLLIN);
+                break;
+
+            case STATUS_GET_METHOD:                          //strfile_fd readable, sock writable
+                //FIXME both of them should be true at the same time...
+                mypoll_add(thread_prop->poll,connection_prop->strfile_fd,EPOLLIN);
+
+            case STATUS_ERR:                                 //sock writable
+            case STATUS_READY_FOR_NEXT:
+            case STATUS_SEND_HEADERS:
+            case STATUS_COPY_FROM_POST_DATA_TO_SOCKET:
+            case STATUS_TAR_DIRECTORY:
+            case STATUS_CGI_FLUSH_HEADER_BUFFER:
+                mypoll_add(thread_prop->poll,connection_prop->sock,EPOLLOUT);
+                break;
+
+
+            case STATUS_CHECK_AUTH:                          //strfile_fd readable
+                mypoll_add(thread_prop->poll,connection_prop->strfile_fd,EPOLLIN);
+                break;
+
+            case STATUS_PUT_METHOD:                          //strfile_fd writable
+                mypoll_add(thread_prop->poll,connection_prop->strfile_fd,EPOLLOUT);
+                break;
+
+
+            case STATUS_PAGE_SENT:                           //closing strfile_fd if >=0
+                if (connection_prop->strfile_fd >=0)
+                    mypoll_del(thread_prop->poll,connection_prop->strfile_fd);
+                break;
+
+            case STATUS_CGI_COPY_POST:                       //fd_to_cgi writable
+                mypoll_add(thread_prop->poll,connection_prop->fd_to_cgi,EPOLLOUT);
+                break;
+
+
+            case STATUS_CGI_SEND_CONTENT:                    //fd_from_cgi readable, sock writable
+                mypoll_add(thread_prop->poll,connection_prop->sock,EPOLLOUT);
+            case STATUS_CGI_WAIT_HEADER:                     //fd_from_cgi readable
+                mypoll_add(thread_prop->poll,connection_prop->fd_from_cgi,EPOLLIN);
+                break;
+
+
+            case STATUS_END:                     //close sock and free structure
+            case STATUS_ERR_NO_CONNECTION:                   //close sock and free structure
+                mypoll_del(thread_prop->poll,connection_prop->sock);
+                close(connection_prop->sock);
+                connection_free(connection_prop);
+                //TODO remove from the list and fix the connections_fds array;
+                break;
             };
-            
+
         }
 
 
@@ -966,36 +994,22 @@ int send_err(connection_t *connection_prop,int err,char* descr) {
     connection_prop->response.status_code=err; //Sets status code, for the logs
 
     //Buffer for both header and page
-    char * head=malloc(MAXSCRIPTOUT+HEADBUF);
+    char * page=malloc(MAXSCRIPTOUT);
 
-    if (head==NULL) {
+    if (page==NULL) {
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers");
 #endif
         return HTTP_CODE_SERVICE_UNAVAILABLE;
     }
 
-    char * page=head+HEADBUF;
-
     //Prepares the page
     int page_len=snprintf(page,MAXSCRIPTOUT,"%s <H1>Error %d</H1>%s %s",HTMLHEAD,err,descr,HTMLFOOT);
 
-    //Prepares the header
-    int head_len = snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n",err,descr ,page_len);
+    dprintf(sock,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n%.*s",err,descr ,page_len,page_len,page);
 
-    //Sends the http header
-    if (write (sock,head,head_len)!=head_len) {
-        free(head);
-        return HTTP_CODE_DISCONNECTED;
-    }
-
-    //Sends the html page
-    if (write(sock,page,page_len)!=page_len) {
-        free(head);
-        return HTTP_CODE_DISCONNECTED;
-    }
-
-    free(head);
+    //return HTTP_CODE_DISCONNECTED;
+    free(page);
     return 0;
 }
 

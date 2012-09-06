@@ -99,7 +99,7 @@ typedef struct {
 
     array_ll indexes;//List of pointers to index files
     dict_t vhosts;         //virtual hosts
-    
+
     int socket;            //Socket to listen
 
 } weborf_configuration_t;

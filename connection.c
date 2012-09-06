@@ -29,20 +29,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
  * Creates a new connection_t,
- * 
+ *
  * allocates its internal buffers:
  * buf.data
  * headers.data
  * strfile
  * read_b
- * 
+ *
  * Returns a pointer to the structure in case of
  * success
  * or NULL in case of failure
  **/
 connection_t* connection_getnew() {
     connection_t * connection_prop = malloc(sizeof(connection_t));
-    
+
     connection_prop->buf.data = calloc(INBUFFER+1,sizeof(char));
     connection_prop->buf.len = 0;
 
@@ -53,15 +53,15 @@ connection_t* connection_getnew() {
     connection_prop->strfile=malloc(URI_LEN);    //buffer for filename
 
     if (buffer_init(&(connection_prop->read_b),BUFFERED_READER_SIZE)!=0 ||
-           connection_prop->buf.data==NULL ||
-           connection_prop->response.headers.data == NULL ||
-           connection_prop->strfile==NULL) {
-            connection_free(connection_prop);
-            return NULL;
-           }
-    
+            connection_prop->buf.data==NULL ||
+            connection_prop->response.headers.data == NULL ||
+            connection_prop->strfile==NULL) {
+        connection_free(connection_prop);
+        return NULL;
+    }
+
     connection_prop->accessed = time(NULL);
-    
+
     return connection_prop;
 
 }

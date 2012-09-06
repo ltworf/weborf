@@ -60,7 +60,7 @@ static inline void mypoll_destroy(poll_t e) {
  **/
 static inline int mypoll_add(poll_t epfd, int fd, uint32_t events) {
     struct epoll_event ev;
-    
+
     ev.events = events;
     ev.data.fd = fd;
     return mypoll_ctl(epfd,MYPOLL_CTL_ADD,fd,&ev);
