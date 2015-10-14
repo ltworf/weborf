@@ -165,6 +165,8 @@ void version() {
 }
 
 void print_capabilities() {
+    printf("version:" VERSION "\n");
+
     printf("ipv:"
 #ifdef IPV6
     "6"
