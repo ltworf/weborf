@@ -31,5 +31,6 @@ void moo();
 void print_start_disclaimer(int argc, char *argv[]);
 bool get_param_value(char *http_param, char *parameter, char *buf, ssize_t size,ssize_t param_len);
 void daemonize();
+void print_capabilities();
 
 #endif

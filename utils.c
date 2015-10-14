@@ -164,6 +164,36 @@ void version() {
     exit(0);
 }
 
+void print_capabilities() {
+    printf("ipv:"
+#ifdef IPV6
+    "6"
+#else
+    "4"
+#endif
+    "\n"
+    );
+
+    printf("webdav:"
+#ifdef WEBDAV
+    "yes"
+#else
+    "no"
+#endif
+    "\n"
+    );
+
+    printf("mime:"
+#ifdef SEND_MIMETYPES
+    "yes"
+#else
+    "no"
+#endif
+    "\n"
+    );
+    exit(0);
+}
+
 /**
 Prints command line help
  */
@@ -197,6 +227,7 @@ void help() {
            "  -h, --help    display this help and exit\n"
            "  -I, --index   list of index files, comma-separated\n"
            "  -i, --ip  followed by IP address to listen (dotted format)\n"
+           "  -k, --caps    lists the capabilities of the binary\n"
            "  -m, --mime    sends content type header to clients\n"
            "  -p, --port    followed by port number to listen\n"
            "  -T  --inetd   must be specified when using weborf with inetd or xinetd\n"
