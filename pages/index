@@ -1,0 +1,3 @@
+<p>Weborf is a lightweight webserver designed to rapidly share directories. Runs on POSIX systems and is meant to solve <a href="http://xkcd.com/949/">this problem</a>.</p>
+
+<img src="images/file_transfer.png">
