@@ -1,0 +1,13 @@
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Weborf maintained by <a href="http://ltworf.github.io/ltworf/">Salvo 'LtWorf' Tomaselli</a></p>
+        <p>Last updated: <?php echo date("F j, Y, g:i a"); ?></p>
+      </footer>
+    </div>
+
+  </body>
+</html>
