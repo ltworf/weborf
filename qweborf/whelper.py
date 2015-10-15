@@ -40,6 +40,7 @@ class weborf_runner():
         self.ipv6 = True
         self._running = False
         self.version = None
+        self.webdav = None
 
         self.weborf = self._test_weborf()
 
@@ -47,8 +48,6 @@ class weborf_runner():
         '''Tests if weborf binary is existing.
         It will return true if everything is OK
         and false otherwise.'''
-        ret = 0
-        out = ""
 
         try:
             with subprocess.Popen(["weborf", "-k"], bufsize=1024, stdout=subprocess.PIPE) as p:
@@ -58,11 +57,17 @@ class weborf_runner():
 
                 self.version = capabilities['version']
                 self.ipv6 = capabilities['ipv'] == '6'
+                self.webdav = capabilities['webdav'] == 'yes'
 
                 self.logclass.logger('Weborf version %s found' %
                                      self.version, self.logclass.DBG_NOTICE)
                 self.logclass.logger('IPv%s protocol in use' %
                                      capabilities['ipv'], self.logclass.DBG_NOTICE)
+                self.logclass.logger('Has webdav support: %s' % capabilities['webdav'], self.logclass.DBG_NOTICE)
+
+                if capabilities['embedded_auth'] == 'yes':
+                    self.logclass.logger('Binary compiled with embedded authentication', self.logclass.DBG_ERROR)
+                    return False
 
                 return True
         except FileNotFoundError:
@@ -83,7 +88,7 @@ class weborf_runner():
 
         if not self.weborf:
             self.logclass.logger(
-                'Unable to find weborf', self.logclass.DBG_ERROR)
+                'Unable to start weborf', self.logclass.DBG_ERROR)
             return False
 
         if len(options['path']) == 0:

@@ -46,6 +46,10 @@ class qweborfForm (QtWidgets.QWidget):
         else:
             self.ui.chkTar.setEnabled(False)
 
+        if not self.weborf.webdav:
+            self.ui.chkDav.setEnabled(False)
+            self.ui.chkWrite.setEnabled(False)
+
         # Listing addresses
         for i in nhelper.getaddrs(self.weborf.ipv6):
             self.ui.cmbAddress.addItem(i, None)
