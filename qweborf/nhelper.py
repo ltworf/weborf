@@ -269,6 +269,16 @@ def get_redirections():
     return redirections
 
 
+def can_redirect():
+    '''Returns true if upnpc is installed and NAT traversal can
+    be attempted'''
+
+    try:
+        with subprocess.Popen(['upnpc']) as p:
+            return True
+    except:
+        return False
+
 class Redirection(object):
 
     '''This class represents a NAT redirection'''

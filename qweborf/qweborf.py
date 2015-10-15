@@ -54,6 +54,8 @@ class qweborfForm (QtWidgets.QWidget):
         for i in nhelper.getaddrs(self.weborf.ipv6):
             self.ui.cmbAddress.addItem(i, None)
 
+        self.ui.chkNAT.setEnabled(nhelper.can_redirect())
+
         self.defaultdir = QtCore.QStandardPaths.writableLocation(
             QtCore.QStandardPaths.HomeLocation)
         self.ui.txtPath.setText(self.defaultdir)
@@ -84,7 +86,7 @@ class qweborfForm (QtWidgets.QWidget):
 
     def about(self):
 
-        self.logger('<hr><strong>Qweborf 0.13</strong>')
+        self.logger('<hr><strong>Qweborf 0.13.1</strong>')
         self.logger('This program comes with ABSOLUTELY NO WARRANTY.'
                     ' This is free software, and you are welcome to redistribute it under certain conditions.'
                     ' For details see the <a href="http://www.gnu.org/licenses/gpl.html">GPLv3 Licese</a>.')
@@ -131,6 +133,22 @@ class qweborfForm (QtWidgets.QWidget):
             self.ui.cmdStop.setEnabled(True)
             self.ui.tabWidget.setEnabled(False)
             self.started = True
+
+        if self.ui.chkNAT.isChecked() and self.started==True:
+            QtCore.QCoreApplication.processEvents()
+            self.logger('Trying to use UPnP to open a redirection in the NAT device. Please wait...')
+            QtCore.QCoreApplication.processEvents()
+            external_addr=nhelper.externaladdr()
+            QtCore.QCoreApplication.processEvents()
+            self.logger('Public IP address %s' % str(external_addr))
+            QtCore.QCoreApplication.processEvents()
+            if external_addr!=None:
+                redirection=nhelper.open_nat(options['port'])
+                if redirection is not None:
+                    self.redirection=redirection
+                    url='http://%s:%d/' % (external_addr,redirection.eport)
+                    logentry='Public address: <a href="%s">%s</a>' % (url,url)
+                    self.logger(logentry)
 
     def select_path(self):
         dirname = QtWidgets.QFileDialog.getExistingDirectory(
