@@ -2,10 +2,10 @@ Source: weborf
 Section: httpd
 Priority: optional
 Maintainer: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>
-Build-Depends: debhelper (>= 7.0.50~), libmagic-dev (>=5.04~), python, python-support, pyqt4-dev-tools
-Standards-Version: 3.9.1
+Build-Depends: debhelper (>= 9), libmagic-dev (>=5.04~), python3, dh-python, pyqt5-dev-tools
+Standards-Version: 3.9.6
+X-Python3-Version: 3.4
 Homepage: http://galileo.dmi.unict.it/wiki/weborf/
-
 
 Package: weborf
 Architecture: any
@@ -17,10 +17,9 @@ Description: Fast and small webserver meant to be run without root privileges
  Has limited support to webdav, allowing its use by GNOME and KDE filemanagers.
  It also supports cgi.
 
-
 Package: weborf-daemon
 Architecture: all
-Depends: ${misc:Depends}, weborf (>=0.13)
+Depends: ${misc:Depends}, weborf (>=${binary:Version})
 Description: init script for weborf
  Weborf is a configurationless webeserver mainly meant to allow users to
  easily share their directories over the web.
@@ -31,9 +30,11 @@ Description: init script for weborf
 
 Package: qweborf
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, weborf (>=0.12), python-qt4 (>=4.7.3)
+Depends: ${misc:Depends}, ${python3:Depends}, weborf (>=${binary:Version}), python3-pyqt5
+Recommends: miniupnpc
 Description: Shares files using the HTTP protocol
  Qweborf provides an easy to use graphical interface to share local files using
  the HTTP protocol.
  It can enable writing on the server, webdav, authentication and sending
  directories as tar.gz.
+ It can try to work across NAT.

@@ -1,3 +1,33 @@
+weborf (0.13.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Recommends miniupnpc for NAT traversal
+  * Typo fixed upstream (Closes: #773655)
+  * Removed patch "miredo" (Now upstream)
+  * Removed patch "mapped_addr" (Now upstream)
+  * qweborf now uses Python3 and PyQt5
+  * Drop python-support (Closes: #786147)
+  * Bumped Standards-Version to 3.9.6
+  * Bumped debhelper to 9
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 15 Oct 2015 08:43:41 +0200
+
+weborf (0.13-3) unstable; urgency=low
+
+  * Fixed typo in the description (Closes: #677083)
+  * Correctly handles IPv4 clients in log files when started by
+    xinetd (Closes: #601253)
+  * Updated Standards-Version
+  * Build-depends on hardening-wrapper
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 21 Jun 2012 17:35:43 +0200
+
+weborf (0.13-2) unstable; urgency=low
+
+  * Backport fix from upstream: qweborf doesn't crash when miredo is in use
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Mon, 19 Dec 2011 10:54:07 +0100
+
 weborf (0.13-1) unstable; urgency=low
 
   * New upstream release

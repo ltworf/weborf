@@ -9,20 +9,21 @@
 SHELL=sh -e
 
 # Uncomment this to turn on verbose mode.
-#export DH_VERBOSE=1
+export DH_VERBOSE=1
 
 %:
-	dh  $@
+	dh $@ --with python3
 
 override_dh_installinit:
 	dh_installinit -pweborf-daemon --onlyscripts --init-script=weborf
 
+#clean:
+#	rm -rf build *.egg-info
+#	dh $@
+
+
 override_dh_auto_install:
-	pyuic4 qweborf/main.ui > qweborf/main.py
-	python qweborf.setup.py install --root=$(CURDIR)/debian/qweborf
-	dh_auto_install
-
-override_dh_install:
+	pyuic5 qweborf/main.ui > qweborf/main.py
+	python3 qweborf.setup.py install --root=debian/qweborf --install-layout=deb 
 	install -D qweborf/qweborf debian/qweborf/usr/bin/qweborf
-	dh_install
-
+	dh_auto_install
