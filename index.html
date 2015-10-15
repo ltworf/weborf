@@ -12,15 +12,15 @@
     <!-- HEADER -->
     <div id="header_wrap" class="outer">
         <header class="inner">
-          <a id="forkme_banner" href="https://github.com/ltworf/weborf">View on GitHub</a>
+          <a id="forkme_banner" href="https://github.com/ltworf/weborf">GitHub</a>
 
-          <h1 id="project_title"><a href="index.html">Relational</a></h1>
+          <h1 id="project_title"><a href="index.html">weborf</a></h1>
           <h2 id="project_tagline">Educational tool for relational algebra</h2>
 
             <section id="download">
               <a href="download.html">Downloads</a> |
               <a href="qweborf.html">qweborf</a> |
-              <a href="cache.html">Cache</a> |
+              <a href="cache.html">Cache</a>
             </section>
         </header>
     </div>
@@ -29,47 +29,9 @@
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
 
-        <p>Relational an educational tool to provide a workspace for experimenting with <em>relational</em> <em>algebra</em>, an offshoot of first-order logic.</p>
+<p>Weborf is a lightweight webserver designed to rapidly share directories. Runs on POSIX systems and is meant to solve <a href="http://xkcd.com/949/">this problem</a>.</p>
 
-<p>It provides GUI that can be used for executing relational queries, and also provides a command line interface.</p>
-
-<p>Provides a standalone Python module that can be used for executing relational queries, parsing relational expressions and optimizing them.</p>
-
-<h1>Version 2.1 released</h1>
-<p>The UI now implements sessions and remembers where you left off the previous time. It was also redesigned to be able to fit smaller screens.</p>
-<p>The release also fixes some bugs in the parser and in the outher join functions.</p>
-
-<h1>
-<a id="install" class="anchor" href="#install" aria-hidden="true"><span class="octicon octicon-link"></span></a>Install</h1>
-
-<p><em>Windows</em> installer can be found in the <a href="download.html">download page</a></p>
-
-<p>For <em>Linux</em>, check your distribution's packages, relational is available on Debian and Ubuntu. If a package is not available for your distribution, you can <a href="download.html">download</a> the source and run it.</p>
-
-<h1>
-<a id="syntax" class="anchor" href="#syntax" aria-hidden="true"><span class="octicon octicon-link"></span></a>Syntax</h1>
-
-<p>These are some valid queries</p>
-
-<pre><code>σage &gt; 25 and rank == weight(A)
-σ (name.upper().startswith('J') and age&gt;21 )(people)
-Q ⋈ π a,b(A) ⋈ B
-ρid➡i,name➡n(A) - π a,b(π a,b(A)) ∩ σage &gt; 25 or rank = weight(A)
-π a,b(π a,b(A))
-ρid➡i,name➡n(π a,b(A))
-A ⋈ B
-</code></pre>
-
-<p>Explaination of all the operators and their syntax can be <a href="allowed_expressions.html">found here</a>.</p>
-
-<p>Formal language definition <a href="grammar.html">can be read here</a>.</p>
-<p>Documentation on how the <a href="types.html">automatic casting</a> is performed.</p>
-
-<h1>Used by</h1>
-<ul>
-<li><a href="http://link.springer.com/chapter/10.1007%2F978-3-642-32498-7_1">Ontology-Based Identification of Research Gaps and Immature Research Areas</a></li>
-
-</ul>
+<img src="images/file_transfer.png">
       </section>
     </div>
 
@@ -77,7 +39,7 @@ A ⋈ B
     <div id="footer_wrap" class="outer">
       <footer class="inner">
         <p class="copyright">Weborf maintained by <a href="http://ltworf.github.io/ltworf/">Salvo 'LtWorf' Tomaselli</a></p>
-        <p>Last updated: October 15, 2015, 3:58 pm</p>
+        <p>Last updated: October 15, 2015, 4:07 pm</p>
       </footer>
     </div>
 
