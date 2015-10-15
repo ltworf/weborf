@@ -1,0 +1,13 @@
+<h2>qweborf</h2>
+
+<img src="images/qweborf.png">
+
+<p><strong>qweborf</strong> provides a GUI to share your files over the HTTP protocol. It acts as a wrapper to weborf.</p>
+
+<p>It allows you to:</p>
+<ul>
+<li>Traverse NAT (acts as a wrapper to miniupnpc)</li>
+<li>Enable DAV</li>
+<li>Enable compression of directories, sending them as .tar.gz</li>
+<li>Enable authentication</li>
+</ul>

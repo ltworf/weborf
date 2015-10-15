@@ -1,3 +1,5 @@
 <p>Weborf is a lightweight webserver designed to rapidly share directories. Runs on POSIX systems and is meant to solve <a href="http://xkcd.com/949/">this problem</a>.</p>
 
+<p>It comes with a GUI called qweborf to make it easier to know the IP address, traverse the NAT, use authentication.</p>
+
 <img src="images/file_transfer.png">
