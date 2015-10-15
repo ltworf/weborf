@@ -38,6 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "mystring.h"
 #include "utils.h"
+#include "embedded_auth.h"
 
 /**
 This function reads the directory dir, putting inside the html string an html
@@ -193,6 +194,16 @@ void print_capabilities() {
 #endif
     "\n"
     );
+
+    printf("embedded_auth:"
+#ifdef EMBEDDED_AUTH
+    "yes"
+#else
+    "no"
+#endif
+    "\n"
+    );
+
     exit(0);
 }
 
