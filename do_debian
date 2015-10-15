@@ -1,0 +1,12 @@
+#!/bin/sh
+rm -rf /amem/weborf*
+autoreconf -f -i
+make clean
+./configure
+make dist
+mv weborf-0.13.1.tar.gz /amem/weborf_0.13.1.orig.tar.gz
+cd /amem
+tar -xvvf weborf_0.13.1.orig.tar.gz
+cd weborf-0.13.1
+cp -r ~/dev/weborf/debian .
+dpkg-buildpackage
