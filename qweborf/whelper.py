@@ -20,8 +20,9 @@ import os
 import subprocess
 import socket
 import threading
-import nhelper
 from PyQt5 import QtCore
+
+import qweborf.nhelper
 
 
 class weborf_runner():

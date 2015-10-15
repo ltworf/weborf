@@ -19,11 +19,12 @@
 # author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 
 from PyQt5 import QtGui, QtWidgets, QtCore
-import main
-import whelper
-import nhelper
 import sys
 import os
+
+import qweborf.main
+import qweborf.whelper
+import qweborf.nhelper
 
 
 class qweborfForm (QtWidgets.QWidget):
