@@ -154,3 +154,31 @@ void net_bind_and_listen(int s) {
     listen(s, MAXQ); //Listen to the socket
 
 }
+
+
+void net_getpeername(int socket,char* buffer) {
+
+#ifdef IPV6
+
+    struct sockaddr_storage t_addr;
+    socklen_t addr_l=sizeof(t_addr);
+
+    getpeername(socket, (struct sockaddr *)&t_addr, &addr_l);
+
+    if (t_addr.ss_family==AF_INET) {
+        struct sockaddr_in *addr =(struct sockaddr_in *)&t_addr;
+        char temp_buffer[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &(addr->sin_addr), temp_buffer, INET_ADDRSTRLEN);
+        snprintf(buffer,INET6_ADDRSTRLEN,"::ffff:%s",temp_buffer);
+    } else {
+        struct sockaddr_in6 *addr =(struct sockaddr_in6 *)&t_addr;
+        inet_ntop(AF_INET6, &(addr->sin6_addr), buffer, INET6_ADDRSTRLEN);
+    }
+#else
+    struct sockaddr_in addr;
+    socklen_t addr_l=sizeof(struct sockaddr_in);
+
+    getpeername(socket, (struct sockaddr *)&addr,&addr_l);
+    inet_ntop(AF_INET, &addr.sin_addr, buffer, INET_ADDRSTRLEN);
+#endif
+}

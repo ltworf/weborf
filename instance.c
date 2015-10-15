@@ -297,15 +297,7 @@ void * instance(void * nulla) {
         }
 
         connection_prop.sock=sock;//Assigned socket into the struct
-
-        //Converting address to string
-#ifdef IPV6
-        getpeername(sock, (struct sockaddr *)&addr, &addr_l);
-        inet_ntop(AF_INET6, &addr.sin6_addr, connection_prop.ip_addr, INET6_ADDRSTRLEN);
-#else
-        getpeername(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
-        inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr, INET_ADDRSTRLEN);
-#endif
+        net_getpeername(sock,connection_prop.ip_addr);
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
@@ -1274,14 +1266,7 @@ void inetd() {
         goto release_resources;
     }
 
-    //Converting address to string
-#ifdef IPV6
-    getpeername(sock, (struct sockaddr *)&addr, &addr_l);
-    inet_ntop(AF_INET6, &addr.sin6_addr, connection_prop.ip_addr, INET6_ADDRSTRLEN);
-#else
-    getpeername(sock, (struct sockaddr *)&addr,(socklen_t *) &addr_l);
-    inet_ntop(AF_INET, &addr.sin_addr, connection_prop.ip_addr, INET_ADDRSTRLEN);
-#endif
+    net_getpeername(sock,connection_prop.ip_addr);
 
     handle_requests(buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
     //close(sock);//Closing the socket
