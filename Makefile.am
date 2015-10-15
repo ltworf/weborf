@@ -39,6 +39,7 @@ EXTRA_DIST = \
     examples \
     daemon \
     weborf.conf \
+    qweborf/__init__.py \
     qweborf/main.ui \
     qweborf/nhelper.py \
     qweborf/whelper.py \
