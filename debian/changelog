@@ -9,6 +9,7 @@ weborf (0.13.1-1) unstable; urgency=low
   * Drop python-support (Closes: #786147)
   * Bumped Standards-Version to 3.9.6
   * Bumped debhelper to 9
+  * Change links to new upstream website
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 15 Oct 2015 08:43:41 +0200
 

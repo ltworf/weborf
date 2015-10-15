@@ -29,8 +29,6 @@ import qweborf.nhelper as nhelper
 
 class qweborfForm (QtWidgets.QWidget):
 
-    '''This class is the form used for the survey, needed to intercept the events.
-    It also sends the data with http POST to a page hosted on galileo'''
 
     DBG_DEFAULT = 0
     DBG_WARNING = 1
@@ -92,7 +90,7 @@ class qweborfForm (QtWidgets.QWidget):
                     ' This is free software, and you are welcome to redistribute it under certain conditions.'
                     ' For details see the <a href="http://www.gnu.org/licenses/gpl.html">GPLv3 Licese</a>.')
         self.logger(
-            '<a href="http://galileo.dmi.unict.it/wiki/weborf">Homepage</a>')
+            '<a href="http://ltworf.github.io/weborf/">Homepage</a>')
         self.logger(
             'Salvo \'LtWorf\' Tomaselli <a href="mailto:tiposchi@tiscali.it">&lt;tiposchi@tiscali.it&gt;</a>')
 

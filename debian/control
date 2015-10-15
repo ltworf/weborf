@@ -5,7 +5,7 @@ Maintainer: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>
 Build-Depends: debhelper (>= 9), libmagic-dev (>=5.04~), python3, dh-python, pyqt5-dev-tools
 Standards-Version: 3.9.6
 X-Python3-Version: 3.4
-Homepage: http://galileo.dmi.unict.it/wiki/weborf/
+Homepage: http://ltworf.github.io/weborf/
 
 Package: weborf
 Architecture: any
