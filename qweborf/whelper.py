@@ -22,7 +22,7 @@ import socket
 import threading
 from PyQt5 import QtCore
 
-import qweborf.nhelper
+import qweborf.nhelper as nhelper
 
 
 class weborf_runner():

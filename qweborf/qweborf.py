@@ -22,9 +22,9 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 import sys
 import os
 
-import qweborf.main
-import qweborf.whelper
-import qweborf.nhelper
+import qweborf.main as main
+import qweborf.whelper as whelper
+import qweborf.nhelper as nhelper
 
 
 class qweborfForm (QtWidgets.QWidget):
