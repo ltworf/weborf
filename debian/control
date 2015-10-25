@@ -2,15 +2,15 @@ Source: weborf
 Section: httpd
 Priority: optional
 Maintainer: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>
-Build-Depends: debhelper (>= 9), libmagic-dev (>=5.04~), python3, dh-python, pyqt5-dev-tools
+Build-Depends: debhelper (>= 9), libmagic-dev, python3, dh-python, pyqt5-dev-tools
 Standards-Version: 3.9.6
-X-Python3-Version: 3.4
+X-Python3-Version: >= 3.4
 Homepage: http://ltworf.github.io/weborf/
 
 Package: weborf
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: php5-cgi (>= 5.2.11.dfsg.1)
+Suggests: php5-cgi
 Description: Fast and small webserver meant to be run without root privileges
  Weborf is a configurationless webeserver mainly meant to allow users to
  easily share their directories over the web.
