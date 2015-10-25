@@ -1,3 +1,12 @@
+weborf (0.13.1-2) unstable; urgency=medium
+
+  * Don't hard-code the python version. (Closes: #802857)
+  * Remove version from depends in stable
+  * Copyright file in dep 5 (Closes: #802489)
+  * Use all hardening flags
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 25 Oct 2015 13:36:21 +0100
+
 weborf (0.13.1-1) unstable; urgency=low
 
   * New upstream release
