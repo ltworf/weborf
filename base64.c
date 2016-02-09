@@ -83,7 +83,7 @@ void decode64(char *result, char *encoded) {
         decode4_64(res, encoded);
         encoded += 4;
         res += 3;
-        res[3] = 0;
+        res[0] = 0;
 
     }
 }
