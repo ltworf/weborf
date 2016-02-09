@@ -1,3 +1,9 @@
+weborf (0.13.2-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Tue, 09 Feb 2016 16:13:52 +0100
+
 weborf (0.13.1-2) unstable; urgency=medium
 
   * Don't hard-code the python version. (Closes: #802857)
