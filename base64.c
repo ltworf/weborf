@@ -26,21 +26,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /**
 Returns the base64 (6bit) code of a char
 */
-char getCode(char c) {
-    static char encodingTable[64] = {
-        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-        'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
-    };
-
-    int i;
-    for (i = 0; i < 64; i++) {
-        if (encodingTable[i] == c)
-            return i;
-    }
-    return '\0';
+static char getCode(char c) {
+    if ('A' <=c && c<='Z') {
+        return c-'A';
+    } else if ('a' <=c && c<='z') {
+        return c-'a'+26;
+    } else if ('0' <=c && c<='9') {
+        return c-'0'+52;
+    } else if (c=='+')
+        return 62;
+    else if(c=='/')
+        return 63;
+    return 0;
 }
 
 /**
