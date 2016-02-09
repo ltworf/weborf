@@ -1,3 +1,6 @@
+0.13.2
+- Fix base64 decoding bug
+
 0.13.1
 - Port qweborf to Python3 and Qt5
 
