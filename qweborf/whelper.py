@@ -143,7 +143,15 @@ class weborf_runner():
     @QtCore.pyqtSlot(object)
     def socket_cback(self, sock):
         '''Recieves connection requests and decides if they have to be authorized or denied'''
-        data = sock.recv(4096).decode('ascii').split('\r\n')
+
+        data = sock.recv(4096).split(b'\r\n')
+
+        if len(data) < 5:
+            sock.send(b' ')
+            sock.close()
+            self.logclass.logger("DENIED: Invalid request")
+            return
+
         uri = data[0]
         client = data[1]
         method = data[2]
@@ -152,11 +160,11 @@ class weborf_runner():
 
         # Checking if the request must be allowed or denied
         allow = True
-        if self.username is not None:  # Must check username and password
-            allow = self.username == username and self.password == password
 
-        print(method, self.methods)
-        if method not in self.methods:
+        if self.username is not None:  # Must check username and password
+            allow = bytes(self.username, 'utf-8') == username and bytes(self.password, 'utf-8') == password
+
+        if method.decode('ascii') not in self.methods:
             allow = False
 
         if allow:
