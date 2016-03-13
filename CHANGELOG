@@ -1,3 +1,6 @@
+0.13.3
+- Better desktop integration for qweborf
+
 0.13.2
 - Fix base64 decoding bug
 
