@@ -47,6 +47,7 @@ EXTRA_DIST = \
     qweborf/qweborf \
     qweborf/qweborf.1 \
     qweborf/qweborf.desktop \
+    qweborf/qweborf_servicemenu.desktop \
     qweborf.setup.py
  
 dist-hook:
