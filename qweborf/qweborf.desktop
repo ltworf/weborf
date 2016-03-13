@@ -9,3 +9,4 @@ Icon=network-wired
 Terminal=0
 Type=Application
 Categories=Network;
+MimeType=inode/directory
