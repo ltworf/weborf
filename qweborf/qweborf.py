@@ -156,13 +156,17 @@ class qweborfForm (QtWidgets.QWidget):
                     self.logger(logentry)
 
     def select_path(self):
+        current = self.ui.txtPath.text()
+        if len(current) == 0:
+            current = self.defaultdir
         dirname = QtWidgets.QFileDialog.getExistingDirectory(
             self,
             'Directory to share',
-            self.defaultdir,
+            current,
             QtWidgets.QFileDialog.ShowDirsOnly
         )
-        self.ui.txtPath.setText(dirname)
+        if len(dirname) > 0:
+            self.ui.txtPath.setText(dirname)
 
 
 def q_main():
