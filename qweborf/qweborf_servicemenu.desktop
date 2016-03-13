@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=KonqPopupMenu/Plugin
+MimeType=inode/directory;
+Actions=share;
+X-KDE-Priority=TopLevel
+X-KDE-StartupNotify=false
+
+[Desktop Action share]
+Name=Share directory…
+Name[it]=Condividi cartella…
+Icon=network-wired
+Exec=qweborf %F
