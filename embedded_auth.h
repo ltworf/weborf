@@ -45,7 +45,7 @@ static int emb_check_password(char *username, char *password) {
 }
 
 /**
- * This function will be used if EMBEDDED_AUTH is defined, do not modify it's signature!
+ * This function will be used if EMBEDDED_AUTH is defined, do not modify its signature!
  *
  * page:       URI of requested page
  * ip_addr:    IP address of the client (it can be an IPv6, depending how weborf is compiled)

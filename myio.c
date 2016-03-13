@@ -87,7 +87,7 @@ This function is something like rm -rf
 dir is the directory to delete
 file is a buffer. Allocated outside because it
 will be reused by every recoursive call.
-It's size is file_s
+Its size is file_s
 
 Returns 0 on success
 */

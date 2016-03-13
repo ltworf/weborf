@@ -406,7 +406,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
      */
     if (has_cache && swap_fd!=-1) {
         int cache_fd=sock;
-        connection_prop->sock=sock=swap_fd; //Restore sock to it's value
+        connection_prop->sock=sock=swap_fd; //Restore sock to its value
 
         off_t prev_pos=lseek(cache_fd,0,SEEK_CUR); //Get size of the file
         lseek(cache_fd,0,SEEK_SET);          //Set cursor to the beginning

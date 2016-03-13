@@ -74,7 +74,7 @@ const char* mime_get_fd (magic_t token,int fd,struct stat *sb) {
 
     if (sb->st_mode & S_IFREG) {
         /*
-         * Seek file to 0 and read it's header to know it's mime type
+         * Seek file to 0 and read its header to know its mime type
          * then seek again to the previous position
         */
         char buf[64];

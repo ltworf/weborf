@@ -93,7 +93,7 @@ If a cache miss occurs -1 will be returned
 If cache is not in use (cache_init was not called) it will always return -1
 
 uprefix is an integer that must be unique for each call of get_cached_dir.
-It's purpose is to distinguish between calls that will eventually generate an
+Its purpose is to distinguish between calls that will eventually generate an
 HTML file and calls that will generate XML or other data.
 So the directory would be the same but the generated content is different.
 
