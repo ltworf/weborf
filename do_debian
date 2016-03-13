@@ -4,9 +4,9 @@ autoreconf -f -i
 make clean
 ./configure
 make dist
-mv weborf-0.13.2.tar.gz /amem/weborf_0.13.2.orig.tar.gz
+mv weborf-0.13.3.tar.gz /amem/weborf_0.13.3.orig.tar.gz
 cd /amem
-tar -xvvf weborf_0.13.2.orig.tar.gz
-cd weborf-0.13.2
+tar -xvvf weborf_0.13.3.orig.tar.gz
+cd weborf-0.13.3
 cp -r ~/dev/weborf/debian .
 dpkg-buildpackage
