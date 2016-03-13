@@ -305,7 +305,8 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     int sock=connection_prop->sock;
     u_dav_details props= {0};
     props.dav_details.type=1; //I need to avoid the struct to be fully 0 in each case
-    int swap_fd; //swap file descriptor
+    int swap_fd=-1; //swap file descriptor
+    const bool has_cache=cache_is_enabled();
 
     {
         //This redirects directory without ending / to directory with the ending /
@@ -333,7 +334,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     send_http_header(207,0,"Content-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
 
     //Check if exists in cache
-    if (cache_is_enabled()) {
+    if (has_cache) {
         if ((swap_fd=cache_get_item_fd(props.int_version,connection_prop))!=-1) {
             //Sends the item stored in the cache
             struct stat sb;
@@ -403,7 +404,7 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
      * at this point the XMP has been saved into the cache but not sent to the client,
      * so now we read from cache and send to the client
      */
-    if (cache_is_enabled() && swap_fd!=-1) {
+    if (has_cache && swap_fd!=-1) {
         int cache_fd=sock;
         connection_prop->sock=sock=swap_fd; //Restore sock to it's value
 
