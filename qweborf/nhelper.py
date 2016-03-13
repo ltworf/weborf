@@ -275,7 +275,7 @@ def can_redirect():
     be attempted'''
 
     try:
-        with subprocess.Popen(['upnpc']) as p:
+        with subprocess.Popen(['upnpc'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT) as p:
             return True
     except:
         return False
