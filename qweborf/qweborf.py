@@ -57,7 +57,13 @@ class qweborfForm (QtWidgets.QWidget):
 
         self.defaultdir = QtCore.QStandardPaths.writableLocation(
             QtCore.QStandardPaths.HomeLocation)
-        self.ui.txtPath.setText(self.defaultdir)
+
+        initialdir = self.defaultdir
+
+        if len(sys.argv) > 1:
+            initialdir = sys.argv[1]
+
+        self.ui.txtPath.setText(initialdir)
 
     def logger(self, data, level=DBG_DEFAULT):
         '''logs an entry, showing it in the GUI'''
