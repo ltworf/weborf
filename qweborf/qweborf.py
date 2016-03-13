@@ -60,7 +60,7 @@ class qweborfForm (QtWidgets.QWidget):
 
         initialdir = self.defaultdir
 
-        if len(sys.argv) > 1:
+        if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
             initialdir = sys.argv[1]
 
         self.ui.txtPath.setText(initialdir)
