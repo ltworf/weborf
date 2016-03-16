@@ -1,13 +1,22 @@
 #!/bin/sh
-rm -rf /amem/weborf*
 autoreconf -f -i
+./configure
+make
+
+PRJDIR=$(pwd)
+TMPDIR=/amem/
+VERSION=$(./weborf --version | head -n 1 | cut -d\  -f2)
+
+
+
+rm -rf $TMPDIR/weborf*
 make clean
 ./configure
 make dist
-mv weborf-0.13.3.tar.gz /amem/weborf_0.13.3.orig.tar.gz
-gpg --sign --armor --detach-sign /amem/weborf_0.13.3.orig.tar.gz
-cd /amem
-tar -xvvf weborf_0.13.3.orig.tar.gz
-cd weborf-0.13.3
-cp -r ~/dev/weborf/debian .
+mv weborf-$VERSION.tar.gz $TMPDIR/weborf_$VERSION.orig.tar.gz
+gpg --sign --armor --detach-sign $TMPDIR/weborf_$VERSION.orig.tar.gz
+cd $TMPDIR
+tar -xvvf weborf_$VERSION.orig.tar.gz
+cd weborf-$VERSION
+cp -r $PRJDIR/debian .
 dpkg-buildpackage
