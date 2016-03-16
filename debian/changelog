@@ -1,9 +1,10 @@
-weborf (0.13.3-1) unstable; urgency=medium
+weborf (0.13.3-1) unstable; urgency=low
 
   * New upstream release
   * Bumped Standards-Version to 3.9.7
+  * Added upstream's public key for verification
 
- -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 13 Mar 2016 18:27:34 +0100
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Wed, 16 Mar 2016 13:45:15 +0100
 
 weborf (0.13.2-1) unstable; urgency=medium
 
