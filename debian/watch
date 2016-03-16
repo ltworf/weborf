@@ -1,2 +1,2 @@
 version=3
-opts=filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/weborf-$1\.tar\.gz/ https://github.com/ltworf/weborf/tags .*/v?(\d\S*)\.tar\.gz
+opts=pgpsigurlmangle=s/$/.asc/,filenamemangle=s/.+\/v?(\d\S*)\.tar\.gz/weborf-$1\.tar\.gz/ https://github.com/ltworf/weborf/tags .*/v?(\d\S*)\.tar\.gz

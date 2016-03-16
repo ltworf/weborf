@@ -5,6 +5,7 @@ make clean
 ./configure
 make dist
 mv weborf-0.13.3.tar.gz /amem/weborf_0.13.3.orig.tar.gz
+gpg --sign --armor --detach-sign /amem/weborf_0.13.3.orig.tar.gz
 cd /amem
 tar -xvvf weborf_0.13.3.orig.tar.gz
 cd weborf-0.13.3
