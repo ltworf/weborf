@@ -63,5 +63,5 @@ dist_doc_DATA = \
     CHANGELOG \
     COPYING \
     Credits \
-    README \
+    README.md \
     TODOlist 
