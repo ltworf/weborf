@@ -38,9 +38,13 @@
 <table id="dtable"></table>
 <p id="nojs">Javascript is disabled. Please go to the <a href="https://github.com/ltworf/weborf/tags">github download page</a>.</p>
 
+<p><a href="http://pgp.mit.edu:11371/pks/lookup?op=get&search=0xB3A7CF0C801886CF">PGP public key</a> to use to verify the signature.</p>
+
 <p>All the downloads: <a href="https://github.com/ltworf/weborf/tags">list of tags</a>.</p>
 
 <script>
+document.getElementById("nojs").innerHTML = 'Loading downloads...';
+
 var xmlhttp = new XMLHttpRequest();
 var url = "https://api.github.com/repos/ltworf/weborf/releases/latest";
 
@@ -78,6 +82,8 @@ function get_name(name) {
         return 'Windows download'
     if (endsWith(name,'.tar.gz'))
         return 'Sources'
+    if (endsWith(name,'.tar.gz.asc'))
+        return 'PGP Signature'
     return name
 }
 
@@ -121,7 +127,7 @@ function myFunction(arr) {
     <div id="footer_wrap" class="outer">
       <footer class="inner">
         <p class="copyright">Weborf maintained by <a href="http://ltworf.github.io/ltworf/">Salvo 'LtWorf' Tomaselli</a></p>
-        <p>Last updated: March 13, 2016, 10:11 pm</p>
+        <p>Last updated: March 31, 2016, 8:47 pm</p>
       </footer>
     </div>
 
