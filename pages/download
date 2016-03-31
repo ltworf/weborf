@@ -12,6 +12,8 @@
 <p>All the downloads: <a href="https://github.com/ltworf/weborf/tags">list of tags</a>.</p>
 
 <script>
+document.getElementById("nojs").innerHTML = 'Loading downloads...';
+
 var xmlhttp = new XMLHttpRequest();
 var url = "https://api.github.com/repos/ltworf/weborf/releases/latest";
 
