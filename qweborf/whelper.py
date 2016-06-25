@@ -152,19 +152,18 @@ class weborf_runner():
             self.logclass.logger("DENIED: Invalid request")
             return
 
-        uri = data[0]
-        client = data[1]
-        method = data[2]
-        username = data[3]
-        password = data[4]
+        uri = data[0].decode('utf-8')
+        client = data[1].decode()
+        method = data[2].decode()
+        username = data[3].decode('utf-8')
+        password = data[4].decode('utf-8')
 
         # Checking if the request must be allowed or denied
         allow = True
-
         if self.username is not None:  # Must check username and password
-            allow = bytes(self.username, 'utf-8') == username and bytes(self.password, 'utf-8') == password
+            allow = self.username == username and self.password == password
 
-        if method.decode('ascii') not in self.methods:
+        if method not in self.methods:
             allow = False
 
         if allow:
