@@ -27,14 +27,21 @@ autoreconf -f -i # Only if you cloned from git
 make clean
 ./configure
 make
-sudo make install
 ```
 
 To compile qweborf.
 
 ```
 pyuic5 qweborf/main.ui > qweborf/main.py
+```
+Run
+===
+```
+./weborf
+```
 
-python3 qweborf.setup.py install
-install -D qweborf/qweborf /usr/local/bin/qweborf
+
+qweborf: will look for weborf in the PATH.
+```
+python3 -m qweborf
 ```
