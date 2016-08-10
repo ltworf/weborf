@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * and its "#endif" to avoid the compilation of unused methods
  * */
 
-//#define EMBEDDED_AUTH
+#define EMBEDDED_AUTH
 
 #ifdef EMBEDDED_AUTH
 

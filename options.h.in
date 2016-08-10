@@ -24,9 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef WEBORF_OPTIONS_H
 #define WEBORF_OPTIONS_H
 
-#define NAME PACKAGE
+#define NAME "OMF-TH Backups"
 //#define VERSION PACKAGE_VERSION
-#define SIGNATURE NAME "/" VERSION  " (GNU/Linux)"
+#define SIGNATURE "OMF Thailand FHQ backup directory server"
 
 //----------System
 #define ROOTUID 0               //Uid for superuser
@@ -37,7 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef _POSIX_IPV6              //Enables ipv6 if supported
 //Delete the following line to use IPv4 instead.
-#define IPV6
+//#define IPV6
 #endif
 
 //-----------Threads
