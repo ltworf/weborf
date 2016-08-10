@@ -108,14 +108,14 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
             //Scaling the file's size
             unsigned long long int size = f_prop.st_size;
             if (size < 1024) {
-                measure="B";
+                measure=" B";
             } else if ((size = (size / 1024)) < 1024) {
-                measure="KiB";
+                measure=" KiB";
             } else if ((size = (size / 1024)) < 1024) {
-                measure="MiB";
+                measure=" MiB";
             } else {
                 size = size / 1024;
-                measure="GiB";
+                measure=" GiB";
             }
 
             if (i % 2 == 0)
