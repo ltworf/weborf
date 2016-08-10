@@ -941,7 +941,7 @@ int request_auth(connection_t *connection_prop) {
     char * page=head+HEADBUF;
 
     //Prepares html page
-    int page_len=snprintf(page,MAXSCRIPTOUT,"%s<H1>Authorization required</H1><p>%s</p>%s",HTMLHEAD,descr,HTMLFOOT);
+    int page_len=snprintf(page,MAXSCRIPTOUT,"%sWeborf</h4><div class=\"list\"><h1>Authorization required</h1><p>%s</p>%s",HTMLHEAD,descr,HTMLFOOT);
 
     //Prepares http header
     int head_len = snprintf(head,HEADBUF,"HTTP/1.1 401 Authorization Required\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nWWW-Authenticate: Basic realm=\"%s\"\r\n\r\n",page_len,descr);
@@ -984,7 +984,7 @@ int send_err(connection_t *connection_prop,int err,char* descr) {
     char * page=head+HEADBUF;
 
     //Prepares the page
-    int page_len=snprintf(page,MAXSCRIPTOUT,"%s <H1>Error %d</H1>%s %s",HTMLHEAD,err,descr,HTMLFOOT);
+    int page_len=snprintf(page,MAXSCRIPTOUT,"%s</h4><div class=\"list\"><h1>Error %d</h1>%s %s",HTMLHEAD,err,descr,HTMLFOOT);
 
     //Prepares the header
     int head_len = snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n",err,descr ,(int)page_len);

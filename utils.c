@@ -67,7 +67,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     }
 
     //Specific header table)
-    pagesize=printf_s=snprintf(html+pagesize,maxsize,"%s<table><tr><td></td><td>Name</td><td>Size</td><td>Last Modified</td></tr>",HTMLHEAD);
+    pagesize=printf_s=snprintf(html+pagesize,maxsize,"%s%s</h4><div class=\"list\"><table><tr><td></td><td><i>Name</i></td><td><i>Size</i></td><td><i>Last Modified</i></td></tr>",HTMLHEAD,connection_prop->strfile);
     maxsize-=printf_s;
 
     //Cycles trough dir's elements
@@ -78,10 +78,12 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
 
     //Print link to parent directory, if there is any
     if (parent) {
-        printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"../\">../</a></td><td>-</td><td>-</td></tr>");
+        printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #D0D0D0;\"><td><b>up</b></td><td><a href=\"..\"><b>%s</b></a></td><td></td><td></td></tr>",connection_prop->page);
         maxsize-=printf_s;
         pagesize+=printf_s;
+        color = "white";
     }
+    else color = "#E0E0E0";
 
     for (i=0; i<counter; i++) {
         //Skipping hidden files
@@ -99,7 +101,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
 
         //get last modified
         localtime_r(&f_prop.st_mtime,&ts);
-        strftime(last_modified,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
+        strftime(last_modified,URI_LEN, "%a, %d %b %Y %H:%M:%S", &ts);
 
         if (S_ISREG(f_mode)) { //Regular file
 
@@ -108,34 +110,31 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
             //Scaling the file's size
             unsigned long long int size = f_prop.st_size;
             if (size < 1024) {
-                measure="B";
+                measure=" B";
             } else if ((size = (size / 1024)) < 1024) {
-                measure="KiB";
+                measure=" KiB";
             } else if ((size = (size / 1024)) < 1024) {
-                measure="MiB";
+                measure=" MiB";
             } else {
                 size = size / 1024;
-                measure="GiB";
+                measure=" GiB";
             }
-
-            if (i % 2 == 0)
-                color = "white";
-            else
-                color = "#EAEAEA";
 
             printf_s=snprintf(html+pagesize,maxsize,
                               "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%lld%s</td><td>%s</td></tr>\n",
                               color, namelist[i]->d_name, namelist[i]->d_name, (long long int)size, measure,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
+            color = (color == "white" ? "#E0E0E0" : "white");
 
         } else if (S_ISDIR(f_mode)) { //Directory entry
             //Table row for the dir
             printf_s=snprintf(html+pagesize,maxsize,
-                              "<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"%s/\">%s/</a></td><td>-</td><td>%s</td></tr>\n",
-                              namelist[i]->d_name, namelist[i]->d_name,last_modified);
+                              "<tr style=\"background-color: %s;\"><td><b>d</b></td><td><a href=\"%s\"><b>%s/</b></a></td><td></td><td>%s</td></tr>\n",
+                              color, namelist[i]->d_name, namelist[i]->d_name,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
+            color = (color == "white" ? "#E0E0E0" : "white");
         }
 
         free(namelist[i]);
