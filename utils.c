@@ -78,10 +78,12 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
 
     //Print link to parent directory, if there is any
     if (parent) {
-        printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"../\">../</a></td><td>-</td><td>-</td></tr>");
+        printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #D0D0D0;\"><td><b>up</b></td><td><a href=\"..\"><b>%s</b></a></td><td></td><td></td></tr>",connection_prop->page);
         maxsize-=printf_s;
         pagesize+=printf_s;
+        color = "white";
     }
+    else color = "#E0E0E0";
 
     for (i=0; i<counter; i++) {
         //Skipping hidden files
@@ -118,16 +120,12 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
                 measure="GiB";
             }
 
-            if (i % 2 == 0)
-                color = "white";
-            else
-                color = "#EAEAEA";
-
             printf_s=snprintf(html+pagesize,maxsize,
                               "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%lld%s</td><td>%s</td></tr>\n",
                               color, namelist[i]->d_name, namelist[i]->d_name, (long long int)size, measure,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
+            color = (color == "white" ? "#E0E0E0" : "white");
 
         } else if (S_ISDIR(f_mode)) { //Directory entry
             //Table row for the dir
@@ -136,6 +134,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
                               namelist[i]->d_name, namelist[i]->d_name,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
+            color = (color == "white" ? "#E0E0E0" : "white");
         }
 
         free(namelist[i]);
