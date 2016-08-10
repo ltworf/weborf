@@ -101,7 +101,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
 
         //get last modified
         localtime_r(&f_prop.st_mtime,&ts);
-        strftime(last_modified,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
+        strftime(last_modified,URI_LEN, "%a, %d %b %Y %H:%M:%S", &ts);
 
         if (S_ISREG(f_mode)) { //Regular file
 
