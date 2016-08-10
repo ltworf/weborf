@@ -130,8 +130,8 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
         } else if (S_ISDIR(f_mode)) { //Directory entry
             //Table row for the dir
             printf_s=snprintf(html+pagesize,maxsize,
-                              "<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"%s/\">%s/</a></td><td>-</td><td>%s</td></tr>\n",
-                              namelist[i]->d_name, namelist[i]->d_name,last_modified);
+                              "<tr style=\"background-color: %s;\"><td><b>d</b></td><td><a href=\"%s\"><b>%s/</b></a></td><td></td><td>%s</td></tr>\n",
+                              color, namelist[i]->d_name, namelist[i]->d_name,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
             color = (color == "white" ? "#E0E0E0" : "white");
