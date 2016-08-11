@@ -24,7 +24,8 @@ These are the steps to compile weborf.
 ```
 autoreconf -f -i # Only if you cloned from git
 
-make clean
+make clean # Only after you've done ./configure at least once
+
 ./configure
 make
 ```

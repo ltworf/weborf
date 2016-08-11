@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
- */
+Some modification in this branch: pepa65 <solusos@passchier.net>
+*/
 
 #include "config.h"
 #include <unistd.h> //Needed because it defines the _POSIX_IPV6
@@ -49,7 +50,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //------------Server
 #define INDEX "index.html"      //Default index file that weborf will search
-#define BASEDIR "/var/www"      //Default basedir
+#define BASEDIR "Public"        //Default basedir
 #define READ_TIMEOUT 5000       //Timeout before closing inactive keep-alive connections, in milliseconds
 
 //------------Buffers
@@ -75,7 +76,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //-------------HTML
 #define HTMLHEAD "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">\n<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" /><meta http-equiv=\"pragma\" content=\"no-cache\" /><title>" NAME "</title><style type=\"text/css\">a, a:active {text-decoration: none; color: blue;}a:visited {color: #48468F;}a:hover, a:focus {text-decoration: underline; color: red;}body {background-color: #F5F5F5;}h2 {margin-bottom: 12px;}table {margin-left: 12px;}th, td { font: 80% sans-serif; text-align: left;}th { font-weight: bold; padding-right: 14px; padding-bottom: 3px;}td {padding-right: 14px;}td.s, th.s {text-align: right;}div.list { background-color: white; border-top: 1px solid #646464; border-bottom: 1px solid #646464; padding-top: 10px; padding-bottom: 14px;}div.foot { font: 80% sans-serif; color: #787878; padding-top: 4px;}</style></head><body><h4>"
-#define HTMLFOOT "</div><div class=\"foot\">" SIGNATURE "</div></body></html>"
+#define HTMLFOOT "</div><div class=\"foot\">" SIGNATURE "</div><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/></body></html>\n"
 
 //-------------SCRIPTS
 #define SCRPT_TIMEOUT 30        //Timeout for the scripts, in seconds

@@ -78,7 +78,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
 
     //Print link to parent directory, if there is any
     if (parent) {
-        printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #D0D0D0;\"><td><b>up</b></td><td><a href=\"..\"><b>../</b></a></td><td></td><td></td></tr>");
+        printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #D0D0D0;\"><td><a href=\"..\"><b>up</b></a></td><td><a href=\"..\"><b>../</b></a></td><td></td><td></td></tr>");
         maxsize-=printf_s;
         pagesize+=printf_s;
         color = "white";
