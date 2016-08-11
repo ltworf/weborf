@@ -41,6 +41,8 @@ weborf_configuration_t weborf_conf=    {
     .port = PORT,
     .basedir=BASEDIR,
     .uid = ROOTUID,
+    .username = NULL,
+    .password = NULL,
 
 #ifdef SEND_MIMETYPES
     .send_content_type = false,
@@ -188,6 +190,8 @@ void configuration_load(int argc, char *argv[]) {
         {"mime", no_argument,0,'m'},
         {"inetd", no_argument,0,'T'},
         {"tar", no_argument,0,'t'},
+        {"username", required_argument, 0, 'U'},
+        {"password", required_argument, 0, 'P'},
         {0, 0, 0, 0}
     };
 
@@ -197,7 +201,7 @@ void configuration_load(int argc, char *argv[]) {
         option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long(argc, argv, "ktTMmvhp:i:I:u:dxb:a:V:c:C:", long_options,
+        c = getopt_long(argc, argv, "ktTMmvhp:i:I:u:dxb:a:V:c:C:U:P:", long_options,
                         &option_index);
 
         //If there are no options it continues
@@ -258,6 +262,12 @@ void configuration_load(int argc, char *argv[]) {
             break;
         case 'M':
             moo();
+            break;
+        case 'U':
+            weborf_conf.username = optarg;
+            break;
+        case 'P':
+            weborf_conf.password = optarg;
             break;
         default:
             exit(19);

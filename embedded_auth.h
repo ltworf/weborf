@@ -32,13 +32,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef EMBEDDED_AUTH
 
+extern weborf_configuration_t weborf_conf;                                      
+
 /**
  * This function is just example code, can be changed or deleted
  */
 static int emb_check_password(char *username, char *password) {
-    char *user="gentoo";
-    char *pass="lalalala";
-
+    char *user="pp";
+    char *pass="pp";
+    if (weborf_conf.username) user = weborf_conf.username;
+    if (weborf_conf.password) pass = weborf_conf.password;
     if (strncmp(username,user,strlen(user))==0 && strncmp(password,pass,strlen(pass))==0)
         return 0;
     return -1;
@@ -63,6 +66,7 @@ static int emb_check_password(char *username, char *password) {
  * Only use reentrant calls in this function. Weborf is multithreaded.
  */
 static int c_auth(char *page, char *ip_addr, char *method, char *username, char *password, char *http_param) {
+    return emb_check_password(username,password);
     char *allowed_prefix="::ffff:10.";
     char *foto = "/foto/";
 

@@ -113,6 +113,8 @@ typedef struct {
     bool tar_directory;         //Sends directories compressed into tar-files
     char *ip;                   //IP addr with default value
     char *port;                 //port with default value
+    char *username;             //Username for authentication
+    char *password;             //Password for authentication
 
     char *indexes[MAXINDEXCOUNT];//List of pointers to index files
     int indexes_l;              //Count of the list
