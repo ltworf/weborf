@@ -266,7 +266,7 @@ static inline int printprops(connection_t *connection_prop,u_dav_details props,c
     if (props.dav_details.getlastmodified) { //Sends Date
         struct tm ts;
         localtime_r(&stat_s.st_mtime,&ts);
-        strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
+        strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S", &ts);
         p_len=snprintf(buffer,URI_LEN,"<D:getlastmodified>%s</D:getlastmodified>\n",prop_buffer);
         write (sock,buffer,p_len);
     }

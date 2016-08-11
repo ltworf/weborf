@@ -1151,7 +1151,7 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
         //Sends Date
         struct tm  ts;
         localtime_r((time_t)&timestamp,&ts);
-        len_head = strftime(head,left_head, "Last-Modified: %a, %d %b %Y %H:%M:%S GMT\r\n", &ts);
+        len_head = strftime(head,left_head, "Last-Modified: %a, %d %b %Y %H:%M:%S\r\n", &ts);
         head+=len_head;
         left_head-=len_head;
     }
