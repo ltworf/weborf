@@ -41,29 +41,26 @@ extern weborf_configuration_t weborf_conf;
 Checks that the authentication socket exists and is a unix socket
 */
 void auth_set_socket(char *u_socket) {
-#ifdef EMBEDDED_AUTH
-    weborf_conf.authsock = "embedded";
-#else
-    struct stat sb;
-    if (stat(u_socket, &sb) == -1) {
-        perror("Existing unix socket expected");
+    if (weborf_conf.authsock != "embedded") {
+        struct stat sb;
+        if (stat(u_socket, &sb) == -1) {
+            perror("Existing unix socket expected");
 #ifdef SERVERDBG
-        syslog(LOG_ERR, "%s doesn't exist", u_socket);
+            syslog(LOG_ERR, "%s doesn't exist", u_socket);
 #endif
-        exit(5);
-    }
+            exit(5);
+        }
 
-    if ((sb.st_mode & S_IFMT) != S_IFSOCK) {
+        if ((sb.st_mode & S_IFMT) != S_IFSOCK) {
 #ifdef SERVERDBG
-        syslog(LOG_ERR, "%s is not a socket", u_socket);
+            syslog(LOG_ERR, "%s is not a socket", u_socket);
 #endif
-        write(2,"Socket expected\n",16);
-        exit(5);
-    }
-
+            write(2,"Socket expected\n",16);
+            exit(5);
+        }
 
     weborf_conf.authsock = u_socket;
-#endif
+    }
 }
 
 /**

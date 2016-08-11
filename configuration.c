@@ -32,17 +32,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cachedir.h"
 #include "auth.h"
 
-weborf_configuration_t weborf_conf=    {
-    .tar_directory=false,
-    .is_inetd=false,
+weborf_configuration_t weborf_conf = {
+    .tar_directory = false,
+    .is_inetd = false,
     .virtual_host = false,
     .exec_script = true,
     .ip = NULL,
     .port = PORT,
     .basedir=BASEDIR,
     .uid = ROOTUID,
-    .username = NULL,
-    .password = NULL,
+    .user = NULL,
+    .pass = NULL,
 
 #ifdef SEND_MIMETYPES
     .send_content_type = false,
@@ -178,7 +178,7 @@ void configuration_load(int argc, char *argv[]) {
         {"port", required_argument, 0, 'p'},
         {"ip", required_argument, 0, 'i'},
         {"uid", required_argument, 0, 'u'},
-        {"daemonize", no_argument, 0, 'd'},
+        {"daemon", no_argument, 0, 'd'},
         {"basedir", required_argument, 0, 'b'},
         {"index", required_argument, 0, 'I'},
         {"auth", required_argument, 0, 'a'},
@@ -190,8 +190,8 @@ void configuration_load(int argc, char *argv[]) {
         {"mime", no_argument,0,'m'},
         {"inetd", no_argument,0,'T'},
         {"tar", no_argument,0,'t'},
-        {"username", required_argument, 0, 'U'},
-        {"password", required_argument, 0, 'P'},
+        {"user", required_argument, 0, 'U'},
+        {"pass", required_argument, 0, 'P'},
         {0, 0, 0, 0}
     };
 
@@ -264,10 +264,12 @@ void configuration_load(int argc, char *argv[]) {
             moo();
             break;
         case 'U':
-            weborf_conf.username = optarg;
+            weborf_conf.user = optarg;
+            weborf_conf.authsock = "embedded";
             break;
         case 'P':
-            weborf_conf.password = optarg;
+            weborf_conf.pass = optarg;
+            weborf_conf.authsock = "embedded";
             break;
         default:
             exit(19);

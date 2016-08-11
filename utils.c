@@ -231,27 +231,29 @@ void help() {
            "Default base directory %s\n"
            "Signature used         %s\n\n", PORT,BASEDIR,SIGNATURE);
 
-    printf("  -a, --auth    followed by absolute path of the program to handle authentication\n"
-           "  -b, --basedir followed by absolute path of basedir\n"
+    printf("  -a, --auth    followed by absolute path of authentication program\n"
+           "  -b, --basedir followed by the path of basedir\n"
            "  -C, --cache   sets the directory to use for cache files\n"
-           "  -c, --cgi     list of cgi files and binary to execute them comma-separated\n"
-           "  -d            run as a daemon\n"
+           "  -c, --cgi     list of cgi files+binaries to execute, comma-separated\n"
+           "  -d, --daemon  keep running, as a daemon\n"
            "  -h, --help    display this help and exit\n"
            "  -I, --index   list of index files, comma-separated\n"
-           "  -i, --ip  followed by IP address to listen (dotted format)\n"
+           "  -i, --ip      followed by IP address to listen on (dotted format)\n"
            "  -k, --caps    lists the capabilities of the binary\n"
            "  -m, --mime    sends content type header to clients\n"
-           "  -p, --port    followed by port number to listen\n"
+           "  -P, --pass    followed by the password for access authentication\n"
+           "  -p, --port    followed by the port number to listen on\n"
            "  -T  --inetd   must be specified when using weborf with inetd or xinetd\n"
            "  -t  --tar     will send the directories as .tar.gz files\n"
-           "  -u,           followed by a valid uid\n"
-           "                If started by root weborf will use this user to read files and execute scripts\n"
+           "  -U, --user    followed by the username for access authentication\n"
+           "  -u, --uid     followed by a valid uid; if started by root,\n"
+           "                  this user will read and execute files for weborf\n"
            "  -V, --virtual list of virtualhosts in the form host=basedir, comma-separated\n"
            "  -v, --version print program version\n"
-           "  -x, --noexec  tells weborf to send each file instead of executing scripts\n\n"
+           "  -x, --noexec  just send each file instead of executing scripts\n\n"
 
 
-           "Report bugs here https://bugs.launchpad.net/weborf\n"
+           "Report bugs here https://github.com/ltworf/weborf\n"
            "or to " PACKAGE_BUGREPORT "\n");
     exit(0);
 }
