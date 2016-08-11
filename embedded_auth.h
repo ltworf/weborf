@@ -21,16 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /**
  * This file contains user defined embedded autentication
  * to avoid the usage of an external daemon for authentication.
- * The use of this, will make things faster and parallel, at the cost
- * of needing to define it at compile time
- *
- * Everything in this file should be between the "#ifdef EMBEDDED_AUTH"
- * and its "#endif" to avoid the compilation of unused methods
+ * The use of this, will make things faster and parallel
  * */
-
-#define EMBEDDED_AUTH
-
-#ifdef EMBEDDED_AUTH
 
 extern weborf_configuration_t weborf_conf;                                      
 
@@ -49,8 +41,6 @@ static int emb_check_password(char *username, char *password) {
 }
 
 /**
- * This function will be used if EMBEDDED_AUTH is defined, do not modify its signature!
- *
  * page:       URI of requested page
  * ip_addr:    IP address of the client (it can be an IPv6, depending how weborf is compiled)
  * method:     HTTP method of the request
@@ -92,4 +82,3 @@ static int c_auth(char *page, char *ip_addr, char *method, char *username, char 
 
 }
 
-#endif

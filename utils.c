@@ -194,15 +194,6 @@ void print_capabilities() {
     "\n"
     );
 
-    printf("embedded_auth:"
-#ifdef EMBEDDED_AUTH
-    "yes"
-#else
-    "no"
-#endif
-    "\n"
-    );
-
     exit(0);
 }
 
@@ -242,6 +233,7 @@ void help() {
            "  -k, --caps    lists the capabilities of the binary\n"
            "  -m, --mime    sends content type header to clients\n"
            "  -P, --pass    followed by the password for access authentication\n"
+           "                  Both username and password must be set for it to work\n"
            "  -p, --port    followed by the port number to listen on\n"
            "  -T  --inetd   must be specified when using weborf with inetd or xinetd\n"
            "  -t  --tar     will send the directories as .tar.gz files\n"

@@ -102,15 +102,14 @@ int auth_check_request(connection_t *connection_prop) {
 
     int result=-1;
 
-#ifdef EMBEDDED_AUTH
-    result=c_auth(connection_prop->page,
-                  connection_prop->ip_addr,
-                  connection_prop->method,
-                  username,
-                  password,
-                  connection_prop->http_param);
-#else
-    {
+    if (weborf_conf.authsock == "embedded")
+        result=c_auth(connection_prop->page,
+                      connection_prop->ip_addr,
+                      connection_prop->method,
+                      username,
+                      password,
+                      connection_prop->http_param);
+    else {
         int s,len;
         struct sockaddr_un remote;
         s=socket(AF_UNIX,SOCK_STREAM,0);
@@ -137,7 +136,6 @@ int auth_check_request(connection_t *connection_prop) {
         close(s);
         free(auth_str);
     }
-#endif
 
     return result;
 }
