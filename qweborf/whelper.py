@@ -140,7 +140,7 @@ class weborf_runner():
         self.listener.new_socket.connect(self.socket_cback)
         self.listener.start()
 
-    @QtCore.pyqtSlot(object)
+    #@QtCore.pyqtSlot(object)
     def socket_cback(self, sock):
         '''Recieves connection requests and decides if they have to be authorized or denied'''
 
@@ -234,7 +234,7 @@ class weborf_runner():
             logentry = 'Address: <a href="%s">%s</a>' % (url, url)
             self.logclass.logger(logentry)
 
-    @QtCore.pyqtSlot(object, int)
+    #@QtCore.pyqtSlot(object, int)
     def _child_terminated(self, child, exit_code):
         '''Called when the child process is terminated
         param child is for now ignored'''
