@@ -1,3 +1,9 @@
+weborf (0.13.3-2) unstable; urgency=medium
+
+  * Remove decorators to workaround a bug in PyQt
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Mon, 29 Aug 2016 22:53:03 +0200
+
 weborf (0.13.3-1) unstable; urgency=low
 
   * New upstream release
