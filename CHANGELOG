@@ -1,3 +1,7 @@
+0.13.4
+- Workaround API breaking in PyQt
+- Improvements in directory listing
+
 0.13.3
 - Better desktop integration for qweborf
 
