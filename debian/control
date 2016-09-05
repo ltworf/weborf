@@ -3,7 +3,7 @@ Section: httpd
 Priority: optional
 Maintainer: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>
 Build-Depends: debhelper (>= 9), libmagic-dev, python3, dh-python, pyqt5-dev-tools
-Standards-Version: 3.9.7
+Standards-Version: 3.9.8
 X-Python3-Version: >= 3.4
 Homepage: http://ltworf.github.io/weborf/
 
