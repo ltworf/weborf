@@ -67,7 +67,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     }
 
     //Specific header table)
-    pagesize=printf_s=snprintf(html+pagesize,maxsize,"%s<table><tr><td></td><td><i>Name</i></td><td><i>Size</i></td><td><i>Last Modified</i></td></tr>",HTMLHEAD);
+    pagesize=printf_s=snprintf(html+pagesize,maxsize,"%s<table><tr><td></td><td>Name</td><td>Size</td><td>Last Modified</td></tr>",HTMLHEAD);
     maxsize-=printf_s;
 
     //Cycles trough dir's elements
