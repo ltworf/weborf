@@ -1,16 +1,16 @@
 # Weborf
 # Copyright (C) 2008  Salvo "LtWorf" Tomaselli
-# 
+#
 # Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -26,7 +26,7 @@ LDFLAGS=-lpthread  -lmagic
 
 #Opensolaris flags
 #CFLAGS=-D_POSIX_PTHREAD_SEMANTICS  -Wall $(DEFS) $(ARCHFLAGS)  -Wformat
-#LDFLAGS=-lpthread -lsocket -lnsl 
+#LDFLAGS=-lpthread -lsocket -lnsl
 #ARCHFLAGS=-m64
 
 MANDIR=/usr/share/man/
@@ -53,7 +53,7 @@ cgi:
 debug: cgi.o listener.o queue.o configuration.o auth.o mynet.o instance.o mystring.o utils.o base64.o buffered_reader.o webdav.o mime.o cachedir.o myio.o
 	$(CC) -g $(LDFLAGS) $(ARCHFLAGS) $+ -o weborf
 
-clean: 
+clean:
 	rm -f *.o weborf debug *.orig *~ *.gz
 	cd cgi_wrapper; make clean
 
@@ -69,7 +69,7 @@ source: clean style
 
 style:
 	#‑‑align‑pointer=name To use when will really work
-	astyle --indent=spaces=4 -a *.c *.h       
+	astyle --indent=spaces=4 -a *.c *.h
 
 installdirs:
 	install -d $(DESTDIR)/$(BINDIR)/
