@@ -699,7 +699,17 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
 
     if ((pagelen=list_dir (connection_prop,html,MAXSCRIPTOUT,parent))<0) { //Creates the page
         free(html);//Frees the memory used for the page
-        return ERR_FILENOTFOUND;
+        switch (pagelen) {
+            case -1:
+                return ERR_FILENOTFOUND;
+            case -2:
+#ifdef SERVERDBG
+                syslog(LOG_ERR, "Directory too large to be listed");
+#endif
+                return ERR_INSUFFICIENT_STORAGE;
+        }
+
+
     } else { //If there are no errors sends the page
 
         /*WARNING using the directory's mtime here allows better caching and
