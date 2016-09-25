@@ -1,0 +1,39 @@
+From 6b4e253e426ea1e369f2f830a88368c9526d71ba Mon Sep 17 00:00:00 2001
+From: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>
+Date: Sun, 25 Sep 2016 16:57:55 +0200
+Subject: [PATCH] Correctly log list failure due to large directory
+
+Since the HTML to list a directory is generated and then sent all at once, the size
+is limited.
+
+This sends a 507 HTTP code to the client and logs a clear message of what happened.
+---
+ instance.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/instance.c b/instance.c
+index a06caea..6e89fd7 100644
+--- a/instance.c
++++ b/instance.c
+@@ -699,7 +699,17 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
+ 
+     if ((pagelen=list_dir (connection_prop,html,MAXSCRIPTOUT,parent))<0) { //Creates the page
+         free(html);//Frees the memory used for the page
+-        return ERR_FILENOTFOUND;
++        switch (pagelen) {
++            case -1:
++                return ERR_FILENOTFOUND;
++            case -2:
++#ifdef SERVERDBG
++                syslog(LOG_ERR, "Directory too large to be listed");
++#endif
++                return ERR_INSUFFICIENT_STORAGE;
++        }
++
++
+     } else { //If there are no errors sends the page
+ 
+         /*WARNING using the directory's mtime here allows better caching and
+-- 
+2.9.3
+

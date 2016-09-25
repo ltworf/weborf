@@ -1,3 +1,9 @@
+weborf (0.13.4-2) unstable; urgency=low
+
+  * Fix segmentation fault when opening extremely large directories
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 25 Sep 2016 17:04:34 +0200
+
 weborf (0.13.4-1) unstable; urgency=low
 
   * New upstream release
