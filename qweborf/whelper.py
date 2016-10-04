@@ -40,7 +40,7 @@ class weborf_runner():
         self.password = None
         self.ipv6 = True
         self._running = False
-        self.version = None
+        self.version = ''
         self.webdav = None
 
         self.weborf = self._test_weborf()
