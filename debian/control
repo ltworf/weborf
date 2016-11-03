@@ -19,7 +19,7 @@ Description: Fast and small webserver meant to be run without root privileges
 
 Package: weborf-daemon
 Architecture: all
-Depends: ${misc:Depends}, weborf (>=${binary:Version})
+Depends: ${misc:Depends}, weborf (>=${binary:Version}),  lsb-base (>= 3.0-6)
 Description: init script for weborf
  Weborf is a configurationless webeserver mainly meant to allow users to
  easily share their directories over the web.

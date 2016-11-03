@@ -1,3 +1,9 @@
+weborf (0.13.4-3) unstable; urgency=low
+
+  * Make weborf-daemon depend on lsb-base
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 03 Nov 2016 22:50:29 +0100
+
 weborf (0.13.4-2) unstable; urgency=low
 
   * Fix segmentation fault when opening extremely large directories
