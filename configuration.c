@@ -41,6 +41,7 @@ weborf_configuration_t weborf_conf=    {
     .port = PORT,
     .basedir=BASEDIR,
     .uid = ROOTUID,
+    .gid = ROOTGID,
 
 #ifdef SEND_MIMETYPES
     .send_content_type = false,
@@ -176,6 +177,7 @@ void configuration_load(int argc, char *argv[]) {
         {"port", required_argument, 0, 'p'},
         {"ip", required_argument, 0, 'i'},
         {"uid", required_argument, 0, 'u'},
+        {"gid", required_argument, 0, 'g'},
         {"daemonize", no_argument, 0, 'd'},
         {"basedir", required_argument, 0, 'b'},
         {"index", required_argument, 0, 'I'},
@@ -197,7 +199,7 @@ void configuration_load(int argc, char *argv[]) {
         option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long(argc, argv, "ktTMmvhp:i:I:u:dxb:a:V:c:C:", long_options,
+        c = getopt_long(argc, argv, "ktTMmvhp:i:I:u:g:dxb:a:V:c:C:", long_options,
                         &option_index);
 
         //If there are no options it continues
@@ -249,6 +251,9 @@ void configuration_load(int argc, char *argv[]) {
             break;
         case 'u':
             weborf_conf.uid = strtol(optarg, NULL, 0);
+            break;
+        case 'g':
+            weborf_conf.gid = strtol(optarg, NULL, 0);
             break;
         case 'd':
             daemonize();

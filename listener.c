@@ -154,6 +154,7 @@ int main(int argc, char *argv[]) {
     s = net_create_server_socket();
     net_bind_and_listen(s);
 
+    set_new_gid(weborf_conf.gid);
     set_new_uid(weborf_conf.uid);
 
     //init the queue for opened sockets
@@ -222,6 +223,24 @@ void set_new_uid(int uid) {
     }
 }
 
+void set_new_gid(int gid) {
+    //Changes UID.
+    if (gid != ROOTGID) {
+        if (setgid(gid) == 0) {
+            //gid changed correctly
+#ifdef SERVERDBG
+            syslog(LOG_INFO, "Changed gid. New one is %d", gid);
+#endif
+        } else {
+            //Not enough permissions i guess...
+#ifdef SERVERDBG
+            syslog(LOG_ERR, "Unable to change gid.");
+#endif
+            perror("Unable to change gid");
+            exit(9);
+        }
+    }
+}
 
 /**
 This function, executed as a thread, terminates threads if there are too much free threads.

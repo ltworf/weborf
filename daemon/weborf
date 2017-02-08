@@ -82,7 +82,7 @@ function startWeborf {
     if test -z "$virtuals"
     then
         echo "Starting weborf"
-        nohup $DAEMON $DAEMON_OPTS $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN -p80 -u $USERID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
+        nohup $DAEMON $DAEMON_OPTS $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN -p80 -u $USERID -g $GROUPID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
         echo ${!} >> $PIDFILE # Writes PID so weborf can be terminated
     else #Virtual hosts
     
@@ -133,8 +133,10 @@ if [ -f /etc/default/$NAME ] ; then
 fi
 
 USERNAME=`cat /etc/weborf.conf | egrep "^user=" | cut -d= -f2`
+GROUPNAME=`cat /etc/weborf.conf | egrep "^group=" | cut -d= -f2`
 BASEDIR=`cat /etc/weborf.conf | egrep "^basedir=" | cut -d= -f2`
 USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
+GROUPID=$(egrep ^"$GROUPNAME" < /etc/group | cut -d: -f3)
 INDEXES=`cat /etc/weborf.conf | egrep "^indexes=" | cut -d= -f2`
 USE_CGI=`cat /etc/weborf.conf | egrep "^use-cgi=" | cut -d= -f2`
 USE_MIME=`cat /etc/weborf.conf | egrep "^use-mime=" | cut -d= -f2`
@@ -185,7 +187,12 @@ then
     MIME="-m"
 fi
 
-if test -z $USERID
+if [ -z "$GROUPID" ]; then
+    echo "Unable to find group $GROUPNAME"
+    exit 1
+fi
+
+if test -z "$USERID"
 then
     echo "Unable to find user $USERNAME"
     echo "Check your configuration"

@@ -30,6 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //----------System
 #define ROOTUID 0               //Uid for superuser
+#define ROOTGID 0
 
 //----------Network
 #define MAXQ 40                 //Queue for connect requests

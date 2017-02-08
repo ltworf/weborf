@@ -88,8 +88,12 @@ Weborf will try to load an index file following the order they're listed, and if
 In /etc/weborf.conf there is an 'indexes' directive, corresponding to this option. It is used when launching weborf as SystemV daemon.
 
 .TP
-.B \-u
+.B \-u, \-\-uid
 Must be followed by a valid uid, different from 0. Weborf will use this user to do his work, but will bind to the network port with the previous user. This mechanism is meant to let users execute it as root and use port 80, and then let it run without root privileges.
+
+.TP
+.B \-g, \-\-gid
+Must be followed by a valid gid, different from 0. Weborf will use this user to do his work, but will bind to the network port before changing.
 
 .TP
 .B \-d

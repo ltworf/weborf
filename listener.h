@@ -33,5 +33,6 @@ void *t_shape(void *nulla);
 void set_authsocket(char *);
 void chn_thread_count(int val);
 void set_new_uid(int uid);
+void set_new_gid(int gid);
 
 #endif
