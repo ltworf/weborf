@@ -79,6 +79,9 @@ void replaceEscape(char *string) {
     char e_seq[3];
     e_seq[2] = 0;
 
+    if (string == NULL)
+        return;
+
     //Parses the string
     while ((string=strstr(string,"%"))!=NULL) {
         e_seq[0] = string[1];
