@@ -1,3 +1,10 @@
+weborf (0.13.5-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+  * Remove patches from 0.13.4-2
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sat, 11 Feb 2017 12:14:51 +0100
+
 weborf (0.13.4-3) unstable; urgency=low
 
   * Make weborf-daemon depend on lsb-base
