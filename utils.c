@@ -41,6 +41,52 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "embedded_auth.h"
 
 /**
+ * This function creates an URI encoded version of the string origin
+ **/
+static void uri_encode(char *dest, size_t size, char *origin) {
+    if (size == 0 || dest == NULL || origin == NULL)
+        return;
+
+    dest[0] = '\0';
+
+    size_t len = strlen(origin);
+    size_t rlen = 0;
+
+    char *format;
+    for (size_t i = 0; i < len; i++) {
+        //Encode forbidden characters
+        if (
+            origin[i] == '!' ||
+            origin[i] == '*' ||
+            origin[i] == '\'' ||
+            origin[i] == '(' ||
+            origin[i] == ')' ||
+            origin[i] == ';' ||
+            origin[i] == ':' ||
+            origin[i] == '@' ||
+            origin[i] == '&' ||
+            origin[i] == '=' ||
+            origin[i] == '+' ||
+            origin[i] == '$' ||
+            origin[i] == ',' ||
+            origin[i] == '/' ||
+            origin[i] == '?' ||
+            origin[i] == '#' ||
+            origin[i] == '[' ||
+            origin[i] == ']' ||
+            origin[i] == '%'
+        ) {
+            format = "%%%02x";
+        } else {
+            format = "%c";
+        }
+        if (size - rlen <= 2)
+            return;
+        rlen += sprintf(dest + rlen, format, origin[i]);
+    }
+}
+
+/**
 This function reads the directory dir, putting inside the html string an html
 page with links to all the files within the directory.
 
@@ -67,6 +113,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
 
     struct dirent **namelist = NULL;
     counter = scandir(connection_prop->strfile, &namelist, 0, alphasort);
+    char *escaped_dname = malloc(ESCAPED_FNAME_LEN);
 
 
     if (counter <0) { //Open not succesfull
@@ -108,6 +155,8 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
         localtime_r(&f_prop.st_mtime,&ts);
         strftime(last_modified,URI_LEN, "%a, %d %b %Y %H:%M:%S", &ts);
 
+        uri_encode(escaped_dname, ESCAPED_FNAME_LEN, namelist[i]->d_name);
+
         if (S_ISREG(f_mode)) { //Regular file
 
             //Table row for the file
@@ -129,10 +178,9 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
                 color = "white";
             else
                 color = "#EAEAEA";
-
             printf_s=snprintf(html+pagesize,maxsize,
                               "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%lld%s</td><td>%s</td></tr>\n",
-                              color, namelist[i]->d_name, namelist[i]->d_name, (long long int)size, measure,last_modified);
+                              color, escaped_dname, namelist[i]->d_name, (long long int)size, measure,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
 
@@ -140,7 +188,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
             //Table row for the dir
             printf_s=snprintf(html+pagesize,maxsize,
                               "<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"%s/\">%s/</a></td><td>-</td><td>%s</td></tr>\n",
-                              namelist[i]->d_name, namelist[i]->d_name,last_modified);
+                              escaped_dname, namelist[i]->d_name,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
         }
@@ -152,6 +200,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     }
 
 escape:
+    free(escaped_dname);
     free(namelist);
     if (errcode == 0) {
         printf_s=snprintf(html+pagesize,maxsize,"</table>%s",HTMLFOOT);
