@@ -100,12 +100,12 @@ static inline int check_etag(connection_t* connection_prop,char *a) {
 This function does some changes on the URL.
 The url will never be longer than the original one.
 */
-static inline void modURL(char* url) {
+static inline void modURL(char* url, bool params) {
     replaceEscape(url);
 
     //Prevents the use of .. to access the whole filesystem
-    strReplace(url,"../",'\0');
-
+    if (!params)
+        strReplace(url,"../",'\0');
     //TODO AbsoluteURI: Check if the url uses absolute url, and in that case remove the 1st part
 }
 
@@ -127,8 +127,9 @@ static inline void set_connection_props(connection_t *connection_prop) {
         connection_prop->keep_alive=(connection && strncmp(a,"Keep",4)==0)?true:false;
     }
 
-    modURL(connection_prop->page);//Operations on the url string
     split_get_params(connection_prop);//Splits URI into page and parameters
+    modURL(connection_prop->page, false);//Operations on the url string
+    modURL(connection_prop->get_params, true);
     connection_prop->basedir=get_basedir(connection_prop->http_param);
 }
 
