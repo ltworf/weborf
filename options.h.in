@@ -65,6 +65,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define BUFFERED_READER_SIZE 2048
 #define DATEBUFFER 50           //Buffer for text date
 #define URI_LEN 256
+#define ESCAPED_FNAME_LEN 256 * 3 //To contain escaped filenames, d_name size is 256 on linux
 #define PATH_LEN 1024
 #define MIMETYPELEN 15          //Size of mimetype string
 
