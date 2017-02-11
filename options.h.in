@@ -84,7 +84,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //#define CGI_PHP "@cgibindir@/php5"
 //#define CGI_PY "@cgibindir@/weborf_py_wrapper"
-#define CGI_PHP "/usr/lib/cgi-bin/php5"
+#define CGI_PHP "/usr/lib/cgi-bin/php"
 #define CGI_PY "/usr/lib/cgi-bin/weborf_py_wrapper"
 
 //-------------COMPRESSING PAGES
