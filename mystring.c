@@ -91,6 +91,7 @@ void replaceEscape(char *string) {
 
         //Replaces the 3rd character with the char corresponding to the escape
         string[0] = strtol(e_seq, NULL, 16);
+        string++;
     }
 }
 
