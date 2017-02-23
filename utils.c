@@ -74,7 +74,8 @@ static void uri_encode(char *dest, size_t size, char *origin) {
             origin[i] == '#' ||
             origin[i] == '[' ||
             origin[i] == ']' ||
-            origin[i] == '%'
+            origin[i] == '%' ||
+            origin[i] == '\\'
         ) {
             format = "%%%02x";
         } else {
