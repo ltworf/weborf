@@ -1,5 +1,6 @@
 0.13.5
 - Added --gid option to change gid
+- Improved handling of reserved characters in URI
 
 0.13.4
 - Workaround API breaking in PyQt
