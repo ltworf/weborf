@@ -75,6 +75,10 @@ static void uri_encode(char *dest, size_t size, char *origin) {
             origin[i] == '[' ||
             origin[i] == ']' ||
             origin[i] == '%' ||
+            origin[i] == '>' ||
+            origin[i] == '<' ||
+            origin[i] == '\"' ||
+            origin[i] == ' ' ||
             origin[i] == '\\'
         ) {
             format = "%%%02x";
@@ -84,6 +88,46 @@ static void uri_encode(char *dest, size_t size, char *origin) {
         if (size - rlen <= 2)
             return;
         rlen += sprintf(dest + rlen, format, origin[i]);
+    }
+}
+
+/**
+ * This function encodes the characters in 'origin' to &code; form into 'encoded'
+ **/
+static void html_encode(char *dest, size_t size, char *origin) {
+    if (size == 0 || dest == NULL || origin == NULL) return;
+
+    dest[0] = '\0';
+
+    size_t len = 0;
+    size_t inc;
+    char *code;
+    size_t codesize;
+    char ni[2] = "X";
+
+    for (size_t i = 0; i < strlen(origin); i++) {
+        ni[0] = origin[i];
+        code = ni;
+        inc = 1;
+        switch (origin[i]) {
+        case '&':
+            code = "&amp;";
+            break;
+        case '<':
+            code = "&lt;";
+            break;
+        case '>':
+            code = "&gt;";
+            break;
+        case ' ':
+            code = "&nbsp;";
+            break;
+        }
+        codesize = strlen(code);
+        if (len + codesize >= ESCAPED_FNAME_LEN)
+            return;
+        strcpy(dest + len, code);
+        len += codesize;
     }
 }
 
@@ -114,6 +158,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
 
     struct dirent **namelist = NULL;
     counter = scandir(connection_prop->strfile, &namelist, 0, alphasort);
+    char *name_html = malloc(ESCAPED_FNAME_LEN);
     char *escaped_dname = malloc(ESCAPED_FNAME_LEN);
 
 
@@ -156,6 +201,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
         localtime_r(&f_prop.st_mtime,&ts);
         strftime(last_modified,URI_LEN, "%a, %d %b %Y %H:%M:%S", &ts);
 
+        html_encode(name_html, ESCAPED_FNAME_LEN, namelist[i]->d_name);
         uri_encode(escaped_dname, ESCAPED_FNAME_LEN, namelist[i]->d_name);
 
         if (S_ISREG(f_mode)) { //Regular file
@@ -181,7 +227,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
                 color = "#EAEAEA";
             printf_s=snprintf(html+pagesize,maxsize,
                               "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%lld%s</td><td>%s</td></tr>\n",
-                              color, escaped_dname, namelist[i]->d_name, (long long int)size, measure,last_modified);
+                              color, escaped_dname, name_html, (long long int)size, measure,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
 
@@ -189,7 +235,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
             //Table row for the dir
             printf_s=snprintf(html+pagesize,maxsize,
                               "<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"%s/\">%s/</a></td><td>-</td><td>%s</td></tr>\n",
-                              escaped_dname, namelist[i]->d_name,last_modified);
+                              escaped_dname, name_html,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
         }
@@ -201,6 +247,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     }
 
 escape:
+    free(name_html);
     free(escaped_dname);
     free(namelist);
     if (errcode == 0) {
