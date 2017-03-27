@@ -35,6 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <syslog.h>
 #include <signal.h>
+#include <string.h>
 
 #include "mystring.h"
 #include "utils.h"
@@ -43,7 +44,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 /**
  * This function creates an URI encoded version of the string origin
  **/
-static void uri_encode(char *dest, size_t size, char *origin) {
+static void uri_encode(char *dest, size_t size, const char *origin) {
     if (size == 0 || dest == NULL || origin == NULL)
         return;
 
@@ -94,13 +95,12 @@ static void uri_encode(char *dest, size_t size, char *origin) {
 /**
  * This function encodes the characters in 'origin' to &code; form into 'encoded'
  **/
-static void html_encode(char *dest, size_t size, char *origin) {
+static void html_encode(char *dest, size_t size, const char *origin) {
     if (size == 0 || dest == NULL || origin == NULL) return;
 
     dest[0] = '\0';
 
     size_t len = 0;
-    size_t inc;
     char *code;
     size_t codesize;
     char ni[2] = "X";
@@ -108,7 +108,6 @@ static void html_encode(char *dest, size_t size, char *origin) {
     for (size_t i = 0; i < strlen(origin); i++) {
         ni[0] = origin[i];
         code = ni;
-        inc = 1;
         switch (origin[i]) {
         case '&':
             code = "&amp;";
@@ -124,7 +123,7 @@ static void html_encode(char *dest, size_t size, char *origin) {
             break;
         }
         codesize = strlen(code);
-        if (len + codesize >= ESCAPED_FNAME_LEN)
+        if (len + codesize >= size)
             return;
         strcpy(dest + len, code);
         len += codesize;
