@@ -78,7 +78,7 @@ static void uri_encode(char *dest, size_t size, const char *origin) {
             origin[i] == '%' ||
             origin[i] == '>' ||
             origin[i] == '<' ||
-            origin[i] == '\"' ||
+            origin[i] == '"' ||
             origin[i] == ' ' ||
             origin[i] == '\\'
         ) {
@@ -107,7 +107,6 @@ static void html_encode(char *dest, size_t size, const char *origin) {
 
     for (size_t i = 0; i < strlen(origin); i++) {
         ni[0] = origin[i];
-        code = ni;
         switch (origin[i]) {
         case '&':
             code = "&amp;";
@@ -120,6 +119,12 @@ static void html_encode(char *dest, size_t size, const char *origin) {
             break;
         case ' ':
             code = "&nbsp;";
+            break;
+        case '"':
+            code = "&quot;";
+            break;
+        default:
+            code = ni;
             break;
         }
         codesize = strlen(code);
