@@ -19,3 +19,5 @@ autom4te.cache
 cgi_wrapper/weborf_cgi_wrapper
 cgi_wrapper/weborf_py_wrapper
 qweborf/main.py
+weborf.kdev4
+.kdev4/
