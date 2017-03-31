@@ -102,10 +102,7 @@ int dir_remove(char * dir) {
         return 0;
 
     DIR *dp = opendir(dir); //Open dir
-    struct dirent entry;
-    struct dirent *result;
-    int return_code;
-
+    struct dirent *entry;
 
     if (dp == NULL) {
         return 1;
@@ -116,13 +113,13 @@ int dir_remove(char * dir) {
         return ERR_NOMEM;
 
     //Cycles trough dir's elements
-    for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) { //Cycles trough dir's elements
+    while ((entry=readdir(dp)) != NULL) { //Cycles trough dir's elements
 
         //skips dir . and .. but not all hidden files
-        if (entry.d_name[0]=='.' && (entry.d_name[1]==0 || (entry.d_name[1]=='.' && entry.d_name[2]==0)))
+        if (entry->d_name[0]=='.' && (entry->d_name[1]==0 || (entry->d_name[1]=='.' && entry->d_name[2]==0)))
             continue;
 
-        snprintf(file,PATH_LEN,"%s/%s",dir, entry.d_name);
+        snprintf(file, PATH_LEN, "%s/%s", dir, entry->d_name);
         dir_remove(file);
     }
 
@@ -239,8 +236,7 @@ int dir_move_copy (char* source, char* dest,int method) {
     }
 
     DIR *dp = opendir(source); //Open dir
-    struct dirent entry;
-    struct dirent *result;
+    struct dirent *entry;
     int return_code;
 
 
@@ -254,14 +250,14 @@ int dir_move_copy (char* source, char* dest,int method) {
     char* dest_file=src_file+PATH_LEN;
 
     //Cycles trough dir's elements
-    for (return_code=readdir_r(dp,&entry,&result); result!=NULL && return_code==0; return_code=readdir_r(dp,&entry,&result)) {
+    while ((entry=readdir(dp)) != NULL) {
 
         //skips dir . and .. but not all hidden files
-        if (entry.d_name[0]=='.' && (entry.d_name[1]==0 || (entry.d_name[1]=='.' && entry.d_name[2]==0)))
+        if (entry->d_name[0]=='.' && (entry->d_name[1]==0 || (entry->d_name[1]=='.' && entry->d_name[2]==0)))
             continue;
 
-        snprintf(src_file,PATH_LEN,"%s/%s",source, entry.d_name);
-        snprintf(dest_file,PATH_LEN,"%s/%s",dest, entry.d_name);
+        snprintf(src_file,PATH_LEN,"%s/%s",source, entry->d_name);
+        snprintf(dest_file,PATH_LEN,"%s/%s",dest, entry->d_name);
 
         stat(src_file, &f_prop);
         if (S_ISDIR(f_prop.st_mode)) {//Directory
