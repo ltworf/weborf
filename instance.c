@@ -704,6 +704,7 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
             case -1:
                 return ERR_FILENOTFOUND;
             case -2:
+            default:
 #ifdef SERVERDBG
                 syslog(LOG_ERR, "Directory too large to be listed");
 #endif
