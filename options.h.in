@@ -41,6 +41,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define IPV6
 #endif
 
+#ifdef IPV6
+#define IPVERSION '6'
+#else
+#define IPVERSION '4'
+#endif
+
 //-----------Threads
 #define MAXTHREAD 300           //Max threads
 #define INITIALTHREAD 12        //Thread started when free threads are low and when starting
