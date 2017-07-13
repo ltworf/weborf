@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 #include "options.h"
-
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -80,79 +79,60 @@ int net_create_server_socket() {
     return s;
 }
 
+
 void net_bind_and_listen(int s) {
 
+    // Check port number
+    unsigned int port = strtol(weborf_conf.port, NULL, 0);
+    if (port < 1 || port > 65535) {
+        dprintf(2, "Invalid port number: %u\n", port);
+        exit(4);
+    }
+
+    // Create socket and set port number
 #ifdef IPV6
     struct sockaddr_in6 locAddr;   //Local and remote address
-    //socklen_t ipAddrL = sizeof(struct sockaddr_in6);
+    memset(&locAddr, 0, sizeof(locAddr));
+    locAddr.sin6_family = AF_INET6;
+    locAddr.sin6_port = htons(port);
 #else
     struct sockaddr_in locAddr;
     int ipAddrL = sizeof(struct sockaddr_in);
+    locAddr.sin_family = AF_INET;
+    locAddr.sin_port = htons(port);
 #endif
 
-
+    // Set IP address
+    if (weborf_conf.ip) {
 #ifdef IPV6
-
-    //Bind
-    memset(&locAddr, 0, sizeof(locAddr));
-    locAddr.sin6_family = AF_INET6;
-    locAddr.sin6_port = htons(strtol(weborf_conf.port, NULL, 0));
-    if (weborf_conf.ip == NULL) { //Default ip, listens to all the interfaces
-        locAddr.sin6_addr = in6addr_any;
-    } else { //Custom ip
-        if (inet_pton(AF_INET6, weborf_conf.ip, &locAddr.sin6_addr) == 0) {
-            printf("Invalid IP address: %s\n", weborf_conf.ip);
+        int rpt = inet_pton(AF_INET6, weborf_conf.ip, &locAddr.sin6_addr);
+#else
+        int rpt = inet_pton(AF_INET, weborf_conf.ip, &locAddr.sin_addr);
+#endif
+        if (rpt == 0) {
+            dprintf(2, "Invalid IPv%c address: %s\n", IPVERSION, weborf_conf.ip);
             exit(2);
         }
+    } else {
+        weborf_conf.ip = "any";
+#ifdef IPV6
+        locAddr.sin6_addr = in6addr_any;
+#else
+        inet_pton(AF_INET, "0.0.0.0", &locAddr.sin_addr);
+#endif
     }
 
+    // Log listened interface
+    syslog(LOG_INFO, "Listening on address: %s:%u",
+           weborf_conf.ip, port);
 
+    // Bind
     if (bind(s, (struct sockaddr *) &locAddr, sizeof(locAddr)) < 0) {
         perror("trying to bind");
-#ifdef SOCKETDBG
-        syslog(LOG_ERR, "Port %d already in use",
-               ntohs(locAddr.sin6_port));
-#endif
+        syslog(LOG_ERR, "Port %u already in use", port);
         exit(3);
     }
-#else
-    //Prepares socket's address
-    locAddr.sin_family = AF_INET;   //Internet socket
-
-    {
-        //Check the validity of port param and uses it
-        unsigned int p = strtol(weborf_conf.port, NULL, 0);
-        if (p < 1 || p > 65535) {
-            printf("Invalid port number: %d\n", p);
-            exit(4);
-        }
-        locAddr.sin_port = htons(p);
-    }
-
-    if (weborf_conf.ip == NULL)
-        weborf_conf.ip = "0.0.0.0"; //Default ip address
-    if (inet_aton(weborf_conf.ip, &locAddr.sin_addr) == 0) { //Converts ip to listen in binary format
-        printf("Invalid IP address: %s\n", weborf_conf.ip);
-        exit(2);
-    }
-#ifdef SOCKETDBG
-    syslog(LOG_INFO, "Listening on address: %s:%d",
-           inet_ntoa(locAddr.sin_addr), ntohs(locAddr.sin_port));
-#endif
-
-
-    //Bind
-    if (bind(s, (struct sockaddr *) &locAddr, ipAddrL) == -1) {
-        perror("trying to bind");
-#ifdef SOCKETDBG
-        syslog(LOG_ERR, "Port %d already in use", ntohs(locAddr.sin_port));
-#endif
-        exit(3);
-    }
-#endif
-
     listen(s, MAXQ); //Listen to the socket
-
 }
 
 
