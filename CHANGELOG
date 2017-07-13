@@ -2,6 +2,7 @@
 - Added --gid option to change gid
 - Improved handling of reserved characters in URI
 - ContentType in directory listing
+- Improved code to create the socket
 
 0.13.4
 - Workaround API breaking in PyQt
