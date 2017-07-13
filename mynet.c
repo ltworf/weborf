@@ -79,6 +79,35 @@ int net_create_server_socket() {
     return s;
 }
 
+#ifdef IPV6
+/**
+ * Accepts an ip address.
+ *
+ * Returns a new buffer that needs to be freed by the
+ * caller of this function.
+ *
+ * If addr is an ipv6 address, it is just copied into
+ * the returned buffer.
+ *
+ * If addr is an ipv4 address, the string "::ffff:" is
+ * prepended to it, turning it into an ipv6 mapped address.
+ **/
+char* net_map_ipv4(char* addr) {
+    size_t len = strlen(addr);
+    char *r;
+    if (strstr(addr, ":")) {
+        r = malloc(len + 1);
+        memcpy(r, addr, len + 1);
+    } else {
+        char * prefix = "::ffff:";
+        r = malloc(len + strlen(prefix) + 1);
+        memcpy(r, prefix, strlen(prefix));
+        memcpy(r + strlen(prefix), addr, len + 1);
+    }
+    return r;
+}
+#endif
+
 
 void net_bind_and_listen(int s) {
 
@@ -105,7 +134,9 @@ void net_bind_and_listen(int s) {
     // Set IP address
     if (weborf_conf.ip) {
 #ifdef IPV6
-        int rpt = inet_pton(AF_INET6, weborf_conf.ip, &locAddr.sin6_addr);
+        char * ip = net_map_ipv4(weborf_conf.ip);
+        int rpt = inet_pton(AF_INET6, ip, &locAddr.sin6_addr);
+        free(ip);
 #else
         int rpt = inet_pton(AF_INET, weborf_conf.ip, &locAddr.sin_addr);
 #endif
