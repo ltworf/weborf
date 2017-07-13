@@ -722,7 +722,14 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
         I tried on reiserfs and the directory's mtime changes too but i didn't
         find any doc about the other filesystems and OS.
         */
-        send_http_header(200,pagelen,NULL,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+        send_http_header(
+            200,
+            pagelen,
+            "Content-Type: text/html\r\n",
+            true,
+            connection_prop->strfile_stat.st_mtime,
+            connection_prop
+        );
         write(sock,html,pagelen);
 
         //Write item in cache
