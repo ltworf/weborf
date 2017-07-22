@@ -32,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <syslog.h>
 #include <getopt.h>
 #include <pthread.h>
+#include <poll.h>
 
 
 #include "listener.h"
@@ -167,8 +168,18 @@ int main(int argc, char *argv[]) {
     init_thread_shaping();
     init_signals();
 
-    //Infinite cycle, accept connections
+    struct pollfd poll_fds[1];
+    poll_fds[0].fd = s;
+    poll_fds[0].events = POLLIN | POLLPRI | POLLOUT | POLLERR;
+
     while (1) {
+        int pr = poll(poll_fds, 1, 1000 * THREADCONTROL);
+        if (pr == 0) {
+            //Timeout
+        } else if (pr < 0) {
+            continue; // Most likely, interrupted by signal
+        }
+
         s1 = accept(s, NULL,NULL);
 
         if (s1 >= 0 && q_put(&queue, s1)!=0) { //Adds s1 to the queue
