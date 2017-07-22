@@ -1,6 +1,7 @@
 0.14
 - Use one less thread
 - Use smaller thread pool
+- Detaches when connections can be accepted (can now use Type=forking in systemd)
 
 0.13.5
 - Added --gid option to change gid
