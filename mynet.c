@@ -28,6 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <fcntl.h>
 
 #include "types.h"
 #include "mynet.h"
@@ -75,6 +76,10 @@ int net_create_server_socket() {
 #endif
         return -1;
     }
+
+    int flags = fcntl(s, F_GETFL, 0);
+    flags |= O_NONBLOCK | O_CLOEXEC;
+    fcntl(s, F_SETFL, flags);
 
     return s;
 }
