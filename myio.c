@@ -72,12 +72,7 @@ int fd_copy(int from, int to, off_t count) {
 Returns true if the specified file exists
 */
 bool file_exists(char *file) {
-    int fp = open(file, O_RDONLY);
-    if (fp >= 0) { // exists
-        close(fp);
-        return true;
-    }
-    return false;
+    return access(file, R_OK) == 0;
 }
 
 /**
