@@ -32,7 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cachedir.h"
 #include "auth.h"
 
-weborf_configuration_t weborf_conf=    {
+weborf_configuration_t weborf_conf = {
     .tar_directory=false,
     .is_inetd=false,
     .virtual_host = false,
@@ -42,6 +42,7 @@ weborf_configuration_t weborf_conf=    {
     .basedir=BASEDIR,
     .uid = ROOTUID,
     .gid = ROOTGID,
+    .daemonize = false,
 
 #ifdef SEND_MIMETYPES
     .send_content_type = false,
@@ -256,7 +257,7 @@ void configuration_load(int argc, char *argv[]) {
             weborf_conf.gid = strtol(optarg, NULL, 0);
             break;
         case 'd':
-            daemonize();
+            weborf_conf.daemonize = true;
             break;
         case 'a':
             auth_set_socket(optarg);

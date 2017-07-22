@@ -112,6 +112,7 @@ typedef struct {
     bool virtual_host;          //True if must check for virtual hosts
     bool exec_script;           //Enable CGI if false
     bool tar_directory;         //Sends directories compressed into tar-files
+    bool daemonize;             //Run daemon()
     char *ip;                   //IP addr with default value
     char *port;                 //port with default value
 

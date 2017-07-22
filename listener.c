@@ -175,6 +175,9 @@ int main(int argc, char *argv[]) {
     set_new_gid(weborf_conf.gid);
     set_new_uid(weborf_conf.uid);
 
+    if (weborf_conf.daemonize)
+        daemonize();
+
     //init the queue for opened sockets
     if (q_init(&queue, MAXTHREAD + 1) != 0)
         exit(NOMEM);
