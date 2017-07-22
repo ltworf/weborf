@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
 
     struct pollfd poll_fds[1];
     poll_fds[0].fd = s;
-    poll_fds[0].events = POLLIN | POLLPRI | POLLOUT | POLLERR;
+    poll_fds[0].events = POLLIN;
 
     while (1) {
         int pr = poll(poll_fds, 1, 1000 * THREADCONTROL);
