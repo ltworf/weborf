@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(
-    version='0.13.5',
+    version='0.14',
     name='qweborf',
     author="Salvo 'LtWorf' Tomaselli",
     author_email='tiposchi@tiscali.it',

@@ -91,7 +91,7 @@ class qweborfForm (QtWidgets.QWidget):
 
     def about(self):
 
-        self.logger('<hr><strong>Qweborf 0.13.5</strong>')
+        self.logger('<hr><strong>Qweborf 0.14</strong>')
         self.logger('This program comes with ABSOLUTELY NO WARRANTY.'
                     ' This is free software, and you are welcome to redistribute it under certain conditions.'
                     ' For details see the <a href="http://www.gnu.org/licenses/gpl.html">GPLv3 Licese</a>.')
