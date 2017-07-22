@@ -30,7 +30,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "types.h"
 
 void split_get_params(connection_t* connection_prop);
-bool endsWith(char *str, char *end,ssize_t len_str,ssize_t len_end);
+bool endsWith(char *str, char *end, size_t len_str, size_t len_end);
 void delChar(char *string, int pos, int n);
 void strReplace(char *string, char *substr, char with);
 void replaceEscape(char *string);
