@@ -33,6 +33,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <getopt.h>
 #include <pthread.h>
 #include <poll.h>
+#include <time.h>
 
 
 #include "listener.h"
@@ -114,6 +115,7 @@ static void init_logger() {
 
 }
 
+
 static void init_thread_info() {
     //Init thread_info
     pthread_mutex_init(&thread_info.mutex, NULL);
@@ -121,11 +123,26 @@ static void init_thread_info() {
     thread_info.free=0;
 }
 
-static void init_thread_shaping() {
-    //Starts the monitoring thread, to close unused threads
-    pthread_t t_id; //Unused var
-    pthread_create(&t_id, NULL, t_shape, (void *) NULL);
+
+/**
+This function, terminates threads if there are too many free threads.
+
+It only takes action every THREADCONTROL seconds.
+*/
+static void t_shape() {
+    static time_t last_action = 0;
+
+    if (last_action + 10 > time(NULL)) {
+        return;
+    }
+    last_action = time(NULL);
+
+    if (thread_info.free > MAXFREETHREAD) { //Too many free threads, terminates one of them
+        //Write the termination order to the queue, the thread who will read it, will terminate
+        q_put(&queue,-1);
+    }
 }
+
 
 /**
  * Set quit action on SIGTERM and SIGINT
@@ -165,7 +182,6 @@ int main(int argc, char *argv[]) {
     //Starts the 1st group of threads
     init_thread_attr();
     init_threads(INITIALTHREAD);
-    init_thread_shaping();
     init_signals();
 
     struct pollfd poll_fds[1];
@@ -174,11 +190,8 @@ int main(int argc, char *argv[]) {
 
     while (1) {
         int pr = poll(poll_fds, 1, 1000 * THREADCONTROL);
-        if (pr == 0) {
-            //Timeout
-        } else if (pr < 0) {
-            continue; // Most likely, interrupted by signal
-        }
+
+        t_shape();
 
         s1 = accept(s, NULL,NULL);
 
@@ -253,27 +266,6 @@ void set_new_gid(int gid) {
     }
 }
 
-/**
-This function, executed as a thread, terminates threads if there are too much free threads.
-
-It works polling the number of free threads and writing an order of termination if too much of them are free.
-
-Policies of this function (polling frequence and limit for free threads) are defined in options.h
- */
-void *t_shape(void *nulla) {
-
-    for (;;) {
-        sleep(THREADCONTROL);
-
-        //pthread_mutex_lock(&thread_info.mutex);
-        if (thread_info.free > MAXFREETHREAD) {	//Too much free threads, terminates one of them
-            //Write the termination order to the queue, the thread who will read it, will terminate
-            q_put(&queue,-1);
-        }
-        //pthread_mutex_unlock(&thread_info.mutex);
-    }
-    return NULL; //make gcc happy
-}
 
 /**
 Will print the internal status of the queue.
