@@ -56,35 +56,36 @@ static void uri_encode(char *dest, size_t size, const char *origin) {
     char *format;
     for (size_t i = 0; i < len; i++) {
         //Encode forbidden characters
-        if (
-            origin[i] == '!' ||
-            origin[i] == '*' ||
-            origin[i] == '\'' ||
-            origin[i] == '(' ||
-            origin[i] == ')' ||
-            origin[i] == ';' ||
-            origin[i] == ':' ||
-            origin[i] == '@' ||
-            origin[i] == '&' ||
-            origin[i] == '=' ||
-            origin[i] == '+' ||
-            origin[i] == '$' ||
-            origin[i] == ',' ||
-            origin[i] == '/' ||
-            origin[i] == '?' ||
-            origin[i] == '#' ||
-            origin[i] == '[' ||
-            origin[i] == ']' ||
-            origin[i] == '%' ||
-            origin[i] == '>' ||
-            origin[i] == '<' ||
-            origin[i] == '"' ||
-            origin[i] == ' ' ||
-            origin[i] == '\\'
-        ) {
-            format = "%%%02x";
-        } else {
-            format = "%c";
+        switch (origin[i]) {
+            case '!':
+            case '*':
+            case '\'':
+            case '(':
+            case ')':
+            case ';':
+            case ':':
+            case '@':
+            case '&':
+            case '=':
+            case '+':
+            case '$':
+            case ',':
+            case '/':
+            case '?':
+            case '#':
+            case '[':
+            case ']':
+            case '%':
+            case '>':
+            case '<':
+            case '"':
+            case ' ':
+            case '\\':
+                format = "%%%02x";
+                break;
+            default:
+                format = "%c";
+                break;
         }
         if (size - rlen <= 2)
             return;
