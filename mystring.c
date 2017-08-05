@@ -42,33 +42,17 @@ This function splits the page name from the GET params.
 It also sets the value for the page_len field
 */
 void split_get_params(connection_t* connection_prop) {
-    int i=0;
-    connection_prop->get_params=NULL;
-    while (connection_prop->page[i]!=0) {
-        if (connection_prop->page[i]=='?') {
-            connection_prop->page[i]=0;
-            connection_prop->get_params=&connection_prop->page[i+1];
-            break;
-        }
-        i++;
-    }
-    connection_prop->page_len=i;
-}
-/*void split_get_params(connection_t* connection_prop) {
     char *separator=strstr(connection_prop->page,"?");
 
     if (separator==NULL) {
         connection_prop->get_params=NULL;
         connection_prop->page_len=strlen(connection_prop->page);
-
     } else {
-
         separator[0]=0;
         connection_prop->get_params=separator+1;
         connection_prop->page_len=separator-connection_prop->page;
-
     }
-}*/
+}
 
 
 /**
