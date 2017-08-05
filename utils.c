@@ -172,7 +172,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     }
 
     //Specific header table)
-    pagesize=printf_s=snprintf(html+pagesize,maxsize,"%s<table><tr><td></td><td>Name</td><td>Size</td><td>Last Modified</td></tr>",HTMLHEAD);
+    pagesize=printf_s=snprintf(html+pagesize,maxsize,HTMLHEAD "<table><tr><td></td><td>Name</td><td>Size</td><td>Last Modified</td></tr>");
     maxsize-=printf_s;
 
     //Cycles trough dir's elements
@@ -230,8 +230,8 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
             else
                 color = "#EAEAEA";
             printf_s=snprintf(html+pagesize,maxsize,
-                              "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%lld%s</td><td>%s</td></tr>\n",
-                              color, escaped_dname, name_html, (long long int)size, measure,last_modified);
+                              "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%llu%s</td><td>%s</td></tr>\n",
+                              color, escaped_dname, name_html, size, measure,last_modified);
             maxsize-=printf_s;
             pagesize+=printf_s;
 
@@ -255,7 +255,7 @@ escape:
     free(escaped_dname);
     free(namelist);
     if (errcode == 0) {
-        printf_s=snprintf(html+pagesize,maxsize,"</table>%s",HTMLFOOT);
+        printf_s=snprintf(html+pagesize,maxsize,"</table>" HTMLFOOT);
         pagesize+=printf_s;
         return pagesize;
     } else
