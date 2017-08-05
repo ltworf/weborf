@@ -105,30 +105,36 @@ static void html_encode(char *dest, size_t size, const char *origin) {
     char *code;
     size_t codesize;
     char ni[2] = "X";
+    size_t origin_len = strlen(origin);
 
-    for (size_t i = 0; i < strlen(origin); i++) {
+    for (size_t i = 0; i < origin_len; i++) {
         ni[0] = origin[i];
         switch (origin[i]) {
         case '&':
             code = "&amp;";
+            codesize = strlen("&amp;");
             break;
         case '<':
             code = "&lt;";
+            codesize = strlen("&lt;");
             break;
         case '>':
             code = "&gt;";
+            codesize = strlen("&gt;");
             break;
         case ' ':
             code = "&nbsp;";
+            codesize = strlen("&nbsp;");
             break;
         case '"':
             code = "&quot;";
+            codesize = strlen("&quot;");
             break;
         default:
             code = ni;
+            codesize = 1;
             break;
         }
-        codesize = strlen(code);
         if (len + codesize >= size)
             return;
         strcpy(dest + len, code);
