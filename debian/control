@@ -10,7 +10,7 @@ Homepage: http://ltworf.github.io/weborf/
 Package: weborf
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Suggests: php5-cgi
+Suggests: php-cgi
 Description: Fast and small webserver meant to be run without root privileges
  Weborf is a configurationless webeserver mainly meant to allow users to
  easily share their directories over the web.
