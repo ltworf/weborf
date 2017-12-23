@@ -179,7 +179,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
     }
 
     //Specific header table)
-    pagesize=printf_s=snprintf(html+pagesize,maxsize,HTMLHEAD "<table><tr><td></td><td>Name</td><td>Size</td><td>Last Modified</td></tr>");
+    pagesize=printf_s=snprintf(html+pagesize,maxsize, "%s", HTMLHEAD "<table><tr><td></td><td>Name</td><td>Size</td><td>Last Modified</td></tr>");
     maxsize-=printf_s;
 
     //Cycles trough dir's elements
@@ -262,7 +262,7 @@ escape:
     free(escaped_dname);
     free(namelist);
     if (errcode == 0) {
-        printf_s=snprintf(html+pagesize,maxsize,"</table>" HTMLFOOT);
+        printf_s=snprintf(html+pagesize,maxsize, "%s", "</table>" HTMLFOOT);
         pagesize+=printf_s;
         return pagesize;
     } else
