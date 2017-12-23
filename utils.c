@@ -190,7 +190,7 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
 
     //Print link to parent directory, if there is any
     if (parent) {
-        printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: #DFDFDF;\"><td>d</td><td><a href=\"../\">../</a></td><td>-</td><td>-</td></tr>");
+        printf_s=snprintf(html+pagesize,maxsize,"<tr style=\"background-color: " HTMLPARENT ";\"><td>d</td><td><a href=\"../\">../</a></td><td>-</td><td>-</td></tr>");
         maxsize-=printf_s;
         pagesize+=printf_s;
     }
@@ -233,9 +233,9 @@ int list_dir(connection_t *connection_prop, char *html, unsigned int bufsize, bo
             }
 
             if (i % 2 == 0)
-                color = "white";
+                color = HTMLLIGHT;
             else
-                color = "#EAEAEA";
+                color = HTMLDARK;
             printf_s=snprintf(html+pagesize,maxsize,
                               "<tr style=\"background-color: %s;\"><td>f</td><td><a href=\"%s\">%s</a></td><td>%llu%s</td><td>%s</td></tr>\n",
                               color, escaped_dname, name_html, size, measure,last_modified);
