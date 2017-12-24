@@ -71,8 +71,7 @@ int net_create_server_socket() {
         perror("ruseaddr(any)");
         syslog(LOG_ERR, "reuseaddr(any)");
 #ifdef IPV6
-        char *suggestion = "If you don't have IPv6 support in kernel, try recompiling weborf, removing the line '#define IPV6' from options.h\n";
-        write(2, suggestion, strlen(suggestion));
+        dprintf(2, "If you don't have IPv6 support in kernel, try recompiling weborf, removing the line '#define IPV6' from options.h\n");
 #endif
         return -1;
     }

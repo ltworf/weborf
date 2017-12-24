@@ -381,11 +381,14 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     }
 
     int fd=open(connection_prop->strfile,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR);
-    if (fd<0) {
+    if (fd == -1) {
         return ERR_FILENOTFOUND;
     }
 
-    ftruncate(fd,content_l);
+    if (ftruncate(fd, content_l) == -1) {
+        close(fd);
+        return ERR_NOMEM;
+    }
 
     char* buf=malloc(FILEBUF);//Buffer to read from file
     if (buf==NULL) {
@@ -405,11 +408,11 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
         write_=write(fd,buf,read_);
 
         if (write_!=read_) {
-            retval= ERR_BRKPIPE;
+            retval = ERR_BRKPIPE;
             break;
         }
 
-        tot_read+=read_;
+        tot_read += read_;
     }
 
     free(buf);
@@ -602,10 +605,7 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
 
         //send normal file, control reaches this point if scripts are disabled or if the filename doesn't trigger CGI
         return write_file(connection_prop);
-
-
     }
-    //return 0; //make gcc happy
 }
 
 /**
@@ -730,10 +730,10 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
             connection_prop->strfile_stat.st_mtime,
             connection_prop
         );
-        write(sock,html,pagelen);
+        write(sock, html, pagelen);
 
         //Write item in cache
-        cache_store_item(0,connection_prop,html,pagelen);
+        cache_store_item(0, connection_prop, html, pagelen);
     }
 
     free(html);//Frees the memory used for the page
@@ -1234,12 +1234,23 @@ static int tar_send_dir(connection_t* connection_prop) {
 
     if (pid==0) { //child, executing tar
         fclose (stdout); //Closing the stdout
-        dup(connection_prop->sock); //Redirects the stdout
-        nice(1); //Reducing priority
+        if (dup(connection_prop->sock) == -1) { //Redirects the stdout
+            exit(1);
+        }
+        errno = 0;
+        if (nice(1) == -1 && errno != 0) {
+            //Failed to reduce priority
+            syslog(LOG_INFO, "Failed to nice() child process");
+        }
         execlp("tar","tar","-cz",connection_prop->strfile,(char *)0);
+        exit(1);
     } else if (pid>0) { //Father, does nothing
         int status;
-        waitpid(pid,&status,0);
+        waitpid(pid, &status, 0);
+        if (status != 0) {
+            syslog(LOG_ERR, "tar terminated with exit code %d", status);
+            return ERR_BRKPIPE;
+        }
     } else { //Error
         return ERR_NOMEM; //Well not enough memory in process table...
     }

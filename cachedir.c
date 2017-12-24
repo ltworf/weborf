@@ -163,10 +163,9 @@ void cache_store_item(unsigned int uprefix,connection_t* connection_prop, char *
     char fname[PATH_LEN];
     cached_filename(uprefix,connection_prop,fname);
 
-    int fd=open(fname,O_WRONLY| O_CREAT,S_IRUSR|S_IWUSR);
+    int fd=open(fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
 
-
-    if (fd==-1) return; //Just do nothing in case of error
+    if (fd == -1) return; //Just do nothing in case of error
 
     //Try to acquire lock in a non-blocking way, and exit if another thread has that lock
     if (flock(fd,LOCK_EX|LOCK_NB)!=0) {
@@ -174,7 +173,7 @@ void cache_store_item(unsigned int uprefix,connection_t* connection_prop, char *
         return;
     }
 
-    write(fd,content,content_len);
+    write(fd, content, content_len);
     close(fd);
     return;
 }
@@ -191,23 +190,20 @@ will just log a warning.
 void cache_init(char* dir) {
     cachedir=dir;
 
-
     {
         //Check if it exists
         struct stat stat_buf;
         if (stat(dir, &stat_buf)!=0) {
-            write(2,"Unable to stat cache directory\n",31);
+            dprintf(2, "Unable to stat cache directory\n")
 #ifdef SERVERDBG
             syslog(LOG_ERR,"Unable to stat cache directory");
 #endif
-
             exit(10);
         }
 
         //Check it is a directory
         if (!S_ISDIR(stat_buf.st_mode)) {
-            write(2,"--cache parameter must be a directory\n",38);
-
+            dprintf(2, "--cache parameter must be a directory\n");
 #ifdef SERVERDBG
             syslog(LOG_ERR,"--cache parameter must be a directory");
 #endif
@@ -217,15 +213,12 @@ void cache_init(char* dir) {
 
     //check we have permissions
     if (access(dir,W_OK|R_OK)!=0) {
-        write(2,"no read or write permissions on cache dir\n",42);
-
+        dprintf(2,"no read or write permissions on cache dir\n");
 #ifdef SERVERDBG
         syslog(LOG_ERR,"no read or write permissions on cache dir");
 #endif
         exit(10);
-
     }
-
 }
 
 /**

@@ -57,7 +57,7 @@ void auth_set_socket(char *u_socket) {
 #ifdef SERVERDBG
         syslog(LOG_ERR, "%s is not a socket", u_socket);
 #endif
-        write(2,"Socket expected\n",16);
+        dprintf(2, "Socket expected\n");
         exit(5);
     }
 
