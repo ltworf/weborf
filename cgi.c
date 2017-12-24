@@ -356,11 +356,21 @@ int exec_page(char * executor,string_t* post_param,char* real_basedir,connection
 
     //Pipe created and used only if there is POST data to send to the script
     if (post_param->data!=NULL) {
-        pipe(ipipe);//Pipe to comunicate with the child
+        if (pipe(ipipe) == -1 ) {
+            syslog(LOG_ERR, "Unable to create pipe");
+            return ERR_NOMEM;
+        }
     }
 
     //Pipe to get the output of the child
-    pipe(wpipe);//Pipe to comunicate with the child
+    if (pipe(wpipe) == -1) {
+        syslog(LOG_ERR, "Unable to create pipe");
+        if (post_param->data!=NULL) {
+            close(ipipe[0]);
+            close(ipipe[1]);
+        }
+        return ERR_NOMEM;
+    }
 
     if ((wpid=fork())<0) { //Error, returns a no memory error
 #ifdef SENDINGDBG
