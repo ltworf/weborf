@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 @author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 */
 
-
 #include "options.h"
 
 #ifdef WEBDAV
@@ -207,84 +206,69 @@ If the file can't be opened in readonly mode, this function does nothing.
 */
 static inline int printprops(connection_t *connection_prop,u_dav_details props,char* file,char*filename,bool parent) {
     int sock=connection_prop->sock;
-    int p_len;
     struct stat stat_s;
-    char buffer[URI_LEN];
     char escaped_filename[URI_LEN];
     char escaped_page[URI_LEN];
 
-    int file_fd=open(file,O_RDONLY);
-    if (file_fd==-1) return 0;
+    int file_fd = open(file, O_RDONLY);
+    if (file_fd == -1) return 0;
     fstat(file_fd, &stat_s);
 
     escape_uri(filename,escaped_filename,URI_LEN);
     escape_uri(connection_prop->page,escaped_page,URI_LEN);
 
-    write(sock,"<D:response>\n",13);
+    dprintf(sock, "<D:response>\n");
 
     {
         //Sends href of the resource
         if (parent) {
-            p_len=snprintf(buffer,URI_LEN,"<D:href>%s</D:href>",escaped_filename);
+            dprintf(sock, "<D:href>%s</D:href>", escaped_filename);
         } else {
-            p_len=snprintf(buffer,URI_LEN,"<D:href>%s%s</D:href>",escaped_page,escaped_filename);
+            dprintf(sock, "<D:href>%s%s</D:href>", escaped_page, escaped_filename);
         }
-
-        write (sock,buffer,p_len);
     }
 
-    write(sock,"<D:propstat><D:prop>",20);
-
-    //Writing properties
-    char prop_buffer[URI_LEN];
+    dprintf(sock, "<D:propstat><D:prop>");
 
     if (props.dav_details.getetag) {
-        snprintf(prop_buffer,URI_LEN,"%d",(unsigned int)stat_s.st_mtime);
-        p_len=snprintf(buffer,URI_LEN,"<D:getetag>%s</D:getetag>\n",prop_buffer);
-        write (sock,buffer,p_len);
-
+        dprintf(sock, "<D:getetag>%ld</D:getetag>\n", stat_s.st_mtime);
     }
 
     if (props.dav_details.getcontentlength) {
-        snprintf(prop_buffer,URI_LEN,"%lld",(long long)stat_s.st_size);
-        p_len=snprintf(buffer,URI_LEN,"<D:getcontentlength>%s</D:getcontentlength>\n",prop_buffer);
-        write (sock,buffer,p_len);
+        dprintf(sock, "<D:getcontentlength>%ld</D:getcontentlength>\n", stat_s.st_size);
     }
 
     if (props.dav_details.resourcetype) {//Directory or normal file
+        const char* type;
         if (S_ISDIR(stat_s.st_mode)) {
-            snprintf(prop_buffer,URI_LEN,"<D:collection/>");
+            type = "<D:collection/>";
         } else {
-            prop_buffer[0]=' ';
-            prop_buffer[1]=0;
+            type = " ";
         }
 
-        p_len=snprintf(buffer,URI_LEN,"<D:resourcetype>%s</D:resourcetype>\n",prop_buffer);
-        write (sock,buffer,p_len);
+        dprintf(sock, "<D:resourcetype>%s</D:resourcetype>\n", type);
     }
 
     if (props.dav_details.getlastmodified) { //Sends Date
         struct tm ts;
         localtime_r(&stat_s.st_mtime,&ts);
-        strftime(prop_buffer,URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
-        p_len=snprintf(buffer,URI_LEN,"<D:getlastmodified>%s</D:getlastmodified>\n",prop_buffer);
-        write (sock,buffer,p_len);
+        char prop_buffer[URI_LEN];
+        strftime(prop_buffer, URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
+        dprintf(sock, "<D:getlastmodified>%s</D:getlastmodified>\n", prop_buffer);
     }
-
 
 #ifdef SEND_MIMETYPES
     if(props.dav_details.getcontenttype) { //Sends MIME type
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
 
-        const char* t=mime_get_fd(thread_prop->mime_token,file_fd,&stat_s);
-        p_len=snprintf(buffer,URI_LEN,"<D:getcontenttype>%s</D:getcontenttype>\n",t);
-        write (sock,buffer,p_len);
+        const char* t = mime_get_fd(thread_prop->mime_token, file_fd, &stat_s);
+        dprintf(sock, "<D:getcontenttype>%s</D:getcontenttype>\n", t);
     }
 #endif
 
-    write(sock,"</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>",58);
-
-    write(sock,"</D:response>",13);
+    dprintf(sock,
+        "</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>"
+        "</D:response>");
 
     close(file_fd);
     return 0;
@@ -359,11 +343,12 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
     }
 
     //Sends header of xml response
-    write(sock,"<?xml version=\"1.0\" encoding=\"utf-8\" ?>",39);
-    write(sock,"<D:multistatus xmlns:D=\"DAV:\">",30);
+    dprintf(sock,
+            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
+            "<D:multistatus xmlns:D=\"DAV:\">");
 
     //sends props about the requested file
-    printprops(connection_prop,props,connection_prop->strfile,connection_prop->page,true);
+    printprops(connection_prop, props, connection_prop->strfile, connection_prop->page, true);
 
     if (props.dav_details.deep) {//Send children files
         DIR *dp = opendir(connection_prop->strfile); //Open dir
@@ -385,7 +370,6 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
             if (entry->d_name[0]=='.' && (entry->d_name[1]==0 || (entry->d_name[1]=='.' && entry->d_name[2]==0)))
                 continue;
 #endif
-
             snprintf(file, URI_LEN, "%s%s", connection_prop->strfile, entry->d_name);
 
             //Sends details about a file
@@ -394,9 +378,8 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
 
         closedir(dp);
     }
-
     //ends multistatus
-    write(sock,"</D:multistatus>",16);
+    dprintf(sock, "</D:multistatus>");
 
     /*
      * If we were able to get a file descriptor for the cache file, and cache is enabled,
