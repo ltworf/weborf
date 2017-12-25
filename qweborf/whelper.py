@@ -108,17 +108,15 @@ class weborf_runner():
         # Deciding which HTTP methods will be enabled
         self.methods = {'GET'}
         if options['dav']:
-            self.methods = self.methods.union({'OPTIONS', 'PROPFIND'})
+            self.methods.update({'OPTIONS', 'PROPFIND'})
             self.logclass.logger(
                 "DAV access enabled", self.logclass.DBG_NOTICE)
 
             # If writing is enabled
             if options['write']:
-                self.methods = self.methods.union(
-                    {'PUT', 'DELETE', 'COPY', 'MOVE', 'MKCOL'})
+                self.methods.update({'PUT', 'DELETE', 'COPY', 'MOVE', 'MKCOL'})
                 self.logclass.logger(
                     'Writing access enabled. This could pose security threat', self.logclass.DBG_WARNING)
-
         return True
 
     def __create_auth_socket(self):
