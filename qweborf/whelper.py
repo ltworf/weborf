@@ -116,7 +116,7 @@ class weborf_runner():
             if options['write']:
                 self.methods.update({'PUT', 'DELETE', 'COPY', 'MOVE', 'MKCOL'})
                 self.logclass.logger(
-                    'Writing access enabled. This could pose security threat', self.logclass.DBG_WARNING)
+                    'Writing access enabled.', self.logclass.DBG_WARNING)
         return True
 
     def __create_auth_socket(self):
