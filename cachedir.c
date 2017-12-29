@@ -194,7 +194,7 @@ void cache_init(char* dir) {
         //Check if it exists
         struct stat stat_buf;
         if (stat(dir, &stat_buf)!=0) {
-            dprintf(2, "Unable to stat cache directory\n")
+            dprintf(2, "Unable to stat cache directory\n");
 #ifdef SERVERDBG
             syslog(LOG_ERR,"Unable to stat cache directory");
 #endif
