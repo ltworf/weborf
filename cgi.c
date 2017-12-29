@@ -183,8 +183,8 @@ static inline void cgi_set_env_content_length() {
  * */
 static inline void cgi_child_chdir(connection_t *connection_prop) {
     //chdir to the directory
-    char* last_slash=rindex(connection_prop->strfile,'/');
-    last_slash[0]=0;
+    char* last_slash = rindex(connection_prop->strfile, '/');
+    last_slash[0] = 0;
     chdir(connection_prop->strfile);
 }
 
@@ -197,35 +197,46 @@ static inline void cgi_child_chdir(connection_t *connection_prop) {
  * running forever.
  * */
 static inline void cgi_execute_child(connection_t* connection_prop,string_t* post_param,char * executor,char* real_basedir,int *wpipe,int *ipipe) {
-    close (wpipe[0]); //Closes unused end of the pipe
+    char* errormsg = NULL;
+    close(wpipe[0]); //Closes unused end of the pipe
 
-    close (STDOUT);
-    dup(wpipe[1]); //Redirects the stdout
-
-#ifdef HIDE_CGI_ERRORS
-    close (STDERR);
-#endif
-    //Redirecting standard input only if there is POST data
-    if (post_param->data!=NULL) {//Send post data to script's stdin
-        close(STDIN);
-        dup(ipipe[0]);
+    close(STDOUT);
+    if (dup(wpipe[1]) == -1) { //Redirects the stdout
+        errormsg = "dup() failed";
+        goto error;
     }
 
-    environ=NULL; //Clear env vars
+#ifdef HIDE_CGI_ERRORS
+    close(STDERR);
+#endif
+    //Redirecting standard input only if there is POST data
+    if (post_param->data != NULL) {//Send post data to script's stdin
+        close(STDIN);
+        if (dup(ipipe[0]) == -1) {
+            errormsg = "dup() failed";
+            goto error;
+        }
+    }
+
+    environ = NULL; //Clear env vars
 
     cgi_set_http_env_vars(connection_prop->http_param);
     cgi_set_SERVER_ADDR_PORT(connection_prop->sock);
-    cgi_set_env_vars(connection_prop,real_basedir);
+    cgi_set_env_vars(connection_prop, real_basedir);
     cgi_set_env_content_length();
-
     cgi_child_chdir(connection_prop);
 
-    alarm(SCRPT_TIMEOUT);//Sets the timeout for the script
+    alarm(SCRPT_TIMEOUT); //Sets the timeout for the script
 
-    execl(executor,executor,(char *)0);
+    execl(executor, executor, (char *)0);
 #ifdef SERVERDBG
-    syslog(LOG_ERR,"Execution of %s failed",executor);
+    syslog(LOG_ERR,"Execution of %s failed", executor);
     perror("Execution of the page failed");
+#endif
+error:
+#ifdef SERVERDBG
+    if (errormsg)
+        syslog(LOG_ERR, "%s", errormsg);
 #endif
     exit(1);
 
