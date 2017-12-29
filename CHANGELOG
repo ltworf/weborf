@@ -2,6 +2,10 @@
 - Use one less thread
 - Use smaller thread pool
 - Detaches when connections can be accepted (can now use Type=forking in systemd)
+- Log some cases of bad request
+- Bug: fixes issue with authentication request causing further requests on the same connection to fail
+- Reduced memory footprint for webdav requests
+- Bug: memory corruption error, only triggered with some gcc flags
 
 0.13.5
 - Added --gid option to change gid
