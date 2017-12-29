@@ -214,7 +214,13 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
         }
 
 #ifdef REQUESTDBG
-        syslog(LOG_INFO,"%s - %d - %s %s",connection_prop->ip_addr,connection_prop->status_code,connection_prop->method,connection_prop->page);
+        syslog(LOG_INFO,
+               "%s - %d - %s %s",
+               connection_prop->ip_addr,
+               connection_prop->status_code,
+               connection_prop->method,
+               connection_prop->page
+              );
 #endif
 
 
@@ -224,7 +230,10 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
     } /* while */
 
 bad_request:
-    send_err(connection_prop,400,"Bad request");
+    send_error_header(400, connection_prop);
+#ifdef REQUESTDBG
+    syslog(LOG_INFO, "%s - %d", connection_prop->ip_addr, connection_prop->status_code);
+#endif
     close(sock);
     return;
 }
@@ -645,7 +654,6 @@ static int send_error_header(int retval, connection_t *connection_prop) {
         return send_http_header(201,0,NULL,true,-1,connection_prop);
     }
     return 0; //Make gcc happy
-
 }
 
 /**
@@ -982,10 +990,10 @@ int request_auth(connection_t *connection_prop) {
 /**
 Sends an error to the client
 */
-int send_err(connection_t *connection_prop,int err,char* descr) {
+int send_err(connection_t *connection_prop, int err, char* descr) {
     int sock=connection_prop->sock;
 
-    connection_prop->status_code=err; //Sets status code, for the logs
+    connection_prop->status_code = err; //Sets status code, for the logs
 
     //Buffer for both header and page
     char * head=malloc(MAXSCRIPTOUT+HEADBUF);
