@@ -35,7 +35,7 @@ class weborf_runner():
         self.socket = None
         self.listener = None
         self.waiter = None
-        self.methods = []
+        self.methods = set()
         self.username = None
         self.password = None
         self.ipv6 = True
