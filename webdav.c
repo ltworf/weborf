@@ -280,16 +280,16 @@ This function serves a PROPFIND request.
 Can serve both depth and non-depth requests. This funcion works only if
 authentication is enabled.
 */
-int propfind(connection_t* connection_prop,string_t *post_param) {
+int propfind(connection_t* connection_prop, string_t *post_param) {
     //Forbids the method if no authentication is in use
-    if (weborf_conf.authsock==NULL) {
+    if (weborf_conf.authsock == NULL) {
         return ERR_FORBIDDEN;
     }
 
-    int sock=connection_prop->sock;
-    u_dav_details props= {0};
-    props.dav_details.type=1; //I need to avoid the struct to be fully 0 in each case
-    int swap_fd=-1; //swap file descriptor
+    int sock = connection_prop->sock;
+    u_dav_details props = {0};
+    props.dav_details.type = 1; //I need to avoid the struct to be fully 0 in each case
+    int swap_fd = -1; //swap file descriptor
     const bool has_cache=cache_is_enabled();
 
     {
@@ -339,7 +339,6 @@ int propfind(connection_t* connection_prop,string_t *post_param) {
             } else
                 swap_fd=-1;
         }
-
     }
 
     //Sends header of xml response

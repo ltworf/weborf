@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2007  Salvo "LtWorf" Tomaselli
+Copyright (C) 2017  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -39,7 +39,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/un.h>
 #include <errno.h>
 
-
 #include "utils.h"
 #include "myio.h"
 #include "cgi.h"
@@ -61,7 +60,6 @@ extern weborf_configuration_t weborf_conf;
 extern char* indexes[MAXINDEXCOUNT];        //Array containing index files
 extern int indexes_l;                       //Length of array
 extern pthread_key_t thread_key;            //key for pthread_setspecific
-
 
 
 int request_auth(connection_t *connection_prop);
@@ -137,7 +135,6 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
     int from;
     int sock=connection_prop->sock;
     char *lasts;//Used by strtok_r
-
 
     short int r;//Readed char
     char *end;//Pointer to header's end
@@ -497,7 +494,7 @@ static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
 
         switch (connection_prop->method_id) {
         case PUT:
-            retval=read_file(connection_prop,read_b);
+            retval=read_file(connection_prop, read_b);
             break;
         case DELETE:
             retval=delete_file(connection_prop);
@@ -508,8 +505,8 @@ static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
 #ifdef WEBDAV
         case PROPFIND:
             //Propfind has data, not strictly post but read_post_data will work
-            post_param=read_post_data(connection_prop,read_b);
-            retval=propfind(connection_prop,&post_param);
+            post_param = read_post_data(connection_prop, read_b);
+            retval = propfind(connection_prop, &post_param);
             break;
         case MKCOL:
             retval=mkcol(connection_prop);
@@ -1029,7 +1026,7 @@ This function reads post data and returns the pointer to the buffer containing t
 or NULL if there was no data.
 If it doesn't return a null value, the returned pointer must be freed.
 */
-string_t read_post_data(connection_t* connection_prop,buffered_read_t* read_b) {
+string_t read_post_data(connection_t* connection_prop, buffered_read_t* read_b) {
     int sock=connection_prop->sock;
     string_t res;
     res.len=0;
@@ -1039,11 +1036,10 @@ string_t read_post_data(connection_t* connection_prop,buffered_read_t* read_b) {
     char a[NBUFFER];
     //Gets the value
     char *content_length="Content-Length";
-    bool r=get_param_value(connection_prop->http_param,content_length, a,NBUFFER,strlen(content_length));
 
-    //If there is a value and method is POST
-    if (r!=false) { //&& connection_prop->method_id==POST) {
-        long int l=strtol( a , NULL, 0 );
+    //If there is a request body
+    if (get_param_value(connection_prop->http_param, content_length, a, NBUFFER, strlen(content_length))) {
+        long int l = strtol(a, NULL, 0 );
         if (l<=POST_MAX_SIZE && (res.data=malloc(l))!=NULL) {//Post size is ok and buffer is allocated
             res.len=buffer_read(sock,res.data,l,read_b);
         }
@@ -1083,7 +1079,7 @@ This function returns the reason phrase according to the response
 code.
 */
 static inline char *reason_phrase(int code) {
-    code=code/100;
+    code /= 100;
 
     switch (code) {
     case 2:
@@ -1096,7 +1092,6 @@ static inline char *reason_phrase(int code) {
         return "Server error";
     case 1:
         return "Received";
-
     };
     return "Something is very wrong";
 }
