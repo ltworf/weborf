@@ -484,23 +484,22 @@ http_param is a string containing parameters of the HTTP request
 static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
     int retval=0;//Return value after sending the page
     string_t post_param; //Contains POST data
+    post_param.data = NULL;
+    post_param.len = 0;
 
 #ifdef SENDINGDBG
     syslog (LOG_DEBUG,"URL changed into %s",connection_prop->page);
 #endif
 
-    if (auth_check_request(connection_prop)!=0) { //If auth is required
+    if (auth_check_request(connection_prop) != 0) { //If auth is required
+        read_post_data(connection_prop, read_b); //Consume request body
         retval = ERR_NOAUTH;
-        post_param.data=NULL;
         goto escape;
     }
 
     connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",connection_prop->basedir,connection_prop->page);//Prepares the string
 
     if (connection_prop->method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
-        post_param.data=NULL;
-        post_param.len=0;
-
         switch (connection_prop->method_id) {
         case PUT:
             retval=read_file(connection_prop, read_b);
@@ -518,32 +517,29 @@ static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
             retval = propfind(connection_prop, &post_param);
             break;
         case MKCOL:
-            retval=mkcol(connection_prop);
+            retval = mkcol(connection_prop);
             break;
         case COPY:
         case MOVE:
-            retval=copy_move(connection_prop);
+            retval = copy_move(connection_prop);
             break;
 #endif
         }
-
         goto escape;
     }
 
     if (connection_prop->method_id==POST)
-        post_param=read_post_data(connection_prop,read_b);
-    else
-        post_param.data=NULL;
+        post_param = read_post_data(connection_prop,read_b);
 
     if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY | O_LARGEFILE))<0) {
         //File doesn't exist. Must return errorcode
-        retval=ERR_FILENOTFOUND;
+        retval = ERR_FILENOTFOUND;
         goto escape;
     }
 
     fstat(connection_prop->strfile_fd, &connection_prop->strfile_stat);
 
-    retval = get_or_post(connection_prop,post_param);
+    retval = get_or_post(connection_prop, post_param);
 
 escape:
     free(post_param.data);
@@ -553,7 +549,7 @@ escape:
         close(connection_prop->strfile_fd);
     }
 
-    return send_error_header(retval,connection_prop);
+    return send_error_header(retval, connection_prop);
 }
 
 /**
