@@ -185,13 +185,12 @@ class weborf_runner():
             cmdline.append(options['ip'])
         self.logclass.logger(' '.join(cmdline))
 
-        self.child = subprocess.Popen(
-            cmdline, bufsize=1024, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.child = subprocess.Popen(cmdline)
 
         self.loglinks(options)
 
-        self.waiter = __waiter__(
-            self.child)  # Starts thread to wait for weborf termination
+        # Starts thread to wait for weborf termination
+        self.waiter = __waiter__(self.child)
 
         self.waiter.child_terminated.connect(self._child_terminated)
         self.waiter.start()
@@ -250,7 +249,6 @@ class weborf_runner():
         if self._running:
             self.logclass.logger(
                 "Sending terminate signal and waiting for termination...")
-            self.child.stdin.close()
             self.child.terminate()
 
         self.socket.close()
