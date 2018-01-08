@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "options.h"
 
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -192,7 +193,13 @@ int main(int argc, char *argv[]) {
     poll_fds[0].events = POLLIN;
 
     while (1) {
-        int pr = poll(poll_fds, 1, 1000 * THREADCONTROL);
+        if (poll(poll_fds, 1, 1000 * THREADCONTROL) == -1) {
+#ifdef SERVERDBG
+            syslog(LOG_ERR, "Error polling server socket: %d", errno);
+#endif
+            exit(11);
+        }
+
 
         t_shape();
 
