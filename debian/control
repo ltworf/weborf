@@ -12,7 +12,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Suggests: php-cgi
 Description: Fast and small webserver meant to be run without root privileges
- Weborf is a configurationless webeserver mainly meant to allow users to
+ Weborf is a configurationless webserver mainly meant to allow users to
  easily share their directories over the web.
  Has limited support to webdav, allowing its use by GNOME and KDE filemanagers.
  It also supports cgi.
@@ -21,7 +21,7 @@ Package: weborf-daemon
 Architecture: all
 Depends: ${misc:Depends}, weborf (>=${binary:Version}),  lsb-base (>= 3.0-6)
 Description: init script for weborf
- Weborf is a configurationless webeserver mainly meant to allow users to
+ Weborf is a configurationless webserver mainly meant to allow users to
  easily share their directories over the web.
  Has limited support to webdav, allowing its use by GNOME and KDE filemanagers.
  It also supports cgi.
