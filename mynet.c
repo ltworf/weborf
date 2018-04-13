@@ -157,11 +157,8 @@ void net_bind_and_listen(int s) {
 #endif
     }
 
-    // Log listened interface
-    syslog(LOG_INFO, "Listening on address: %s:%u",
-           weborf_conf.ip, port);
+    syslog(LOG_INFO, "Listening on address: %s:%u", weborf_conf.ip, port);
 
-    // Bind
     if (bind(s, (struct sockaddr *) &locAddr, sizeof(locAddr)) < 0) {
         perror("trying to bind");
         syslog(LOG_ERR, "Port %u already in use", port);

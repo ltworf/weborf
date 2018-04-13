@@ -204,9 +204,13 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
         //Stores the parameters of the request
         set_connection_props(connection_prop);
 
-        if (send_page(read_b, connection_prop)<0) {
+        if (send_page(read_b, connection_prop) < 0) {
 #ifdef REQUESTDBG
-            syslog(LOG_INFO,"%s - FAILED - %s %s",connection_prop->ip_addr,connection_prop->method,connection_prop->page);
+            syslog(LOG_INFO,
+                   "%s - FAILED - %s %s",
+                   connection_prop->ip_addr,
+                   connection_prop->method,
+                   connection_prop->page);
 #endif
 
             close(sock);
@@ -482,7 +486,7 @@ This function determines the requested page and sends it
 http_param is a string containing parameters of the HTTP request
 */
 static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
-    int retval=0;//Return value after sending the page
+    int retval = 0;//Return value after sending the page
     string_t post_param; //Contains POST data
     post_param.data = NULL;
     post_param.len = 0;
@@ -497,9 +501,14 @@ static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
         goto escape;
     }
 
-    connection_prop->strfile_len = snprintf(connection_prop->strfile,URI_LEN,"%s%s",connection_prop->basedir,connection_prop->page);//Prepares the string
+    connection_prop->strfile_len = snprintf(
+        connection_prop->strfile,
+        URI_LEN,
+        "%s%s",
+        connection_prop->basedir,
+        connection_prop->page);
 
-    if (connection_prop->method_id>=PUT) {//Methods from PUT to other uncommon ones :-D
+    if (connection_prop->method_id >= PUT) {//Methods from PUT to other uncommon ones :-D
         switch (connection_prop->method_id) {
         case PUT:
             retval=read_file(connection_prop, read_b);
@@ -528,7 +537,7 @@ static int send_page(buffered_read_t* read_b, connection_t* connection_prop) {
         goto escape;
     }
 
-    if (connection_prop->method_id==POST)
+    if (connection_prop->method_id == POST)
         post_param = read_post_data(connection_prop,read_b);
 
     if ((connection_prop->strfile_fd=open(connection_prop->strfile,O_RDONLY | O_LARGEFILE))<0) {
@@ -1039,7 +1048,7 @@ string_t read_post_data(connection_t* connection_prop, buffered_read_t* read_b) 
     //Buffer for field's value
     char a[NBUFFER];
     //Gets the value
-    char *content_length="Content-Length";
+    char *content_length = "Content-Length";
 
     //If there is a request body
     if (get_param_value(connection_prop->http_param, content_length, a, NBUFFER, strlen(content_length))) {

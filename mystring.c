@@ -107,12 +107,13 @@ In case deleting of more chars than the string's len itself, the string will be 
 This function doesn't create copies but changes the original string.
 */
 void delChar(char *string, int pos, int n) {
-    size_t l=strlen(string+pos);
+    size_t l = strlen(string + pos);
 
-    if (l<n) return;
-    l-=n;
-    memmove(string+pos,string+pos+n,l);
-    string[l]=0;
+    if (l < n)
+        return;
+    l -= n;
+    memmove(string + pos, string + pos + n, l);
+    string[l] = 0;
 
     return;
 }
