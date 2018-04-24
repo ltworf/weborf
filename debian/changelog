@@ -1,7 +1,8 @@
 weborf (0.14-2) unstable; urgency=high
 
   * Build-Depend on python3-distutils (Closes: #896795)
-  * Fix typo in description 
+  * Fix typo in description
+  * Remove trailing spaces in changelog
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Tue, 24 Apr 2018 22:12:59 +0200
 
@@ -118,7 +119,7 @@ weborf (0.12.5-1) unstable; urgency=high
 
 weborf (0.12.4-1) unstable; urgency=high
 
-  * New upstream release 
+  * New upstream release
   * Fixes DoS (Closes: #601585)
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Wed, 27 Oct 2010 16:01:35 +0200
@@ -132,13 +133,13 @@ weborf (0.12.3-1) unstable; urgency=low
 
 weborf (0.12.2-1) unstable; urgency=low
 
-  * New upstream release 
+  * New upstream release
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Tue, 22 Jun 2010 16:33:22 +0200
 
 weborf (0.12.1-1) unstable; urgency=low
 
-  * New upstream release 
+  * New upstream release
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 03 Jun 2010 23:48:40 +0200
 
@@ -163,7 +164,7 @@ weborf (0.11-2) unstable; urgency=low
 
   * Corrected name of upstream author Salvo Rinaldi in the copyright file.
   * Added name of upstream author Salvo Rinaldi in the manpages.
-  * Edited description of the package 
+  * Edited description of the package
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sat, 26 Sep 2009 18:46:22 +0200
 
