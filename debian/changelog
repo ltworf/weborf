@@ -3,6 +3,7 @@ weborf (0.14-2) unstable; urgency=high
   * Build-Depend on python3-distutils (Closes: #896795)
   * Fix typo in description
   * Remove trailing spaces in changelog
+  * Updated debian/copyright file
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Tue, 24 Apr 2018 22:12:59 +0200
 
