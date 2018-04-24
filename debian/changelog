@@ -4,6 +4,7 @@ weborf (0.14-2) unstable; urgency=high
   * Fix typo in description
   * Remove trailing spaces in changelog
   * Updated debian/copyright file
+  * Bump compat from 9 to 11
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Tue, 24 Apr 2018 22:12:59 +0200
 
