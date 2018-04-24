@@ -6,6 +6,8 @@ weborf (0.14-2) unstable; urgency=high
   * Updated debian/copyright file
   * Bump compat from 9 to 11
   * Bump Standards-Version to 4.1.4
+  * Clean the python install directory
+  * Clean generated GUI python file
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Tue, 24 Apr 2018 22:12:59 +0200
 
