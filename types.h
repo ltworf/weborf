@@ -118,6 +118,9 @@ typedef struct {
 
     char *indexes[MAXINDEXCOUNT];//List of pointers to index files
     int indexes_l;              //Count of the list
+#ifdef HAVE_LIBSSL
+    char *certificate;          //SSL certificate
+#endif
 
 } weborf_configuration_t;
 
