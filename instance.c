@@ -282,7 +282,13 @@ void * instance(void * nulla) {
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    if (mime_init(&thread_prop.mime_token) != 0 || buffer_init(&read_b, BUFFERED_READER_SIZE) != 0 || buf == NULL || connection_prop.strfile == NULL) { //Unable to allocate the buffer
+#ifdef HAVE_LIBSSL
+    bool ssl = true;
+#else
+    bool ssl = false;
+#endif
+
+    if (mime_init(&thread_prop.mime_token) != 0 || buffer_init(&read_b, BUFFERED_READER_SIZE, ssl) != 0 || buf == NULL || connection_prop.strfile == NULL) { //Unable to allocate the buffer
 #ifdef SERVERDBG
         syslog(LOG_CRIT, "Not enough memory to allocate buffers for new thread");
 #endif
@@ -1309,7 +1315,7 @@ void inetd() {
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
+    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE, false)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
 #endif
