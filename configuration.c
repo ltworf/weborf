@@ -191,6 +191,9 @@ void configuration_load(int argc, char *argv[]) {
         {"mime", no_argument,0,'m'},
         {"inetd", no_argument,0,'T'},
         {"tar", no_argument,0,'t'},
+#ifdef HAVE_LIBSSL
+        {"certificate", required_argument, 0, 'S'},
+#endif
         {0, 0, 0, 0}
     };
 
@@ -200,8 +203,17 @@ void configuration_load(int argc, char *argv[]) {
         option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long(argc, argv, "ktTMmvhp:i:I:u:g:dxb:a:V:c:C:", long_options,
-                        &option_index);
+        c = getopt_long(
+            argc,
+            argv,
+#ifdef HAVE_LIBSSL
+            "ktTMmvhp:i:I:u:g:dxb:a:V:c:C:S:",
+#else
+            "ktTMmvhp:i:I:u:g:dxb:a:V:c:C:",
+#endif
+            long_options,
+            &option_index
+        );
 
         //If there are no options it continues
         if (c == -1)
