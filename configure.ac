@@ -33,7 +33,9 @@ AC_C_INLINE
 AC_CHECK_LIB([pthread], [pthread_create], , \
     AC_MSG_ERROR([libpthread is needed])
 )
-AC_CHECK_LIB([magic], [magic_load], , )
+AC_CHECK_LIB([magic], [magic_load])
+AC_CHECK_LIB([crypto], [RAND_add])
+AC_CHECK_LIB([ssl], [SSL_new])
 
 #AC_CONFIG_HEADERS([config.h options.h])
 
