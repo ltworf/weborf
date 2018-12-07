@@ -206,9 +206,7 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
                    connection_prop->method,
                    connection_prop->page);
 #endif
-
-            close(sock);
-            return;//Unable to send an error
+            return; //Unable to send an error
         }
 
 #ifdef REQUESTDBG
