@@ -290,40 +290,40 @@ void * instance(void * nulla) {
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
+    if (mime_init(&thread_prop.mime_token) != 0 || buffer_init(&read_b, BUFFERED_READER_SIZE) != 0 || buf == NULL || connection_prop.strfile == NULL) { //Unable to allocate the buffer
 #ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
+        syslog(LOG_CRIT, "Not enough memory to allocate buffers for new thread");
 #endif
         goto release_resources;
     }
 
     //Start accepting sockets
-    change_free_thread(thread_prop.id,1,0);
+    change_free_thread(thread_prop.id, 1, 0);
 
     while (true) {
         q_get(&queue, &sock);//Gets a socket from the queue
-        change_free_thread(thread_prop.id,-1,0);//Sets this thread as busy
+        change_free_thread(thread_prop.id, -1, 0);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order
             goto release_resources;
         }
 
-        connection_prop.sock=sock;//Assigned socket into the struct
-        net_getpeername(sock,connection_prop.ip_addr);
+        connection_prop.sock=sock; //Assigned socket into the struct
+        net_getpeername(sock, connection_prop.ip_addr);
 
 #ifdef THREADDBG
-        syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
+        syslog(LOG_DEBUG, "Thread %ld: Reading from socket",thread_prop.id);
 #endif
-        handle_requests(buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
+        handle_requests(buf, &read_b, &bufFull, &connection_prop, thread_prop.id);
 
 #ifdef THREADDBG
-        syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",thread_prop.id);
+        syslog(LOG_DEBUG, "Thread %ld: Closing socket with client", thread_prop.id);
 #endif
 
-        close(sock);//Closing the socket
-        buffer_reset (&read_b);
+        close(sock); //Closing the socket
+        buffer_reset(&read_b);
 
-        change_free_thread(thread_prop.id,1,0);//Sets this thread as free
+        change_free_thread(thread_prop.id, 1, 0);//Sets this thread as free
     }
 
 
