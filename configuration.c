@@ -208,7 +208,7 @@ void configuration_load(int argc, char *argv[]) {
         {"inetd", no_argument,0,'T'},
         {"tar", no_argument,0,'t'},
 #ifdef HAVE_LIBSSL
-        {"certificate", required_argument, 0, 'S'},
+        {"cert", required_argument, 0, 'S'},
 #endif
         {0, 0, 0, 0}
     };
