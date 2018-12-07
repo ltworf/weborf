@@ -26,6 +26,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdbool.h>
 
+#ifdef HAVE_LIBSSL
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+#endif
+
 #include "configuration.h"
 #include "types.h"
 #include "utils.h"
@@ -43,6 +48,9 @@ weborf_configuration_t weborf_conf = {
     .uid = ROOTUID,
     .gid = ROOTGID,
     .daemonize = false,
+#ifdef HAVE_LIBSSL
+    .certificate = NULL,
+#endif
 
 #ifdef SEND_MIMETYPES
     .send_content_type = false,
@@ -161,6 +169,14 @@ static void configuration_set_virtualhost(char *optarg) {
     putenv(virtual);
 }
 
+#ifdef HAVE_LIBSSL
+static void init_ssl(char *certificate) {
+    SSL_load_error_strings();
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+    weborf_conf.certificate = certificate;
+}
+#endif
 
 void configuration_load(int argc, char *argv[]) {
     configuration_set_default_CGI();
@@ -277,6 +293,11 @@ void configuration_load(int argc, char *argv[]) {
         case 'M':
             moo();
             break;
+#ifdef HAVE_LIBSSL
+        case 'S':
+            init_ssl(optarg);
+            break;
+#endif
         default:
             exit(19);
         }
