@@ -49,7 +49,7 @@ weborf_configuration_t weborf_conf = {
     .gid = ROOTGID,
     .daemonize = false,
 #ifdef HAVE_LIBSSL
-    .certificate = NULL,
+    .sslctx = NULL,
 #endif
 
 #ifdef SEND_MIMETYPES
@@ -170,11 +170,26 @@ static void configuration_set_virtualhost(char *optarg) {
 }
 
 #ifdef HAVE_LIBSSL
-static void init_ssl(char *certificate) {
+static void init_ssl(char *certificate, char* key) {
     SSL_load_error_strings();
     SSL_library_init();
     OpenSSL_add_all_algorithms();
-    weborf_conf.certificate = certificate;
+
+    weborf_conf.sslctx = SSL_CTX_new( TLS_server_method());
+    if (!weborf_conf.sslctx) {
+        printf("Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
+        abort();
+    }
+
+    SSL_CTX_set_options(weborf_conf.sslctx, SSL_OP_SINGLE_DH_USE);
+    if (SSL_CTX_use_certificate_file(weborf_conf.sslctx, certificate, SSL_FILETYPE_PEM) != 1) {
+        printf("Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
+        abort();
+    }
+    if (SSL_CTX_use_PrivateKey_file(weborf_conf.sslctx, key, SSL_FILETYPE_PEM) != 1) {
+        printf("Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
+        abort();
+    }
 }
 #endif
 
@@ -185,6 +200,8 @@ void configuration_load(int argc, char *argv[]) {
 
     int c; //Identify the readed option
     int option_index = 0;
+    char *certificate = NULL;
+    char *key = NULL;
 
     //Declares options
     struct option long_options[] = {
@@ -209,6 +226,7 @@ void configuration_load(int argc, char *argv[]) {
         {"tar", no_argument,0,'t'},
 #ifdef HAVE_LIBSSL
         {"cert", required_argument, 0, 'S'},
+        {"key", required_argument, 0, 'K'},
 #endif
         {0, 0, 0, 0}
     };
@@ -295,7 +313,10 @@ void configuration_load(int argc, char *argv[]) {
             break;
 #ifdef HAVE_LIBSSL
         case 'S':
-            init_ssl(optarg);
+            certificate = optarg;
+            break;
+        case 'K':
+            key = optarg;
             break;
 #endif
         default:
@@ -303,4 +324,9 @@ void configuration_load(int argc, char *argv[]) {
         }
 
     }
+
+#ifdef HAVE_LIBSSL
+    if (certificate || key)
+        init_ssl(certificate, key);
+#endif
 }

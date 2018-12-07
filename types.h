@@ -35,6 +35,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 typedef void* magic_t;
 #endif
 
+#ifdef HAVE_LIBSSL
+#include <openssl/ssl.h>
+#endif
+
 typedef struct {
     long int id;                //ID of the thread
     magic_t mime_token;         //Token for libmagic
@@ -119,7 +123,7 @@ typedef struct {
     char *indexes[MAXINDEXCOUNT];//List of pointers to index files
     int indexes_l;              //Count of the list
 #ifdef HAVE_LIBSSL
-    char *certificate;          //SSL certificate
+    SSL_CTX *sslctx;            //SSL context
 #endif
 
 } weborf_configuration_t;

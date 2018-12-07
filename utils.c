@@ -373,6 +373,7 @@ void help() {
            "  -x, --noexec  tells weborf to send each file instead of executing scripts\n"
 #ifdef HAVE_LIBSSL
            "  -S, --cert    the certificate to use\n"
+           "  -K, --key     the private key to use with the certificate\n"
 #endif
            "\n"
 
