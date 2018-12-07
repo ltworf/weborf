@@ -136,19 +136,17 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
     int sock=connection_prop->sock;
     char *lasts;//Used by strtok_r
 
-    short int r;//Readed char
-    char *end;//Pointer to header's end
+    short int r; //Readed char
+    char *end; //Pointer to header's end
 
     while (true) { //Infinite cycle to handle all pipelined requests
         if ((*bufFull)!=0) {
             memset(buf,0,(*bufFull));//Sets to 0 the buffer, only the part used for the previous request in the same connection
-            (*bufFull)=0;//bufFull-(end-buf+4);
+            (*bufFull)=0;
         }
         from=0;
 
         while ((end=strstr(buf+from,"\r\n\r"))==NULL) { //Determines if there is a \r\n\r which is an ending sequence
-            //ssize_t rsize=buffer_strstr(sock,read_b,"\r\n\r\n");
-            //r=buffer_read(sock, buf+(*bufFull),rsize+strlen("\r\n\r\n"),read_b);//Reads 2 char and adds to the buffer
             r=buffer_read(sock, buf+(*bufFull),2,read_b);//Reads 2 char and adds to the buffer
 
             if (r<=0) { //Connection closed or error
@@ -159,23 +157,19 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
                 from=(*bufFull);
             }
 
-            //TODO remove this crap!!
-            //if ((*bufFull)!=0) { //Removes Cr Lf from beginning
             (*bufFull)+=r;//Sets the end of the user buffer (may contain more than one header)
-            //} else if (buf[*bufFull]!='\n' && buf[*bufFull]!='\r') {
-            //    (*bufFull)+=r;
-            //}
 
             //Buffer full and still no valid http header
             if ((*bufFull)>=INBUFFER) goto bad_request;
 
         }
 
-        if (strstr(buf+from,"\r\n\r\n")==NULL) {//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
-            *bufFull+=buffer_read(sock, buf+*bufFull,1,read_b);//Reads 1 char and adds to the buffer
+        //If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
+        if (strstr(buf+from,"\r\n\r\n")==NULL) {
+            *bufFull+=buffer_read(sock, buf+*bufFull,1,read_b);
         }
 
-        end[2]='\0';//Terminates the header, leaving a final \r\n in it
+        end[2]='\0'; //Terminates the header, leaving a final \r\n in it
 
         //Finds out request's kind
         if (strncmp(buf,"GET",strlen("GET"))==0) connection_prop->method_id=GET;
