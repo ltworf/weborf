@@ -311,15 +311,34 @@ void * instance(void * nulla) {
         connection_prop.sock=sock; //Assigned socket into the struct
         net_getpeername(sock, connection_prop.ip_addr);
 
-#ifdef THREADDBG
-        syslog(LOG_DEBUG, "Thread %ld: Reading from socket",thread_prop.id);
+#ifdef HAVE_LIBSSL
+        if (weborf_conf.sslctx) {
+            connection_prop.ssl = SSL_new(weborf_conf.sslctx);
+            SSL_set_fd(connection_prop.ssl, sock);
+            if (SSL_accept(connection_prop.ssl) == 1)
+                handle_requests(buf, &read_b, &bufFull, &connection_prop, thread_prop.id);
+            else
+                syslog(LOG_INFO, "SSL connection failed from %s", connection_prop.ip_addr);
+        } else
 #endif
-        handle_requests(buf, &read_b, &bufFull, &connection_prop, thread_prop.id);
+
+        {
+#ifdef THREADDBG
+            syslog(LOG_DEBUG, "Thread %ld: Reading from socket", thread_prop.id);
+#endif
+            handle_requests(buf, &read_b, &bufFull, &connection_prop, thread_prop.id);
+        }
 
 #ifdef THREADDBG
         syslog(LOG_DEBUG, "Thread %ld: Closing socket with client", thread_prop.id);
 #endif
 
+#ifdef HAVE_LIBSSL
+    if (weborf_conf.sslctx) {
+        SSL_shutdown(connection_prop.ssl);
+        SSL_free(connection_prop.ssl);
+    }
+#endif
         close(sock); //Closing the socket
         buffer_reset(&read_b);
 
