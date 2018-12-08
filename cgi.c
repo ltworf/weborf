@@ -34,6 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "cgi.h"
 #include "types.h"
 #include "instance.h"
+#include "myio.h"
 
 extern char ** environ;                     //To reset environ vars
 extern weborf_configuration_t weborf_conf;
@@ -221,7 +222,7 @@ static inline void cgi_execute_child(connection_t* connection_prop,string_t* pos
     environ = NULL; //Clear env vars
 
     cgi_set_http_env_vars(connection_prop->http_param);
-    cgi_set_SERVER_ADDR_PORT(connection_prop->sock);
+    cgi_set_SERVER_ADDR_PORT(myio_getfd(connection_prop->sock));
     cgi_set_env_vars(connection_prop, real_basedir);
     cgi_set_env_content_length();
     cgi_child_chdir(connection_prop);
@@ -244,7 +245,6 @@ error:
 
 
 static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post_param,char * executor,pid_t wpid,int *wpipe,int *ipipe) {
-    int sock=connection_prop->sock;
     //Closing pipes, so if they're empty read is non blocking
     close (wpipe[1]);
 
@@ -322,14 +322,14 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
         send_http_header(status,reads,header_buf,true,-1,connection_prop);
 
         if (reads!=0) {//Sends the page if there is something to send
-            write (sock,scrpt_buf,reads);
+            myio_write(connection_prop->sock, scrpt_buf, reads);
         }
 
         if (reads==-1) {//Reading until the pipe is empty, if it wasn't fully read before
             e_reads=MAXSCRIPTOUT+HEADBUF;
             while (e_reads==MAXSCRIPTOUT+HEADBUF) {
                 e_reads=read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF);
-                write (sock,header_buf,e_reads);
+                myio_write(connection_prop->sock, header_buf, e_reads);
             }
         }
 
