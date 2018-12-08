@@ -33,6 +33,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "types.h"
 #include "myio.h"
 
+#ifdef HAVE_LIBSSL
+/*
+ * Does a write to an fd_t
+ *
+ * If there is an ssl object attached, it will do an ssl write,
+ * otherwise it will do a normal write.
+ */
+int myio_write(fd_t fd, const void *buf, size_t count) {
+    if (fd.ssl)
+        return SSL_write(fd.ssl, buf, count);
+    return write(fd.fd, buf, count);
+}
+
+/**
+ * Does a read from an fd_t.
+ *
+ * If there is an ssl object attached, it will do an ssl read,
+ * otherwise it will do a normal read.
+ */
+int myio_read(fd_t fd, void *buf, size_t count) {
+    if (fd.ssl)
+        return SSL_read(fd.ssl, buf, count);
+    return read(fd.fd, buf, count);
+}
+#endif
+
 /**
 Copies count bytes from the file descriptor "from" to the
 file descriptor "to".
@@ -40,7 +66,7 @@ It is possible to use lseek on the descriptors before calling
 this function.
 Will not close any descriptor
 */
-int fd_copy(int from, int to, off_t count) {
+int fd_copy(fd_t from, fd_t to, off_t count) {
     char *buf=malloc(FILEBUF);//Buffer to read from file
     int reads,wrote;
 
@@ -48,14 +74,14 @@ int fd_copy(int from, int to, off_t count) {
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers");
 #endif
-        return ERR_NOMEM;//If no memory is available
+        return ERR_NOMEM; //If no memory is available
     }
 
     //Sends file
-    while (count>0 && (reads=read(from, buf, FILEBUF<count? FILEBUF:count ))>0) {
-        count-=reads;
-        wrote=write(to,buf,reads);
-        if (wrote!=reads) { //Error writing to the descriptor
+    while (count>0 && (reads=myio_read(from, buf, FILEBUF<count ? FILEBUF : count)) > 0) {
+        count -= reads;
+        wrote = myio_write(to, buf, reads);
+        if (wrote != reads) { //Error writing to the descriptor
 #ifdef SOCKETDBG
             syslog(LOG_ERR, "error writing to the file descriptor");
 #endif
