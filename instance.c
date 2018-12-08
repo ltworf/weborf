@@ -133,7 +133,7 @@ static inline void set_connection_props(connection_t *connection_prop) {
 
 static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
     int from;
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
     char *lasts;//Used by strtok_r
 
     short int r; //Readed char
@@ -230,7 +230,6 @@ bad_request:
 #ifdef REQUESTDBG
     syslog(LOG_INFO, "%s - %d", connection_prop->ip_addr, connection_prop->status_code);
 #endif
-    close(sock);
     return;
 }
 
@@ -374,7 +373,7 @@ Auth provider has to check for the file's size and refuse it if it is the case.
 This function will not work if there is no auth provider.
 */
 int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
-    int sock = connection_prop->sock;
+    fd_t sock = connection_prop->sock;
     if (weborf_conf.authsock==NULL) {
         return ERR_FORBIDDEN;
     }
@@ -688,7 +687,7 @@ This function writes on the specified socket an html page containing the list of
 specified directory.
 */
 int write_dir(char* real_basedir,connection_t* connection_prop) {
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
 
     /*
     WARNING
@@ -762,7 +761,7 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
             connection_prop->strfile_stat.st_mtime,
             connection_prop
         );
-        write(sock, html, pagelen);
+        myio_write(sock, html, pagelen);
 
         //Write item in cache
         cache_store_item(0, connection_prop, html, pagelen);
@@ -783,7 +782,7 @@ sock is the socket
 */
 #ifdef __COMPRESSION
 static inline int write_compressed_file(connection_t* connection_prop ) {
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
 
     if (
         connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN &&
@@ -944,7 +943,7 @@ The file sent is the one specified by strfile_fd, and it will not be closed afte
 */
 int write_file(connection_t* connection_prop) {
 
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
 
     char a[RBUFFER+MIMETYPELEN+16]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
@@ -969,14 +968,14 @@ int write_file(connection_t* connection_prop) {
     }*/
 
     //Copy file using descriptors; from to and size
-    return fd_copy(connection_prop->strfile_fd,sock,count);
+    return fd_copy(fd2fd_t(connection_prop->strfile_fd), sock, count);
 }
 
 /**
 Sends a request for authentication
 */
 int request_auth(connection_t *connection_prop) {
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
     char * descr = connection_prop->page;
     connection_prop->status_code=401;
 
@@ -998,13 +997,13 @@ int request_auth(connection_t *connection_prop) {
     int head_len = snprintf(head,HEADBUF,"HTTP/1.1 401 Authorization Required\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nWWW-Authenticate: Basic realm=\"%s\"\r\n\r\n",page_len,descr);
 
     //Sends the header
-    if (write (sock,head,head_len)!=head_len) {
+    if (myio_write (sock,head,head_len)!=head_len) {
         free(head);
         return ERR_SOCKWRITE;
     }
 
     //Sends the page
-    if (write(sock,page,page_len)!=page_len) {
+    if (myio_write(sock,page,page_len)!=page_len) {
         free(head);
         return ERR_SOCKWRITE;
     }
@@ -1018,8 +1017,7 @@ int request_auth(connection_t *connection_prop) {
 Sends an error to the client
 */
 int send_err(connection_t *connection_prop, int err, char* descr) {
-    int sock=connection_prop->sock;
-
+    fd_t sock = connection_prop->sock;
     connection_prop->status_code = err; //Sets status code, for the logs
 
     //Buffer for both header and page
@@ -1041,13 +1039,13 @@ int send_err(connection_t *connection_prop, int err, char* descr) {
     int head_len = snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n",err,descr ,(int)page_len);
 
     //Sends the http header
-    if (write (sock,head,head_len)!=head_len) {
+    if (myio_write(sock, head, head_len) != head_len) {
         free(head);
         return ERR_SOCKWRITE;
     }
 
     //Sends the html page
-    if (write(sock,page,page_len)!=page_len) {
+    if (myio_write(sock, page, page_len) != page_len) {
         free(head);
         return ERR_SOCKWRITE;
     }
@@ -1062,7 +1060,7 @@ or NULL if there was no data.
 If it doesn't return a null value, the returned pointer must be freed.
 */
 string_t read_post_data(connection_t* connection_prop, buffered_read_t* read_b) {
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
     string_t res;
     res.len=0;
     res.data=NULL;
@@ -1147,7 +1145,7 @@ needed, according to keep_alive and protocol_version of connection_prop
 
 */
 int send_http_header(int code, unsigned long long int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
     int len_head,wrote;
     char *head=malloc(HEADBUF);
     char* h_ptr=head;
@@ -1222,7 +1220,7 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
     //head+=len_head; Not necessary because the snprintf was the last one
     left_head-=len_head;
 
-    wrote=write (sock,h_ptr,HEADBUF-left_head);
+    wrote = myio_write(sock, h_ptr, HEADBUF - left_head);
     free(h_ptr);
     if (wrote!=HEADBUF-left_head) return ERR_BRKPIPE;
     return 0;
@@ -1264,7 +1262,7 @@ static int tar_send_dir(connection_t* connection_prop) {
 
     if (pid==0) { //child, executing tar
         fclose (stdout); //Closing the stdout
-        if (dup(connection_prop->sock) == -1) { //Redirects the stdout
+        if (dup(myio_getfd(connection_prop->sock)) == -1) { //Redirects the stdout
             exit(1);
         }
         errno = 0;
