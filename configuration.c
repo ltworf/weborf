@@ -326,7 +326,13 @@ void configuration_load(int argc, char *argv[]) {
     }
 
 #ifdef HAVE_LIBSSL
-    if (certificate || key)
+    if (certificate || key) {
+        if (weborf_conf.tar_directory) {
+            fprintf(stderr, "Sending directories as tar is not supported while SSL is in use.\n");
+            exit(19);
+
+        }
         init_ssl(certificate, key);
+    }
 #endif
 }
