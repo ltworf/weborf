@@ -37,9 +37,7 @@ typedef struct {
     SSL *ssl;
 } fd_t;
 #else
-typedef struct {
-    int fd;
-} fd_t;
+typedef int fd_type;
 #endif
 
 #ifdef SEND_MIMETYPES

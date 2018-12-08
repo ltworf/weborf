@@ -306,10 +306,11 @@ void * instance(void * nulla) {
             goto release_resources;
         }
 
-        connection_prop.sock.fd = sock;
         net_getpeername(sock, connection_prop.ip_addr);
 
 #ifdef HAVE_LIBSSL
+        connection_prop.sock.fd = sock;
+
         if (weborf_conf.sslctx) {
             connection_prop.sock.ssl = SSL_new(weborf_conf.sslctx);
             SSL_set_fd(connection_prop.sock.ssl, sock);
@@ -320,6 +321,8 @@ void * instance(void * nulla) {
         } else {
             connection_prop.sock.ssl = NULL;
         }
+#else
+    connection_prop.sock = sock;
 #endif
 
 
