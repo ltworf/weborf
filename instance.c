@@ -1299,7 +1299,11 @@ void inetd() {
     int bufFull=0;                                  //Amount of buf used
     connection_t connection_prop;                   //Struct to contain properties of the connection
     buffered_read_t read_b;                         //Buffer for buffered reader
+#ifdef HAVE_LIBSSL
+#warning Not implemented
+#else
     int sock=connection_prop.sock=0;                //Socket with the client,using normal file descriptor 0
+#endif
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
     connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
 
@@ -1327,7 +1331,7 @@ void inetd() {
         goto release_resources;
     }
 
-    net_getpeername(sock,connection_prop.ip_addr);
+    net_getpeername(0,connection_prop.ip_addr);
 
     handle_requests(buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
     //close(sock);//Closing the socket
