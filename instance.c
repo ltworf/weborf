@@ -369,7 +369,7 @@ Auth provider has to check for the file's size and refuse it if it is the case.
 This function will not work if there is no auth provider.
 */
 int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
-    int sock=connection_prop->sock;
+    int sock = connection_prop->sock;
     if (weborf_conf.authsock==NULL) {
         return ERR_FORBIDDEN;
     }
