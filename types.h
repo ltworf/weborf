@@ -31,16 +31,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #ifdef HAVE_LIBSSL
 #include <openssl/ssl.h>
+
+typedef struct {
+    int fd;
+    SSL *ssl;
+} fd_t;
+#else
+typedef struct {
+    int fd;
+} fd_t;
 #endif
 
 #ifdef SEND_MIMETYPES
 #include <magic.h>
 #else
 typedef void* magic_t;
-#endif
-
-#ifdef HAVE_LIBSSL
-#include <openssl/ssl.h>
 #endif
 
 typedef struct {
@@ -71,11 +76,7 @@ typedef struct {
 } syn_queue_t;
 
 typedef struct {
-    int sock;                   //File descriptor for the socket
-#ifdef HAVE_LIBSSL
-    SSL *ssl;
-#endif
-
+    fd_t sock;                 //File and ssl descriptor for the socket
 #ifdef IPV6
     char ip_addr[INET6_ADDRSTRLEN];              //ip address in string format
 #else

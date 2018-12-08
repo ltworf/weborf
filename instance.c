@@ -306,35 +306,37 @@ void * instance(void * nulla) {
             goto release_resources;
         }
 
-        connection_prop.sock=sock; //Assigned socket into the struct
+        connection_prop.sock.fd = sock;
         net_getpeername(sock, connection_prop.ip_addr);
 
 #ifdef HAVE_LIBSSL
         if (weborf_conf.sslctx) {
-            connection_prop.ssl = SSL_new(weborf_conf.sslctx);
-            SSL_set_fd(connection_prop.ssl, sock);
-            if (SSL_accept(connection_prop.ssl) == 1)
-                handle_requests(buf, &read_b, &bufFull, &connection_prop, thread_prop.id);
-            else
+            connection_prop.sock.ssl = SSL_new(weborf_conf.sslctx);
+            SSL_set_fd(connection_prop.sock.ssl, sock);
+            if (SSL_accept(connection_prop.sock.ssl) != 1) {
                 syslog(LOG_INFO, "SSL connection failed from %s", connection_prop.ip_addr);
-        } else
-#endif
-
-        {
-#ifdef THREADDBG
-            syslog(LOG_DEBUG, "Thread %ld: Reading from socket", thread_prop.id);
-#endif
-            handle_requests(buf, &read_b, &bufFull, &connection_prop, thread_prop.id);
+                goto closeconnection;
+            }
+        } else {
+            connection_prop.sock.ssl = NULL;
         }
+#endif
 
+
+#ifdef THREADDBG
+        syslog(LOG_DEBUG, "Thread %ld: Reading from socket", thread_prop.id);
+#endif
+        handle_requests(buf, &read_b, &bufFull, &connection_prop, thread_prop.id);
+
+closeconnection:
 #ifdef THREADDBG
         syslog(LOG_DEBUG, "Thread %ld: Closing socket with client", thread_prop.id);
 #endif
 
 #ifdef HAVE_LIBSSL
     if (weborf_conf.sslctx) {
-        SSL_shutdown(connection_prop.ssl);
-        SSL_free(connection_prop.ssl);
+        SSL_shutdown(connection_prop.sock.ssl);
+        SSL_free(connection_prop.sock.ssl);
     }
 #endif
         close(sock); //Closing the socket
