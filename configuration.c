@@ -177,7 +177,7 @@ static void init_ssl(char *certificate, char* key) {
     weborf_conf.sslctx = SSL_CTX_new( TLS_server_method());
     if (!weborf_conf.sslctx) {
         fprintf(stderr, "SSL Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
-        abort()
+        abort();
     }
 
     SSL_CTX_set_options(weborf_conf.sslctx, SSL_OP_SINGLE_DH_USE);
