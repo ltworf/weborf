@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2007  Salvo "LtWorf" Tomaselli
+Copyright (C) 2007-2016  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

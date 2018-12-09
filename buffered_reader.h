@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2009  Salvo "LtWorf" Tomaselli
+Copyright (C) 2009-2018  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@ typedef struct {
     char *start;    //Pointer to non-consumed data
     char *end;      //Pointer to 1st byte after end of the data. A read must continue after end.
     int size;       //Size of the buffer
-    bool ssl;
 } buffered_read_t;
 
 void buffer_reset (buffered_read_t * buf);
