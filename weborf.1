@@ -1,4 +1,4 @@
-.TH Weborf 1 "Sep 13, 2009" "Minimal webserver"
+.TH Weborf 1 "Dec 9, 2018" "Minimal webserver"
 .SH NAME
 weborf
 \- Minimal webserver
@@ -48,6 +48,7 @@ Daemon \-d mode should not be used.
 .B \-t, \-\-tar
 If used, instead of sending directory listing when requesting a directory, weborf will send a tar.gz file with the content of that directory.
 It is used mainly to share files and preserving their permissions.
+It cannot be used together with https.
 
 .TP
 .B \-x, \-\-noexec
@@ -74,6 +75,14 @@ Must be followed by a valid port number (between 1 and 65535), and weborf will l
 If the port is already used weborf will terminate.
 To use low port numbers (less than 1024) it is necessary to execute the process as root.
 Thus it isn't a good idea to run a webserver with root privileges, so it is possible to specify another user.
+
+.TP
+.B \-S, \-\-cert
+Path to the SSL certificate. Enables https. Requires a key to be passed as well.
+
+.TP
+.B \-K, \-\-key
+Path to the SSL key. Enables https. Requires a certificate to be passed as well.
 
 .TP
 .B \-V, \-\-virtual
