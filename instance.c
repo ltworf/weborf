@@ -133,22 +133,20 @@ static inline void set_connection_props(connection_t *connection_prop) {
 
 static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufFull,connection_t* connection_prop,long int id) {
     int from;
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
     char *lasts;//Used by strtok_r
 
-    short int r;//Readed char
-    char *end;//Pointer to header's end
+    short int r; //Readed char
+    char *end; //Pointer to header's end
 
     while (true) { //Infinite cycle to handle all pipelined requests
         if ((*bufFull)!=0) {
             memset(buf,0,(*bufFull));//Sets to 0 the buffer, only the part used for the previous request in the same connection
-            (*bufFull)=0;//bufFull-(end-buf+4);
+            (*bufFull)=0;
         }
         from=0;
 
         while ((end=strstr(buf+from,"\r\n\r"))==NULL) { //Determines if there is a \r\n\r which is an ending sequence
-            //ssize_t rsize=buffer_strstr(sock,read_b,"\r\n\r\n");
-            //r=buffer_read(sock, buf+(*bufFull),rsize+strlen("\r\n\r\n"),read_b);//Reads 2 char and adds to the buffer
             r=buffer_read(sock, buf+(*bufFull),2,read_b);//Reads 2 char and adds to the buffer
 
             if (r<=0) { //Connection closed or error
@@ -159,23 +157,19 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
                 from=(*bufFull);
             }
 
-            //TODO remove this crap!!
-            //if ((*bufFull)!=0) { //Removes Cr Lf from beginning
             (*bufFull)+=r;//Sets the end of the user buffer (may contain more than one header)
-            //} else if (buf[*bufFull]!='\n' && buf[*bufFull]!='\r') {
-            //    (*bufFull)+=r;
-            //}
 
             //Buffer full and still no valid http header
             if ((*bufFull)>=INBUFFER) goto bad_request;
 
         }
 
-        if (strstr(buf+from,"\r\n\r\n")==NULL) {//If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
-            *bufFull+=buffer_read(sock, buf+*bufFull,1,read_b);//Reads 1 char and adds to the buffer
+        //If we didn't read yet the lst \n of the ending sequence, we read it now, so it won't disturb the next request
+        if (strstr(buf+from,"\r\n\r\n")==NULL) {
+            *bufFull+=buffer_read(sock, buf+*bufFull,1,read_b);
         }
 
-        end[2]='\0';//Terminates the header, leaving a final \r\n in it
+        end[2]='\0'; //Terminates the header, leaving a final \r\n in it
 
         //Finds out request's kind
         if (strncmp(buf,"GET",strlen("GET"))==0) connection_prop->method_id=GET;
@@ -212,9 +206,7 @@ static inline void handle_requests(char* buf,buffered_read_t * read_b,int * bufF
                    connection_prop->method,
                    connection_prop->page);
 #endif
-
-            close(sock);
-            return;//Unable to send an error
+            return; //Unable to send an error
         }
 
 #ifdef REQUESTDBG
@@ -238,7 +230,6 @@ bad_request:
 #ifdef REQUESTDBG
     syslog(LOG_INFO, "%s - %d", connection_prop->ip_addr, connection_prop->status_code);
 #endif
-    close(sock);
     return;
 }
 
@@ -290,40 +281,70 @@ void * instance(void * nulla) {
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
+#ifdef HAVE_LIBSSL
+    bool ssl = true;
+#else
+    bool ssl = false;
+#endif
+
+    if (mime_init(&thread_prop.mime_token) != 0 || buffer_init(&read_b, BUFFERED_READER_SIZE, ssl) != 0 || buf == NULL || connection_prop.strfile == NULL) { //Unable to allocate the buffer
 #ifdef SERVERDBG
-        syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
+        syslog(LOG_CRIT, "Not enough memory to allocate buffers for new thread");
 #endif
         goto release_resources;
     }
 
     //Start accepting sockets
-    change_free_thread(thread_prop.id,1,0);
+    change_free_thread(thread_prop.id, 1, 0);
 
     while (true) {
         q_get(&queue, &sock);//Gets a socket from the queue
-        change_free_thread(thread_prop.id,-1,0);//Sets this thread as busy
+        change_free_thread(thread_prop.id, -1, 0);//Sets this thread as busy
 
         if (sock<0) { //Was not a socket but a termination order
             goto release_resources;
         }
 
-        connection_prop.sock=sock;//Assigned socket into the struct
-        net_getpeername(sock,connection_prop.ip_addr);
+        net_getpeername(sock, connection_prop.ip_addr);
+
+#ifdef HAVE_LIBSSL
+        connection_prop.sock.fd = sock;
+
+        if (weborf_conf.sslctx) {
+            connection_prop.sock.ssl = SSL_new(weborf_conf.sslctx);
+            SSL_set_fd(connection_prop.sock.ssl, sock);
+            if (SSL_accept(connection_prop.sock.ssl) != 1) {
+                syslog(LOG_INFO, "SSL connection failed from %s", connection_prop.ip_addr);
+                goto closeconnection;
+            }
+        } else {
+            connection_prop.sock.ssl = NULL;
+        }
+#else
+    connection_prop.sock = sock;
+#endif
+
 
 #ifdef THREADDBG
-        syslog(LOG_DEBUG,"Thread %ld: Reading from socket",thread_prop.id);
+        syslog(LOG_DEBUG, "Thread %ld: Reading from socket", thread_prop.id);
 #endif
-        handle_requests(buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
+        handle_requests(buf, &read_b, &bufFull, &connection_prop, thread_prop.id);
 
+closeconnection:
 #ifdef THREADDBG
-        syslog(LOG_DEBUG,"Thread %ld: Closing socket with client",thread_prop.id);
+        syslog(LOG_DEBUG, "Thread %ld: Closing socket with client", thread_prop.id);
 #endif
 
-        close(sock);//Closing the socket
-        buffer_reset (&read_b);
+#ifdef HAVE_LIBSSL
+    if (weborf_conf.sslctx) {
+        SSL_shutdown(connection_prop.sock.ssl);
+        SSL_free(connection_prop.sock.ssl);
+    }
+#endif
+        close(sock); //Closing the socket
+        buffer_reset(&read_b);
 
-        change_free_thread(thread_prop.id,1,0);//Sets this thread as free
+        change_free_thread(thread_prop.id, 1, 0);//Sets this thread as free
     }
 
 
@@ -352,7 +373,7 @@ Auth provider has to check for the file's size and refuse it if it is the case.
 This function will not work if there is no auth provider.
 */
 int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
     if (weborf_conf.authsock==NULL) {
         return ERR_FORBIDDEN;
     }
@@ -666,7 +687,7 @@ This function writes on the specified socket an html page containing the list of
 specified directory.
 */
 int write_dir(char* real_basedir,connection_t* connection_prop) {
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
 
     /*
     WARNING
@@ -740,7 +761,7 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
             connection_prop->strfile_stat.st_mtime,
             connection_prop
         );
-        write(sock, html, pagelen);
+        myio_write(sock, html, pagelen);
 
         //Write item in cache
         cache_store_item(0, connection_prop, html, pagelen);
@@ -761,7 +782,7 @@ sock is the socket
 */
 #ifdef __COMPRESSION
 static inline int write_compressed_file(connection_t* connection_prop ) {
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
 
     if (
         connection_prop->strfile_stat.st_size>SIZE_COMPRESS_MIN &&
@@ -922,7 +943,7 @@ The file sent is the one specified by strfile_fd, and it will not be closed afte
 */
 int write_file(connection_t* connection_prop) {
 
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
 
     char a[RBUFFER+MIMETYPELEN+16]; //Buffer for Range, Content-Range headers, and reading if-none-match from header
 
@@ -947,14 +968,14 @@ int write_file(connection_t* connection_prop) {
     }*/
 
     //Copy file using descriptors; from to and size
-    return fd_copy(connection_prop->strfile_fd,sock,count);
+    return fd_copy(fd2fd_t(connection_prop->strfile_fd), sock, count);
 }
 
 /**
 Sends a request for authentication
 */
 int request_auth(connection_t *connection_prop) {
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
     char * descr = connection_prop->page;
     connection_prop->status_code=401;
 
@@ -976,13 +997,13 @@ int request_auth(connection_t *connection_prop) {
     int head_len = snprintf(head,HEADBUF,"HTTP/1.1 401 Authorization Required\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nWWW-Authenticate: Basic realm=\"%s\"\r\n\r\n",page_len,descr);
 
     //Sends the header
-    if (write (sock,head,head_len)!=head_len) {
+    if (myio_write (sock,head,head_len)!=head_len) {
         free(head);
         return ERR_SOCKWRITE;
     }
 
     //Sends the page
-    if (write(sock,page,page_len)!=page_len) {
+    if (myio_write(sock,page,page_len)!=page_len) {
         free(head);
         return ERR_SOCKWRITE;
     }
@@ -996,8 +1017,7 @@ int request_auth(connection_t *connection_prop) {
 Sends an error to the client
 */
 int send_err(connection_t *connection_prop, int err, char* descr) {
-    int sock=connection_prop->sock;
-
+    fd_t sock = connection_prop->sock;
     connection_prop->status_code = err; //Sets status code, for the logs
 
     //Buffer for both header and page
@@ -1019,13 +1039,13 @@ int send_err(connection_t *connection_prop, int err, char* descr) {
     int head_len = snprintf(head,HEADBUF,"HTTP/1.1 %d %s\r\nServer: " SIGNATURE "\r\nContent-Length: %d\r\nContent-Type: text/html\r\n\r\n",err,descr ,(int)page_len);
 
     //Sends the http header
-    if (write (sock,head,head_len)!=head_len) {
+    if (myio_write(sock, head, head_len) != head_len) {
         free(head);
         return ERR_SOCKWRITE;
     }
 
     //Sends the html page
-    if (write(sock,page,page_len)!=page_len) {
+    if (myio_write(sock, page, page_len) != page_len) {
         free(head);
         return ERR_SOCKWRITE;
     }
@@ -1040,7 +1060,7 @@ or NULL if there was no data.
 If it doesn't return a null value, the returned pointer must be freed.
 */
 string_t read_post_data(connection_t* connection_prop, buffered_read_t* read_b) {
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
     string_t res;
     res.len=0;
     res.data=NULL;
@@ -1125,7 +1145,7 @@ needed, according to keep_alive and protocol_version of connection_prop
 
 */
 int send_http_header(int code, unsigned long long int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
-    int sock=connection_prop->sock;
+    fd_t sock = connection_prop->sock;
     int len_head,wrote;
     char *head=malloc(HEADBUF);
     char* h_ptr=head;
@@ -1200,7 +1220,7 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
     //head+=len_head; Not necessary because the snprintf was the last one
     left_head-=len_head;
 
-    wrote=write (sock,h_ptr,HEADBUF-left_head);
+    wrote = myio_write(sock, h_ptr, HEADBUF - left_head);
     free(h_ptr);
     if (wrote!=HEADBUF-left_head) return ERR_BRKPIPE;
     return 0;
@@ -1242,7 +1262,7 @@ static int tar_send_dir(connection_t* connection_prop) {
 
     if (pid==0) { //child, executing tar
         fclose (stdout); //Closing the stdout
-        if (dup(connection_prop->sock) == -1) { //Redirects the stdout
+        if (dup(myio_getfd(connection_prop->sock)) == -1) { //Redirects the stdout
             exit(1);
         }
         errno = 0;
@@ -1277,7 +1297,11 @@ void inetd() {
     int bufFull=0;                                  //Amount of buf used
     connection_t connection_prop;                   //Struct to contain properties of the connection
     buffered_read_t read_b;                         //Buffer for buffered reader
+#ifdef HAVE_LIBSSL
+#warning Not implemented
+#else
     int sock=connection_prop.sock=0;                //Socket with the client,using normal file descriptor 0
+#endif
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
     connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
 
@@ -1298,14 +1322,14 @@ void inetd() {
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
+    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b,BUFFERED_READER_SIZE, false)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
 #endif
         goto release_resources;
     }
 
-    net_getpeername(sock,connection_prop.ip_addr);
+    net_getpeername(0,connection_prop.ip_addr);
 
     handle_requests(buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
     //close(sock);//Closing the socket

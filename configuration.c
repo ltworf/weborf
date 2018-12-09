@@ -26,6 +26,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdbool.h>
 
+#ifdef HAVE_LIBSSL
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+#endif
+
 #include "configuration.h"
 #include "types.h"
 #include "utils.h"
@@ -43,6 +48,9 @@ weborf_configuration_t weborf_conf = {
     .uid = ROOTUID,
     .gid = ROOTGID,
     .daemonize = false,
+#ifdef HAVE_LIBSSL
+    .sslctx = NULL,
+#endif
 
 #ifdef SEND_MIMETYPES
     .send_content_type = false,
@@ -58,7 +66,7 @@ static void configuration_enable_sending_mime() {
 #ifdef SEND_MIMETYPES
     weborf_conf.send_content_type=true;
 #else
-    fprintf(stderr,"Support for MIME is not available\n");
+    fprintf(stderr, "Support for MIME is not available\n");
     exit(19);
 #endif
 }
@@ -73,7 +81,7 @@ static void configuration_set_basedir(char * bd) {
 
     if (!S_ISDIR(stat_buf.st_mode)) {
         //Not a directory
-        printf("%s must be a directory\n",bd);
+        fprintf(stderr, "%s must be a directory\n", bd);
         exit(1);
     }
     weborf_conf.basedir = bd;
@@ -84,15 +92,15 @@ static void configuration_set_basedir(char * bd) {
  * run .php and .py as CGI
  * */
 static void configuration_set_default_CGI() {
-    weborf_conf.cgi_paths.len=4;
-    weborf_conf.cgi_paths.data[0]=".php";
-    weborf_conf.cgi_paths.data[1]=CGI_PHP;
-    weborf_conf.cgi_paths.data[2]=".py";
-    weborf_conf.cgi_paths.data[3]=CGI_PY;
-    weborf_conf.cgi_paths.data_l[0]=strlen(".php");
-    weborf_conf.cgi_paths.data_l[1]=strlen(CGI_PHP);
-    weborf_conf.cgi_paths.data_l[2]=strlen(".py");
-    weborf_conf.cgi_paths.data_l[3]=strlen(CGI_PY);
+    weborf_conf.cgi_paths.len = 4;
+    weborf_conf.cgi_paths.data[0] = ".php";
+    weborf_conf.cgi_paths.data[1] = CGI_PHP;
+    weborf_conf.cgi_paths.data[2] = ".py";
+    weborf_conf.cgi_paths.data[3] = CGI_PY;
+    weborf_conf.cgi_paths.data_l[0] = strlen(".php");
+    weborf_conf.cgi_paths.data_l[1] = strlen(CGI_PHP);
+    weborf_conf.cgi_paths.data_l[2] = strlen(".py");
+    weborf_conf.cgi_paths.data_l[3] = strlen(CGI_PY);
 }
 
 /**
@@ -113,7 +121,7 @@ static void configuration_set_cgi(char *optarg) {
             //Increasing counter and making next item point to char after the comma
             weborf_conf.cgi_paths.data[weborf_conf.cgi_paths.len++] = &optarg[i];
             if (weborf_conf.cgi_paths.len == MAXINDEXCOUNT) {
-                perror("Too much cgis, change MAXINDEXCOUNT in options.h to allow more");
+                fprintf(stderr, "Too many cgis, change MAXINDEXCOUNT in options.h to allow more\n");
                 exit(6);
             }
         }
@@ -136,7 +144,7 @@ static void configuration_set_index_list(char *optarg) { //Setting list of index
             //Increasing counter and making next item point to char after the comma
             weborf_conf.indexes[weborf_conf.indexes_l++] = &optarg[i];
             if (weborf_conf.indexes_l == MAXINDEXCOUNT) {
-                perror("Too much indexes, change MAXINDEXCOUNT in options.h to allow more");
+                fprintf(stderr, "Too many indexes, change MAXINDEXCOUNT in options.h to allow more\n");
                 exit(6);
             }
         }
@@ -155,12 +163,34 @@ static void configuration_set_virtualhost(char *optarg) {
             optarg[i++] = 0; //Nulling the comma
             putenv(virtual);
             virtual = &optarg[i];
-
         }
     }
     putenv(virtual);
 }
 
+#ifdef HAVE_LIBSSL
+static void init_ssl(char *certificate, char* key) {
+    SSL_load_error_strings();
+    SSL_library_init();
+    OpenSSL_add_all_algorithms();
+
+    weborf_conf.sslctx = SSL_CTX_new( TLS_server_method());
+    if (!weborf_conf.sslctx) {
+        fprintf(stderr, "SSL Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
+        abort();
+    }
+
+    SSL_CTX_set_options(weborf_conf.sslctx, SSL_OP_SINGLE_DH_USE);
+    if (SSL_CTX_use_certificate_file(weborf_conf.sslctx, certificate, SSL_FILETYPE_PEM) != 1) {
+        fprintf(stderr, "SSL Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
+        exit(19);
+    }
+    if (SSL_CTX_use_PrivateKey_file(weborf_conf.sslctx, key, SSL_FILETYPE_PEM) != 1) {
+        fprintf(stderr, "SSL Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
+        exit(19);
+    }
+}
+#endif
 
 void configuration_load(int argc, char *argv[]) {
     configuration_set_default_CGI();
@@ -169,6 +199,8 @@ void configuration_load(int argc, char *argv[]) {
 
     int c; //Identify the readed option
     int option_index = 0;
+    char *certificate = NULL;
+    char *key = NULL;
 
     //Declares options
     struct option long_options[] = {
@@ -191,6 +223,10 @@ void configuration_load(int argc, char *argv[]) {
         {"mime", no_argument,0,'m'},
         {"inetd", no_argument,0,'T'},
         {"tar", no_argument,0,'t'},
+#ifdef HAVE_LIBSSL
+        {"cert", required_argument, 0, 'S'},
+        {"key", required_argument, 0, 'K'},
+#endif
         {0, 0, 0, 0}
     };
 
@@ -200,8 +236,17 @@ void configuration_load(int argc, char *argv[]) {
         option_index = 0;
 
         //Reading one option and telling what options are allowed and what needs an argument
-        c = getopt_long(argc, argv, "ktTMmvhp:i:I:u:g:dxb:a:V:c:C:", long_options,
-                        &option_index);
+        c = getopt_long(
+            argc,
+            argv,
+#ifdef HAVE_LIBSSL
+            "ktTMmvhp:i:I:u:g:dxb:a:V:c:C:S:",
+#else
+            "ktTMmvhp:i:I:u:g:dxb:a:V:c:C:",
+#endif
+            long_options,
+            &option_index
+        );
 
         //If there are no options it continues
         if (c == -1)
@@ -265,9 +310,28 @@ void configuration_load(int argc, char *argv[]) {
         case 'M':
             moo();
             break;
+#ifdef HAVE_LIBSSL
+        case 'S':
+            certificate = optarg;
+            break;
+        case 'K':
+            key = optarg;
+            break;
+#endif
         default:
             exit(19);
         }
 
     }
+
+#ifdef HAVE_LIBSSL
+    if (certificate || key) {
+        if (weborf_conf.tar_directory) {
+            fprintf(stderr, "Sending directories as tar is not supported while SSL is in use.\n");
+            exit(19);
+
+        }
+        init_ssl(certificate, key);
+    }
+#endif
 }

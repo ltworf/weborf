@@ -25,15 +25,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <poll.h>
 
 #include "buffered_reader.h"
-#include "types.h"
+#include "myio.h"
 
 /**
 This funcion inits the struct allocating a buffer of the specified size.
 It will return 0 on success and 1 on fail.
 */
-int buffer_init(buffered_read_t * buf, ssize_t size) {
+int buffer_init(buffered_read_t* buf, ssize_t size, bool ssl)
+{
     buf->buffer = malloc(sizeof(char) * size);
     buf->size = size;
+    buf->ssl = ssl;
     buffer_reset(buf);
     return (buf->buffer == NULL) ? 1 : 0;
 }
@@ -53,14 +55,14 @@ void buffer_free(buffered_read_t * buf) {
     free(buf->buffer);
 }
 
-static ssize_t buffer_fill(int fd, buffered_read_t * buf) {
+static ssize_t buffer_fill(fd_t fd, buffered_read_t * buf) {
     ssize_t r;
 
     buf->start = buf->buffer;
 
     //Timeout implementation
     struct pollfd monitor[1];
-    monitor[0].fd = fd; //File descriptor to monitor
+    monitor[0].fd = myio_getfd(fd); //File descriptor to monitor
     monitor[0].events = POLLIN; //Monitor on input events
 
     //Waits the timeout or reads the data.
@@ -69,7 +71,7 @@ static ssize_t buffer_fill(int fd, buffered_read_t * buf) {
     if (poll(monitor, 1, READ_TIMEOUT) == 0) {
         r = 0;
     } else {
-        r = read(fd, buf->buffer, buf->size);
+        r = myio_read(fd, buf->buffer, buf->size);
     }
 
     if (r <= 0) { //End of the stream
@@ -91,7 +93,7 @@ Timeout duration is defined with the READ_TIMEOUT define.
 On some special cases, the read data could be less than the requested one. For example if
 end of file is reached and it is impossible to do further reads.
 */
-ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
+ssize_t buffer_read(fd_t fd, void *b, ssize_t count, buffered_read_t * buf) {
     ssize_t wrote = 0;              //Count of written bytes
     ssize_t available, needed;      //Available bytes in buffer, and requested bytes remaining
 
@@ -130,7 +132,7 @@ ssize_t buffer_read(int fd, void *b, ssize_t count, buffered_read_t * buf) {
  * If the string needle is not in the buffer then the entire size
  * of the data present in cache will be return.
  * */
-size_t buffer_strstr(int fd, buffered_read_t * buf, char * needle) {
+size_t buffer_strstr(fd_t fd, buffered_read_t * buf, char * needle) {
     if (buf->end - buf->start==0) {
         buffer_fill(fd,buf);
     }

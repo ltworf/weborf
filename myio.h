@@ -24,7 +24,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "types.h"
 #include "options.h"
 
-int fd_copy(int from, int to, off_t count);
+#ifdef HAVE_LIBSSL
+int myio_write(fd_t fd, const void *buf, size_t count);
+int myio_read(fd_t fd, void *buf, size_t count);
+static inline int myio_getfd(fd_t fd) { return fd.fd; }
+static inline fd_t fd2fd_t(int fd) {
+    fd_t r;
+    r.ssl = NULL;
+    r.fd = fd;
+    return r;
+}
+#else
+#define myio_read read
+#define myio_write write
+static inline int myio_getfd(fd_t fd) { return fd; }
+static inline fd_t fd2fd_t(int fd) { return fd; }
+#endif
+
+int fd_copy(fd_t from, fd_t to, off_t count);
 int dir_remove(char * dir);
 bool file_exists(char *file);
 

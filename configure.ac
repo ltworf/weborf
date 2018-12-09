@@ -1,4 +1,4 @@
-AC_INIT([weborf], [0.14], [tiposchi@tiscali.it])
+AC_INIT([weborf], [0.15], [tiposchi@tiscali.it])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([queue.c])
 AC_CONFIG_HEADERS([config.h])
@@ -33,7 +33,9 @@ AC_C_INLINE
 AC_CHECK_LIB([pthread], [pthread_create], , \
     AC_MSG_ERROR([libpthread is needed])
 )
-AC_CHECK_LIB([magic], [magic_load], , )
+AC_CHECK_LIB([magic], [magic_load])
+AC_CHECK_LIB([crypto], [RAND_add])
+AC_CHECK_LIB([ssl], [SSL_new])
 
 #AC_CONFIG_HEADERS([config.h options.h])
 

@@ -204,8 +204,7 @@ It can be called only by funcions aware of this xml, because it sends only parti
 
 If the file can't be opened in readonly mode, this function does nothing.
 */
-static inline int printprops(connection_t *connection_prop,u_dav_details props,char* file,char*filename,bool parent) {
-    int sock=connection_prop->sock;
+static inline int printprops(fd_t sock, char *page, u_dav_details props,char* file,char*filename,bool parent) {
     struct stat stat_s;
     char escaped_filename[URI_LEN];
     char escaped_page[URI_LEN];
@@ -215,27 +214,42 @@ static inline int printprops(connection_t *connection_prop,u_dav_details props,c
     fstat(file_fd, &stat_s);
 
     escape_uri(filename,escaped_filename,URI_LEN);
-    escape_uri(connection_prop->page,escaped_page,URI_LEN);
+    escape_uri(page,escaped_page,URI_LEN);
 
-    dprintf(sock, "<D:response>\n");
+    char* xml = malloc(MAXSCRIPTOUT);
+    int pagesize=0; //Written bytes on the page
+    int maxsize = MAXSCRIPTOUT - 1; //String's max size
+    int printf_s;
+
+    printf_s = snprintf(xml + pagesize, maxsize, "<D:response>\n");
+    maxsize -= printf_s;
+    pagesize += printf_s;
 
     {
         //Sends href of the resource
         if (parent) {
-            dprintf(sock, "<D:href>%s</D:href>", escaped_filename);
+            printf_s = snprintf(xml + pagesize, maxsize, "<D:href>%s</D:href>", escaped_filename);
         } else {
-            dprintf(sock, "<D:href>%s%s</D:href>", escaped_page, escaped_filename);
+            printf_s = snprintf(xml + pagesize, maxsize, "<D:href>%s%s</D:href>", escaped_page, escaped_filename);
         }
+        maxsize -= printf_s;
+        pagesize += printf_s;
     }
 
-    dprintf(sock, "<D:propstat><D:prop>");
+    printf_s = snprintf(xml + pagesize, maxsize, "<D:propstat><D:prop>");
+    maxsize -= printf_s;
+    pagesize += printf_s;
 
     if (props.dav_details.getetag) {
-        dprintf(sock, "<D:getetag>%ld</D:getetag>\n", stat_s.st_mtime);
+        printf_s = snprintf(xml + pagesize, maxsize, "<D:getetag>%ld</D:getetag>\n", stat_s.st_mtime);
+        maxsize -= printf_s;
+        pagesize += printf_s;
     }
 
     if (props.dav_details.getcontentlength) {
-        dprintf(sock, "<D:getcontentlength>%ld</D:getcontentlength>\n", stat_s.st_size);
+        printf_s = snprintf(xml + pagesize, maxsize, "<D:getcontentlength>%ld</D:getcontentlength>\n", stat_s.st_size);
+        maxsize -= printf_s;
+        pagesize += printf_s;
     }
 
     if (props.dav_details.resourcetype) {//Directory or normal file
@@ -246,7 +260,9 @@ static inline int printprops(connection_t *connection_prop,u_dav_details props,c
             type = " ";
         }
 
-        dprintf(sock, "<D:resourcetype>%s</D:resourcetype>\n", type);
+        printf_s = snprintf(xml + pagesize, maxsize, "<D:resourcetype>%s</D:resourcetype>\n", type);
+        maxsize -= printf_s;
+        pagesize += printf_s;
     }
 
     if (props.dav_details.getlastmodified) { //Sends Date
@@ -254,7 +270,9 @@ static inline int printprops(connection_t *connection_prop,u_dav_details props,c
         localtime_r(&stat_s.st_mtime,&ts);
         char prop_buffer[URI_LEN];
         strftime(prop_buffer, URI_LEN, "%a, %d %b %Y %H:%M:%S GMT", &ts);
-        dprintf(sock, "<D:getlastmodified>%s</D:getlastmodified>\n", prop_buffer);
+        printf_s = snprintf(xml + pagesize, maxsize, "<D:getlastmodified>%s</D:getlastmodified>\n", prop_buffer);
+        maxsize -= printf_s;
+        pagesize += printf_s;
     }
 
 #ifdef SEND_MIMETYPES
@@ -262,14 +280,20 @@ static inline int printprops(connection_t *connection_prop,u_dav_details props,c
         thread_prop_t *thread_prop = pthread_getspecific(thread_key);
 
         const char* t = mime_get_fd(thread_prop->mime_token, file_fd, &stat_s);
-        dprintf(sock, "<D:getcontenttype>%s</D:getcontenttype>\n", t);
+        printf_s = snprintf(xml + pagesize, maxsize, "<D:getcontenttype>%s</D:getcontenttype>\n", t);
+        maxsize -= printf_s;
+        pagesize += printf_s;
     }
 #endif
 
-    dprintf(sock,
+    printf_s = snprintf(xml + pagesize, maxsize,
         "</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>"
         "</D:response>");
+    maxsize -= printf_s;
+    pagesize += printf_s;
 
+    myio_write(sock, xml, pagesize);
+    free(xml);
     close(file_fd);
     return 0;
 }
@@ -286,10 +310,9 @@ int propfind(connection_t* connection_prop, string_t *post_param) {
         return ERR_FORBIDDEN;
     }
 
-    int sock = connection_prop->sock;
     u_dav_details props = {0};
     props.dav_details.type = 1; //I need to avoid the struct to be fully 0 in each case
-    int swap_fd = -1; //swap file descriptor
+    fd_t dest_fd = connection_prop->sock;
     const bool has_cache=cache_is_enabled();
 
     {
@@ -319,44 +342,42 @@ int propfind(connection_t* connection_prop, string_t *post_param) {
 
     //Check if exists in cache
     if (has_cache) {
-        if ((swap_fd=cache_get_item_fd(props.int_version,connection_prop))!=-1) {
+        int cache_fd;
+        if ((cache_fd = cache_get_item_fd(props.int_version,connection_prop)) != -1) {
             //Sends the item stored in the cache
             struct stat sb;
-            fstat(swap_fd,&sb);
-
-            fd_copy(swap_fd,sock, sb.st_size);
-
-            close(swap_fd);
+            fstat(cache_fd, &sb);
+            fd_copy(fd2fd_t(cache_fd), connection_prop->sock, sb.st_size);
+            close(cache_fd);
             return 0;
         } else { //Prepares for storing the item in cache, will be sent afterwards
             //Get file descriptor of cache file
-            int cache_fd=cache_get_item_fd_wr(props.int_version,connection_prop);
+            cache_fd = cache_get_item_fd_wr(props.int_version, connection_prop);
 
             //If we obtained that descriptor, replace socket with it
-            if (cache_fd!=-1) {
-                swap_fd=sock; //Stores the real socket
-                connection_prop->sock=sock=cache_fd;
-            } else
-                swap_fd=-1;
+            if (cache_fd != -1) {
+                dest_fd = fd2fd_t(cache_fd);
+            }
         }
     }
 
     //Sends header of xml response
-    dprintf(sock,
+    myio_write(
+        dest_fd,
             "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
-            "<D:multistatus xmlns:D=\"DAV:\">");
+            "<D:multistatus xmlns:D=\"DAV:\">", 69);
 
     //sends props about the requested file
-    printprops(connection_prop, props, connection_prop->strfile, connection_prop->page, true);
+    printprops(dest_fd, connection_prop->page, props, connection_prop->strfile, connection_prop->page, true);
 
     if (props.dav_details.deep) {//Send children files
         DIR *dp = opendir(connection_prop->strfile); //Open dir
         char file[URI_LEN];
         struct dirent *entry;
-        int return_code;
 
         if (dp == NULL) {//Error, unable to send because header was already sent
-            close(sock);
+#warning "This is leaking"
+            close(myio_getfd(connection_prop->sock));
             return 0;
         }
 
@@ -372,28 +393,24 @@ int propfind(connection_t* connection_prop, string_t *post_param) {
             snprintf(file, URI_LEN, "%s%s", connection_prop->strfile, entry->d_name);
 
             //Sends details about a file
-            printprops(connection_prop, props, file, entry->d_name, false);
+            printprops(dest_fd, connection_prop->page, props, file, entry->d_name, false);
         }
 
         closedir(dp);
     }
     //ends multistatus
-    dprintf(sock, "</D:multistatus>");
+    myio_write(dest_fd, "</D:multistatus>", 16);
 
     /*
      * If we were able to get a file descriptor for the cache file, and cache is enabled,
-     * at this point the XMP has been saved into the cache but not sent to the client,
+     * at this point the XML has been saved into the cache but not sent to the client,
      * so now we read from cache and send to the client
      */
-    if (has_cache && swap_fd!=-1) {
-        int cache_fd=sock;
-        connection_prop->sock=sock=swap_fd; //Restore sock to its value
-
-        off_t prev_pos=lseek(cache_fd,0,SEEK_CUR); //Get size of the file
-        lseek(cache_fd,0,SEEK_SET);          //Set cursor to the beginning
-        fd_copy(cache_fd,sock,prev_pos);     //Send the file
-
-        close(cache_fd);
+    if (has_cache && myio_getfd(dest_fd) != myio_getfd(connection_prop->sock)) {
+        off_t prev_pos = lseek(myio_getfd(dest_fd), 0, SEEK_CUR); //Get size of the file
+        lseek(myio_getfd(dest_fd), 0, SEEK_SET); //Set cursor to the beginning
+        fd_copy(dest_fd, connection_prop->sock, prev_pos); //Send the cache file
+        close(myio_getfd(dest_fd));
     }
 
     return 0;

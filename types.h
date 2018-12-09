@@ -29,6 +29,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <netinet/in.h>
 
+#ifdef HAVE_LIBSSL
+#include <openssl/ssl.h>
+
+typedef struct {
+    int fd;
+    SSL *ssl;
+} fd_t;
+#else
+typedef int fd_type;
+#endif
+
 #ifdef SEND_MIMETYPES
 #include <magic.h>
 #else
@@ -63,8 +74,7 @@ typedef struct {
 } syn_queue_t;
 
 typedef struct {
-    int sock;                   //File descriptor for the socket
-
+    fd_t sock;                 //File and ssl descriptor for the socket
 #ifdef IPV6
     char ip_addr[INET6_ADDRSTRLEN];              //ip address in string format
 #else
@@ -118,6 +128,9 @@ typedef struct {
 
     char *indexes[MAXINDEXCOUNT];//List of pointers to index files
     int indexes_l;              //Count of the list
+#ifdef HAVE_LIBSSL
+    SSL_CTX *sslctx;            //SSL context
+#endif
 
 } weborf_configuration_t;
 
