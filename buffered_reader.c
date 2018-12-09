@@ -35,7 +35,6 @@ int buffer_init(buffered_read_t* buf, ssize_t size, bool ssl)
 {
     buf->buffer = malloc(sizeof(char) * size);
     buf->size = size;
-    buf->ssl = ssl;
     buffer_reset(buf);
     return (buf->buffer == NULL) ? 1 : 0;
 }

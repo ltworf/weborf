@@ -30,7 +30,6 @@ typedef struct {
     char *start;    //Pointer to non-consumed data
     char *end;      //Pointer to 1st byte after end of the data. A read must continue after end.
     int size;       //Size of the buffer
-    bool ssl;
 } buffered_read_t;
 
 void buffer_reset (buffered_read_t * buf);
