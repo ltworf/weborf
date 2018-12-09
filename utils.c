@@ -324,6 +324,15 @@ void print_capabilities() {
     "\n"
     );
 
+    printf("https:"
+#ifdef HAVE_LIBSSL
+    "yes"
+#else
+    "no"
+#endif
+    "\n"
+    );
+
     exit(0);
 }
 
