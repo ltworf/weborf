@@ -223,10 +223,8 @@ void configuration_load(int argc, char *argv[]) {
         {"mime", no_argument,0,'m'},
         {"inetd", no_argument,0,'T'},
         {"tar", no_argument,0,'t'},
-#ifdef HAVE_LIBSSL
         {"cert", required_argument, 0, 'S'},
         {"key", required_argument, 0, 'K'},
-#endif
         {0, 0, 0, 0}
     };
 
@@ -239,11 +237,7 @@ void configuration_load(int argc, char *argv[]) {
         c = getopt_long(
             argc,
             argv,
-#ifdef HAVE_LIBSSL
             "ktTMmvhp:i:I:u:g:dxb:a:V:c:C:S:",
-#else
-            "ktTMmvhp:i:I:u:g:dxb:a:V:c:C:",
-#endif
             long_options,
             &option_index
         );
@@ -310,28 +304,28 @@ void configuration_load(int argc, char *argv[]) {
         case 'M':
             moo();
             break;
-#ifdef HAVE_LIBSSL
         case 'S':
             certificate = optarg;
             break;
         case 'K':
             key = optarg;
             break;
-#endif
         default:
             exit(19);
         }
 
     }
 
-#ifdef HAVE_LIBSSL
     if (certificate || key) {
         if (weborf_conf.tar_directory) {
             fprintf(stderr, "Sending directories as tar is not supported while SSL is in use.\n");
             exit(19);
-
         }
+#ifdef HAVE_LIBSSL
         init_ssl(certificate, key);
-    }
+#else
+        fprintf(stderr, "This binary does not support https.\n");
+        exit(19);
 #endif
+    }
 }
