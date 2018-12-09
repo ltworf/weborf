@@ -380,12 +380,9 @@ void help() {
            "  -V, --virtual list of virtualhosts in the form host=basedir, comma-separated\n"
            "  -v, --version print program version\n"
            "  -x, --noexec  tells weborf to send each file instead of executing scripts\n"
-#ifdef HAVE_LIBSSL
            "  -S, --cert    the certificate to use\n"
            "  -K, --key     the private key to use with the certificate\n"
-#endif
            "\n"
-
            "Report bugs here https://bugs.launchpad.net/weborf\n"
            "or to " PACKAGE_BUGREPORT "\n");
     exit(0);
