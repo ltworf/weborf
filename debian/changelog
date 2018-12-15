@@ -4,7 +4,8 @@ weborf (0.15-1) UNRELEASED; urgency=medium
   * Add libssl-dev to build depends to enable https
   * Add lintian override for possible-gpl-code-linked-with-openssl, since
     exception is provided in the license.
-  * Bump ancient-python-version-field to 3.6
+  * Bump python-version-field to 3.6
+  * Bump Standards-Version to 4.2.1
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 09 Dec 2018 06:26:46 +0100
 
