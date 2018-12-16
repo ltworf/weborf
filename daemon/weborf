@@ -72,7 +72,7 @@ function startWeborf {
     fi
 
     echo "Starting weborf"
-    nohup $DAEMON $DAEMON_OPTS $VIRTUALS $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN $PORT -u $USERID -g $GROUPID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
+    nohup $DAEMON $DAEMON_OPTS $VIRTUALS $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN $PORT -u $USERID -g $GROUPID -b $BASEDIR $INDEXES >/dev/null 2> /dev/null &
     echo ${!} >> $PIDFILE # Writes PID so weborf can be terminated
 }
 
@@ -149,6 +149,11 @@ fi
 if test -n "$AUTH_SOCKET"
 then
         AUTH_SOCKET="-a $AUTH_SOCKET"
+fi
+
+if test -n "$INDEXES"
+then
+        INDEXES="-I $INDEXES"
 fi
 
 if test -n "$PORT"
