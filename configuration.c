@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <syslog.h>
 
 #ifdef HAVE_LIBSSL
 #include <openssl/err.h>
@@ -67,6 +68,7 @@ static void configuration_enable_sending_mime() {
     weborf_conf.send_content_type=true;
 #else
     fprintf(stderr, "Support for MIME is not available\n");
+    syslog(LOG_ERR, "Support for MIME is not available\n");
     exit(19);
 #endif
 }
@@ -82,6 +84,7 @@ static void configuration_set_basedir(char * bd) {
     if (!S_ISDIR(stat_buf.st_mode)) {
         //Not a directory
         fprintf(stderr, "%s must be a directory\n", bd);
+        syslog(LOG_ERR, "%s must be a directory\n", bd);
         exit(1);
     }
     weborf_conf.basedir = bd;
@@ -122,6 +125,7 @@ static void configuration_set_cgi(char *optarg) {
             weborf_conf.cgi_paths.data[weborf_conf.cgi_paths.len++] = &optarg[i];
             if (weborf_conf.cgi_paths.len == MAXINDEXCOUNT) {
                 fprintf(stderr, "Too many cgis, change MAXINDEXCOUNT in options.h to allow more\n");
+                syslog(LOG_ERR, "Too many cgis, change MAXINDEXCOUNT in options.h to allow more\n");
                 exit(6);
             }
         }
@@ -145,6 +149,7 @@ static void configuration_set_index_list(char *optarg) { //Setting list of index
             weborf_conf.indexes[weborf_conf.indexes_l++] = &optarg[i];
             if (weborf_conf.indexes_l == MAXINDEXCOUNT) {
                 fprintf(stderr, "Too many indexes, change MAXINDEXCOUNT in options.h to allow more\n");
+                syslog(LOG_ERR, "Too many indexes, change MAXINDEXCOUNT in options.h to allow more\n");
                 exit(6);
             }
         }
@@ -177,16 +182,19 @@ static void init_ssl(char *certificate, char* key) {
     weborf_conf.sslctx = SSL_CTX_new( TLS_server_method());
     if (!weborf_conf.sslctx) {
         fprintf(stderr, "SSL Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
+        syslog(LOG_ERR, "SSL Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
         abort();
     }
 
     SSL_CTX_set_options(weborf_conf.sslctx, SSL_OP_SINGLE_DH_USE);
     if (SSL_CTX_use_certificate_file(weborf_conf.sslctx, certificate, SSL_FILETYPE_PEM) != 1) {
         fprintf(stderr, "SSL Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
+        syslog(LOG_ERR, "SSL Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
         exit(19);
     }
     if (SSL_CTX_use_PrivateKey_file(weborf_conf.sslctx, key, SSL_FILETYPE_PEM) != 1) {
         fprintf(stderr, "SSL Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
+        syslog(LOG_ERR, "SSL Error: %s\n", ERR_error_string(ERR_get_error(), NULL));
         exit(19);
     }
 }
@@ -319,12 +327,14 @@ void configuration_load(int argc, char *argv[]) {
     if (certificate || key) {
         if (weborf_conf.tar_directory) {
             fprintf(stderr, "Sending directories as tar is not supported while SSL is in use.\n");
+            syslog(LOG_ERR, "Sending directories as tar is not supported while SSL is in use.\n");
             exit(19);
         }
 #ifdef HAVE_LIBSSL
         init_ssl(certificate, key);
 #else
         fprintf(stderr, "This binary does not support https.\n");
+        syslog(LOG_ERR, "This binary does not support https.\n");
         exit(19);
 #endif
     }
