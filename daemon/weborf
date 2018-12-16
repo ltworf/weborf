@@ -59,7 +59,7 @@ function stopWeborf {
         echo -n ..
         kill $i
     done
-    echo " done"
+    echo "done"
     rm -f $PIDFILE
 }
 
@@ -67,11 +67,11 @@ function startWeborf {
     #This function will start all the needed processes for weborf
     if test -e $PIDFILE
     then
-        echo "Weborf already running, if you're sure it is not running, delete $PIDFILE"
+        logger -s -perror "Weborf already running, if you're sure it is not running, delete $PIDFILE"
         exit 2
     fi
 
-    echo "Starting weborf"
+    logger -s "Starting weborf"
     nohup $DAEMON $DAEMON_OPTS $VIRTUALS $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN $PORT -u $USERID -g $GROUPID -b $BASEDIR $INDEXES >/dev/null 2> /dev/null &
     echo ${!} >> $PIDFILE # Writes PID so weborf can be terminated
 }
@@ -106,30 +106,26 @@ DIETIME=3               # Time to wait for the server to die, in seconds
 
 LOGFILE=$LOGDIR/$NAME.log  # Server logfile
 
-# Include defaults if available
-if [ -f /etc/default/$NAME ] ; then
-    . /etc/default/$NAME
-fi
-
 VIRTUALS=`cat /etc/weborf.conf | egrep "^virtual=" | cut -c 9-`
 USERNAME=`cat /etc/weborf.conf | egrep "^user=" | cut -d= -f2`
 GROUPNAME=`cat /etc/weborf.conf | egrep "^group=" | cut -d= -f2`
 BASEDIR=`cat /etc/weborf.conf | egrep "^basedir=" | cut -d= -f2`
-USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
-GROUPID=$(egrep ^"$GROUPNAME" < /etc/group | cut -d: -f3)
 INDEXES=`cat /etc/weborf.conf | egrep "^indexes=" | cut -d= -f2`
 USE_CGI=`cat /etc/weborf.conf | egrep "^use-cgi=" | cut -d= -f2`
 USE_MIME=`cat /etc/weborf.conf | egrep "^use-mime=" | cut -d= -f2`
 CGI_BIN=`cat /etc/weborf.conf | egrep "^cgi=" | cut -d= -f2`
 CACHE_DIR=`cat /etc/weborf.conf | egrep "^cachedir=" | cut -d= -f2`
 PORT=`cat /etc/weborf.conf | egrep "port=" | cut -d= -f2`
+AUTH_SOCKET=`cat /etc/weborf.conf | grep "^auth-socket=" | cut -d= -f2`
+
+# Include defaults if available
+if [ -f /etc/default/$NAME ] ; then
+    . /etc/default/$NAME
+fi
 
 if [ -z "$USERNAME" ] || [ -z "$GROUPNAME" ]; then
     logger -s -perror "User or group not set"
 fi
-
-# Authentication
-AUTH_SOCKET=`cat /etc/weborf.conf | grep "^auth-socket=" | cut -d= -f2`
 
 if test "$USERNAME" = "root"
 then
@@ -137,15 +133,28 @@ then
     exit 0 #LSB requires 0 termination in each case
 fi
 
+USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
+GROUPID=$(egrep ^"$GROUPNAME" < /etc/group | cut -d: -f3)
+
+if [ -z "$GROUPID" ]; then
+    logger -perror "Unable to find group $GROUPNAME"
+    exit 1
+fi
+
+if [ -z "$USERID" ]; then
+    logger -s -perror "Unable to find user $USERNAME"
+    exit 1
+fi
+
 if test -n "$CACHE_DIR"
 then
         if ! test -d $CACHE_DIR
         then
             #Does not exist or it is not a directory
+            logger -s "Creating cachedir for weborf: $CACHE_DIR"
             rm -rf $CACHE_DIR
             mkdir -m700 $CACHE_DIR
         fi
-
         chown $USERNAME $CACHE_DIR
         CACHE_DIR="-C $CACHE_DIR"
 fi
@@ -187,17 +196,6 @@ then
     MIME="-m"
 fi
 
-if [ -z "$GROUPID" ]; then
-    echo "Unable to find group $GROUPNAME"
-    exit 1
-fi
-
-if test -z "$USERID"
-then
-    echo "Unable to find user $USERNAME"
-    echo "Check your configuration"
-    exit 1
-fi
 case $1 in
     start)
         startWeborf;;
