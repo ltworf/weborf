@@ -124,10 +124,14 @@ CGI_BIN=`cat /etc/weborf.conf | egrep "^cgi=" | cut -d= -f2`
 CACHE_DIR=`cat /etc/weborf.conf | egrep "^cachedir=" | cut -d= -f2`
 PORT=`cat /etc/weborf.conf | egrep "port=" | cut -d= -f2`
 
+if [ -z "$USERNAME" ] || [ -z "$GROUPNAME" ]; then
+    logger -s -perror "User or group not set"
+fi
+
 # Authentication
 AUTH_SOCKET=`cat /etc/weborf.conf | grep "^auth-socket=" | cut -d= -f2`
 
-if test -z "$USERNAME" || test "$USERNAME" = "root"
+if test "$USERNAME" = "root"
 then
     logger -s -perror "You are trying to run weborf as root!"
     exit 0 #LSB requires 0 termination in each case
