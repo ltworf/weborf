@@ -53,7 +53,7 @@ function stopWeborf {
         exit 0
     fi
 
-    echo -n "Stopping weborf "    
+    echo -n "Stopping weborf "
     for i in `cat $PIDFILE`
     do
         echo -n ..
@@ -70,31 +70,10 @@ function startWeborf {
         echo "Weborf already running, if you're sure it is not running, delete $PIDFILE"
         exit 2
     fi
-    
-    if test -n "$AUTH_BIN"
-    then
-        echo "Starting authentication server for weborf"
-        nohup $AUTH_BIN > /dev/null 2> /dev/null &
-        echo ${!} >> $PIDFILE # Writes PID so it will be terminated
-    fi
 
-    virtuals=`cat /etc/weborf.conf | egrep ^virtual`
-    if test -z "$virtuals"
-    then
-        echo "Starting weborf"
-        nohup $DAEMON $DAEMON_OPTS $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN -p80 -u $USERID -g $GROUPID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
-        echo ${!} >> $PIDFILE # Writes PID so weborf can be terminated
-    else #Virtual hosts
-    
-        for i in $virtuals
-            do
-                PORT=`echo $i | cut -d# -f2`
-                CMDLINE=`echo $i | cut -d# -f3`
-                echo "Starting weborf on port $PORT"
-                nohup $DAEMON $DAEMON_OPTS $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN -p $PORT -u $USERID -b $BASEDIR -I $INDEXES -V "$CMDLINE" > /dev/null 2> /dev/null &
-                echo $! >> $PIDFILE # Writes PID so weborf can be terminated
-            done
-    fi
+    echo "Starting weborf"
+    nohup $DAEMON $DAEMON_OPTS $VIRTUALS $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN $PORT -u $USERID -g $GROUPID -b $BASEDIR -I $INDEXES >/dev/null 2> /dev/null &
+    echo ${!} >> $PIDFILE # Writes PID so weborf can be terminated
 }
 
 
@@ -132,6 +111,7 @@ if [ -f /etc/default/$NAME ] ; then
     . /etc/default/$NAME
 fi
 
+VIRTUALS=`cat /etc/weborf.conf | egrep "^virtual=" | cut -c 9-`
 USERNAME=`cat /etc/weborf.conf | egrep "^user=" | cut -d= -f2`
 GROUPNAME=`cat /etc/weborf.conf | egrep "^group=" | cut -d= -f2`
 BASEDIR=`cat /etc/weborf.conf | egrep "^basedir=" | cut -d= -f2`
@@ -142,9 +122,9 @@ USE_CGI=`cat /etc/weborf.conf | egrep "^use-cgi=" | cut -d= -f2`
 USE_MIME=`cat /etc/weborf.conf | egrep "^use-mime=" | cut -d= -f2`
 CGI_BIN=`cat /etc/weborf.conf | egrep "^cgi=" | cut -d= -f2`
 CACHE_DIR=`cat /etc/weborf.conf | egrep "^cachedir=" | cut -d= -f2`
+PORT=`cat /etc/weborf.conf | egrep "port=" | cut -d= -f2`
 
 # Authentication
-AUTH_BIN=`cat /etc/weborf.conf | grep "^auth-bin=" | cut -d= -f2`
 AUTH_SOCKET=`cat /etc/weborf.conf | grep "^auth-socket=" | cut -d= -f2`
 
 if test -z "$USERNAME" || test "$USERNAME" = "root"
@@ -160,7 +140,6 @@ then
             #Does not exist or it is not a directory
             rm -rf $CACHE_DIR
             mkdir -m700 $CACHE_DIR
-            
         fi
 
         chown $USERNAME $CACHE_DIR
@@ -170,6 +149,18 @@ fi
 if test -n "$AUTH_SOCKET"
 then
         AUTH_SOCKET="-a $AUTH_SOCKET"
+fi
+
+if test -n "$PORT"
+then
+        PORT="-p $PORT"
+else
+        PORT="-p 80"
+fi
+
+if test -n "$VIRTUALS"
+then
+        VIRTUALS="-V $VIRTUALS"
 fi
 
 if test -n "$CGI_BIN"
@@ -216,4 +207,3 @@ case $1 in
     * )
         echo "Usage: $0 {start|stop|restart|force-reload|status|clearcache}";;
 esac
-
