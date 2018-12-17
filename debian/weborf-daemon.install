@@ -1,3 +1,4 @@
 usr/share/man/man5/weborf.conf.5
 etc/weborf.conf
 etc/init.d/
+/usr/share/weborf/weborf_launcher
