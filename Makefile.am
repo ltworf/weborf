@@ -49,7 +49,7 @@ EXTRA_DIST = \
     qweborf/qweborf.desktop \
     qweborf/qweborf_servicemenu.desktop \
     qweborf.setup.py
- 
+
 dist-hook:
 	rm -rf `find $(distdir)/ -name .svn`
 
@@ -64,4 +64,4 @@ dist_doc_DATA = \
     COPYING \
     Credits \
     README.md \
-    TODOlist 
+    TODOlist
