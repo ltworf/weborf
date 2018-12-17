@@ -104,8 +104,6 @@ DIETIME=3               # Time to wait for the server to die, in seconds
                         # be a false positive (says it did not start
                         # when it actually did)
 
-LOGFILE=$LOGDIR/$NAME.log  # Server logfile
-
 VIRTUALS=`cat /etc/weborf.conf | egrep "^virtual=" | cut -c 9-`
 USERNAME=`cat /etc/weborf.conf | egrep "^user=" | cut -d= -f2`
 GROUPNAME=`cat /etc/weborf.conf | egrep "^group=" | cut -d= -f2`
