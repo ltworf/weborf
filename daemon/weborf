@@ -72,7 +72,7 @@ function startWeborf {
     fi
 
     logger -s "Starting weborf"
-    nohup $DAEMON $DAEMON_OPTS $VIRTUALS $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN $PORT -u $USERID -g $GROUPID -b $BASEDIR $INDEXES >/dev/null 2> /dev/null &
+    nohup $DAEMON $DAEMON_OPTS $VIRTUALS $CERT $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN $PORT -u $USERID -g $GROUPID -b $BASEDIR $INDEXES >/dev/null 2> /dev/null &
     echo ${!} >> $PIDFILE # Writes PID so weborf can be terminated
 }
 
@@ -117,6 +117,8 @@ CGI_BIN=`cat /etc/weborf.conf | egrep "^cgi=" | cut -d= -f2`
 CACHE_DIR=`cat /etc/weborf.conf | egrep "^cachedir=" | cut -d= -f2`
 PORT=`cat /etc/weborf.conf | egrep "port=" | cut -d= -f2`
 AUTH_SOCKET=`cat /etc/weborf.conf | grep "^auth-socket=" | cut -d= -f2`
+KEY=`cat /etc/weborf.conf | grep "^key=" | cut -d= -f2`
+CERT=`cat /etc/weborf.conf | grep "^cert=" | cut -d= -f2`
 
 # Include defaults if available
 if [ -f /etc/default/$NAME ] ; then
@@ -167,6 +169,10 @@ fi
 if test -n "$INDEXES"
 then
         INDEXES="-I $INDEXES"
+fi
+
+if [ -n "$CERT" ]; then
+        CERT="--cert $CERT --key $KEY"
 fi
 
 if test -n "$PORT"
