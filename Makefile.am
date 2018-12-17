@@ -57,6 +57,8 @@ dist_man_MANS = weborf.1 weborf.conf.5
 
 init_SCRIPTS = daemon/weborf
 
+pkgdata_DATA = daemon/weborf_launcher
+
 sysconf_DATA = weborf.conf
 
 dist_doc_DATA = \
