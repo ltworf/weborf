@@ -72,7 +72,7 @@ function startWeborf {
     fi
 
     logger -s "Starting weborf"
-    nohup /usr/share/weborf/weborf_launcher ../weborf.conf >/dev/null 2> /dev/null &
+    nohup /usr/share/weborf/weborf_launcher /etc/weborf.conf >/dev/null 2> /dev/null &
     echo ${!} >> $PIDFILE # Writes PID so weborf can be terminated
 }
 

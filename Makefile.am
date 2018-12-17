@@ -53,6 +53,10 @@ EXTRA_DIST = \
 dist-hook:
 	rm -rf `find $(distdir)/ -name .svn`
 
+install-data-local:
+	install -d echo $(DESTDIR)/etc/weborf.d
+	ln -s ../weborf.conf $(DESTDIR)/etc/weborf.d/weborf.conf
+
 install-data-hook:
 	chmod a+x $(DESTDIR)$(datadir)/weborf/weborf_launcher
 
