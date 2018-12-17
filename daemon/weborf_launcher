@@ -1,0 +1,124 @@
+#!/bin/sh
+# Copyright (C) 2018  Salvo "LtWorf" Tomaselli
+#
+# Weborf is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
+
+CONFFILE="/etc/weborf.d/$1"
+
+if ! [ -e "$CONFFILE" ]; then
+    logger --id=$$ -perror "File $CONFFILE does not exist"
+    exit 1
+fi
+
+logger --id=$$ -perror "Starting weborf using $CONFFILE"
+
+VIRTUALS=`cat "$CONFFILE" | egrep "^virtual=" | cut -c 9-`
+USERNAME=`cat "$CONFFILE" | egrep "^user=" | cut -d= -f2`
+GROUPNAME=`cat "$CONFFILE" | egrep "^group=" | cut -d= -f2`
+BASEDIR=`cat "$CONFFILE" | egrep "^basedir=" | cut -d= -f2`
+INDEXES=`cat "$CONFFILE" | egrep "^indexes=" | cut -d= -f2`
+USE_CGI=`cat "$CONFFILE" | egrep "^use-cgi=" | cut -d= -f2`
+USE_MIME=`cat "$CONFFILE" | egrep "^use-mime=" | cut -d= -f2`
+CGI_BIN=`cat "$CONFFILE" | egrep "^cgi=" | cut -d= -f2`
+CACHE_DIR=`cat "$CONFFILE" | egrep "^cachedir=" | cut -d= -f2`
+PORT=`cat "$CONFFILE" | egrep "port=" | cut -d= -f2`
+AUTH_SOCKET=`cat "$CONFFILE" | grep "^auth-socket=" | cut -d= -f2`
+KEY=`cat "$CONFFILE" | grep "^key=" | cut -d= -f2`
+CERT=`cat "$CONFFILE" | grep "^cert=" | cut -d= -f2`
+
+# Include defaults if available
+if [ -f /etc/default/weborf ] ; then
+    . /etc/default/weborf
+fi
+
+if [ -z "$USERNAME" ] || [ -z "$GROUPNAME" ]; then
+    logger --id=$$ -s -perror "User or group not set"
+fi
+
+if test "$USERNAME" = "root"
+then
+    logger --id=$$ -s -perror "You are trying to run weborf as root!"
+    exit 0 #LSB requires 0 termination in each case
+fi
+
+USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
+GROUPID=$(egrep ^"$GROUPNAME" < /etc/group | cut -d: -f3)
+
+if [ -z "$GROUPID" ]; then
+    logger --id=$$ -perror "Unable to find group $GROUPNAME"
+    exit 1
+fi
+
+if [ -z "$USERID" ]; then
+    logger --id=$$ -s -perror "Unable to find user $USERNAME"
+    exit 1
+fi
+
+if test -n "$CACHE_DIR"
+then
+        if ! test -d $CACHE_DIR
+        then
+            #Does not exist or it is not a directory
+            logger --id=$$ -s "Creating cachedir for weborf: $CACHE_DIR"
+            rm -rf $CACHE_DIR
+            mkdir -m700 $CACHE_DIR
+        fi
+        chown $USERNAME $CACHE_DIR
+        CACHE_DIR="-C $CACHE_DIR"
+fi
+
+if test -n "$AUTH_SOCKET"
+then
+        AUTH_SOCKET="-a $AUTH_SOCKET"
+fi
+
+if test -n "$INDEXES"
+then
+        INDEXES="-I $INDEXES"
+fi
+
+if [ -n "$CERT" ]; then
+        CERT="--cert $CERT --key $KEY"
+fi
+
+if test -n "$PORT"
+then
+        PORT="-p $PORT"
+else
+        PORT="-p 80"
+fi
+
+if test -n "$VIRTUALS"
+then
+        VIRTUALS="-V $VIRTUALS"
+fi
+
+if test -n "$CGI_BIN"
+then
+    CGI_BIN=-c $CGI_BIN
+fi
+
+if test $USE_CGI = "false"
+then
+    CGI="-x"
+fi
+
+if test $USE_MIME = "true"
+then
+    MIME="-m"
+fi
+
+exec $DAEMON $DAEMON_OPTS $VIRTUALS $CERT $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN $PORT -u $USERID -g $GROUPID -b $BASEDIR $INDEXES
