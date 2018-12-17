@@ -53,6 +53,9 @@ EXTRA_DIST = \
 dist-hook:
 	rm -rf `find $(distdir)/ -name .svn`
 
+install-data-hook:
+	chmod a+x $(DESTDIR)$(datadir)/weborf/weborf_launcher
+
 dist_man_MANS = weborf.1 weborf.conf.5
 
 init_SCRIPTS = daemon/weborf
