@@ -29,7 +29,6 @@ import qweborf.nhelper as nhelper
 
 class qweborfForm (QtWidgets.QWidget):
 
-
     DBG_DEFAULT = 0
     DBG_WARNING = 1
     DBG_ERROR = 2
@@ -48,6 +47,12 @@ class qweborfForm (QtWidgets.QWidget):
         if not self.weborf.webdav:
             self.ui.chkDav.setEnabled(False)
             self.ui.chkWrite.setEnabled(False)
+
+        if not self.weborf.https:
+            self.ui.txtKey.setEnabled(False)
+            self.ui.txtCert.setEnabled(False)
+            self.ui.cmdOpenCert.setEnabled(False)
+            self.ui.cmdOpenKey.setEnabled(False)
 
         # Listing addresses
         for i in nhelper.getaddrs(self.weborf.ipv6):
@@ -118,6 +123,13 @@ class qweborfForm (QtWidgets.QWidget):
             options['username'] = None
             options['password'] = None
 
+        if self.ui.txtKey.text() or self.ui.txtCert.text():
+            options['key'] = self.ui.txtKey.text()
+            options['cert'] = self.ui.txtCert.text()
+        else:
+            options['key'] = None
+            options['cert'] = None
+
         options['port'] = self.ui.spinPort.value()
 
         options['dav'] = self.ui.chkDav.isChecked()
@@ -154,6 +166,26 @@ class qweborfForm (QtWidgets.QWidget):
                     url='http://%s:%d/' % (external_addr,redirection.eport)
                     logentry='Public address: <a href="%s">%s</a>' % (url,url)
                     self.logger(logentry)
+
+    def select_cert(self):
+        fname = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            'Certificate',
+            self.ui.txtCert.text(),
+            filter='PEM certificates(*.pem);;All files(*)',
+        )[0]
+        if fname:
+            self.ui.txtCert.setText(fname)
+
+
+    def select_key(self):
+        fname = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            'Certificate',
+            self.ui.txtKey.text(),
+        )[0]
+        if fname:
+            self.ui.txtKey.setText(fname)
 
     def select_path(self):
         current = self.ui.txtPath.text()

@@ -59,6 +59,7 @@ class weborf_runner():
                 self.version = capabilities['version']
                 self.ipv6 = capabilities['ipv'] == '6'
                 self.webdav = capabilities['webdav'] == 'yes'
+                self.https = capabilities.get('https') == 'yes'
 
                 self.logclass.logger('Weborf version %s found' %
                                      self.version, self.logclass.DBG_NOTICE)
@@ -83,7 +84,7 @@ class weborf_runner():
 
         return False
 
-    def start(self, options):
+    def start(self, options) -> bool:
         '''Starts weborf,
         returns True if it is correctly started'''
 
@@ -99,7 +100,8 @@ class weborf_runner():
         self.logclass.logger("Starting weborf...")
 
         auth_socket = self.__create_auth_socket()
-        self.__start_weborf(options, auth_socket)
+        if not self.__start_weborf(options, auth_socket):
+            return False
         self.__listen_auth_socket(options)
 
         self.username = options['username']
@@ -171,14 +173,26 @@ class weborf_runner():
 
         sock.close()
 
-    def __start_weborf(self, options, auth_socket):
+    def __start_weborf(self, options, auth_socket) -> bool:
         '''Starts a weborf in a subprocess'''
 
         cmdline = ["weborf", "-p", str(options['port']), "-b", str(
             options['path']), "-x", "-I", "....", "-a", auth_socket]
 
+        if options['tar'] and (options['cert'] or options['key']):
+            self.logclass.logger('Tar and HTTPS cannot be enabled at the same time', self.logclass.DBG_ERROR)
+            return False
+
         if options['tar']:
             cmdline.append('--tar')
+
+        if options['cert'] or options['key']:
+            cmdline.extend([
+                '--cert',
+                options['cert'],
+                '--key',
+                options['key'],
+            ])
 
         if options['ip'] != None:
             cmdline.append('-i')
@@ -220,13 +234,18 @@ class weborf_runner():
                 addrs6 = tuple()
                 addrs4 = (options['ip'],)
 
-        # Output of addresses binded
+        if options['cert'] or options['key']:
+            protocol = 'https'
+        else:
+            protocol = 'http'
+
+        # Output of addresses bound
         for i in addrs4:
-            url = 'http://%s:%d/' % (i, options['port'])
+            url = f'{protocol}://%s:%d/' % (i, options['port'])
             logentry = 'Address: <a href="%s">%s</a>' % (url, url)
             self.logclass.logger(logentry)
         for i in addrs6:
-            url = 'http://[%s]:%d/' % (i, options['port'])
+            url = f'{protocol}://[%s]:%d/' % (i, options['port'])
             logentry = 'Address: <a href="%s">%s</a>' % (url, url)
             self.logclass.logger(logentry)
 

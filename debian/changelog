@@ -6,6 +6,7 @@ weborf (0.15-1) UNRELEASED; urgency=medium
     exception is provided in the license.
   * Bump python-version-field to 3.6
   * Bump Standards-Version to 4.2.1
+  * Removed joke from qweborf (Closes: #892208)
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 09 Dec 2018 06:26:46 +0100
 
