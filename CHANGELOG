@@ -1,5 +1,7 @@
 0.15
 - Finally support https
+- Support systemd. It's now easy to run several weborf instances.
+- qweborf can set certificate to use with ssl
 
 0.14
 - Use one less thread
