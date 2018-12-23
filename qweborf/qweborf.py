@@ -29,7 +29,6 @@ import qweborf.nhelper as nhelper
 
 class qweborfForm (QtWidgets.QWidget):
 
-
     DBG_DEFAULT = 0
     DBG_WARNING = 1
     DBG_ERROR = 2
@@ -48,6 +47,12 @@ class qweborfForm (QtWidgets.QWidget):
         if not self.weborf.webdav:
             self.ui.chkDav.setEnabled(False)
             self.ui.chkWrite.setEnabled(False)
+
+        if not self.weborf.https:
+            self.ui.txtKey.setEnabled(False)
+            self.ui.txtCert.setEnabled(False)
+            self.ui.cmdOpenCert.setEnabled(False)
+            self.ui.cmdOpenKey.setEnabled(False)
 
         # Listing addresses
         for i in nhelper.getaddrs(self.weborf.ipv6):

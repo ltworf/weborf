@@ -59,6 +59,7 @@ class weborf_runner():
                 self.version = capabilities['version']
                 self.ipv6 = capabilities['ipv'] == '6'
                 self.webdav = capabilities['webdav'] == 'yes'
+                self.https = capabilities.get('https') == 'yes'
 
                 self.logclass.logger('Weborf version %s found' %
                                      self.version, self.logclass.DBG_NOTICE)
