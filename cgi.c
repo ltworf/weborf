@@ -29,12 +29,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <errno.h>
 
-
 #include "mystring.h"
 #include "cgi.h"
 #include "types.h"
 #include "instance.h"
 #include "myio.h"
+
+#define STDIN 0
+#define STDOUT 1
+#define STDERR 2
 
 extern char ** environ;                     //To reset environ vars
 extern weborf_configuration_t weborf_conf;

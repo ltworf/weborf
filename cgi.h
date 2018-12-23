@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2010  Salvo "LtWorf" Tomaselli
+Copyright (C) 2010-2018  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,10 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "options.h"
 #include "types.h"
-
-#define STDIN 0
-#define STDOUT 1
-#define STDERR 2
 
 int exec_page(char * executor,string_t* post_param,char* real_basedir,connection_t* connection_prop);
 
