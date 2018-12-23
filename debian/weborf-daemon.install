@@ -3,3 +3,6 @@ etc/weborf.conf
 etc/init.d/
 etc/weborf.d/
 usr/share/weborf/weborf_launcher
+lib/systemd/system/weborf.service
+lib/systemd/system/weborf@.service
+lib/systemd/system-generators/weborf-generator
