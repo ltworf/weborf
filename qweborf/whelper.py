@@ -181,6 +181,14 @@ class weborf_runner():
         if options['tar']:
             cmdline.append('--tar')
 
+        if options['cert'] or options['key']:
+            cmdline.extend([
+                '--cert',
+                options['cert'],
+                '--key',
+                options['key'],
+            ])
+
         if options['ip'] != None:
             cmdline.append('-i')
             cmdline.append(options['ip'])

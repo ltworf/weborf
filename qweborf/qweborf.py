@@ -123,6 +123,13 @@ class qweborfForm (QtWidgets.QWidget):
             options['username'] = None
             options['password'] = None
 
+        if self.ui.txtKey.text() or self.ui.txtCert.text():
+            options['key'] = self.ui.txtKey.text()
+            options['cert'] = self.ui.txtCert.text()
+        else:
+            options['key'] = None
+            options['cert'] = None
+
         options['port'] = self.ui.spinPort.value()
 
         options['dav'] = self.ui.chkDav.isChecked()
