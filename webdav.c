@@ -310,11 +310,6 @@ int propfind(connection_t* connection_prop, string_t *post_param) {
         return ERR_FORBIDDEN;
     }
 
-    u_dav_details props = {0};
-    props.dav_details.type = 1; //I need to avoid the struct to be fully 0 in each case
-    fd_t dest_fd = connection_prop->sock;
-    const bool has_cache=cache_is_enabled();
-
     {
         //This redirects directory without ending / to directory with the ending /
         int stat_r=stat(connection_prop->strfile, &connection_prop->strfile_stat);
@@ -330,6 +325,12 @@ int propfind(connection_t* connection_prop, string_t *post_param) {
             return 0;
         }
     } // End redirection
+
+
+    u_dav_details props = {0};
+    props.dav_details.type = 1; //I need to avoid the struct to be fully 0 in each case
+    fd_t dest_fd = connection_prop->sock;
+    const bool has_cache = cache_is_enabled();
 
     int retval=get_props(connection_prop,post_param,&props);//splitting props
     if (retval!=0) {
