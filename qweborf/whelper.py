@@ -84,7 +84,7 @@ class weborf_runner():
 
         return False
 
-    def start(self, options):
+    def start(self, options) -> bool:
         '''Starts weborf,
         returns True if it is correctly started'''
 
@@ -100,7 +100,8 @@ class weborf_runner():
         self.logclass.logger("Starting weborf...")
 
         auth_socket = self.__create_auth_socket()
-        self.__start_weborf(options, auth_socket)
+        if not self.__start_weborf(options, auth_socket):
+            return False
         self.__listen_auth_socket(options)
 
         self.username = options['username']
@@ -172,11 +173,15 @@ class weborf_runner():
 
         sock.close()
 
-    def __start_weborf(self, options, auth_socket):
+    def __start_weborf(self, options, auth_socket) -> bool:
         '''Starts a weborf in a subprocess'''
 
         cmdline = ["weborf", "-p", str(options['port']), "-b", str(
             options['path']), "-x", "-I", "....", "-a", auth_socket]
+
+        if options['tar'] and (options['cert'] or options['key']):
+            self.logclass.logger('Tar and HTTPS cannot be enabled at the same time', self.logclass.DBG_ERROR)
+            return False
 
         if options['tar']:
             cmdline.append('--tar')
