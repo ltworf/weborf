@@ -173,7 +173,8 @@ void cache_store_item(unsigned int uprefix,connection_t* connection_prop, char *
         return;
     }
 
-    write(fd, content, content_len);
+    if (write(fd, content, content_len) != content_len)
+        unlink(fname);
     close(fd);
     return;
 }
