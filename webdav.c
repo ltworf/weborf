@@ -376,7 +376,8 @@ int propfind(connection_t* connection_prop, string_t *post_param) {
         struct dirent *entry;
 
         if (dp == NULL) {//Error, unable to send because header was already sent
-#warning "This is leaking"
+            if (myio_getfd(connection_prop->sock) != myio_getfd(dest_fd))
+                close(myio_getfd(dest_fd));
             close(myio_getfd(connection_prop->sock));
             return 0;
         }
