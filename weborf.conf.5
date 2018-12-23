@@ -1,4 +1,4 @@
-.TH Weborf 5 "Sep 13, 2009" "Minimal webserver"
+.TH Weborf 5 "Dec 23, 2018" "Minimal webserver"
 
 .SH NAME
 .B weborf.conf
@@ -6,19 +6,20 @@
 
 .SH SYNOPSIS
 /etc/weborf.conf
+.br
+/etc/weborf.d/*.conf
 
 .SH DESCRIPTION
 Weborf is a minimal webserver. Also has a limited support for webdav.
 .br
-Can be started as stand-alone or as SystemV daemon. This manual page documents Weborf's configuration file, used only when it is started as daemon.
+Can be started as stand-alone or as system daemon. This manual page documents Weborf's configuration file, used only when it is started as daemon.
 .br
-On debian systems, the script to run weborf as a daemon is located into /usr/share/docs/weborf and has to be manually copied into /etc/init.d
-.br
-Weborf is released under the GNU General Public License version 3.
 
 .SH DESCRIPTION
 Options are case sensitive. Immediately followed by the equal = sign, without any space between name and value.
 Lines beginning with # will be ignored and treated as comments.
+.P
+When systemd is in use, every .conf file in /etc/weborf.d/ is used to start a different instance of weborf, with a different configuration. Otherwise the file /etc/weborf.conf is used to start a single instance of weborf.
 .SS
 
 .TP
@@ -39,43 +40,59 @@ Can be true or false. If true weborf will send the Content-Type header to the cl
 
 .TP
 .B cgi
-List of extensions to consider as dynamic pages and binaries to execute them
-
-.TP
-.B auth-bin
-Path of the binary that provides authentication to weborf
+List of extensions to consider as dynamic pages and binaries to execute them. It takes a file format and a path, comma separated, and the list can include more formats and paths. Eg: cgi=.php,/bin/phpexecutor,.sh,/bin/shellexecutor
 
 .TP
 .B auth-socket
-Path of the unix socket that weborf will use to connect to the authentication server
+Path of the unix socket that weborf will use to connect to the authentication server. When this is enabled, for every HTTP request weborf opens a connection to this socket, forwards the request, and the authentication daemon is in charge of deciding wether to accept or deny the request. Examples are provided in /usr/share/doc/weborf/examples.
 
 .TP
 .B cachedir
-Will set the path of the directory used for caching
+Will set the path of the directory used for caching. When this is enabled, weborf will cache PROPFIND and directory listing requests, making them faster.
 
 .TP
 .B user
-Username of the user that will run the webserver. On debian this is usually www-data.
+Username of the user that will run the webserver. On Debian this is usually www-data.
 
 .TP
 .B group
-Groupname of the group that will run the webserver. On debian this is usually www-data.
+Groupname of the group that will run the webserver. On Debian this is usually www-data.
+
+.TP
+.B port
+The port to use.
+
+.TP
+.B key
+Absolute path to the SSL key file. It must be used with the cert option.
+.br
+When set, weborf will use HTTPS instead of HTTP.
+
+.TP
+.B cert
+Absolute path to the SSL certificate file. It must be used with the key option.
+.br
+When set, weborf will use HTTPS instead of HTTP.
 
 .TP
 .B virtual
-This directive is used to enable virtualhosts. One line is needed for each port.
+This directive is used to enable virtualhosts.
 The format is:
-virtual#port#domain1=basedir1,domain2=basedir2
-.SS
+virtual=localhost=/var/www/,serverq.com=/var/www-alt/
+.br
+To run on multiple ports, more instances are needed.
 
-.SH EXAMPLE
-Example file can be found in /usr/share/doc/weborf/examples/weborf.conf
+.TP
+.B start
+If this is set to auto, when systemd is in use, the instance using this configuration file is considered as part of the weborf service and started/stopped along with it. It does nothing with other init systems.
+
+.SS
 
 .SH "SEE ALSO"
 .BR weborf (1)
 
 .SH VERSION
-.BR Weborf 0.13
+.BR Weborf 0.15
 
 .SH WEB
 .BR http://ltworf.github.io/weborf/
