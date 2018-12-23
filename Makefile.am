@@ -56,6 +56,9 @@ dist-hook:
 install-data-local:
 	install -d echo $(DESTDIR)/etc/weborf.d
 	ln -s ../weborf.conf $(DESTDIR)/etc/weborf.d/weborf.conf
+	install -D -m644 daemon/weborf.service $(DESTDIR)/lib/systemd/system/weborf.service
+	install -D -m644 daemon/weborf@.service $(DESTDIR)/lib/systemd/system/weborf@.service
+	install -D daemon/weborf-generator $(DESTDIR)/lib/systemd/system-generators/weborf-generator
 
 install-data-hook:
 	chmod a+x $(DESTDIR)$(datadir)/weborf/weborf_launcher
