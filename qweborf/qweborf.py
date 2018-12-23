@@ -167,6 +167,26 @@ class qweborfForm (QtWidgets.QWidget):
                     logentry='Public address: <a href="%s">%s</a>' % (url,url)
                     self.logger(logentry)
 
+    def select_cert(self):
+        fname = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            'Certificate',
+            self.ui.txtCert.text(),
+            filter='PEM certificates(*.pem);;All files(*)',
+        )[0]
+        if fname:
+            self.ui.txtCert.setText(fname)
+
+
+    def select_key(self):
+        fname = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            'Certificate',
+            self.ui.txtKey.text(),
+        )[0]
+        if fname:
+            self.ui.txtKey.setText(fname)
+
     def select_path(self):
         current = self.ui.txtPath.text()
         if len(current) == 0:
