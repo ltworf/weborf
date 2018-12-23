@@ -14,8 +14,8 @@ User=root
 Type=forking
 Restart=always
 ExecStart=/usr/share/weborf/weborf_launcher /etc/weborf.d/%i -d
-StandardOutput=devnull
-StandardError=devnull
+StandardOutput=null
+StandardError=null
 SyslogIdentifier=weborf-%i
 
 # ProtectHome=read-only
