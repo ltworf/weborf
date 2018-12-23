@@ -33,7 +33,7 @@ typedef struct {
 } buffered_read_t;
 
 void buffer_reset (buffered_read_t * buf);
-int buffer_init(buffered_read_t * buf, ssize_t size, bool ssl);
+int buffer_init(buffered_read_t * buf, ssize_t size);
 void buffer_free(buffered_read_t * buf);
 ssize_t buffer_read(fd_t fd, void *b, ssize_t count, buffered_read_t * buf);
 size_t buffer_strstr(fd_t fd, buffered_read_t * buf, char * needle);
