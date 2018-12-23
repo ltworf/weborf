@@ -229,13 +229,18 @@ class weborf_runner():
                 addrs6 = tuple()
                 addrs4 = (options['ip'],)
 
-        # Output of addresses binded
+        if options['cert'] or options['key']:
+            protocol = 'https'
+        else:
+            protocol = 'http'
+
+        # Output of addresses bound
         for i in addrs4:
-            url = 'http://%s:%d/' % (i, options['port'])
+            url = f'{protocol}://%s:%d/' % (i, options['port'])
             logentry = 'Address: <a href="%s">%s</a>' % (url, url)
             self.logclass.logger(logentry)
         for i in addrs6:
-            url = 'http://[%s]:%d/' % (i, options['port'])
+            url = f'{protocol}://[%s]:%d/' % (i, options['port'])
             logentry = 'Address: <a href="%s">%s</a>' % (url, url)
             self.logclass.logger(logentry)
 
