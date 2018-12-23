@@ -1,4 +1,4 @@
-weborf (0.15-1) UNRELEASED; urgency=medium
+weborf (0.15-1) unstable; urgency=medium
 
     The configuration options for the .conf file are slightly different, so
     please make sure that your configuration still works.
