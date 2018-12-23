@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>532</width>
-    <height>536</height>
+    <height>565</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -535,8 +535,8 @@
    <slot>stop_sharing()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>526</x>
-     <y>495</y>
+     <x>524</x>
+     <y>509</y>
     </hint>
     <hint type="destinationlabel">
      <x>457</x>
@@ -567,8 +567,8 @@
    <slot>select_path()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>517</x>
-     <y>40</y>
+     <x>513</x>
+     <y>83</y>
     </hint>
     <hint type="destinationlabel">
      <x>528</x>
@@ -599,8 +599,8 @@
    <slot>about()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>494</x>
-     <y>426</y>
+     <x>523</x>
+     <y>464</y>
     </hint>
     <hint type="destinationlabel">
      <x>265</x>
@@ -615,12 +615,12 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>415</x>
-     <y>44</y>
+     <x>427</x>
+     <y>82</y>
     </hint>
     <hint type="destinationlabel">
-     <x>360</x>
-     <y>44</y>
+     <x>337</x>
+     <y>82</y>
     </hint>
    </hints>
   </connection>
@@ -631,12 +631,12 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>470</x>
-     <y>359</y>
+     <x>523</x>
+     <y>424</y>
     </hint>
     <hint type="destinationlabel">
-     <x>398</x>
-     <y>359</y>
+     <x>405</x>
+     <y>467</y>
     </hint>
    </hints>
   </connection>
@@ -647,12 +647,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>238</x>
-     <y>181</y>
+     <x>272</x>
+     <y>231</y>
     </hint>
     <hint type="destinationlabel">
-     <x>152</x>
-     <y>193</y>
+     <x>276</x>
+     <y>260</y>
     </hint>
    </hints>
   </connection>
@@ -663,12 +663,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>169</x>
-     <y>220</y>
+     <x>210</x>
+     <y>289</y>
     </hint>
     <hint type="destinationlabel">
-     <x>196</x>
-     <y>276</y>
+     <x>320</x>
+     <y>365</y>
     </hint>
    </hints>
   </connection>
