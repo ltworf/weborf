@@ -51,7 +51,7 @@ EXTRA_DIST = \
     qweborf.setup.py
 
 dist-hook:
-	rm -rf `find $(distdir)/ -name .svn`
+	rm -rf `find $(distdir)/ -name .git`
 
 install-data-local:
 	install -d echo $(DESTDIR)/etc/weborf.d
