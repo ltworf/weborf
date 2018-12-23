@@ -7,6 +7,7 @@ AssertPathExists=/etc/weborf.d/%i
 PartOf=weborf.service
 ReloadPropagatedFrom=weborf.service
 Before=weborf.service
+Documentation=man:weborf.conf(5)
 
 [Service]
 PrivateTmp=true

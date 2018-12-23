@@ -4,6 +4,7 @@
 
 [Unit]
 Description=Weborf webserver
+Documentation=man:weborf.conf(5)
 
 [Service]
 Type=oneshot
