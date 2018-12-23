@@ -1,0 +1,24 @@
+#!/bin/sh
+# This systemd generator creates dependency symlinks that make all weborf
+# instances with start=auto configuration file be started/stopped/reloaded
+# when weborf.service is started/stopped/reloaded.
+
+set -eu
+
+gendir="$1"
+wantdir="$1/weborf.service.wants"
+instance="/lib/systemd/system/weborf@.service"
+
+mkdir -p "$wantdir"
+
+for conf in /etc/weborf.d/*.conf; do
+	# abort loop if glob was not expanded (but accept dead symlinks)
+	if ! test -e "$conf" && ! test -L "$conf"; then continue; fi
+
+	if ! grep "^start=auto$" < $conf > /dev/null; then
+            continue
+	fi
+	ln -s "$instance" "$wantdir/weborf@`basename $conf`.service"
+done
+
+exit 0
