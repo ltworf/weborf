@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 This funcion inits the struct allocating a buffer of the specified size.
 It will return 0 on success and 1 on fail.
 */
-int buffer_init(buffered_read_t* buf, ssize_t size, bool ssl)
+int buffer_init(buffered_read_t* buf, ssize_t size)
 {
     buf->buffer = malloc(sizeof(char) * size);
     buf->size = size;
@@ -147,35 +147,3 @@ size_t buffer_strstr(fd_t fd, buffered_read_t * buf, char * needle) {
     }
 
 }
-
-
-/*#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-int main () {
-    buffered_read_t buf;
-
-    buffer_init(&buf, 30);
-
-    int fp=open("/home/salvo/.bash_history",O_RDONLY);
-    char * k=malloc (600);
-
-    int end=0;
-
-    while (1) {
-
-        int size=buffer_strstr(fp,&buf,"\n")+1;
-        end=buffer_read(fp,k,size,&buf);
-        if (end<size || end==0) break;
-
-        k[end]=0;
-        printf("%d ---- %s\n",size,k);
-    }
-    printf("%d",end);
-
-    free(k);
-    buffer_free(&buf);
-}
-*/
