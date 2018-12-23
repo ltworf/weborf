@@ -50,8 +50,17 @@
            </item>
            <item>
             <widget class="QPushButton" name="cmdClearPath">
+             <property name="accessibleName">
+              <string>Clear directory to share</string>
+             </property>
+             <property name="accessibleDescription">
+              <string extracomment="Clear directory to share"/>
+             </property>
              <property name="text">
-              <string>⌫</string>
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset theme="edit-clear"/>
              </property>
             </widget>
            </item>
@@ -334,8 +343,17 @@
        </property>
        <item>
         <widget class="QPushButton" name="cmdClearLog">
+         <property name="accessibleName">
+          <string>Clear log</string>
+         </property>
+         <property name="accessibleDescription">
+          <string extracomment="Clear log"/>
+         </property>
          <property name="text">
-          <string>⌫</string>
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset theme="edit-clear"/>
          </property>
         </widget>
        </item>
