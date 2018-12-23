@@ -1,9 +1,9 @@
 weborf (0.15-1) UNRELEASED; urgency=medium
 
-  * The configuration options for the .conf file are slightly different, so
+    The configuration options for the .conf file are slightly different, so
     please make sure that your configuration still works.
 
-  * This version comes with .service files for systemd.
+    This version comes with .service files for systemd.
     It is now possible to run several instances of weborf, by creating a new
     .conf file in /etc/weborf.d
 
@@ -11,7 +11,7 @@ weborf (0.15-1) UNRELEASED; urgency=medium
     /etc/weborf.d/weborf.conf into /etc/weborf.d/https.conf, change the port
     and add the path to the SSL certificate.
 
-  * The .service file removes some permissions to the executable, if your use
+    The .service file removes some permissions to the executable, if your use
     case requires those permissions, you might experience failures. You can
     override the .service file locally.
 
