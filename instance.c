@@ -1286,16 +1286,10 @@ will use 0 as socket and exit after.
 It is almost a copy of instance()
 */
 void inetd() {
-
     thread_prop_t thread_prop;  //Server's props
     int bufFull=0;                                  //Amount of buf used
     connection_t connection_prop;                   //Struct to contain properties of the connection
     buffered_read_t read_b;                         //Buffer for buffered reader
-#ifdef HAVE_LIBSSL
-#warning Not implemented
-#else
-    int sock=connection_prop.sock=0;                //Socket with the client,using normal file descriptor 0
-#endif
     char * buf=calloc(INBUFFER+1,sizeof(char));     //Buffer to contain the HTTP request
     connection_prop.strfile=malloc(URI_LEN);        //buffer for filename
 
@@ -1316,26 +1310,32 @@ void inetd() {
     int addr_l=sizeof(struct sockaddr_in);
 #endif
 
-    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b, BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) { //Unable to allocate the buffer
+    if (mime_init(&thread_prop.mime_token)!=0 || buffer_init(&read_b, BUFFERED_READER_SIZE)!=0 || buf==NULL || connection_prop.strfile==NULL) {
 #ifdef SERVERDBG
         syslog(LOG_CRIT,"Not enough memory to allocate buffers for new thread");
 #endif
-        goto release_resources;
+        exit(1);
     }
 
-    net_getpeername(0,connection_prop.ip_addr);
+    net_getpeername(0, connection_prop.ip_addr);
+
+#ifdef HAVE_LIBSSL
+        connection_prop.sock.fd = 0;
+
+        if (weborf_conf.sslctx) {
+            connection_prop.sock.ssl = SSL_new(weborf_conf.sslctx);
+            SSL_set_fd(connection_prop.sock.ssl, 0);
+            if (SSL_accept(connection_prop.sock.ssl) != 1) {
+                syslog(LOG_INFO, "SSL connection failed from %s", connection_prop.ip_addr);
+                exit(1);
+            }
+        } else {
+            connection_prop.sock.ssl = NULL;
+        }
+#else
+    connection_prop.sock = 0;
+#endif
 
     handle_requests(buf,&read_b,&bufFull,&connection_prop,thread_prop.id);
-    //close(sock);//Closing the socket
-    //buffer_reset (&read_b);
-
-release_resources:
     exit(0);
-    /* No need to free memory and resources
-    free(buf);
-    free(connection_prop.strfile);
-    buffer_free(&read_b);
-    mime_release(thread_prop.mime_token);
-    */
-    return;
 }
