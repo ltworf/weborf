@@ -18,7 +18,12 @@ StandardOutput=null
 StandardError=null
 SyslogIdentifier=weborf-%i
 
-# ProtectHome=read-only
-# ProtectKernelTunables=true
-# ProtectKernelModules=true
-# ProtectControlGroups=true
+# Some security tuning
+NoNewPrivileges=yes
+SystemCallArchitectures=native
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
