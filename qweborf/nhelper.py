@@ -23,6 +23,7 @@ from socket import AF_INET, AF_INET6, AF_PACKET, inet_ntop
 from sys import platform
 import subprocess
 import re
+from typing import List, NamedTuple, Optional
 
 
 def getifaddrs():
@@ -241,7 +242,7 @@ def open_nat(port):
         return None
 
 
-def externaladdr():
+def externaladdr() -> Optional[str]:
     '''Returns the public IP address.
     none in case of error'''
     with subprocess.Popen(['external-ip'], bufsize=1024, stdout=subprocess.PIPE) as p:
@@ -252,7 +253,7 @@ def externaladdr():
     return out
 
 
-def get_redirections():
+def get_redirections() -> List[Redirection]:
     '''Returns a list of current NAT redirections'''
     with subprocess.Popen(['upnpc', '-l'], bufsize=2048, stdout=subprocess.PIPE) as p:
         out = p.stdout.read().decode('ascii').strip().split('\n')
@@ -270,7 +271,7 @@ def get_redirections():
     return redirections
 
 
-def can_redirect():
+def can_redirect() -> bool:
     '''Returns true if upnpc is installed and NAT traversal can
     be attempted'''
 
@@ -280,29 +281,18 @@ def can_redirect():
     except:
         return False
 
-class Redirection(object):
-
+class Redirection(NamedTuple):
     '''This class represents a NAT redirection'''
-
-    def __init__(self, lport, eport, ip, proto, description):
-        self.lport = int(lport)
-        self.eport = int(eport)
-        self.ip = ip
-        self.proto = proto
-        self.description = description
+    lport: int
+    eport: int
+    ip: str
+    proto: str
+    description: str
 
     def __str__(self):
         return '%s %d->%s:%d\t\'%s\'' % (self.proto, self.eport, self.ip, self.lport, self.description)
 
-    def __repr__(self):
-        return 'Redirection(%s,%s,%s,%s,%s)' % (repr(self.lport), repr(self.eport), repr(self.ip), repr(self.proto), repr(self.description))
-
-    def __eq__(self, other):
-        if not isinstance(other, Redirection):
-            return False
-        return self.lport == other.lport and self.eport == other.eport and self.ip == other.ip and self.proto == other.proto
-
-    def create_redirection(self):
+    def create_redirection(self) -> bool:
         '''Activates the redirection.
         Returns true if the redirection becomes active'''
         print ("Creating redirection", ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto])
@@ -321,7 +311,7 @@ class Redirection(object):
         ret = p.wait()
 
 
-def printifconfig():
+def printifconfig() -> None:
     ifaces = getifaddrs()
     for iface in ifaces:
         print(iface)

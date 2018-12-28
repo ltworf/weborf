@@ -34,7 +34,7 @@ class qweborfForm (QtWidgets.QWidget):
     DBG_ERROR = 2
     DBG_NOTICE = 3
 
-    def setUi(self, ui):
+    def setUi(self, ui) -> None:
         self.ui = ui
         self.weborf = whelper.weborf_runner(self)
         self.started = False
@@ -167,7 +167,7 @@ class qweborfForm (QtWidgets.QWidget):
                     logentry='Public address: <a href="%s">%s</a>' % (url,url)
                     self.logger(logentry)
 
-    def select_cert(self):
+    def select_cert(self) -> None:
         fname = QtWidgets.QFileDialog.getOpenFileName(
             self,
             'Certificate',
@@ -178,7 +178,7 @@ class qweborfForm (QtWidgets.QWidget):
             self.ui.txtCert.setText(fname)
 
 
-    def select_key(self):
+    def select_key(self) -> None:
         fname = QtWidgets.QFileDialog.getOpenFileName(
             self,
             'Certificate',
@@ -187,7 +187,7 @@ class qweborfForm (QtWidgets.QWidget):
         if fname:
             self.ui.txtKey.setText(fname)
 
-    def select_path(self):
+    def select_path(self) -> None:
         current = self.ui.txtPath.text()
         if len(current) == 0:
             current = self.defaultdir
@@ -201,7 +201,7 @@ class qweborfForm (QtWidgets.QWidget):
             self.ui.txtPath.setText(dirname)
 
 
-def q_main():
+def q_main() -> None:
     import sys
     app = QtWidgets.QApplication(sys.argv)
     Form = qweborfForm()
