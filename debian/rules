@@ -15,12 +15,9 @@ override_dh_installinit:
 	dh_installinit -pweborf-daemon --onlyscripts --init-script=weborf
 
 override_dh_auto_install:
-	pyuic5 qweborf/main.ui > qweborf/main.py
-	python3 qweborf.setup.py install --root=debian/qweborf --install-layout=deb
-	install -D qweborf/qweborf debian/qweborf/usr/bin/qweborf
+	make -C qweborf install DESTDIR=debian/qweborf
 	dh_auto_install
 
 override_dh_auto_clean:
-	rm -rf build
-	rm -f qweborf/main.py
+	make -C qweborf clean
 	dh_auto_clean

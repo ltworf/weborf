@@ -16,9 +16,18 @@
 #
 # author Salvo "LtWorf" Tomaselli <tiposchi@tiscali.it>
 
-main.py: main.ui
-	pyuic5 main.ui > main.py
+qweborf/main.py: qweborf/main.ui
+	pyuic5 qweborf/main.ui > qweborf/main.py
 
 .PHONY: clean
 clean:
-	$(RM) main.py
+	$(RM) qweborf/main.py
+	$(RM) -r build/
+
+.PHONY: install
+install: qweborf/main.py
+	python3 setup.py install --root=$${DESTDIR:-/} --install-layout=deb
+	install -D qweborf/qweborf $${DESTDIR:-/}/bin/qweborf
+	install -D -m644 man/qweborf.1 $${DESTDIR:-/}/usr/share/man/man1/qweborf.1
+	install -D -m644 integration/qweborf.desktop $${DESTDIR:-/}/usr/share/applications/qweborf.desktop
+	install -D -m644 integration/qweborf_servicemenu.desktop $${DESTDIR:-/}/usr/share/kservices5/ServiceMenus/qweborf_servicemenu.desktop
