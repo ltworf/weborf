@@ -20,6 +20,7 @@ import os
 import subprocess
 import socket
 import threading
+from typing import Optional
 from PyQt5 import QtCore
 
 import qweborf.nhelper as nhelper
@@ -31,17 +32,17 @@ class weborf_runner():
         self.logclass = logfunction
         self.logclass.logger("Software initialized")
 
-        self.child = None
+        self.child: Optional[subprocess.Popen] = None
         self.socket = None
         self.listener = None
-        self.waiter = None
+        self.waiter: Optional[_Waiter] = None
         self.methods = set()
-        self.username = None
-        self.password = None
+        self.username: Optional[str] = None
+        self.password: Optional[str] = None
         self.ipv6 = True
         self._running = False
         self.version = ''
-        self.webdav = None
+        self.webdav = False
 
         self.weborf = self._test_weborf()
 
