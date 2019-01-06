@@ -1,6 +1,7 @@
 weborf (0.16-1) UNRELEASED; urgency=medium
 
   * New upstream release
+  * Bump compat level to 12
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 06 Jan 2019 19:49:18 +0100
 
