@@ -205,7 +205,7 @@ class weborf_runner():
         self.loglinks(options)
 
         # Starts thread to wait for weborf termination
-        self.waiter = __waiter__(self.child)
+        self.waiter = _Waiter(self.child)
 
         self.waiter.child_terminated.connect(self._child_terminated)
         self.waiter.start()
@@ -309,7 +309,7 @@ class __listener__(QtCore.QThread):
                 pass
 
 
-class __waiter__(QtCore.QThread):
+class _Waiter(QtCore.QThread):
 
     '''This class creates a separate thread that will wait for the
     termination of weborf, and performs a callback when it occurs.
