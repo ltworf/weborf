@@ -221,19 +221,19 @@ class weborf_runner():
             if self.ipv6:
                 addrs6 = nhelper.getaddrs(True)
             else:
-                addrs6 = tuple()
+                addrs6 = []
         else:
             if self.ipv6:
                 # address can be both ipv6 or mapped ipv4
                 if '.' in options['ip']:
-                    addrs6 = (options['ip'],)
-                    addrs4 = (options['ip'][7:],)
+                    addrs6 = [options['ip']]
+                    addrs4 = [options['ip'][7:]]
                 else:  # Normal ipv6
-                    addrs4 = tuple()
-                    addrs6 = (options['ip'],)
+                    addrs4 = []
+                    addrs6 = [options['ip']]
             else:
-                addrs6 = tuple()
-                addrs4 = (options['ip'],)
+                addrs6 = []
+                addrs4 = [options['ip']]
 
         if options['cert'] or options['key']:
             protocol = 'https'
