@@ -15,7 +15,7 @@ override_dh_installinit:
 	dh_installinit -pweborf-daemon --onlyscripts --init-script=weborf
 
 override_dh_auto_install:
-	make -C qweborf install DESTDIR=debian/qweborf
+	make -C qweborf install DESTDIR=../debian/qweborf
 	dh_auto_install
 
 override_dh_auto_clean:
