@@ -320,7 +320,7 @@ class _Waiter(QtCore.QThread):
 
     child_terminated = QtCore.pyqtSignal(object, object)
 
-    def __init__(self, child):
+    def __init__(self, child) -> None:
         '''child: child process to wait
         '''
         QtCore.QThread.__init__(self)
