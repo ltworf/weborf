@@ -1,3 +1,6 @@
+0.16
+- qweborf has a normal makefile
+
 0.15
 - Finally support https
 - Support systemd. It's now easy to run several weborf instances.

@@ -39,16 +39,17 @@ EXTRA_DIST = \
     examples \
     daemon \
     weborf.conf \
-    qweborf/__init__.py \
-    qweborf/main.ui \
-    qweborf/nhelper.py \
-    qweborf/whelper.py \
-    qweborf/qweborf.py \
-    qweborf/qweborf \
-    qweborf/qweborf.1 \
-    qweborf/qweborf.desktop \
-    qweborf/qweborf_servicemenu.desktop \
-    qweborf.setup.py
+    qweborf/qweborf/__init__.py \
+    qweborf/qweborf/main.ui \
+    qweborf/qweborf/nhelper.py \
+    qweborf/qweborf/whelper.py \
+    qweborf/qweborf/qweborf.py \
+    qweborf/qweborf/qweborf \
+    qweborf/man/qweborf.1 \
+    qweborf/integration/qweborf.desktop \
+    qweborf/integration/qweborf_servicemenu.desktop \
+    qweborf/setup.py \
+    qweborf/Makefile
 
 dist-hook:
 	rm -rf `find $(distdir)/ -name .git`

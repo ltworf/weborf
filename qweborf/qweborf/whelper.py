@@ -1,5 +1,5 @@
 # Weborf
-# Copyright (C) 2010  Salvo "LtWorf" Tomaselli
+# Copyright (C) 2010-2018  Salvo "LtWorf" Tomaselli
 #
 # Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ class weborf_runner():
 
         self.weborf = self._test_weborf()
 
-    def _test_weborf(self):
+    def _test_weborf(self) -> bool:
         '''Tests if weborf binary is existing.
         It will return true if everything is OK
         and false otherwise.'''

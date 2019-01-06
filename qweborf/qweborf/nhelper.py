@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Weborf
-# Copyright (C) 2011  Salvo "LtWorf" Tomaselli
+# Copyright (C) 2011-2019  Salvo "LtWorf" Tomaselli
 #
 # Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@ from socket import AF_INET, AF_INET6, AF_PACKET, inet_ntop
 from sys import platform
 import subprocess
 import re
+from typing import List, NamedTuple, Optional
 
 
 def getifaddrs():
@@ -181,7 +182,7 @@ def getifaddrs():
     return result
 
 
-def getaddrs(ipv6=True):
+def getaddrs(ipv6: bool=True) -> List[str]:
     '''Returns the list of the IP addresses it is possible to bind to
 
     ipv6: if true, ONLY ipv6 addresses will be returned (ipv4 will be mapped to ipv6)
@@ -212,7 +213,7 @@ def getaddrs(ipv6=True):
         return l_ipv4
 
 
-def open_nat(port):
+def open_nat(port: int) -> bool:
     '''Tries to open a port in the nat device
     directing it to the current host.
 
@@ -235,13 +236,10 @@ def open_nat(port):
 
     r = Redirection(port, eport, ip, "TCP", "weborf")
 
-    if r.create_redirection():
-        return r
-    else:
-        return None
+    return r.create_redirection()
 
 
-def externaladdr():
+def externaladdr() -> Optional[str]:
     '''Returns the public IP address.
     none in case of error'''
     with subprocess.Popen(['external-ip'], bufsize=1024, stdout=subprocess.PIPE) as p:
@@ -252,7 +250,7 @@ def externaladdr():
     return out
 
 
-def get_redirections():
+def get_redirections() -> List[Redirection]:
     '''Returns a list of current NAT redirections'''
     with subprocess.Popen(['upnpc', '-l'], bufsize=2048, stdout=subprocess.PIPE) as p:
         out = p.stdout.read().decode('ascii').strip().split('\n')
@@ -262,7 +260,7 @@ def get_redirections():
     for i in out:
         m = re.match(
             r'[ ]*([0-9]+)[ ]+(UDP|TCP)[ ]+([0-9]+)->([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):([0-9]+)[ ]+\'(.*)\' \'\'', i)
-        if m != None:
+        if m is not None:
             redirect = m.groups()
             r = Redirection(redirect[4], redirect[
                             2], redirect[3], redirect[1], redirect[5])
@@ -270,7 +268,7 @@ def get_redirections():
     return redirections
 
 
-def can_redirect():
+def can_redirect() -> bool:
     '''Returns true if upnpc is installed and NAT traversal can
     be attempted'''
 
@@ -280,48 +278,34 @@ def can_redirect():
     except:
         return False
 
-class Redirection(object):
-
+class Redirection(NamedTuple):
     '''This class represents a NAT redirection'''
+    lport: int
+    eport: int
+    ip: str
+    proto: str
+    description: str
 
-    def __init__(self, lport, eport, ip, proto, description):
-        self.lport = int(lport)
-        self.eport = int(eport)
-        self.ip = ip
-        self.proto = proto
-        self.description = description
-
-    def __str__(self):
+    def __str__(self) -> str:
         return '%s %d->%s:%d\t\'%s\'' % (self.proto, self.eport, self.ip, self.lport, self.description)
 
-    def __repr__(self):
-        return 'Redirection(%s,%s,%s,%s,%s)' % (repr(self.lport), repr(self.eport), repr(self.ip), repr(self.proto), repr(self.description))
-
-    def __eq__(self, other):
-        if not isinstance(other, Redirection):
-            return False
-        return self.lport == other.lport and self.eport == other.eport and self.ip == other.ip and self.proto == other.proto
-
-    def create_redirection(self):
+    def create_redirection(self) -> bool:
         '''Activates the redirection.
         Returns true if the redirection becomes active'''
-        print ("Creating redirection", ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto])
-        p = subprocess.Popen(
-            ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto])
-        ret = p.wait()
+        subprocess.check_call(
+            ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto]
+        )
 
         for i in get_redirections():
-            print ("Comparing %s %s" % (i, self))
             if i == self:
                 return True
         return False
 
-    def remove_redirection(self):
-        p = subprocess.Popen(['upnpc', '-d', str(self.eport), self.proto])
-        ret = p.wait()
+    def remove_redirection(self) -> None:
+        subprocess.check_call(['upnpc', '-d', str(self.eport), self.proto])
 
 
-def printifconfig():
+def printifconfig() -> None:
     ifaces = getifaddrs()
     for iface in ifaces:
         print(iface)
