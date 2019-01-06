@@ -9,7 +9,7 @@ config.h
 config.log
 config.status
 stamp-h1
-./Makefile
+cgi_wrapper/Makefile
 Makefile.in
 .deps
 options.h
