@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Weborf
-# Copyright (C) 2011  Salvo "LtWorf" Tomaselli
+# Copyright (C) 2011-2019  Salvo "LtWorf" Tomaselli
 #
 # Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -182,7 +182,7 @@ def getifaddrs():
     return result
 
 
-def getaddrs(ipv6=True):
+def getaddrs(ipv6: bool=True) -> List[str]:
     '''Returns the list of the IP addresses it is possible to bind to
 
     ipv6: if true, ONLY ipv6 addresses will be returned (ipv4 will be mapped to ipv6)
@@ -213,7 +213,7 @@ def getaddrs(ipv6=True):
         return l_ipv4
 
 
-def open_nat(port):
+def open_nat(port: int) -> bool:
     '''Tries to open a port in the nat device
     directing it to the current host.
 
@@ -236,10 +236,7 @@ def open_nat(port):
 
     r = Redirection(port, eport, ip, "TCP", "weborf")
 
-    if r.create_redirection():
-        return r
-    else:
-        return None
+    return r.create_redirection()
 
 
 def externaladdr() -> Optional[str]:
@@ -289,26 +286,23 @@ class Redirection(NamedTuple):
     proto: str
     description: str
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '%s %d->%s:%d\t\'%s\'' % (self.proto, self.eport, self.ip, self.lport, self.description)
 
     def create_redirection(self) -> bool:
         '''Activates the redirection.
         Returns true if the redirection becomes active'''
-        print ("Creating redirection", ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto])
-        p = subprocess.Popen(
-            ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto])
-        ret = p.wait()
+        subprocess.check_call(
+            ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto]
+        )
 
         for i in get_redirections():
-            print ("Comparing %s %s" % (i, self))
             if i == self:
                 return True
         return False
 
-    def remove_redirection(self):
-        p = subprocess.Popen(['upnpc', '-d', str(self.eport), self.proto])
-        ret = p.wait()
+    def remove_redirection(self) -> None:
+        subprocess.check_call(['upnpc', '-d', str(self.eport), self.proto])
 
 
 def printifconfig() -> None:
