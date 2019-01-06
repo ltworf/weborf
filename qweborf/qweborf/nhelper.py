@@ -47,7 +47,7 @@ def getifaddrs():
 
     # AF_UNKNOWN / generic
     if platform.startswith("darwin") or platform.startswith("freebsd"):
-        class sockaddr (Structure):
+        class sockaddr(Structure):
             _fields_ = [
                 ("sa_len",     c_uint8),
                 ("sa_family",  c_uint8),
@@ -213,7 +213,7 @@ def getaddrs(ipv6: bool=True) -> List[str]:
         return l_ipv4
 
 
-def open_nat(port: int) -> Optional['Redirection']:
+def open_nat(port: int) -> Optional[Redirection]:
     '''Tries to open a port in the nat device
     directing it to the current host.
     '''
@@ -233,7 +233,7 @@ def open_nat(port: int) -> Optional['Redirection']:
 
     r = Redirection(port, eport, ip, "TCP", "weborf")
 
-    if create_redirection():
+    if r.create_redirection():
         return r
     return None
 

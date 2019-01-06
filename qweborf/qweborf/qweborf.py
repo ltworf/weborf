@@ -155,12 +155,13 @@ class qweborfForm (QtWidgets.QWidget):
             self.logger('Trying to use UPnP to open a redirection in the NAT device. Please wait...')
             QtCore.QCoreApplication.processEvents()
             external_addr = nhelper.externaladdr()
+            QtCore.QCoreApplication.processEvents()
             self.logger('Public IP address %s' % str(external_addr))
             QtCore.QCoreApplication.processEvents()
-            if external_addr:
-                redirection = nhelper.open_nat(options['port'])
-                if redirection:
-                    self.redirection = redirection
+            if external_addr is not None:
+                redirection=nhelper.open_nat(options['port'])
+                if redirection is not None:
+                    self.redirection=redirection
                     url='http://%s:%d/' % (external_addr,redirection.eport)
                     logentry='Public address: <a href="%s">%s</a>' % (url,url)
                     self.logger(logentry)
