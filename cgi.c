@@ -224,14 +224,23 @@ static inline void cgi_execute_child(connection_t* connection_prop,string_t* pos
 
     environ = NULL; //Clear env vars
 
+    syslog(LOG_ERR, "executor before %s", executor);
+    if (strlen(executor) == 0) {
+        executor = malloc(connection_prop->strfile_len + 1);
+        strncpy(executor, connection_prop->strfile, connection_prop->strfile_len);
+    }
+
+    syslog(LOG_ERR, "executor after %s", executor);
+
     cgi_set_http_env_vars(connection_prop->http_param);
     cgi_set_SERVER_ADDR_PORT(myio_getfd(connection_prop->sock));
     cgi_set_env_vars(connection_prop, real_basedir);
     cgi_set_env_content_length();
     cgi_child_chdir(connection_prop);
 
-    alarm(SCRPT_TIMEOUT); //Sets the timeout for the script
 
+
+    alarm(SCRPT_TIMEOUT); //Sets the timeout for the script
     execl(executor, executor, (char *)0);
 #ifdef SERVERDBG
     syslog(LOG_ERR,"Execution of %s failed", executor);
