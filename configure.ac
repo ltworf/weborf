@@ -40,7 +40,6 @@ AC_CHECK_LIB([ssl], [SSL_new])
 #AC_CONFIG_HEADERS([config.h options.h])
 
 AC_CONFIG_FILES([Makefile
-    cgi_wrapper/Makefile
     options.h
 ])
 

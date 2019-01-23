@@ -1,4 +1,2 @@
 usr/bin/weborf      
-usr/lib/*/cgi-bin/weborf_cgi_wrapper
-usr/lib/*/cgi-bin/weborf_py_wrapper
 usr/share/man/man1/weborf.1
