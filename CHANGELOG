@@ -1,5 +1,6 @@
 0.16
 - qweborf has a normal makefile
+- Authentication example comes with a systemd file
 
 0.15
 - Finally support https
