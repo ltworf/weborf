@@ -58,7 +58,7 @@ USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
 GROUPID=$(egrep ^"$GROUPNAME" < /etc/group | cut -d: -f3)
 
 if [ -z "$GROUPID" ]; then
-    logger --id=$$ -perror "Unable to find group $GROUPNAME"
+    logger --id=$$ -perror -s "Unable to find group $GROUPNAME"
     exit 1
 fi
 
@@ -92,6 +92,9 @@ fi
 
 if [ -n "$CERT" ]; then
         CERT="--cert $CERT --key $KEY"
+elif [ -n "$KEY" ] && [ -z "$CERT" ]; then
+        logger --id=$$ -s "Key set but certificate is not"
+        exit 1
 fi
 
 if test -n "$PORT"
