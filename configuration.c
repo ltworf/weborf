@@ -135,8 +135,19 @@ static void configuration_set_cgi(char *optarg) {
         }
     }
 
+    if (weborf_conf.cgi_paths.len % 2 == 1) {
+        fprintf(stderr, "--cgi components must be an even number\n");
+        syslog(LOG_ERR, "--cgi components must be an even number\n");
+        exit(6);
+    }
+
     for (i=0; i<weborf_conf.cgi_paths.len; i++) {
         weborf_conf.cgi_paths.data_l[i]=strlen(weborf_conf.cgi_paths.data[i]);
+        if (i % 2 == 0 && weborf_conf.cgi_paths.data_l[i] == 0) {
+            fprintf(stderr, "file extension can't have lenght 0\n");
+            syslog(LOG_ERR, "file extension can't have lenght 0\n");
+            exit(6);
+        }
     }
 
 }
