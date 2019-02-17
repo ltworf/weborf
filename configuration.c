@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2010-2018  Salvo "LtWorf" Tomaselli
+Copyright (C) 2010-2019  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ weborf_configuration_t weborf_conf = {
     .tar_directory=false,
     .is_inetd=false,
     .virtual_host = false,
-    .exec_script = true,
+    .exec_script = false,
     .ip = NULL,
     .port = PORT,
     .basedir=BASEDIR,
@@ -225,7 +225,7 @@ void configuration_load(int argc, char *argv[]) {
         {"auth", required_argument, 0, 'a'},
         {"virtual", required_argument, 0, 'V'},
         {"moo", no_argument, 0, 'M'},
-        {"noexec", no_argument, 0, 'x'},
+        {"yesexec", no_argument, 0, 'Y'},
         {"cgi", required_argument, 0, 'c'},
         {"cache", required_argument, 0, 'C'},
         {"mime", no_argument,0,'m'},
@@ -282,8 +282,8 @@ void configuration_load(int argc, char *argv[]) {
         case 'b':
             configuration_set_basedir(optarg);
             break;
-        case 'x':
-            weborf_conf.exec_script = false;
+        case 'Y':
+            weborf_conf.exec_script = true;
             break;
         case 'v':   //Show version and exit
             version();
