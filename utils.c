@@ -274,13 +274,14 @@ Prints version information
 */
 void version() {
     printf("Weborf %s\n"
-           "Copyright (C) 2007-2018 Salvo 'LtWorf' Tomaselli.\n"
+           "Copyright (C) 2007-2019 Salvo 'LtWorf' Tomaselli.\n"
            "This is free software.  You may redistribute copies of it under the terms of\n"
            "the GNU General Public License <http://www.gnu.org/licenses/gpl.html>.\n"
            "There is NO WARRANTY, to the extent permitted by law.\n\n"
 
            "Written by Salvo 'LtWorf' Tomaselli and Salvo Rinaldi.\n"
            "Synchronized queue by Prof. Giuseppe Pappalardo.\n\n"
+
            "http://ltworf.github.io/weborf/\n", VERSION);
     exit(0);
 }
