@@ -1,3 +1,9 @@
+weborf (0.16-1) unstable; urgency=medium
+
+  CGI is disabled by default now. To enable it there is a -Y flag.
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 17 Feb 2019 13:36:08 +0100
+
 weborf (0.15-1) unstable; urgency=medium
 
     The configuration options for the .conf file are slightly different, so

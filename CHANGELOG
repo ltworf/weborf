@@ -2,6 +2,7 @@
 - qweborf has a normal makefile
 - Authentication example comes with a systemd file
 - CGI wrappers eliminated
+- CGI disabled by default
 
 0.15
 - Finally support https
