@@ -92,8 +92,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SCRPT_TIMEOUT 30        //Timeout for the scripts, in seconds
 #define HIDE_CGI_ERRORS         //Hides all the errors.
 
-//#define CGI_PHP "@cgibindir@/php5"
-//#define CGI_PY "@cgibindir@/weborf_py_wrapper"
 #define CGI_PHP "/usr/lib/cgi-bin/php"
 #define CGI_PY ""
 
