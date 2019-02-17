@@ -115,6 +115,10 @@ static void configuration_set_default_index() {
 }
 
 static void configuration_set_cgi(char *optarg) {
+    if (!optarg || strlen(optarg) == 0) {
+        weborf_conf.cgi_paths.len = 1; //count of indexes
+        return;
+    }
     int i = 0;
     weborf_conf.cgi_paths.len = 1; //count of indexes
     weborf_conf.cgi_paths.data[0] = optarg; //1st one points to begin of param
