@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2007-2018  Salvo "LtWorf" Tomaselli
+Copyright (C) 2007-2019  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -380,9 +380,9 @@ void help() {
            "  -g  --gid     followed by a valid gid\n"
            "  -V, --virtual list of virtualhosts in the form host=basedir, comma-separated\n"
            "  -v, --version print program version\n"
-           "  -x, --noexec  tells weborf to send each file instead of executing scripts\n"
            "  -S, --cert    the certificate to use\n"
            "  -K, --key     the private key to use with the certificate\n"
+           "  -Y, --yesexec enables CGI\n"
            "\n"
            "Report bugs here https://bugs.launchpad.net/weborf\n"
            "or to " PACKAGE_BUGREPORT "\n");
