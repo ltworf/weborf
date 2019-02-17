@@ -18,3 +18,4 @@ autom4te.cache
 qweborf/main.py
 weborf.kdev4
 .kdev4/
+Makefile
