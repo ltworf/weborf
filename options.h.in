@@ -56,7 +56,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 //------------Server
 #define INDEX "index.html"      //Default index file that weborf will search
-#define BASEDIR "/var/www"      //Default basedir
+#define BASEDIR "/srv/www"      //Default basedir
 #define READ_TIMEOUT 5000       //Timeout before closing inactive keep-alive connections, in milliseconds
 
 //------------Buffers

@@ -3,6 +3,7 @@
 - Authentication example comes with a systemd file
 - CGI wrappers eliminated
 - CGI disabled by default
+- Default basedir to /srv/www
 
 0.15
 - Finally support https
