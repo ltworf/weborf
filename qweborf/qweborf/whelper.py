@@ -177,7 +177,7 @@ class weborf_runner():
         '''Starts a weborf in a subprocess'''
 
         cmdline = ["weborf", "-p", str(options['port']), "-b", str(
-            options['path']), "-x", "-I", "....", "-a", auth_socket]
+            options['path']), "-I", "....", "-a", auth_socket]
 
         if options['tar'] and (options['cert'] or options['key']):
             self.logclass.logger('Tar and HTTPS cannot be enabled at the same time', self.logclass.DBG_ERROR)
