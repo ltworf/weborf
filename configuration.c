@@ -122,11 +122,11 @@ static void configuration_set_cgi(char *optarg) {
     int i = 0;
     weborf_conf.cgi_paths.len = 1; //count of indexes
     weborf_conf.cgi_paths.data[0] = optarg; //1st one points to begin of param
-    while (optarg[i++] != 0) { //Reads the string
+    while (optarg[++i] != 0) { //Reads the string
         if (optarg[i] == ',') {
-            optarg[i++] = 0; //Nulling the comma
+            optarg[i] = 0; //Nulling the comma
             //Increasing counter and making next item point to char after the comma
-            weborf_conf.cgi_paths.data[weborf_conf.cgi_paths.len++] = &optarg[i];
+            weborf_conf.cgi_paths.data[weborf_conf.cgi_paths.len++] = &optarg[i + 1];
             if (weborf_conf.cgi_paths.len == MAXINDEXCOUNT) {
                 fprintf(stderr, "Too many cgis, change MAXINDEXCOUNT in options.h to allow more\n");
                 syslog(LOG_ERR, "Too many cgis, change MAXINDEXCOUNT in options.h to allow more\n");
