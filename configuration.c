@@ -249,7 +249,7 @@ void configuration_load(int argc, char *argv[]) {
         c = getopt_long(
             argc,
             argv,
-            "ktTMmvhp:i:I:u:g:dxb:a:V:c:C:S:",
+            "ktTMmvhp:i:I:u:g:dYb:a:V:c:C:S:",
             long_options,
             &option_index
         );
