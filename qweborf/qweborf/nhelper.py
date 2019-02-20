@@ -213,13 +213,10 @@ def getaddrs(ipv6: bool=True) -> List[str]:
         return l_ipv4
 
 
-def open_nat(port: int) -> bool:
+def open_nat(port: int) -> Optional['Redirection']:
     '''Tries to open a port in the nat device
     directing it to the current host.
-
-    RETURNS: a redirection object in case of success
-    None in case of failure'''
-
+    '''
     # Chooses the external port
     eport = port
     used_ports = {i.eport for i in get_redirections()}
@@ -236,7 +233,9 @@ def open_nat(port: int) -> bool:
 
     r = Redirection(port, eport, ip, "TCP", "weborf")
 
-    return r.create_redirection()
+    if create_redirection():
+        return r
+    return None
 
 
 def externaladdr() -> Optional[str]:
@@ -274,9 +273,12 @@ class Redirection(NamedTuple):
     def create_redirection(self) -> bool:
         '''Activates the redirection.
         Returns true if the redirection becomes active'''
-        subprocess.check_call(
-            ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto]
-        )
+        try:
+            subprocess.check_call(
+                ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto]
+            )
+        except:
+            return False
 
         for i in get_redirections():
             if i == self:
