@@ -250,24 +250,6 @@ def externaladdr() -> Optional[str]:
     return out
 
 
-def get_redirections() -> List[Redirection]:
-    '''Returns a list of current NAT redirections'''
-    with subprocess.Popen(['upnpc', '-l'], bufsize=2048, stdout=subprocess.PIPE) as p:
-        out = p.stdout.read().decode('ascii').strip().split('\n')
-
-    redirections = []
-
-    for i in out:
-        m = re.match(
-            r'[ ]*([0-9]+)[ ]+(UDP|TCP)[ ]+([0-9]+)->([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):([0-9]+)[ ]+\'(.*)\' \'\'', i)
-        if m is not None:
-            redirect = m.groups()
-            r = Redirection(redirect[4], redirect[
-                            2], redirect[3], redirect[1], redirect[5])
-            redirections.append(r)
-    return redirections
-
-
 def can_redirect() -> bool:
     '''Returns true if upnpc is installed and NAT traversal can
     be attempted'''
@@ -303,6 +285,24 @@ class Redirection(NamedTuple):
 
     def remove_redirection(self) -> None:
         subprocess.check_call(['upnpc', '-d', str(self.eport), self.proto])
+
+
+def get_redirections() -> List[Redirection]:
+    '''Returns a list of current NAT redirections'''
+    with subprocess.Popen(['upnpc', '-l'], bufsize=2048, stdout=subprocess.PIPE) as p:
+        out = p.stdout.read().decode('ascii').strip().split('\n')
+
+    redirections = []
+
+    for i in out:
+        m = re.match(
+            r'[ ]*([0-9]+)[ ]+(UDP|TCP)[ ]+([0-9]+)->([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):([0-9]+)[ ]+\'(.*)\' \'\'', i)
+        if m is not None:
+            redirect = m.groups()
+            r = Redirection(redirect[4], redirect[
+                            2], redirect[3], redirect[1], redirect[5])
+            redirections.append(r)
+    return redirections
 
 
 def printifconfig() -> None:
