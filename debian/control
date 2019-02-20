@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>
 Build-Depends: debhelper (>= 11), libmagic-dev, python3, dh-python, pyqt5-dev-tools,
  python3-distutils, libssl-dev
-Standards-Version: 4.2.1
+Standards-Version: 4.3.0
 X-Python3-Version: >= 3.6
 Homepage: http://ltworf.github.io/weborf/
 
