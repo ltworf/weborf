@@ -152,20 +152,22 @@ class qweborfForm (QtWidgets.QWidget):
             self.started = True
 
         if self.ui.chkNAT.isChecked() and self.started==True:
-            QtCore.QCoreApplication.processEvents()
             self.logger('Trying to use UPnP to open a redirection in the NAT device. Please wait...')
             QtCore.QCoreApplication.processEvents()
-            external_addr=nhelper.externaladdr()
-            QtCore.QCoreApplication.processEvents()
+            external_addr = nhelper.externaladdr()
             self.logger('Public IP address %s' % str(external_addr))
             QtCore.QCoreApplication.processEvents()
-            if external_addr!=None:
-                redirection=nhelper.open_nat(options['port'])
-                if redirection is not None:
-                    self.redirection=redirection
+            if external_addr:
+                redirection = nhelper.open_nat(options['port'])
+                if redirection:
+                    self.redirection = redirection
                     url='http://%s:%d/' % (external_addr,redirection.eport)
                     logentry='Public address: <a href="%s">%s</a>' % (url,url)
                     self.logger(logentry)
+                else:
+                    self.logger('Could not create NAT route')
+            else:
+                self.logger('Could not find the external IP address')
 
     def select_cert(self) -> None:
         fname = QtWidgets.QFileDialog.getOpenFileName(
