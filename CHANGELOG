@@ -192,7 +192,7 @@
 - Improved file listing
 - Added support for large files
 - Bug: Now authentication works even with spaces within file or directory's names
-- Prepared handling for content-lenght
+- Prepared handling for content-length
 - Bug: POST works again
 - Maximum size for POST requests
 

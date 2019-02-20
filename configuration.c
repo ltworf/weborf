@@ -144,8 +144,8 @@ static void configuration_set_cgi(char *optarg) {
     for (i=0; i<weborf_conf.cgi_paths.len; i++) {
         weborf_conf.cgi_paths.data_l[i]=strlen(weborf_conf.cgi_paths.data[i]);
         if (i % 2 == 0 && weborf_conf.cgi_paths.data_l[i] == 0) {
-            fprintf(stderr, "file extension can't have lenght 0\n");
-            syslog(LOG_ERR, "file extension can't have lenght 0\n");
+            fprintf(stderr, "file extension can't have length 0\n");
+            syslog(LOG_ERR, "file extension can't have length 0\n");
             exit(6);
         }
     }

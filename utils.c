@@ -438,7 +438,7 @@ http_param is the string containing the header
 parameter is the searched parameter
 buf is the buffer where copy the value
 size, maximum size of the buffer
-param_len =lenght of the parameter
+param_len =length of the parameter
 
 Returns false if the parameter isn't found, or true otherwise
 */

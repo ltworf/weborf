@@ -389,10 +389,10 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     long long int content_l;  //Length of the put data
 
     //Gets the value of content-length header
-    bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,strlen("Content-Length"));//14 is content-lenght's len
+    bool r=get_param_value(connection_prop->http_param,"Content-Length", a,NBUFFER,strlen("Content-Length"));//14 is content-length's len
 
 
-    if (r!=false) {//If there is no content-lenght returns error
+    if (r!=false) {//If there is no content-length returns error
         content_l=strtoll( a , NULL, 0 );
     } else {//No data
         return ERR_NODATA;
@@ -1129,7 +1129,7 @@ size is the Content-Length field.
 headers can be NULL or some extra headers to add. Headers must be
 separated by \r\n and must have an \r\n at the end.
 
-Content says if the size is for content-lenght or for entity-length
+Content says if the size is for content-length or for entity-length
 
 Timestamp is the timestamp for the content. Set to -1 to use the current
 timestamp for Last-Modified and to omit ETag.
@@ -1199,7 +1199,7 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
 #endif
 
     if (size>0 || (connection_prop->keep_alive==true)) {
-        //Content length (or entity lenght) and extra headers
+        //Content length (or entity length) and extra headers
         if (content) {
             len_head=snprintf(head,left_head,"Content-Length: %llu\r\n",(unsigned long long int)size);
         } else {
