@@ -4,6 +4,7 @@
 - CGI wrappers eliminated
 - CGI disabled by default
 - Default basedir to /srv/www
+- Bug: webdav reported wrong file size on certain architectures
 
 0.15
 - Finally support https
