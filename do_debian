@@ -19,4 +19,4 @@ cd $TMPDIR
 tar -xvvf weborf_$VERSION.orig.tar.gz
 cd weborf-$VERSION
 cp -r $PRJDIR/debian .
-dpkg-buildpackage
+dpkg-buildpackage --changes-option=-S
