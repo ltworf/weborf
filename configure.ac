@@ -1,4 +1,4 @@
-AC_INIT([weborf], [0.16], [tiposchi@tiscali.it])
+AC_INIT([weborf], [0.17], [tiposchi@tiscali.it])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_SRCDIR([queue.c])
 AC_CONFIG_HEADERS([config.h])
