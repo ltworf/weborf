@@ -6,6 +6,7 @@ Build-Depends: debhelper (>= 12), libmagic-dev, python3, dh-python, pyqt5-dev-to
  python3-distutils, libssl-dev
 Standards-Version: 4.3.0
 X-Python3-Version: >= 3.6
+Rules-Requires-Root: no
 Homepage: http://ltworf.github.io/weborf/
 
 Package: weborf
