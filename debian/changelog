@@ -1,6 +1,7 @@
 weborf (0.16-1) unstable; urgency=medium
 
   * New upstream release
+  * Bump compat to 12
   * Bump Standards-Version to 4.3.0
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 10 Nov 2019 13:49:18 +0100
