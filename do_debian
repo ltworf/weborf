@@ -1,7 +1,7 @@
 #!/bin/sh
 autoreconf -f -i
 ./configure
-make
+make -j
 
 PRJDIR=$(pwd)
 TMPDIR=/tmp/
@@ -12,7 +12,7 @@ VERSION=$(./weborf --version | head -n 1 | cut -d\  -f2)
 rm -rf $TMPDIR/weborf*
 make clean
 ./configure
-make dist
+make -j dist
 mv weborf-$VERSION.tar.gz $TMPDIR/weborf_$VERSION.orig.tar.gz
 gpg --sign --armor --detach-sign $TMPDIR/weborf_$VERSION.orig.tar.gz
 cd $TMPDIR
