@@ -54,8 +54,8 @@ then
     exit 0 #LSB requires 0 termination in each case
 fi
 
-USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
-GROUPID=$(egrep ^"$GROUPNAME" < /etc/group | cut -d: -f3)
+USERID=`cat /etc/passwd | grep "^${USERNAME}:" | cut -d: -f3` #Gets the userid
+GROUPID=$(grep "^${GROUPNAME}:" < /etc/group | cut -d: -f3)
 
 if [ -z "$GROUPID" ]; then
     logger --id=$$ -perror -s "Unable to find group $GROUPNAME"
