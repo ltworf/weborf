@@ -34,7 +34,7 @@ USE_CGI=`cat "$CONFFILE" | egrep "^use-cgi=" | cut -d= -f2`
 USE_MIME=`cat "$CONFFILE" | egrep "^use-mime=" | cut -d= -f2`
 CGI_BIN=`cat "$CONFFILE" | egrep "^cgi=" | cut -d= -f2`
 CACHE_DIR=`cat "$CONFFILE" | egrep "^cachedir=" | cut -d= -f2`
-PORT=`cat "$CONFFILE" | egrep "port=" | cut -d= -f2`
+PORT=`cat "$CONFFILE" | egrep "^port=" | cut -d= -f2`
 AUTH_SOCKET=`cat "$CONFFILE" | grep "^auth-socket=" | cut -d= -f2`
 KEY=`cat "$CONFFILE" | grep "^key=" | cut -d= -f2`
 CERT=`cat "$CONFFILE" | grep "^cert=" | cut -d= -f2`
