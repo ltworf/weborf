@@ -19,7 +19,7 @@
 CONFFILE="$1"
 
 if ! [ -e "$CONFFILE" ]; then
-    logger --id=$$ -perror "File $CONFFILE does not exist"
+    logger --id=$$ -s -perror "File $CONFFILE does not exist"
     exit 1
 fi
 
@@ -123,5 +123,7 @@ if test $USE_MIME = "true"
 then
     MIME="-m"
 fi
+
+logger --id=$$ -s "weborf $2 $DAEMON_OPTS $VIRTUALS $CERT $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN $PORT -u $USERID -g $GROUPID -b $BASEDIR $INDEXES"
 
 exec weborf $2 $DAEMON_OPTS $VIRTUALS $CERT $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN $PORT -u $USERID -g $GROUPID -b $BASEDIR $INDEXES
