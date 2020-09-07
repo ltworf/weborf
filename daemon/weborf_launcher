@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (C) 2018-2019  Salvo "LtWorf" Tomaselli
+# Copyright (C) 2018-2020  Salvo "LtWorf" Tomaselli
 #
 # Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 CONFFILE="$1"
 
 if ! [ -e "$CONFFILE" ]; then
-    logger --id=$$ -perror "File $CONFFILE does not exist"
+    logger --id=$$ -s -perror "File $CONFFILE does not exist"
     exit 1
 fi
 
@@ -34,7 +34,7 @@ USE_CGI=`cat "$CONFFILE" | egrep "^use-cgi=" | cut -d= -f2`
 USE_MIME=`cat "$CONFFILE" | egrep "^use-mime=" | cut -d= -f2`
 CGI_BIN=`cat "$CONFFILE" | egrep "^cgi=" | cut -d= -f2`
 CACHE_DIR=`cat "$CONFFILE" | egrep "^cachedir=" | cut -d= -f2`
-PORT=`cat "$CONFFILE" | egrep "port=" | cut -d= -f2`
+PORT=`cat "$CONFFILE" | egrep "^port=" | cut -d= -f2`
 AUTH_SOCKET=`cat "$CONFFILE" | grep "^auth-socket=" | cut -d= -f2`
 KEY=`cat "$CONFFILE" | grep "^key=" | cut -d= -f2`
 CERT=`cat "$CONFFILE" | grep "^cert=" | cut -d= -f2`
@@ -54,8 +54,8 @@ then
     exit 0 #LSB requires 0 termination in each case
 fi
 
-USERID=`cat /etc/passwd | fgrep $USERNAME | cut -d: -f3` #Gets the userid
-GROUPID=$(egrep ^"$GROUPNAME" < /etc/group | cut -d: -f3)
+USERID=`cat /etc/passwd | grep "^${USERNAME}:" | cut -d: -f3` #Gets the userid
+GROUPID=$(grep "^${GROUPNAME}:" < /etc/group | cut -d: -f3)
 
 if [ -z "$GROUPID" ]; then
     logger --id=$$ -perror -s "Unable to find group $GROUPNAME"
@@ -123,5 +123,7 @@ if test $USE_MIME = "true"
 then
     MIME="-m"
 fi
+
+logger --id=$$ -s "weborf $2 $DAEMON_OPTS $VIRTUALS $CERT $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN $PORT -u $USERID -g $GROUPID -b $BASEDIR $INDEXES"
 
 exec weborf $2 $DAEMON_OPTS $VIRTUALS $CERT $CACHE_DIR $AUTH_SOCKET $MIME $CGI $CGI_BIN $PORT -u $USERID -g $GROUPID -b $BASEDIR $INDEXES
