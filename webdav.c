@@ -489,12 +489,15 @@ int copy_move(connection_t* connection_prop) {
         check_exists=(overwrite[0]!='F');
     }
 
-    dest=strstr(dest,host);
-    if (dest==NULL) {//Something is wrong here
-        retval=ERR_NOTHTTP;
-        goto escape;
+    //Destination might be like http://localhost/destination or just /destination
+    if (dest[0] != '/') {
+        dest=strstr(dest, host);
+        if (dest == NULL) {//Something is wrong here
+            retval = ERR_NOTHTTP;
+            goto escape;
+        }
+        dest += strlen(host);
     }
-    dest+=strlen(host);
 
     //Local path for destination file
     snprintf(destination,PATH_LEN,"%s%s",connection_prop->basedir,dest);
