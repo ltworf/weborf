@@ -7,7 +7,7 @@ Build-Depends: debhelper-compat (= 12), debhelper (>= 12), libmagic-dev, python3
 Standards-Version: 4.4.1
 X-Python3-Version: >= 3.6
 Rules-Requires-Root: no
-Homepage: http://ltworf.github.io/weborf/
+Homepage: https://ltworf.github.io/weborf/
 
 Package: weborf
 Architecture: any
