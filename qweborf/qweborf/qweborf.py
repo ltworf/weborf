@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Weborf
-# Copyright (C) 2010-2019  Salvo "LtWorf" Tomaselli
+# Copyright (C) 2010-2020  Salvo "LtWorf" Tomaselli
 #
 # Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -101,7 +101,7 @@ class qweborfForm (QtWidgets.QWidget):
                     ' This is free software, and you are welcome to redistribute it under certain conditions.'
                     ' For details see the <a href="http://www.gnu.org/licenses/gpl.html">GPLv3 Licese</a>.')
         self.logger(
-            '<a href="http://ltworf.github.io/weborf/">Homepage</a>')
+            '<a href="https://ltworf.github.io/weborf/">Homepage</a>')
         self.logger(
             'Salvo \'LtWorf\' Tomaselli <a href="mailto:tiposchi@tiscali.it">&lt;tiposchi@tiscali.it&gt;</a>')
 
