@@ -1,5 +1,6 @@
 0.17
 - Fix MOVE and COPY methods to support relative URI
+- Fix parsing issues in the daemon startup script
 
 0.16
 - qweborf has a normal makefile
