@@ -20,6 +20,7 @@ import os
 import subprocess
 import socket
 import threading
+from typing import Optional
 from PyQt5 import QtCore
 
 import qweborf.nhelper as nhelper
@@ -31,17 +32,17 @@ class weborf_runner():
         self.logclass = logfunction
         self.logclass.logger("Software initialized")
 
-        self.child = None
+        self.child: Optional[subprocess.Popen] = None
         self.socket = None
         self.listener = None
-        self.waiter = None
+        self.waiter: Optional[_Waiter] = None
         self.methods = set()
-        self.username = None
-        self.password = None
+        self.username: Optional[str] = None
+        self.password: Optional[str] = None
         self.ipv6 = True
         self._running = False
         self.version = ''
-        self.webdav = None
+        self.webdav = False
 
         self.weborf = self._test_weborf()
 
@@ -204,7 +205,7 @@ class weborf_runner():
         self.loglinks(options)
 
         # Starts thread to wait for weborf termination
-        self.waiter = __waiter__(self.child)
+        self.waiter = _Waiter(self.child)
 
         self.waiter.child_terminated.connect(self._child_terminated)
         self.waiter.start()
@@ -220,19 +221,19 @@ class weborf_runner():
             if self.ipv6:
                 addrs6 = nhelper.getaddrs(True)
             else:
-                addrs6 = tuple()
+                addrs6 = []
         else:
             if self.ipv6:
                 # address can be both ipv6 or mapped ipv4
                 if '.' in options['ip']:
-                    addrs6 = (options['ip'],)
-                    addrs4 = (options['ip'][7:],)
+                    addrs6 = [options['ip']]
+                    addrs4 = [options['ip'][7:]]
                 else:  # Normal ipv6
-                    addrs4 = tuple()
-                    addrs6 = (options['ip'],)
+                    addrs4 = []
+                    addrs6 = [options['ip']]
             else:
-                addrs6 = tuple()
-                addrs4 = (options['ip'],)
+                addrs6 = []
+                addrs4 = [options['ip']]
 
         if options['cert'] or options['key']:
             protocol = 'https'
@@ -308,7 +309,7 @@ class __listener__(QtCore.QThread):
                 pass
 
 
-class __waiter__(QtCore.QThread):
+class _Waiter(QtCore.QThread):
 
     '''This class creates a separate thread that will wait for the
     termination of weborf, and performs a callback when it occurs.
@@ -319,7 +320,7 @@ class __waiter__(QtCore.QThread):
 
     child_terminated = QtCore.pyqtSignal(object, object)
 
-    def __init__(self, child):
+    def __init__(self, child) -> None:
         '''child: child process to wait
         '''
         QtCore.QThread.__init__(self)

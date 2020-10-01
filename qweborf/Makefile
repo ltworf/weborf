@@ -23,6 +23,7 @@ qweborf/main.py: qweborf/main.ui
 clean:
 	$(RM) qweborf/main.py
 	$(RM) -r build/
+	$(RM) -r .mypy_cache/
 
 .PHONY: install
 install: qweborf/main.py
@@ -31,3 +32,7 @@ install: qweborf/main.py
 	install -D -m644 man/qweborf.1 $${DESTDIR:-/}/usr/share/man/man1/qweborf.1
 	install -D -m644 integration/qweborf.desktop $${DESTDIR:-/}/usr/share/applications/qweborf.desktop
 	install -D -m644 integration/qweborf_servicemenu.desktop $${DESTDIR:-/}/usr/share/kservices5/ServiceMenus/qweborf_servicemenu.desktop
+
+.PHONY: mypy
+mypy:
+	mypy --config-file mypy.conf qweborf
