@@ -1,4 +1,4 @@
-.TH Weborf 1 "Sep 30, 2020" "Minimal webserver"
+.TH Weborf 1 "Nov 11, 2020" "Minimal webserver"
 .SH NAME
 weborf
 \- Minimal webserver
@@ -35,8 +35,7 @@ In /etc/weborf.conf there is a 'cgi' directive, corresponding to this option. It
 .TP
 .B \-C, \-\-cache
 Must be followed by a directory that will be used to store cached files.
-To flush the cache (empty that directory) you must send SIGUSR2 to the process.
-It is advised to flush the cache on reboot (manually or with kill) because some items might be invalid after a reboot but weborf would not know that.
+To flush the cache (empty that directory) you must delete the files in the directory.
 
 .TP
 .B \-T, \-\-inetd
