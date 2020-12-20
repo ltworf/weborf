@@ -301,8 +301,13 @@ def get_redirections() -> List[Redirection]:
             r'[ ]*([0-9]+)[ ]+(UDP|TCP)[ ]+([0-9]+)->([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):([0-9]+)[ ]+\'(.*)\' \'\'', i)
         if m is not None:
             redirect = m.groups()
-            r = Redirection(redirect[4], redirect[
-                            2], redirect[3], redirect[1], redirect[5])
+            r = Redirection(
+                int(redirect[4]),
+                int(redirect[2]),
+                redirect[3],
+                redirect[1],
+                redirect[5],
+            )
             redirections.append(r)
     return redirections
 
