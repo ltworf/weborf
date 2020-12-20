@@ -181,6 +181,36 @@ def getifaddrs():
     return result
 
 
+class Redirection(NamedTuple):
+    '''This class represents a NAT redirection'''
+    lport: int
+    eport: int
+    ip: str
+    proto: str
+    description: str
+
+    def __str__(self) -> str:
+        return '%s %d->%s:%d\t\'%s\'' % (self.proto, self.eport, self.ip, self.lport, self.description)
+
+    def create_redirection(self) -> bool:
+        '''Activates the redirection.
+        Returns true if the redirection becomes active'''
+        try:
+            subprocess.check_call(
+                ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto]
+            )
+        except:
+            return False
+
+        for i in get_redirections():
+            if i == self:
+                return True
+        return False
+
+    def remove_redirection(self) -> None:
+        subprocess.check_call(['upnpc', '-d', str(self.eport), self.proto])
+
+
 def getaddrs(ipv6: bool=True) -> List[str]:
     '''Returns the list of the IP addresses it is possible to bind to
 
@@ -257,35 +287,6 @@ def can_redirect() -> bool:
             return True
     except:
         return False
-
-class Redirection(NamedTuple):
-    '''This class represents a NAT redirection'''
-    lport: int
-    eport: int
-    ip: str
-    proto: str
-    description: str
-
-    def __str__(self) -> str:
-        return '%s %d->%s:%d\t\'%s\'' % (self.proto, self.eport, self.ip, self.lport, self.description)
-
-    def create_redirection(self) -> bool:
-        '''Activates the redirection.
-        Returns true if the redirection becomes active'''
-        try:
-            subprocess.check_call(
-                ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto]
-            )
-        except:
-            return False
-
-        for i in get_redirections():
-            if i == self:
-                return True
-        return False
-
-    def remove_redirection(self) -> None:
-        subprocess.check_call(['upnpc', '-d', str(self.eport), self.proto])
 
 
 def get_redirections() -> List[Redirection]:
