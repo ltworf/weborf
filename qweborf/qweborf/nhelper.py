@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 # Weborf
-# Copyright (C) 2011-2019  Salvo "LtWorf" Tomaselli
+# Copyright (C) 2011-2020  Salvo "LtWorf" Tomaselli
 #
 # Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -182,6 +181,36 @@ def getifaddrs():
     return result
 
 
+class Redirection(NamedTuple):
+    '''This class represents a NAT redirection'''
+    lport: int
+    eport: int
+    ip: str
+    proto: str
+    description: str
+
+    def __str__(self) -> str:
+        return '%s %d->%s:%d\t\'%s\'' % (self.proto, self.eport, self.ip, self.lport, self.description)
+
+    def create_redirection(self) -> bool:
+        '''Activates the redirection.
+        Returns true if the redirection becomes active'''
+        try:
+            subprocess.check_call(
+                ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto]
+            )
+        except:
+            return False
+
+        for i in get_redirections():
+            if i == self:
+                return True
+        return False
+
+    def remove_redirection(self) -> None:
+        subprocess.check_call(['upnpc', '-d', str(self.eport), self.proto])
+
+
 def getaddrs(ipv6: bool=True) -> List[str]:
     '''Returns the list of the IP addresses it is possible to bind to
 
@@ -241,8 +270,7 @@ def open_nat(port: int) -> Optional[Redirection]:
 def externaladdr() -> Optional[str]:
     '''Returns the public IP address.
     none in case of error'''
-    with subprocess.Popen(['external-ip'], bufsize=1024, stdout=subprocess.PIPE) as p:
-        out = p.stdout.readline().decode('ascii').strip()
+    out = subprocess.check_output(['external-ip']).decode('ascii').strip()
 
     if re.match(r'[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}', out) == None:
         return None
@@ -254,45 +282,15 @@ def can_redirect() -> bool:
     be attempted'''
 
     try:
-        with subprocess.Popen(['upnpc'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT) as p:
-            return True
+        subprocess.call(['upnpc'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        return True
     except:
         return False
-
-class Redirection(NamedTuple):
-    '''This class represents a NAT redirection'''
-    lport: int
-    eport: int
-    ip: str
-    proto: str
-    description: str
-
-    def __str__(self) -> str:
-        return '%s %d->%s:%d\t\'%s\'' % (self.proto, self.eport, self.ip, self.lport, self.description)
-
-    def create_redirection(self) -> bool:
-        '''Activates the redirection.
-        Returns true if the redirection becomes active'''
-        try:
-            subprocess.check_call(
-                ['upnpc', '-a', self.ip, str(self.lport), str(self.eport), self.proto]
-            )
-        except:
-            return False
-
-        for i in get_redirections():
-            if i == self:
-                return True
-        return False
-
-    def remove_redirection(self) -> None:
-        subprocess.check_call(['upnpc', '-d', str(self.eport), self.proto])
 
 
 def get_redirections() -> List[Redirection]:
     '''Returns a list of current NAT redirections'''
-    with subprocess.Popen(['upnpc', '-l'], bufsize=2048, stdout=subprocess.PIPE) as p:
-        out = p.stdout.read().decode('ascii').strip().split('\n')
+    out = subprocess.check_output(['upnpc', '-l']).decode('ascii').strip().split('\n')
 
     redirections = []
 
@@ -301,8 +299,13 @@ def get_redirections() -> List[Redirection]:
             r'[ ]*([0-9]+)[ ]+(UDP|TCP)[ ]+([0-9]+)->([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):([0-9]+)[ ]+\'(.*)\' \'\'', i)
         if m is not None:
             redirect = m.groups()
-            r = Redirection(redirect[4], redirect[
-                            2], redirect[3], redirect[1], redirect[5])
+            r = Redirection(
+                int(redirect[4]),
+                int(redirect[2]),
+                redirect[3],
+                redirect[1],
+                redirect[5],
+            )
             redirections.append(r)
     return redirections
 
