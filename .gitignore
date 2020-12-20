@@ -19,3 +19,5 @@ qweborf/main.py
 weborf.kdev4
 .kdev4/
 Makefile
+*.log
+*.trs
