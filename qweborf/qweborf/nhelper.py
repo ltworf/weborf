@@ -270,8 +270,7 @@ def open_nat(port: int) -> Optional[Redirection]:
 def externaladdr() -> Optional[str]:
     '''Returns the public IP address.
     none in case of error'''
-    with subprocess.Popen(['external-ip'], bufsize=1024, stdout=subprocess.PIPE) as p:
-        out = p.stdout.readline().decode('ascii').strip()
+    out = subprocess.check_output(['external-ip']).decode('ascii').strip()
 
     if re.match(r'[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}', out) == None:
         return None
@@ -283,16 +282,15 @@ def can_redirect() -> bool:
     be attempted'''
 
     try:
-        with subprocess.Popen(['upnpc'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT) as p:
-            return True
+        subprocess.call(['upnpc'], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        return True
     except:
         return False
 
 
 def get_redirections() -> List[Redirection]:
     '''Returns a list of current NAT redirections'''
-    with subprocess.Popen(['upnpc', '-l'], bufsize=2048, stdout=subprocess.PIPE) as p:
-        out = p.stdout.read().decode('ascii').strip().split('\n')
+    out = subprocess.check_output(['upnpc', '-l']).decode('ascii').strip().split('\n')
 
     redirections = []
 

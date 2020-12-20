@@ -52,30 +52,33 @@ class weborf_runner():
         and false otherwise.'''
 
         try:
-            with subprocess.Popen(["weborf", "-k"], bufsize=1024, stdout=subprocess.PIPE) as p:
-                out = p.stdout.read().decode('ascii').strip()
-                capabilities = {key: value for key, value in (
-                    i.split(':', 1) for i in (l for l in out.split('\n')))}
+            out = subprocess.check_output(["weborf", "-k"]).decode('ascii').strip().split('\n')
+        except Exception as e:
+            self.logclass.logger(f'Unable to check capabilities weborf.\n{e}', self.logclass.DBG_ERROR)
+            return False
 
-                self.version = capabilities['version']
-                self.ipv6 = capabilities['ipv'] == '6'
-                self.webdav = capabilities['webdav'] == 'yes'
-                self.https = capabilities.get('https') == 'yes'
+        try:
+            capabilities = {}
+            for i in out:
+                k, v = i.split(':', 1)
+                capabilities[k] = v
 
-                self.logclass.logger('Weborf version %s found' %
-                                     self.version, self.logclass.DBG_NOTICE)
-                self.logclass.logger('IPv%s protocol in use' %
-                                     capabilities['ipv'], self.logclass.DBG_NOTICE)
-                self.logclass.logger('Has webdav support: %s' % capabilities['webdav'], self.logclass.DBG_NOTICE)
+            self.version = capabilities['version']
+            self.ipv6 = capabilities['ipv'] == '6'
+            self.webdav = capabilities['webdav'] == 'yes'
+            self.https = capabilities.get('https') == 'yes'
 
-                if capabilities['embedded_auth'] == 'yes':
-                    self.logclass.logger('Binary compiled with embedded authentication', self.logclass.DBG_ERROR)
-                    return False
+            self.logclass.logger('Weborf version %s found' %
+                                    self.version, self.logclass.DBG_NOTICE)
+            self.logclass.logger('IPv%s protocol in use' %
+                                    capabilities['ipv'], self.logclass.DBG_NOTICE)
+            self.logclass.logger('Has webdav support: %s' % capabilities['webdav'], self.logclass.DBG_NOTICE)
 
-                return True
-        except FileNotFoundError:
-            self.logclass.logger(
-                'Unable to find weborf', self.logclass.DBG_ERROR)
+            if capabilities['embedded_auth'] == 'yes':
+                self.logclass.logger('Binary compiled with embedded authentication', self.logclass.DBG_ERROR)
+                return False
+
+            return True
         except KeyError as e:
             self.logclass.logger(
                 'Capability %s not supported' % e, self.logclass.DBG_ERROR)
