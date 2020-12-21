@@ -1,5 +1,5 @@
 #!/bin/sh
 set -ex
-weborf --help
-weborf --version
-weborf -k
+./weborf --help
+./weborf --version
+./weborf -k
