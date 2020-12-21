@@ -17,4 +17,4 @@ jobs:
     - name: configure
       run: ./configure
     - name: weborf tests
-      run: make check
+      run: make check || (cat test-suite.log; false)
