@@ -2,7 +2,7 @@
 set -mex
 cd $(dirname $0)
 
-./weborf -b site1 -p 12346  --cert cert/certificate.pem --key cert/key.pem &
+../weborf -b site1 -p 12346  --cert cert/certificate.pem --key cert/key.pem &
 WEBORF_PID=$(jobs -p)
 
 ROBOTS=$(curl -s -k https://127.0.0.1:12346/robots.txt)
