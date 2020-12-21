@@ -2,10 +2,9 @@
 set -mex
 cd $(dirname $0)
 
-weborf -b site1 -p 12346  --mime &
+weborf -b site1 -p 12347  --mime &
 WEBORF_PID=$(jobs -p)
 
-curl -v http://127.0.0.1:12346/robots.txt
-curl -v http://127.0.0.1:12346/robots.txt |& grep Content-Type | grep text/
+curl -v http://127.0.0.1:12347/robots.txt |& grep Content-Type | grep text/
 
 kill -9 $WEBORF_PID
