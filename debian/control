@@ -3,7 +3,7 @@ Section: httpd
 Priority: optional
 Maintainer: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>
 Build-Depends: debhelper-compat (= 12), debhelper (>= 12), libmagic-dev, python3, dh-python, pyqt5-dev-tools,
- python3-distutils, libssl-dev
+ python3-distutils, libssl-dev, curl
 Standards-Version: 4.4.1
 X-Python3-Version: >= 3.6
 Rules-Requires-Root: no

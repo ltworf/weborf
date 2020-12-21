@@ -39,6 +39,7 @@ EXTRA_DIST = \
     examples \
     daemon \
     weborf.conf \
+    testsuite/* \
     qweborf/qweborf/__init__.py \
     qweborf/qweborf/main.ui \
     qweborf/qweborf/nhelper.py \
@@ -78,3 +79,9 @@ dist_doc_DATA = \
     Credits \
     README.md \
     TODOlist
+
+TESTS = \
+    testsuite/version_and_help \
+    testsuite/site1http \
+    testsuite/site1https \
+    testsuite/site1mimetype
