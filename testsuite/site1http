@@ -2,10 +2,10 @@
 set -mex
 cd $(dirname $0)
 
-weborf -b site1 -p 12346 &
+weborf -b site1 -p 12345 &
 WEBORF_PID=$(jobs -p)
 
-ROBOTS=$(curl -s http://127.0.0.1:12346/robots.txt)
+ROBOTS=$(curl -s http://127.0.0.1:12345/robots.txt)
 
 kill -9 $WEBORF_PID
 
