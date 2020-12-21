@@ -1,0 +1,18 @@
+name: make check
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run testsuite
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: autoreconf
+      run: autoreconf -f -i
+    - name: weborf tests
+      run: make check
