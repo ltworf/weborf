@@ -87,7 +87,7 @@ static inline int check_etag(connection_t* connection_prop,char *a) {
         time_t etag=(time_t)strtol(a+1,NULL,0);
         if (connection_prop->strfile_stat.st_mtime==etag) {
             //Browser has the item in its cache, sending 304
-            send_http_header(304,0,NULL,true,etag,connection_prop);
+            send_http_header(304, NULL, NULL, true, etag, connection_prop);
             return 0;
         }
     }
@@ -492,7 +492,7 @@ static inline int options (connection_t* connection_prop) {
 #define ALLOWED "Allow: GET,POST,PUT,DELETE,OPTIONS\r\n"
 #endif
 
-    send_http_header(200,0,ALLOWED,true,-1,connection_prop);
+    send_http_header(200, NULL, ALLOWED, true, -1, connection_prop);
     return 0;
 }
 
@@ -593,7 +593,7 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
-            send_http_header(301,0,head,true,-1,connection_prop);
+            send_http_header(301, NULL, head, true, -1, connection_prop);
             return 0;
         } else {//Requested directory with "/" Search for index files or list directory
 
@@ -606,7 +606,7 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
                 if (file_exists(connection_prop->strfile)) { //If index exists, redirect to it
                     char head[URI_LEN+12];//12 is the size for the location header
                     snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes[i]);
-                    send_http_header(303,0,head,true,-1,connection_prop);
+                    send_http_header(303, NULL, head, true, -1, connection_prop);
                     return 0;
                 }
             }
@@ -670,9 +670,9 @@ static int send_error_header(int retval, connection_t *connection_prop) {
     case ERR_NOAUTH:
         return request_auth(connection_prop);//Sends a request for authentication
     case OK_NOCONTENT:
-        return send_http_header(204,0,NULL,true,-1,connection_prop);
+        return send_http_header(204, NULL, NULL, true, -1, connection_prop);
     case OK_CREATED:
-        return send_http_header(201,0,NULL,true,-1,connection_prop);
+        return send_http_header(201, NULL, NULL, true, -1, connection_prop);
     }
     return 0; //Make gcc happy
 }
@@ -701,7 +701,7 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
     if (cache_send_item(0,connection_prop)) return 0;
 
 
-    int pagelen;
+    unsigned long long int pagelen;
     bool parent;
 
     /*
@@ -750,7 +750,7 @@ int write_dir(char* real_basedir,connection_t* connection_prop) {
         */
         send_http_header(
             200,
-            pagelen,
+            &pagelen,
             "Content-Type: text/html\r\n",
             true,
             connection_prop->strfile_stat.st_mtime,
@@ -804,7 +804,7 @@ static inline int write_compressed_file(connection_t* connection_prop ) {
 
     connection_prop->keep_alive=false;
     send_http_header(200,
-                     connection_prop->strfile_stat.st_size,
+                     &connection_prop->strfile_stat.st_size,
                      "Content-Encoding: gzip\r\n",
                      false,
                      connection_prop->strfile_stat.st_mtime,
@@ -865,7 +865,6 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
      * If range header is present and (If-Range has the same etag OR there is no If-Range)
      * */
     if (range_header && connection_prop->strfile_stat.st_mtime==etag) {//Find if it is a range request 5 is strlen of "range"
-
         unsigned long long int from;
         unsigned long long int to;
 
@@ -910,7 +909,6 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         count = connection_prop->strfile_stat.st_size;
     }
 
-
     //Sending MIME to the client
 #ifdef SEND_MIMETYPES
     if (weborf_conf.send_content_type) {
@@ -923,8 +921,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         //remain-=t;
     }
 #endif
-
-    send_http_header(http_code,count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
+    send_http_header(http_code, &count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
     return count;
 }
 
@@ -1150,7 +1147,7 @@ This function will automatically take care of generating Connection header when
 needed, according to keep_alive and protocol_version of connection_prop
 
 */
-int send_http_header(int code, unsigned long long int size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
+int send_http_header(int code, unsigned long long int *size,char* headers,bool content,time_t timestamp,connection_t* connection_prop) {
     fd_t sock = connection_prop->sock;
     int len_head,wrote;
     char *head=malloc(HEADBUF);
@@ -1210,12 +1207,12 @@ int send_http_header(int code, unsigned long long int size,char* headers,bool co
     }
 #endif
 
-    if (size>0 || (connection_prop->keep_alive==true)) {
+    if (size != NULL && connection_prop->keep_alive==true) {
         //Content length (or entity length) and extra headers
         if (content) {
-            len_head=snprintf(head,left_head,"Content-Length: %llu\r\n",(unsigned long long int)size);
+            len_head=snprintf(head,left_head,"Content-Length: %llu\r\n", *size);
         } else {
-            len_head=snprintf(head,left_head,"entity-length: %llu\r\n",(unsigned long long int)size);
+            len_head=snprintf(head,left_head,"entity-length: %llu\r\n", *size);
         }
 
         head+=len_head;
@@ -1256,7 +1253,7 @@ static int tar_send_dir(connection_t* connection_prop) {
             );
 
     send_http_header(200,
-                     0,
+                     NULL,
                      headers,
                      true,
                      -1,

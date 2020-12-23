@@ -321,7 +321,7 @@ int propfind(connection_t* connection_prop, string_t *post_param) {
         if (S_ISDIR(connection_prop->strfile_stat.st_mode) && !endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
-            send_http_header(301,0,head,true,-1,connection_prop);
+            send_http_header(301, NULL, head, true, -1, connection_prop);
             return 0;
         }
     } // End redirection
@@ -339,7 +339,7 @@ int propfind(connection_t* connection_prop, string_t *post_param) {
 
     //Sets keep alive to false (have no clue about how big is the generated xml) and sends a multistatus header code
     connection_prop->keep_alive=false;
-    send_http_header(207,0,"Content-Type: text/xml; charset=\"utf-8\"\r\n",false,-1,connection_prop);
+    send_http_header(207, NULL, "Content-Type: text/xml; charset=\"utf-8\"\r\n", false, -1, connection_prop);
 
     //Check if exists in cache
     if (has_cache) {
