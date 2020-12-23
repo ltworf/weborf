@@ -1,0 +1,10 @@
+#!/bin/bash
+set -mex
+cd $(dirname $0)
+
+../weborf -b site1 -p 12350 --yesexec --cgi .py,/usr/bin/python3 &
+WEBORF_PID=$(jobs -p)
+
+curl -vs -H 'If-None-Match: "1545650587"' http://localhost:12350/cgi.py
+
+kill -9 $WEBORF_PID
