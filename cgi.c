@@ -186,11 +186,13 @@ static inline void cgi_set_env_content_length() {
 /**
  * Will chdir to the same directory that contains the CGI script
  * */
-static inline void cgi_child_chdir(connection_t *connection_prop) {
+static inline char* cgi_child_chdir(connection_t *connection_prop) {
     //chdir to the directory
     char* last_slash = rindex(connection_prop->strfile, '/');
     last_slash[0] = 0;
     chdir(connection_prop->strfile);
+    last_slash[0] = '/';
+    return last_slash + 1;
 }
 
 /**
@@ -234,10 +236,10 @@ static inline void cgi_execute_child(connection_t* connection_prop,string_t* pos
     cgi_set_SERVER_ADDR_PORT(myio_getfd(connection_prop->sock));
     cgi_set_env_vars(connection_prop, real_basedir);
     cgi_set_env_content_length();
-    cgi_child_chdir(connection_prop);
+    char *filename = cgi_child_chdir(connection_prop);
 
     alarm(SCRPT_TIMEOUT); //Sets the timeout for the script
-    execl(executor, executor, (char *)0);
+    execl(executor, executor, filename, (char *)0);
 #ifdef SERVERDBG
     syslog(LOG_ERR,"Execution of %s failed", executor);
     perror("Execution of the page failed");
