@@ -1,0 +1,29 @@
+#!/bin/bash
+set -mex
+cd $(dirname $0)
+
+../weborf -b site1 -p 12349 &
+WEBORF_PID=$(jobs -p)
+
+# ETag header is there
+curl -sv http://127.0.0.1:12349/robots.txt  |& grep ETag
+
+ETAG=$(curl -sv http://127.0.0.1:12349/robots.txt  |& grep ETag | cut -d\  -f3 | tr -d '\r')
+
+CACHED=$(curl -vs -H "If-None-Match: $ETAG" http://localhost:12349/robots.txt)
+[[ $(printf $CACHED | wc -c) = 0 ]]
+
+
+NON_CACHED=$(curl -vs -H 'If-None-Match: "aaaa"' http://localhost:12349/robots.txt)
+[[ "$NON_CACHED" = $(cat site1/robots.txt) ]]
+
+
+CACHED=$(curl -vs -H "If-Range: $ETAG" --range 0-3 http://localhost:12349/robots.txt)
+[[ $(printf $CACHED | wc -c) = 4 ]]
+
+
+CACHED=$(curl -vs -H 'If-Range: "qwe"' --range 0-3 http://localhost:12349/robots.txt)
+[[ $(printf $CACHED | wc -c) != 4 ]]
+
+
+kill -9 $WEBORF_PID
