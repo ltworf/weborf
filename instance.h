@@ -53,6 +53,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define NO_ACTION -120
 
 //Errors
+#define ERR_RANGE_NOT_SATISFIABLE -15
 #define ERR_PRECONDITION_FAILED -14
 #define ERR_NOT_ALLOWED -13
 #define ERR_INSUFFICIENT_STORAGE -12

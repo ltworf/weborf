@@ -650,6 +650,8 @@ static int send_error_header(int retval, connection_t *connection_prop) {
     case ERR_SERVICE_UNAVAILABLE:
     case ERR_NOMEM:
         return send_err(connection_prop,503,"Service Unavailable");
+    case ERR_RANGE_NOT_SATISFIABLE:
+        return send_err(connection_prop,416,"Range not satisfiable");
     case ERR_NODATA:
     case ERR_NOTHTTP:
         return send_err(connection_prop,400,"Bad request");
@@ -892,8 +894,8 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         remain-=t;
 
         count = to - from + 1;
-        if (from + count> connection_prop->strfile_stat.st_size) {
-            *errcode = ERR_NOTHTTP;
+        if (from + count >= connection_prop->strfile_stat.st_size) {
+            *errcode = ERR_RANGE_NOT_SATISFIABLE;
             return 0;
         }
 
