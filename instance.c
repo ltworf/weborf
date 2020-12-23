@@ -873,16 +873,16 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
             char *eq, *sep;
 
             if ((eq=strstr(a,"="))==NULL ||(sep=strstr(eq,"-"))==NULL) {//Invalid data in Range header.
-                errno =ERR_NOTHTTP;
+                errno = ERR_NOTHTTP;
                 return ERR_NOTHTTP;
             }
             sep[0]=0;
             from=strtoll(eq+1,NULL,0);
             to=strtoll(sep+1,NULL,0);
-        }
 
-        if (to==0) { //If no to is specified, it is to the end of the file
-            to=connection_prop->strfile_stat.st_size-1;
+            if (to == 0 && strlen(sep +1) == 0) { //If no to is specified, it is to the end of the file
+                to=connection_prop->strfile_stat.st_size-1;
+            }
         }
 
         http_code=206;
