@@ -894,7 +894,7 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         remain-=t;
 
         count = to - from + 1;
-        if (from + count >= connection_prop->strfile_stat.st_size) {
+        if (from >= connection_prop->strfile_stat.st_size || from + count > connection_prop->strfile_stat.st_size) {
             *errcode = ERR_RANGE_NOT_SATISFIABLE;
             return 0;
         }
