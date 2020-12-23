@@ -280,74 +280,66 @@ static inline int cgi_waitfor_child(connection_t* connection_prop,string_t* post
         close (ipipe[1]); //Closes the pipe
     }
 
-    {
-        int state;
-        waitpid (wpid,&state,0); //Wait the termination of the script
-    }
-
     //Reads output of the script
-    int e_reads=read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF);
+    int e_reads=read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF-1);
+    header_buf[e_reads] = '\0';
 
     //Separating header from contents
-    char* scrpt_buf=strstr(header_buf,"\r\n\r\n");
-    int reads=0;
+    char* scrpt_buf=strstr(header_buf, "\r\n\r\n");
+
+    long long unsigned int cgi_content_s = 0;
     if (scrpt_buf!=NULL) {
         scrpt_buf+=2;
         scrpt_buf[0]=0;
         scrpt_buf=scrpt_buf+2;
-        reads=e_reads - (int)(scrpt_buf-header_buf);//Len of the content
+        cgi_content_s = e_reads - (scrpt_buf - header_buf);//Len of the content
     } else {//Something went wrong, ignoring the output (it's missing the headers)
         e_reads=0;
     }
 
     if (e_reads>0) {//There is output from script
-        unsigned int status; //Standard status
+        unsigned int status = 200; //Standard status
         {
             //Reading if there is another status
             char*s=strstr(header_buf,"Status: ");
             if (s!=NULL) {
                 status=(unsigned int)strtoul( s+8 , NULL, 0 );
-            } else {
-                status=200; //Standard status
             }
         }
 
         /* There could be other data, which didn't fit in the buffer,
         so we set reads to -1 (this will make connection non-keep-alive)
         and we continue reading and writing to the socket */
-        if (e_reads==MAXSCRIPTOUT+HEADBUF) {
-            reads=-1;
-            connection_prop->keep_alive=false;
+
+        connection_prop->keep_alive = false;
+        send_http_header(status, NULL, header_buf, true, -1, connection_prop);
+
+        if (cgi_content_s) {//Sends the page if there is something to send
+            myio_write(connection_prop->sock, scrpt_buf, cgi_content_s);
         }
 
-        /*
-        Sends header,
-        reads is the size
-        true tells to use Content-Length rather than entity-length
-        -1 won't use any ETag, and will eventually use the current time as last-modified
-        */
-        send_http_header(status,reads,header_buf,true,-1,connection_prop);
 
-        if (reads!=0) {//Sends the page if there is something to send
-            myio_write(connection_prop->sock, scrpt_buf, reads);
-        }
-
-        if (reads==-1) {//Reading until the pipe is empty, if it wasn't fully read before
-            e_reads=MAXSCRIPTOUT+HEADBUF;
-            while (e_reads==MAXSCRIPTOUT+HEADBUF) {
-                e_reads=read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF);
-                myio_write(connection_prop->sock, header_buf, e_reads);
-            }
+        e_reads = 1;
+        while (e_reads) {
+            e_reads = read(wpipe[0],header_buf,MAXSCRIPTOUT+HEADBUF);
+            if (myio_write(connection_prop->sock, header_buf, e_reads) != e_reads)
+                break; //Write error, just break, can't send errors now
         }
 
         //Closing pipe
-        close (wpipe[0]);
+        close(wpipe[0]);
 
     } else {//No output from script, maybe terminated...
         send_err(connection_prop,500,"Internal server error");
     }
 
     free(header_buf);
+
+    {
+        int state;
+        waitpid (wpid,&state,0); //Wait the termination of the script
+    }
+
     return 0;
 }
 
