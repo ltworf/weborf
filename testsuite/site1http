@@ -11,4 +11,6 @@ ROBOTS=$(curl -s http://127.0.0.1:12345/robots.txt)
 ROBOTS=$(curl -s http://127.0.0.1:12345/empty)
 [[ "$ROBOTS" = '' ]]
 
+curl -s http://127.0.0.1:12345/cgi.py | grep "import os"
+
 kill -9 $WEBORF_PID
