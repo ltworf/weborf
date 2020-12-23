@@ -647,6 +647,7 @@ static int send_error_header(int retval, connection_t *connection_prop) {
         return send_err(connection_prop,500,"Internal server error");
     case ERR_FILENOTFOUND:
         return send_err(connection_prop,404,"Page not found");
+    case ERR_SERVICE_UNAVAILABLE:
     case ERR_NOMEM:
         return send_err(connection_prop,503,"Service Unavailable");
     case ERR_NODATA:
@@ -656,8 +657,6 @@ static int send_error_header(int retval, connection_t *connection_prop) {
         return send_err(connection_prop,403,"Forbidden");
     case ERR_NOTIMPLEMENTED:
         return send_err(connection_prop,501,"Not implemented");
-    case ERR_SERVICE_UNAVAILABLE:
-        return send_err(connection_prop,503,"Service Unavailable");
     case ERR_PRECONDITION_FAILED:
         return send_err(connection_prop,412,"Precondition Failed");
     case ERR_CONFLICT:
