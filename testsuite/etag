@@ -1,5 +1,4 @@
 #!/bin/bash
-exit 0
 set -mex
 cd $(dirname $0)
 
