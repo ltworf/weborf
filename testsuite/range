@@ -1,0 +1,23 @@
+#!/bin/bash
+set -mex
+cd $(dirname $0)
+../weborf -b site1 -p 12348 &
+WEBORF_PID=$(jobs -p)
+# ETag header is there
+curl -sv http://127.0.0.1:12348/robots.txt  |& grep Content-Length
+CONTENT_LENGTH=$(curl -sv http://127.0.0.1:12348/robots.txt |& grep Content-Length | cut -d\  -f3 | tr -d '\r')
+ROBOTS="$(
+    curl -s -r0-5 http://127.0.0.1:12348/robots.txt;
+    curl -s -r6-10 http://127.0.0.1:12348/robots.txt;
+    curl -s -r11- http://127.0.0.1:12348/robots.txt)"
+
+curl -s -r0-$(($CONTENT_LENGTH - 1)) http://127.0.0.1:12348/robots.txt
+
+if curl -s --fail -r0-$CONTENT_LENGTH http://127.0.0.1:12348/robots.txt; then
+    exit 1
+fi
+
+[[ $(curl -s -r0-0 http://127.0.0.1:12348/robots.txt | wc -c) = 1 ]]
+kill -9 $WEBORF_PID
+
+[[ "$ROBOTS" = $(cat site1/robots.txt) ]]

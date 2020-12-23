@@ -85,5 +85,6 @@ TESTS = \
     testsuite/site1http \
     testsuite/site1https \
     testsuite/ip_listener \
+    testsuite/range \
     testsuite/site1mimetype
 
