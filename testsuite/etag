@@ -1,0 +1,14 @@
+#!/bin/bash
+exit 0
+set -mex
+cd $(dirname $0)
+
+../weborf -b site1 -p 12349 &
+WEBORF_PID=$(jobs -p)
+
+# ETag header is there
+curl -sv http://127.0.0.1:12349/robots.txt  |& grep ETag
+
+ETAG=$(curl -sv http://127.0.0.1:12349/robots.txt  |& grep ETag | cut -d\  -f3 | tr -d '\r')
+
+kill -9 $WEBORF_PID
