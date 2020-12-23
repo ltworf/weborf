@@ -837,7 +837,7 @@ static inline int write_compressed_file(connection_t* connection_prop ) {
  *
  * a must be a pointer to a buffer large at least RBUFFER+MIMETYPELEN+16
  * */
-static inline unsigned long long int bytes_to_send(connection_t* connection_prop,char *a) {
+static inline unsigned long long int bytes_to_send(connection_t* connection_prop, char *a, int *errcode) {
     int http_code=200;
     errno=0;
     unsigned long long int count;
@@ -865,7 +865,8 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
      * */
     if (range_header && connection_prop->strfile_stat.st_mtime==etag) {//Find if it is a range request 5 is strlen of "range"
 
-        unsigned long long int from,to;
+        unsigned long long int from;
+        unsigned long long int to;
 
         {
             //Locating from and to
@@ -873,8 +874,8 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
             char *eq, *sep;
 
             if ((eq=strstr(a,"="))==NULL ||(sep=strstr(eq,"-"))==NULL) {//Invalid data in Range header.
-                errno = ERR_NOTHTTP;
-                return ERR_NOTHTTP;
+                *errcode = ERR_NOTHTTP;
+                return 0;
             }
             sep[0]=0;
             from=strtoll(eq+1,NULL,0);
@@ -887,18 +888,25 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
 
         http_code=206;
 
-        t=snprintf(hbuf,remain,"Accept-Ranges: bytes\r\nContent-Range: bytes %llu-%llu/%lld\r\n",(unsigned long long int)from,(unsigned long long int)to,(long long int)connection_prop->strfile_stat.st_size);
+        t=snprintf(hbuf,remain,"Accept-Ranges: bytes\r\nContent-Range: bytes %llu-%llu/%lld\r\n", from, to,(long long int)connection_prop->strfile_stat.st_size);
         hbuf+=t;
         remain-=t;
 
-        lseek(connection_prop->strfile_fd,from,SEEK_SET);
-        count=to-from+1;
+        count = to - from + 1;
+        if (from + count> connection_prop->strfile_stat.st_size) {
+            *errcode = ERR_NOTHTTP;
+            return 0;
+        }
+
+        if (from)
+            lseek(connection_prop->strfile_fd,from,SEEK_SET);
+
 
     } else //Normal request
 #endif
     {
         a[0]=0; //Reset buffer in case it isn't used for headers
-        count=connection_prop->strfile_stat.st_size;
+        count = connection_prop->strfile_stat.st_size;
     }
 
 
@@ -954,7 +962,10 @@ int write_file(connection_t* connection_prop) {
 
     //Determines how many bytes send, depending on file size and ranges
     //Also sends the http header
-    unsigned long long int count= bytes_to_send(connection_prop,&a[0]);
+    int errcode = 0;
+    unsigned long long int count = bytes_to_send(connection_prop,&a[0], &errcode);
+    if (errcode != 0)
+        return errcode;
     /*if (errno !=0) {
         int e=errno;
         errno=0;
