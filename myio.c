@@ -79,6 +79,9 @@ int fd_copy(fd_t from, fd_t to, off_t count) {
 
     //Sends file
     while (count>0 && (reads=myio_read(from, buf, FILEBUF<count ? FILEBUF : count)) > 0) {
+        if (reads == 0) { // Descriptor is over
+            return ERR_NODATA;
+        }
         count -= reads;
         wrote = myio_write(to, buf, reads);
         if (wrote != reads) { //Error writing to the descriptor

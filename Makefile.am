@@ -1,4 +1,4 @@
-#SUBDIRS = 
+#SUBDIRS =
 
 bin_PROGRAMS = weborf
 weborf_SOURCES = \
@@ -84,4 +84,7 @@ TESTS = \
     testsuite/version_and_help \
     testsuite/site1http \
     testsuite/site1https \
+    testsuite/ip_listener \
+    testsuite/range \
     testsuite/site1mimetype
+
