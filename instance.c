@@ -865,7 +865,6 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
      * If range header is present and (If-Range has the same etag OR there is no If-Range)
      * */
     if (range_header && connection_prop->strfile_stat.st_mtime==etag) {//Find if it is a range request 5 is strlen of "range"
-
         unsigned long long int from;
         unsigned long long int to;
 
@@ -910,7 +909,6 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         count = connection_prop->strfile_stat.st_size;
     }
 
-
     //Sending MIME to the client
 #ifdef SEND_MIMETYPES
     if (weborf_conf.send_content_type) {
@@ -923,7 +921,6 @@ static inline unsigned long long int bytes_to_send(connection_t* connection_prop
         //remain-=t;
     }
 #endif
-
     send_http_header(http_code, &count,a,true,connection_prop->strfile_stat.st_mtime,connection_prop);
     return count;
 }
@@ -1210,7 +1207,7 @@ int send_http_header(int code, unsigned long long int *size,char* headers,bool c
     }
 #endif
 
-    if (size != NULL || (connection_prop->keep_alive==true)) {
+    if (size != NULL && connection_prop->keep_alive==true) {
         //Content length (or entity length) and extra headers
         if (content) {
             len_head=snprintf(head,left_head,"Content-Length: %llu\r\n", *size);
