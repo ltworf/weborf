@@ -6,7 +6,9 @@ cd $(dirname $0)
 WEBORF_PID=$(jobs -p)
 
 ROBOTS=$(curl -s http://127.0.0.1:12345/robots.txt)
+[[ "$ROBOTS" = $(cat site1/robots.txt) ]]
+
+ROBOTS=$(curl -s http://127.0.0.1:12345/empty)
+[[ "$ROBOTS" = '' ]]
 
 kill -9 $WEBORF_PID
-
-[[ "$ROBOTS" = $(cat site1/robots.txt) ]]
