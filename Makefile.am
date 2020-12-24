@@ -86,6 +86,7 @@ TESTS = \
     testsuite/site1https \
     testsuite/ip_listener \
     testsuite/etag \
+    testsuite/index_file \
     testsuite/range \
     testsuite/cgi \
     testsuite/site1mimetype
