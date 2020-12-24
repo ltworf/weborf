@@ -582,6 +582,7 @@ escape:
  * the appropriate index file or show the list of the files.
  * */
 static int get_or_post(connection_t *connection_prop, string_t post_param) {
+    unsigned long long int size_zero = 0;
 
     if (S_ISDIR(connection_prop->strfile_stat.st_mode)) {//Requested a directory
 
@@ -593,7 +594,7 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
         if (!endsWith(connection_prop->strfile,"/",connection_prop->strfile_len,1)) {//Putting the ending / and redirect
             char head[URI_LEN+12];//12 is the size for the location header
             snprintf(head,URI_LEN+12,"Location: %s/\r\n",connection_prop->page);
-            send_http_header(301, NULL, head, true, -1, connection_prop);
+            send_http_header(301, &size_zero, head, true, -1, connection_prop);
             return 0;
         } else {//Requested directory with "/" Search for index files or list directory
 
@@ -606,7 +607,7 @@ static int get_or_post(connection_t *connection_prop, string_t post_param) {
                 if (file_exists(connection_prop->strfile)) { //If index exists, redirect to it
                     char head[URI_LEN+12];//12 is the size for the location header
                     snprintf(head,URI_LEN+12,"Location: %s%s\r\n",connection_prop->page,weborf_conf.indexes[i]);
-                    send_http_header(303, NULL, head, true, -1, connection_prop);
+                    send_http_header(303, &size_zero, head, true, -1, connection_prop);
                     return 0;
                 }
             }
