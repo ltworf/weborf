@@ -1,0 +1,14 @@
+#!/bin/bash
+set -mex
+cd $(dirname $0)
+
+../weborf -b site1 -p 12351 --index index.txt,index.dat &
+WEBORF_PID=$(jobs -p)
+
+[[ $(curl -Lvs http://localhost:12351/sub1/) = $(cat site1/sub1/index.txt) ]]
+[[ $(curl -Lvs http://localhost:12351/sub2/) = $(cat site1/sub2/index.dat) ]]
+
+[[ $(curl -Lvs http://localhost:12351/sub1) = $(cat site1/sub1/index.txt) ]]
+[[ $(curl -Lvs http://localhost:12351/sub2) = $(cat site1/sub2/index.dat) ]]
+
+kill -9 $WEBORF_PID
