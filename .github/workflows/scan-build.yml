@@ -1,0 +1,13 @@
+name: clang scan build check
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: install scan build
+      run: apt-get -y install clang-tools
+    - name: scan build
+      run: scan-build --status-bugs gcc -c *.c
