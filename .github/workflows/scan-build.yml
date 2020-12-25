@@ -9,5 +9,9 @@ jobs:
     - uses: actions/checkout@v2
     - name: install scan build
       run: sudo apt-get -y install clang-tools
+    - name: autoreconf
+      run: autoreconf -f -i
+    - name: configure
+      run: ./configure
     - name: scan build
       run: scan-build --status-bugs gcc -c *.c
