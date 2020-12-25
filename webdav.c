@@ -241,13 +241,13 @@ static inline int printprops(fd_t sock, char *page, u_dav_details props,char* fi
     pagesize += printf_s;
 
     if (props.dav_details.getetag) {
-        printf_s = snprintf(xml + pagesize, maxsize, "<D:getetag>%lld</D:getetag>\n", stat_s.st_mtime);
+        printf_s = snprintf(xml + pagesize, maxsize, "<D:getetag>%lld</D:getetag>\n", (long long int)stat_s.st_mtime);
         maxsize -= printf_s;
         pagesize += printf_s;
     }
 
     if (props.dav_details.getcontentlength) {
-        printf_s = snprintf(xml + pagesize, maxsize, "<D:getcontentlength>%lld</D:getcontentlength>\n", stat_s.st_size);
+        printf_s = snprintf(xml + pagesize, maxsize, "<D:getcontentlength>%lld</D:getcontentlength>\n", (long long int)stat_s.st_size);
         maxsize -= printf_s;
         pagesize += printf_s;
     }
@@ -289,7 +289,7 @@ static inline int printprops(fd_t sock, char *page, u_dav_details props,char* fi
     printf_s = snprintf(xml + pagesize, maxsize,
         "</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>"
         "</D:response>");
-    maxsize -= printf_s;
+//     maxsize -= printf_s;
     pagesize += printf_s;
 
     myio_write(sock, xml, pagesize);
