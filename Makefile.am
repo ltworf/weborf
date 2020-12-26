@@ -89,5 +89,6 @@ TESTS = \
     testsuite/index_file \
     testsuite/range \
     testsuite/cgi \
+    testsuite/cachedir \
     testsuite/site1mimetype
 
