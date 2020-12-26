@@ -2,6 +2,12 @@
 - Fix MOVE and COPY methods to support relative URI
 - Fix parsing issues in the daemon startup script
 - Test suite added
+- Add github workflows to run tests
+- Improve compatibility with range requests
+- Set conent length for redirection responses
+- Partially fix deadlock possibility while running a CGI page
+- Pass CGI filename as parameter
+- Fix error where responses with size 0 would cause timeouts
 
 0.16
 - qweborf has a normal makefile
