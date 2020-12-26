@@ -5,6 +5,9 @@ cd $(dirname $0)
 ../weborf -b site1 -p 12347  --mime &
 WEBORF_PID=$(jobs -p)
 
-curl -v http://127.0.0.1:12347/robots.txt |& grep Content-Type | grep text/
+function cleanup () {
+    kill -9 $WEBORF_PID
+}
+trap cleanup EXIT
 
-kill -9 $WEBORF_PID
+curl -v http://127.0.0.1:12347/robots.txt |& grep Content-Type | grep text/
