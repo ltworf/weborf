@@ -5,10 +5,13 @@ cd $(dirname $0)
 ../weborf -b site1 -p 12340 --ip 127.0.0.2 &
 WEBORF_PID=$(jobs -p)
 
+function cleanup () {
+    kill -9 $WEBORF_PID
+}
+trap cleanup EXIT
+
 if curl -s http://127.0.0.1:12340/robots.txt; then
     exit 1
 fi
 
 curl -s http://127.0.0.2:12340/robots.txt
-
-kill -9 $WEBORF_PID

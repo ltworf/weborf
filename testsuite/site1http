@@ -5,6 +5,11 @@ cd $(dirname $0)
 ../weborf -b site1 -p 12345 &
 WEBORF_PID=$(jobs -p)
 
+function cleanup () {
+    kill -9 $WEBORF_PID
+}
+trap cleanup EXIT
+
 ROBOTS=$(curl -s http://127.0.0.1:12345/robots.txt)
 [[ "$ROBOTS" = $(cat site1/robots.txt) ]]
 
@@ -12,5 +17,3 @@ ROBOTS=$(curl -s http://127.0.0.1:12345/empty)
 [[ "$ROBOTS" = '' ]]
 
 curl -s http://127.0.0.1:12345/cgi.py | grep "import os"
-
-kill -9 $WEBORF_PID

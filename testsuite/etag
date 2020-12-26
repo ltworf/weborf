@@ -5,6 +5,11 @@ cd $(dirname $0)
 ../weborf -b site1 -p 12349 &
 WEBORF_PID=$(jobs -p)
 
+function cleanup () {
+    kill -9 $WEBORF_PID
+}
+trap cleanup EXIT
+
 # ETag header is there
 curl -sv http://127.0.0.1:12349/robots.txt  |& grep ETag
 
@@ -24,6 +29,3 @@ CACHED=$(curl -vs -H "If-Range: $ETAG" --range 0-3 http://localhost:12349/robots
 
 CACHED=$(curl -vs -H 'If-Range: "qwe"' --range 0-3 http://localhost:12349/robots.txt)
 [[ $(printf $CACHED | wc -c) != 4 ]]
-
-
-kill -9 $WEBORF_PID
