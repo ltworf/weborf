@@ -1,0 +1,36 @@
+#!/bin/bash
+set -mex
+cd $(dirname $0)
+
+# Test that it fails with a non existing cache directory
+if ../weborf -db site1 -p 12352 --cache "/tmp/fakecachedir" --index nonexisting; then
+    exit 1
+fi
+
+CACHE_DIR=$(mktemp -d)
+../weborf -b site1 -p 12352 --cache $CACHE_DIR --index nonexisting &
+WEBORF_PID=$(jobs -p)
+
+function cleanup () {
+    kill -9 $WEBORF_PID
+    ls "$CACHE_DIR"
+    rm -rf "$CACHE_DIR"
+}
+trap cleanup EXIT
+
+curl -s http://localhost:12352/
+
+[[ "$(ls $CACHE_DIR | wc -l)" = 1 ]]
+curl -s http://localhost:12352/ | diff - $CACHE_DIR/*
+
+touch site1/cachedir.test
+sleep 1.1
+curl -s http://localhost:12352/ | grep cachedir.test
+
+rm site1/cachedir.test
+sleep 1.1
+
+if curl -s http://localhost:12352/ | grep cachedir.test; then
+    exit 1
+fi
+[[ "$(ls $CACHE_DIR | wc -l)" = 3 ]]

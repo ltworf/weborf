@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2010  Salvo "LtWorf" Tomaselli
+Copyright (C) 2010-2020  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -49,9 +49,7 @@ Returns true if the caching is enabled and
 false otherwise
 */
 bool cache_is_enabled() {
-    if (cachedir==NULL)
-        return false;
-    return true;
+    return cachedir != NULL;
 }
 
 /**
@@ -221,43 +219,3 @@ void cache_init(char* dir) {
         exit(10);
     }
 }
-
-/**
-Removes all the files contained in the cache directory.
-The cache must have been already initialized for this to work
-
-Returns 0 on success, -1 otherwise
-*/
-int cache_clear() {
-    if (!cachedir) return -1;
-
-    //Empty directory
-    DIR *dp = opendir(cachedir); //Open dir
-    struct dirent *entry;
-    int retval = 0;
-
-    if (dp == NULL) {
-        return 1;
-    }
-
-    char*file=malloc(PATH_LEN);//Buffer for path
-    if (file==NULL)
-        return -1;
-
-    //Cycles trough dir's elements
-    while ((entry=readdir(dp)) != NULL) { //Cycles trough dir's elements
-
-        //skips dir . and .. but not all hidden files
-        if (entry->d_name[0]=='.' && (entry->d_name[1]==0 || (entry->d_name[1]=='.' && entry->d_name[2]==0)))
-            continue;
-
-        snprintf(file,PATH_LEN,"%s/%s",cachedir, entry->d_name);
-        if (unlink(file)!=0) retval=-1;
-    }
-
-    closedir(dp);
-    free(file);
-    return retval;
-
-}
-
