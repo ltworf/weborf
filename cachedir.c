@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2010  Salvo "LtWorf" Tomaselli
+Copyright (C) 2010-2020  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -49,9 +49,7 @@ Returns true if the caching is enabled and
 false otherwise
 */
 bool cache_is_enabled() {
-    if (cachedir==NULL)
-        return false;
-    return true;
+    return cachedir != NULL;
 }
 
 /**
