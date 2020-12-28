@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2010  Salvo "LtWorf" Tomaselli
+Copyright (C) 2010-2020  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -29,7 +29,6 @@ int cache_get_item_fd(unsigned int uprefix,connection_t* connection_prop);
 int cache_get_item_fd_wr(unsigned int uprefix,connection_t *connection_prop);
 void cache_store_item(unsigned int uprefix,connection_t* connection_prop, char *content, size_t content_len);
 void cache_init(char *dir);
-int cache_clear();
 bool cache_is_enabled();
 
 
