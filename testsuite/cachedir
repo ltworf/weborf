@@ -17,5 +17,19 @@ function cleanup () {
 }
 trap cleanup EXIT
 
+curl -s http://localhost:12352/
 
-[[ "$(curl http://localhost:12352/)" = "$(cat $CACHE_DIR/*)" ]]
+[[ "$(ls $CACHE_DIR | wc -l)" = 1 ]]
+curl -s http://localhost:12352/ | diff - $CACHE_DIR/*
+
+touch site1/cachedir.test
+sleep 2
+curl -s http://localhost:12352/ | grep cachedir.test
+
+rm site1/cachedir.test
+sleep 2
+
+if curl -s http://localhost:12352/ | grep cachedir.test; then
+    exit 1
+fi
+[[ "$(ls $CACHE_DIR | wc -l)" = 3 ]]
