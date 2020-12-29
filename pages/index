@@ -1,5 +1,17 @@
-<p>Weborf is a lightweight webserver designed to rapidly share directories. Runs on POSIX systems and is meant to solve <a href="http://xkcd.com/949/">this problem</a>.</p>
+<p>Weborf is a lightweight webserver designed to rapidly share directories. Runs on GNU/Linux systems and is meant to solve <a href="http://xkcd.com/949/">this problem</a>.</p>
 
-<p>It comes with a GUI called qweborf to make it easier to know the IP address, traverse the NAT, use authentication.</p>
+<p>It comes with a GUI called <a href="qweborf.html">qweborf</a> to make it easier to know the IP address, traverse the NAT, use authentication.</p>
 
 <img src="images/file_transfer.png">
+
+<h3>Features</h3>
+<ul>
+    <li>Qt GUI or and command line</li>
+    <li>Webdav support</li>
+    <li>Cache to speed up webdav operations</li>
+    <li>SSL support</li>
+    <li>(x)inetd support</li>
+    <li>Compress directories on the fly</li>
+    <li>CGI support</li>
+    <li>systemd integration</li>
+</ul>
