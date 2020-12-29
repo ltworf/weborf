@@ -45,14 +45,13 @@ def getifaddrs():
         ]
 
     # AF_UNKNOWN / generic
-    if platform.startswith("darwin") or platform.startswith("freebsd"):
-        class sockaddr(Structure):
+    class sockaddr(Structure):
+        if platform.startswith("darwin") or platform.startswith("freebsd"):
             _fields_ = [
                 ("sa_len",     c_uint8),
                 ("sa_family",  c_uint8),
                 ("sa_data",   (c_uint8 * 14))]
-    else:
-        class sockaddr(Structure):
+        else:
             _fields_ = [
                 ("sa_family", c_uint16),
                 ("sa_data",   (c_uint8 * 14))
