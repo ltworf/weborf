@@ -1,0 +1,23 @@
+Description: Add sleep to quick fix flaky test
+ The test seems flaky.
+ .
+ weborf (0.17-1.1) unstable; urgency=medium
+ .
+   * Added sleep to test that flaked on s390
+Author: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+--- weborf-0.17.orig/testsuite/site1http
++++ weborf-0.17/testsuite/site1http
+@@ -9,6 +9,7 @@ function cleanup () {
+     kill -9 $WEBORF_PID
+ }
+ trap cleanup EXIT
++sleep 0.1
+ 
+ ROBOTS=$(curl -s http://127.0.0.1:12345/robots.txt)
+ [[ "$ROBOTS" = $(cat site1/robots.txt) ]]

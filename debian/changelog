@@ -1,3 +1,9 @@
+weborf (0.17-3) unstable; urgency=medium
+
+  * Disable most of the test suite (flaky on debian builders)
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 31 Dec 2020 15:13:19 +0100
+
 weborf (0.17-2) unstable; urgency=medium
 
   * Added sleep to test that flaked on s390
