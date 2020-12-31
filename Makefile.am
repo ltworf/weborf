@@ -90,5 +90,6 @@ TESTS = \
     testsuite/range \
     testsuite/cgi \
     testsuite/cachedir \
-    testsuite/site1mimetype
+    testsuite/site1mimetype \
+    testsuite/functions.sh
 

@@ -1,6 +1,5 @@
 #!/bin/bash
-set -mex
-cd $(dirname $0)
+. testsuite/functions.sh
 
 # Test that it fails with a non existing cache directory
 if ../weborf -db site1 -p 12352 --cache "/tmp/fakecachedir" --index nonexisting; then

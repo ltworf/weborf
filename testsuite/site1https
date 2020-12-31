@@ -1,14 +1,7 @@
 #!/bin/bash
-set -mex
-cd $(dirname $0)
+. testsuite/functions.sh
 
-../weborf -b site1 -p 12346  --cert cert/certificate.pem --key cert/key.pem &
-WEBORF_PID=$(jobs -p)
-
-function cleanup () {
-    kill -9 $WEBORF_PID
-}
-trap cleanup EXIT
+run_weborf -b site1 -p 12346  --cert cert/certificate.pem --key cert/key.pem
 
 ROBOTS=$(curl -s -k https://127.0.0.1:12346/robots.txt)
 
