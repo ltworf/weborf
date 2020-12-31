@@ -9,6 +9,7 @@ function cleanup () {
     kill -9 $WEBORF_PID
 }
 trap cleanup EXIT
+sleep 0.1
 
 ROBOTS=$(curl -s http://127.0.0.1:12345/robots.txt)
 [[ "$ROBOTS" = $(cat site1/robots.txt) ]]
