@@ -1,3 +1,9 @@
+weborf (0.17-2) unstable; urgency=medium
+
+  * Added sleep to test that flaked on s390
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 31 Dec 2020 12:55:04 +0100
+
 weborf (0.17-1) unstable; urgency=low
 
   * build-depend on curl to run new test suite
