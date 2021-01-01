@@ -1,13 +1,7 @@
 #!/bin/bash
-set -mex
-cd $(dirname $0)
-../weborf -b site1 -p 12350 --yesexec --cgi .py,/usr/bin/python3 &
-WEBORF_PID=$(jobs -p)
+. testsuite/functions.sh
 
-function cleanup () {
-    kill -9 $WEBORF_PID
-}
-trap cleanup EXIT
+run_weborf -b site1 -p 12350 --yesexec --cgi .py,/usr/bin/python3
 
 curl -vs http://localhost:12350/cgi.py
 curl -vs -H 'If-None-Match: "1545650587"' http://localhost:12350/cgi.py | grep 1545650587

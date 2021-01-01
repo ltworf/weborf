@@ -1,4 +1,5 @@
 0.18
+- Wait for weborf to create socket in testsuite
 
 0.17
 - Fix MOVE and COPY methods to support relative URI
