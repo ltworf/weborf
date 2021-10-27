@@ -20,6 +20,7 @@ weborf (0.17-1) unstable; urgency=low
 
   * build-depend on curl to run new test suite
   * New upstream release (LP: #1875194)
+  * Fix debian/watch
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Tue, 29 Dec 2020 19:41:28 +0100
 
