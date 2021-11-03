@@ -4,6 +4,12 @@ weborf (0.18-1) UNRELEASED; urgency=medium
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 31 Dec 2020 15:22:14 +0100
 
+weborf (0.17-4) unstable; urgency=low
+
+  * Fix d/watch
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Fri, 29 Oct 2021 17:01:04 +0200
+
 weborf (0.17-3) unstable; urgency=medium
 
   * Disable most of the test suite (flaky on debian builders)
