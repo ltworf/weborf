@@ -21,3 +21,4 @@ weborf.kdev4
 Makefile
 *.log
 *.trs
+deb-pkg/
