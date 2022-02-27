@@ -1,4 +1,4 @@
-.TH Weborf 1 "Nov 11, 2020" "Minimal webserver"
+.TH Weborf 1 "Feb 27, 2022" "Minimal webserver"
 .SH NAME
 weborf
 \- Minimal webserver
@@ -107,6 +107,11 @@ Must be followed by a valid gid, different from 0. Weborf will use this user to 
 .TP
 .B \-d
 Runs weborf as a daemon. It will not terminate when its father process terminates, and it will leave the shell free to receive commands.
+
+.TP
+.B \-\-logfd
+Must be followed by an open file descriptor number that weborf will use to send the logs, instead of using syslog.
+
 .SS
 
 .SH SCRIPTING
