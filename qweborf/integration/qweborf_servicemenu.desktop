@@ -11,3 +11,13 @@ Name=Share directory via HTTP…
 Name[it]=Condividi cartella con HTTP…
 Icon=qweborf
 Exec=qweborf %f
+
+[Nemo Action]
+Active=true
+Name=Share directory via HTTP…
+Comment=share local files using the HTTP protocol.
+Exec=qweborf %F
+Icon-Name=qweborf
+Selection=notnone
+Extensions=dir;
+Quote=double
