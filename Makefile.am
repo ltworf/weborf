@@ -76,7 +76,6 @@ sysconf_DATA = weborf.conf
 
 dist_doc_DATA = \
     CHANGELOG \
-    COPYING \
     Credits \
     README.md \
     TODOlist
