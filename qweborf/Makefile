@@ -1,5 +1,5 @@
 # Weborf
-# Copyright (C) 2019  Salvo "LtWorf" Tomaselli
+# Copyright (C) 2019-2022  Salvo "LtWorf" Tomaselli
 #
 # Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ install: qweborf/main.py
 	install -D -m644 man/qweborf.1 $${DESTDIR:-/}/usr/share/man/man1/qweborf.1
 	install -D -m644 integration/qweborf.desktop $${DESTDIR:-/}/usr/share/applications/qweborf.desktop
 	install -D -m644 integration/qweborf_servicemenu.desktop $${DESTDIR:-/}/usr/share/kservices5/ServiceMenus/qweborf_servicemenu.desktop
+	install -D -m644 integration/qweborf.png $${DESTDIR:-/}/usr/share/icons/hicolor/128x128/apps/qweborf.png
 
 .PHONY: mypy
 mypy:
