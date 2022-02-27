@@ -9,5 +9,5 @@ X-KDE-StartupNotify=false
 [Desktop Action share]
 Name=Share directory via HTTP…
 Name[it]=Condividi cartella con HTTP…
-Icon=network-wired
+Icon=qweborf
 Exec=qweborf %f
