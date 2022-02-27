@@ -24,6 +24,6 @@ cd weborf-$VERSION
 cp -r $PRJDIR/debian .
 dpkg-buildpackage --changes-option=-S
 cd ..
-mv /tmp/weborf*.* "$PRJDIR"/deb-pkg
+mv /tmp/weborf*.* /tmp/qweborf* "$PRJDIR"/deb-pkg
 cd "$PRJDIR"
 lintian --pedantic -E --color auto -i -I deb-pkg/*changes deb-pkg/*deb
