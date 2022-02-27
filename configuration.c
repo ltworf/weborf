@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "options.h"
 
+#include <fcntl.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <stdio.h>
@@ -48,6 +49,7 @@ weborf_configuration_t weborf_conf = {
     .basedir=BASEDIR,
     .uid = ROOTUID,
     .gid = ROOTGID,
+    .log_fd = -1,
     .daemonize = false,
 #ifdef HAVE_LIBSSL
     .sslctx = NULL,
@@ -112,6 +114,16 @@ static void configuration_set_default_CGI() {
 static void configuration_set_default_index() {
     weborf_conf.indexes[0] = INDEX;
     weborf_conf.indexes_l = 1;
+}
+
+static void configuration_set_logging(char *optarg) {
+    int fd = atoi(optarg);
+    if (fcntl(fd, F_GETFL) == -1) {
+        fprintf(stderr, "%d invalid file descriptor\n", fd);
+        syslog(LOG_ERR, "%d invalid file descriptor\n", fd);
+        exit(1);
+    }
+    weborf_conf.log_fd = fd;
 }
 
 static void configuration_set_cgi(char *optarg) {
@@ -248,6 +260,7 @@ void configuration_load(int argc, char *argv[]) {
         {"tar", no_argument,0,'t'},
         {"cert", required_argument, 0, 'S'},
         {"key", required_argument, 0, 'K'},
+        {"logfd", required_argument, 0, '\0'},
         {0, 0, 0, 0}
     };
 
@@ -270,6 +283,12 @@ void configuration_load(int argc, char *argv[]) {
             break;
 
         switch (c) {
+        case '\0':
+            switch(option_index) {
+                case 21:
+                    configuration_set_logging(optarg);
+            };
+            break;
         case 'k':
             print_capabilities();
             break;
