@@ -33,6 +33,7 @@ install: qweborf/main.py
 	install -D -m644 integration/qweborf.desktop $${DESTDIR:-/}/usr/share/applications/qweborf.desktop
 	install -D -m644 integration/qweborf_servicemenu.desktop $${DESTDIR:-/}/usr/share/kservices5/ServiceMenus/qweborf_servicemenu.desktop
 	install -D -m644 integration/qweborf.png $${DESTDIR:-/}/usr/share/icons/hicolor/256x256/apps/qweborf.png
+	install -D -m644 integration/qweborf.metainfo.xml $${DESTDIR:-/}/usr/share/metainfo/qweborf.metainfo.xml
 
 .PHONY: mypy
 mypy:
