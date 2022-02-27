@@ -1,4 +1,7 @@
 #!/bin/sh
+mkdir -p deb-pkg
+rm -f deb-pkg/*
+
 autoreconf -f -i
 ./configure
 make -j
@@ -20,3 +23,7 @@ tar -xvvf weborf_$VERSION.orig.tar.gz
 cd weborf-$VERSION
 cp -r $PRJDIR/debian .
 dpkg-buildpackage --changes-option=-S
+cd ..
+mv /tmp/weborf*.* "$PRJDIR"/deb-pkg
+cd "$PRJDIR"
+lintian --pedantic -E --color auto -i -I deb-pkg/*changes deb-pkg/*deb
