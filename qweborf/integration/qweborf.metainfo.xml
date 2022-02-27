@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='utf-8'?>
+<component type="desktop">
+    <id>org.ltworf.qweborf</id>
+    <project_license>GPL-3+</project_license>
+    <metadata_license>GPL-3+</metadata_license>
+    <name>qweborf</name>
+    <icon type="stock">qweborf</icon>
+    <name xml:lang="it">qweborf</name>
+    <summary>Shares files using the HTTP protocol</summary>
+    <summary xml:lang="it">condivide file usando il protocollo HTTP</summary>
+
+    <description>
+        <p>Qweborf provides an easy to use graphical interface to share local files using the HTTP protocol.</p>
+        <p>It can enable writing on the server, webdav, authentication and sending directories as tar.gz.</p>
+        <p>It can try to work across NAT.</p>
+    </description>
+
+    <description xml:lang="it">
+        <p>Qweborf fornisce un'interfaccia grafica facile da usare per condividere file locali usando il protocollo HTTP.</p>
+        <p>Può abilitare la scrittura sul server, WebDAV, l'autenticazione e l'invio di directory come tar.gz.</p>
+        <p>Può provare a funzionare attraverso NAT.</p>
+    </description>
+    <provides>
+        <binary>qweborf</binary>
+    </provides>
+    <launchable type="desktop-id">qweborf.desktop</launchable>
+    <update_contact>tiposchi@tiscali.it</update_contact>
+    <developer_name>Salvo 'LtWorf' Tomaselli</developer_name>
+
+    <url type="homepage">https://ltworf.github.io/weborf/qweborf.html</url>
+    <url type="bugtracker">https://github.com/ltworf/weborf/issues/</url>
+    <url type="help">https://ltworf.github.io/weborf/qweborf.html</url>
+    <url type="donation">https://liberapay.com/ltworf</url>
+
+    <screenshots>
+      <screenshot type="default">
+        <image>https://ltworf.github.io/weborf/images/qweborf.png</image>
+      </screenshot>
+    </screenshots>
+
+    <categories>
+        <category>Utility</category>
+        <category>Qt</category>
+    </categories>
+
+    <keywords>
+        <keyword>http</keyword>
+        <keyword>webdav</keyword>
+        <keyword>share</keyword>
+        <keyword>directory</keyword>
+    </keywords>
+</component>
