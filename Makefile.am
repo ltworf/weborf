@@ -47,6 +47,7 @@ EXTRA_DIST = \
     qweborf/qweborf/qweborf.py \
     qweborf/qweborf/qweborf \
     qweborf/man/qweborf.1 \
+    qweborf/integration/qweborf.png \
     qweborf/integration/qweborf.desktop \
     qweborf/integration/qweborf_servicemenu.desktop \
     qweborf/setup.py \
