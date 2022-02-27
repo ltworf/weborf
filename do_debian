@@ -1,6 +1,6 @@
 #!/bin/sh
 mkdir -p deb-pkg
-rm -f deb-pkg/*
+rm -rf deb-pkg/*
 
 autoreconf -f -i
 ./configure
