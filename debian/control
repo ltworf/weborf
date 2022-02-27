@@ -2,7 +2,7 @@ Source: weborf
 Section: httpd
 Priority: optional
 Maintainer: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>
-Build-Depends: debhelper-compat (= 12), debhelper (>= 12), libmagic-dev, python3, dh-python, pyqt5-dev-tools,
+Build-Depends: debhelper-compat (= 13), debhelper (>= 13), libmagic-dev, python3, dh-python, pyqt5-dev-tools,
  python3-distutils, libssl-dev, curl
 Standards-Version: 4.6.0.1
 X-Python3-Version: >= 3.6
