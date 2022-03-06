@@ -1,10 +1,10 @@
-weborf (0.18-1) UNRELEASED; urgency=medium
+weborf (0.18-1) unstable; urgency=low
 
   * New upstream release
   * Bump Standards-Version: 4.6.0.1
   * Bump compat to 13
 
- -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 31 Dec 2020 15:22:14 +0100
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 06 Mar 2022 13:31:12 +0100
 
 weborf (0.17-4) unstable; urgency=low
 
