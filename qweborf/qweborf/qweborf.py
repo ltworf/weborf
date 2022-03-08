@@ -35,14 +35,13 @@ class qweborfForm (QtWidgets.QWidget):
     DBG_NOTICE = 3
 
     def setUi(self, ui) -> None:
+        self.settings = QtCore.QSettings()
         self.ui = ui
         self.weborf = whelper.weborf_runner(self)
         self.started = False
 
-        if self.weborf.version >= '0.13':
-            self.ui.chkTar.setEnabled(True)
-        else:
-            self.ui.chkTar.setEnabled(False)
+        if self.weborf.version < '0.13':
+            sys.exit('Ancient version of weborf detected')
 
         if not self.weborf.webdav:
             self.ui.chkDav.setEnabled(False)
@@ -63,7 +62,22 @@ class qweborfForm (QtWidgets.QWidget):
         self.defaultdir = QtCore.QStandardPaths.writableLocation(
             QtCore.QStandardPaths.HomeLocation)
 
-        initialdir = self.defaultdir
+        initialdir = self.settings.value('main/defaultdir', self.defaultdir)
+
+        self.ui.chkDav.setChecked(self.settings.value('dav/dav', 'false') == 'true')
+        self.ui.chkWrite.setChecked(self.settings.value('dav/dav_write', 'false') == 'true')
+        self.ui.chkEnableAuth.setChecked(self.settings.value('auth/auth', 'false') == 'true')
+        self.ui.txtPassword.setText(self.settings.value('auth/password', ''))
+        self.ui.txtUsername.setText(self.settings.value('auth/username', ''))
+
+        self.ui.chkTar.setChecked(self.settings.value('tar/tar', 'false') == 'true')
+
+        self.ui.txtCert.setText(self.settings.value('ssl/cert', ''))
+        self.ui.txtKey.setText(self.settings.value('ssl/key', ''))
+
+        self.ui.chkNAT.setChecked(self.settings.value('net/nat', 'false') == 'true')
+        self.ui.cmbAddress.setCurrentIndex(int(self.settings.value('net/address', 0)))
+        self.ui.spinPort.setValue(int(self.settings.value('net/port', 8080)))
 
         if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
             initialdir = sys.argv[1]
@@ -93,6 +107,20 @@ class qweborfForm (QtWidgets.QWidget):
             self.ui.cmdStop.setEnabled(False)
             self.ui.tabWidget.setEnabled(True)
             self.started = False
+
+    def save_settings(self):
+        self.settings.setValue('main/defaultdir', self.ui.txtPath.text())
+        self.settings.setValue('dav/dav', self.ui.chkDav.isChecked())
+        self.settings.setValue('dav/dav_write', self.ui.chkWrite.isChecked())
+        self.settings.setValue('auth/auth', self.ui.chkEnableAuth.isChecked())
+        self.settings.setValue('auth/password', self.ui.txtPassword.text())
+        self.settings.setValue('auth/username', self.ui.txtUsername.text())
+        self.settings.setValue('tar/tar', self.ui.chkTar.isChecked())
+        self.settings.setValue('ssl/cert', self.ui.txtCert.text())
+        self.settings.setValue('ssl/key', self.ui.txtKey.text())
+        self.settings.setValue('net/nat', self.ui.chkNAT.isChecked())
+        self.settings.setValue('net/address', self.ui.cmbAddress.currentIndex())
+        self.settings.setValue('net/port', self.ui.spinPort.value())
 
     def about(self):
 
