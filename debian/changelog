@@ -1,6 +1,9 @@
 weborf (0.19-1) UNRELEASED; urgency=medium
 
   * New upstream release
+  * Add autopkgtest suite.
+    Calls the regular test suite but using the system
+    installed version.
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Tue, 08 Mar 2022 23:34:28 +0100
 
