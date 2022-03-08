@@ -1,6 +1,6 @@
-#!/bin/sh
-set -ex
-cd $(dirname $0)
-../weborf --help
-../weborf --version
-../weborf -k
+#!/bin/bash
+. testsuite/functions.sh
+
+"$BINNAME" --help
+"$BINNAME" --version
+"$BINNAME" -k

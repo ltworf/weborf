@@ -2,12 +2,12 @@
 . testsuite/functions.sh
 
 # Test that it fails with a non existing cache directory
-if ../weborf -db site1 -p 12352 --cache "/tmp/fakecachedir" --index nonexisting; then
+if "$BINNAME" -db site1 -p 12352 --cache "/tmp/fakecachedir" --index nonexisting; then
     exit 1
 fi
 
 CACHE_DIR=$(mktemp -d)
-../weborf -b site1 -p 12352 --cache $CACHE_DIR --index nonexisting &
+"$BINNAME" -b site1 -p 12352 --cache $CACHE_DIR --index nonexisting &
 WEBORF_PID=$(jobs -p)
 
 function cleanup () {
