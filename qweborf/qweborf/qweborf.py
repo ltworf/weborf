@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Weborf
-# Copyright (C) 2010-2020  Salvo "LtWorf" Tomaselli
+# Copyright (C) 2010-2022  Salvo "LtWorf" Tomaselli
 #
 # Weborf is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -207,6 +207,9 @@ class qweborfForm (QtWidgets.QWidget):
 def q_main() -> None:
     import sys
     app = QtWidgets.QApplication(sys.argv)
+    app.setOrganizationName('weborf')
+    app.setApplicationName('qweborf')
+    app.setOrganizationDomain("org.ltworf")
     Form = qweborfForm()
     ui = main.Ui_Form()
     ui.setupUi(Form)
