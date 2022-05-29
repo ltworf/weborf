@@ -273,11 +273,11 @@ class weborf_runner():
             self.logclass.logger(
                 "Sending terminate signal and waiting for termination...")
             self.child.terminate()
-
-        self.socket.close()
+        if self.socket:
+            self.socket.close()
                           # Closing socket, so the accept will fail and the
                           # thread can terminate
-        self.listener.stop()
+            self.listener.stop()
 
         return True
 
