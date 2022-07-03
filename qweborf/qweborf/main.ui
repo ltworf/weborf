@@ -453,20 +453,7 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QPushButton" name="cmdStart">
-       <property name="toolTip">
-        <string>Start sharing the directory</string>
-       </property>
-       <property name="text">
-        <string>Start sharing</string>
-       </property>
-       <property name="default">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
+    <layout class="QVBoxLayout" name="verticalLayout_5">
      <item>
       <widget class="QPushButton" name="cmdStop">
        <property name="enabled">
@@ -477,6 +464,19 @@
        </property>
        <property name="text">
         <string>Stop sharing</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cmdStart">
+       <property name="toolTip">
+        <string>Start sharing the directory</string>
+       </property>
+       <property name="text">
+        <string>Start sharing</string>
+       </property>
+       <property name="default">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -511,8 +511,8 @@
    <slot>stop_sharing()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>524</x>
-     <y>509</y>
+     <x>559</x>
+     <y>710</y>
     </hint>
     <hint type="destinationlabel">
      <x>457</x>
@@ -527,8 +527,8 @@
    <slot>start_sharing()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>125</x>
-     <y>495</y>
+     <x>129</x>
+     <y>710</y>
     </hint>
     <hint type="destinationlabel">
      <x>122</x>
@@ -543,8 +543,8 @@
    <slot>select_path()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>513</x>
-     <y>213</y>
+     <x>549</x>
+     <y>47</y>
     </hint>
     <hint type="destinationlabel">
      <x>528</x>
@@ -559,8 +559,8 @@
    <slot>about()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>523</x>
-     <y>464</y>
+     <x>533</x>
+     <y>662</y>
     </hint>
     <hint type="destinationlabel">
      <x>265</x>
@@ -575,8 +575,8 @@
    <slot>clear()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>523</x>
-     <y>424</y>
+     <x>533</x>
+     <y>622</y>
     </hint>
     <hint type="destinationlabel">
      <x>405</x>
@@ -591,12 +591,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>115</x>
-     <y>89</y>
+     <x>260</x>
+     <y>36</y>
     </hint>
     <hint type="destinationlabel">
-     <x>115</x>
-     <y>89</y>
+     <x>260</x>
+     <y>65</y>
     </hint>
    </hints>
   </connection>
@@ -607,12 +607,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>115</x>
-     <y>89</y>
+     <x>231</x>
+     <y>94</y>
     </hint>
     <hint type="destinationlabel">
-     <x>115</x>
-     <y>89</y>
+     <x>260</x>
+     <y>170</y>
     </hint>
    </hints>
   </connection>
@@ -639,8 +639,8 @@
    <slot>select_cert()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>506</x>
-     <y>116</y>
+     <x>548</x>
+     <y>211</y>
     </hint>
     <hint type="destinationlabel">
      <x>527</x>
@@ -655,8 +655,8 @@
    <slot>select_key()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>506</x>
-     <y>158</y>
+     <x>548</x>
+     <y>253</y>
     </hint>
     <hint type="destinationlabel">
      <x>528</x>
@@ -671,8 +671,8 @@
    <slot>save_settings()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>376</x>
-     <y>228</y>
+     <x>415</x>
+     <y>46</y>
     </hint>
     <hint type="destinationlabel">
      <x>3</x>
