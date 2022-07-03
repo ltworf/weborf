@@ -49,23 +49,6 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="cmdClearPath">
-           <property name="accessibleName">
-            <string>Clear directory to share</string>
-           </property>
-           <property name="accessibleDescription">
-            <string extracomment="Clear directory to share"/>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset theme="edit-clear">
-             <normaloff>.</normaloff>.</iconset>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QDialogButtonBox" name="cmdOpen">
            <property name="maximumSize">
             <size>
@@ -329,23 +312,6 @@
             </widget>
            </item>
            <item>
-            <widget class="QPushButton" name="cmdClearPath_2">
-             <property name="accessibleName">
-              <string>clear SSL certificate</string>
-             </property>
-             <property name="accessibleDescription">
-              <string extracomment="Clear SSL certificate"/>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="icon">
-              <iconset theme="edit-clear">
-               <normaloff>.</normaloff>.</iconset>
-             </property>
-            </widget>
-           </item>
-           <item>
             <widget class="QDialogButtonBox" name="cmdOpenCert">
              <property name="maximumSize">
               <size>
@@ -366,23 +332,6 @@
             <widget class="QLineEdit" name="txtKey">
              <property name="toolTip">
               <string>Insert here the absolute path of the directory to share</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="cmdClearPath_3">
-             <property name="accessibleName">
-              <string>clear SSL key</string>
-             </property>
-             <property name="accessibleDescription">
-              <string extracomment="clear SSL key"/>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="icon">
-              <iconset theme="edit-clear">
-               <normaloff>.</normaloff>.</iconset>
              </property>
             </widget>
            </item>
@@ -531,7 +480,6 @@
  </widget>
  <tabstops>
   <tabstop>txtPath</tabstop>
-  <tabstop>cmdClearPath</tabstop>
   <tabstop>cmdOpen</tabstop>
   <tabstop>chkDav</tabstop>
   <tabstop>chkWrite</tabstop>
@@ -612,22 +560,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>cmdClearPath</sender>
-   <signal>clicked()</signal>
-   <receiver>txtPath</receiver>
-   <slot>clear()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>427</x>
-     <y>212</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>385</x>
-     <y>212</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>cmdClearLog</sender>
    <signal>clicked()</signal>
    <receiver>txtLog</receiver>
@@ -682,44 +614,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>115</x>
-     <y>89</y>
+     <x>231</x>
+     <y>94</y>
     </hint>
     <hint type="destinationlabel">
-     <x>115</x>
-     <y>89</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>cmdClearPath_2</sender>
-   <signal>clicked()</signal>
-   <receiver>txtCert</receiver>
-   <slot>clear()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>420</x>
-     <y>115</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>346</x>
-     <y>115</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>cmdClearPath_3</sender>
-   <signal>clicked()</signal>
-   <receiver>txtKey</receiver>
-   <slot>clear()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>420</x>
-     <y>157</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>349</x>
-     <y>157</y>
+     <x>260</x>
+     <y>132</y>
     </hint>
    </hints>
   </connection>
