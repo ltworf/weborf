@@ -10,3 +10,5 @@ Terminal=0
 Type=Application
 Categories=Network;
 MimeType=inode/directory
+X-Purism-FormFactor=Workstation;Mobile;
+StartupNotify=true

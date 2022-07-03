@@ -83,6 +83,7 @@ class qweborfForm (QtWidgets.QWidget):
             initialdir = sys.argv[1]
 
         self.ui.txtPath.setText(initialdir)
+        self.stop_sharing()
 
     def logger(self, data, level=DBG_DEFAULT):
         '''logs an entry, showing it in the GUI'''
@@ -102,11 +103,12 @@ class qweborfForm (QtWidgets.QWidget):
         pass
 
     def stop_sharing(self):
-        if self.weborf.stop():
-            self.ui.cmdStart.setEnabled(True)
-            self.ui.cmdStop.setEnabled(False)
-            self.ui.tabWidget.setEnabled(True)
-            self.started = False
+        self.weborf.stop()
+        self.ui.cmdStart.setVisible(True)
+        self.ui.cmdStop.setVisible(False)
+        self.ui.tabWidget.setVisible(True)
+        self.ui.LogLayout.setVisible(False)
+        self.started = False
 
     def save_settings(self):
         self.settings.setValue('main/defaultdir', self.ui.txtPath.text())
@@ -174,9 +176,10 @@ class qweborfForm (QtWidgets.QWidget):
             options['ip'] = str(self.ui.cmbAddress.currentText())
 
         if self.weborf.start(options):
-            self.ui.cmdStart.setEnabled(False)
-            self.ui.cmdStop.setEnabled(True)
-            self.ui.tabWidget.setEnabled(False)
+            self.ui.cmdStart.setVisible(False)
+            self.ui.cmdStop.setVisible(True)
+            self.ui.tabWidget.setVisible(False)
+            self.ui.LogLayout.setVisible(True)
             self.started = True
 
         if self.ui.chkNAT.isChecked() and self.started==True:
