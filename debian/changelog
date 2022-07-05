@@ -1,6 +1,7 @@
 weborf (0.20-1) UNRELEASED; urgency=medium
 
   * New upstream release
+  * Remove X-Python3-Version: >= 3.6 from control file
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Mon, 14 Mar 2022 23:42:51 +0100
 
