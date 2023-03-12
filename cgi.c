@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2010-2020  Salvo "LtWorf" Tomaselli
+Copyright (C) 2010-2023  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -143,12 +143,15 @@ static inline void cgi_set_env_vars(connection_t *connection_prop,char *real_bas
     setenv("SERVER_SOFTWARE",SIGNATURE,true);
     setenv("GATEWAY_INTERFACE","CGI/1.1",true);
     setenv("REQUEST_METHOD",connection_prop->method,true); //POST GET
-    setenv("SERVER_NAME", getenv("HTTP_HOST"),true); //TODO for older http version this header might not exist
     setenv("REDIRECT_STATUS","Ciao",true); // Mah.. i'll never understand php, this env var is needed
     setenv("SCRIPT_FILENAME",connection_prop->strfile,true); //This var is needed as well or php say no input file...
     setenv("DOCUMENT_ROOT",real_basedir,true);
     setenv("REMOTE_ADDR",connection_prop->ip_addr,true); //Client's address
     setenv("SCRIPT_NAME",connection_prop->page,true); //Name of the script without complete path
+
+    char* http_host = getenv("HTTP_HOST");
+    if (http_host)
+        setenv("SERVER_NAME", http_host,true); //TODO for older http version this header might not exist
 
     //Request URI with or without a query
     if (connection_prop->get_params==NULL) {
@@ -176,10 +179,12 @@ static inline void cgi_set_env_vars(connection_t *connection_prop,char *real_bas
  * */
 static inline void cgi_set_env_content_length() {
     //If Content-Length field exists
-    char *content_l=getenv("HTTP_CONTENT_LENGTH");
-    if (content_l!=NULL) {
-        setenv("CONTENT_LENGTH",content_l,true);
-        setenv("CONTENT_TYPE",getenv("HTTP_CONTENT_TYPE"),true);
+    char *content_l = getenv("HTTP_CONTENT_LENGTH");
+    char *content_type = getenv("HTTP_CONTENT_TYPE");
+
+    if (content_l != NULL && content_type != NULL) {
+        setenv("CONTENT_LENGTH", content_l, true);
+        setenv("CONTENT_TYPE", content_type, true);
     }
 }
 
