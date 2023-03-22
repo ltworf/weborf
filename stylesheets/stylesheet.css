@@ -139,13 +139,6 @@ img {
   max-width: 739px;
   padding: 5px;
   margin: 10px 0 10px 0;
-  border: 1px solid #ebebeb;
-
-  box-shadow: 0 0 5px #ebebeb;
-  -webkit-box-shadow: 0 0 5px #ebebeb;
-  -moz-box-shadow: 0 0 5px #ebebeb;
-  -o-box-shadow: 0 0 5px #ebebeb;
-  -ms-box-shadow: 0 0 5px #ebebeb;
 }
 
 p img {
@@ -284,6 +277,22 @@ Full-Width Styles
   box-shadow: 0 0 10px rgba(0,0,0,.5);
   border-bottom-left-radius: 2px;
   border-bottom-right-radius: 2px;
+}
+
+#donate_banner {
+  display: block;
+  position: absolute;
+  top:0;
+  left: 10px;
+  width: 83px;
+  z-index: 10;
+/*   background: #f6c915; */
+  background: url('../images/donate.svg') #f6c915 no-repeat 95% 50%;
+  padding: 0px 0px 0px 0px;
+  margin: 0px 0px 0px 0px;
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
+  color: #00000000;
 }
 
 #header_wrap {
