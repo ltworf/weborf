@@ -1,6 +1,6 @@
 /*
 Weborf
-Copyright (C) 2017-2020  Salvo "LtWorf" Tomaselli
+Copyright (C) 2017-2023  Salvo "LtWorf" Tomaselli
 
 Weborf is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -370,18 +370,6 @@ int read_file(connection_t* connection_prop,buffered_read_t* read_b) {
     fd_t sock = connection_prop->sock;
     if (weborf_conf.authsock==NULL) {
         return ERR_FORBIDDEN;
-    }
-
-    //Checking if there is any unsupported Content-* header. In this case return 501 (Not implemented)
-    {
-        char*header=connection_prop->http_param;
-
-        while ((header=strstr(header,"Content-"))!=NULL) {
-            if (strncmp(header,"Content-Length",14)!=0) {
-                return ERR_NOTIMPLEMENTED;
-            }
-            header++;
-        }
     }
 
     char a[NBUFFER]; //Buffer for field's value
