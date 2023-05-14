@@ -1,5 +1,6 @@
 0.20
 - restyle qweborf to fit on a mobile screen
+- ignore Content-Type header in PUT requests, instead of failing
 
 0.19
 - qweborf can store the default settings
