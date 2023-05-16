@@ -383,6 +383,7 @@ void help() {
            "  -S, --cert    the certificate to use\n"
            "  -K, --key     the private key to use with the certificate\n"
            "  -Y, --yesexec enables CGI\n"
+           "      --logfd   file descriptor number to use for the logs\n"
            "\n"
            "Report bugs here https://bugs.launchpad.net/weborf\n"
            "or to " PACKAGE_BUGREPORT "\n");

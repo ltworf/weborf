@@ -114,6 +114,7 @@ typedef struct {
     char* authsock;             //Executable that will authenticate
     uid_t uid;                  //Uid to use after bind
     gid_t gid;                  //gid to use after bind
+    int  log_fd;                //fd to use to print the logs. -1 for syslog
 #ifdef SEND_MIMETYPES
     bool send_content_type;     //True if we want to send the content type
 #endif
