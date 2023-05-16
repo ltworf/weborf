@@ -14,6 +14,10 @@ Test-Command: testsuite/ip_listener
 Restrictions: allow-stderr
 Depends: curl, weborf
 
+Test-Command: testsuite/vhost
+Restrictions: allow-stderr
+Depends: curl, weborf
+
 Test-Command: testsuite/etag
 Restrictions: allow-stderr
 Depends: curl, weborf

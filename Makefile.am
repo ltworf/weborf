@@ -92,5 +92,6 @@ TESTS = \
     testsuite/cgi \
     testsuite/cachedir \
     testsuite/site1mimetype \
+    testsuite/vhost \
     testsuite/functions.sh
 
