@@ -1,4 +1,4 @@
-.TH Weborf 1 "Nov 11, 2020" "Minimal webserver"
+.TH Weborf 1 "May 05, 2023" "Minimal webserver"
 .SH NAME
 weborf
 \- Minimal webserver
@@ -88,7 +88,7 @@ Path to the SSL key. Enables https. Requires a certificate to be passed as well.
 .B \-V, \-\-virtual
 Enables weborf to use virtualhosts. The basedir supplied with \-b will be the default one (will be used if the requested host is unknown).
 Every virtualhost must be in the form host[:port]=basedir. The port must be specified if the port used is different than 80. And the basedir must end with a /. To separate many virtualhosts, use a comma, and avoid spaces.
-To make weborf use different virtualhosts on different ports, it will be necessary to launch many weborf's processes.
+To make weborf use different virtualhosts on different ports, it will be necessary to launch many weborf's processes. This can now be achieved easily by creating multiple configuration files and using the systemd units like weborf@cfgfile.conf
 
 .TP
 .B \-I, \-\-index
