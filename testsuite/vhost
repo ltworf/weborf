@@ -1,9 +1,9 @@
 #!/bin/bash
 . testsuite/functions.sh
 
-run_weborf -p 12349 --virtual localhost:12349=site1,127.0.0.1:12349=site2 -b site1
+run_weborf -p 12342 --virtual localhost:12342=site1,127.0.0.1:12342=site2 -b site1
 
 # ETag header is there
-curl -vs http://localhost:12349/robots.txt | grep User-agent
+curl -vs http://localhost:12342/robots.txt | grep User-agent
 
-curl -vs http://127.0.0.1:12349/site2.txt | grep site2
+curl -vs http://127.0.0.1:12342/site2.txt | grep site2
