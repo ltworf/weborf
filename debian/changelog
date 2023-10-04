@@ -3,6 +3,7 @@ weborf (0.20-1) UNRELEASED; urgency=medium
   * New upstream release
   * Remove X-Python3-Version: >= 3.6 from control file
   * Added metadata file
+  * Use setuptools since python intelligently dropped distutil
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 16 Oct 2022 19:29:57 +0200
 
