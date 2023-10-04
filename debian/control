@@ -3,8 +3,8 @@ Section: httpd
 Priority: optional
 Maintainer: Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>
 Build-Depends: debhelper-compat (= 13), debhelper (>= 13), libmagic-dev, python3, dh-python, pyqt5-dev-tools,
- python3-distutils, libssl-dev, curl
-Standards-Version: 4.6.0.1
+ python3-setuptools, libssl-dev, curl
+Standards-Version: 4.6.2
 Rules-Requires-Root: no
 Homepage: https://ltworf.github.io/weborf/
 
@@ -21,7 +21,7 @@ Description: Fast and small webserver meant to be run without root privileges
 Package: weborf-daemon
 Architecture: all
 Pre-Depends: ${misc:Pre-Depends}
-Depends: ${misc:Depends}, weborf (>=${binary:Version}),  lsb-base (>= 3.0-6)
+Depends: ${misc:Depends}, weborf (>=${binary:Version})
 Description: init script for weborf
  Weborf is a configurationless webserver mainly meant to allow users to
  easily share their directories over the web.
