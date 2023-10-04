@@ -1,3 +1,9 @@
+weborf (1.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Wed, 04 Oct 2023 18:58:10 +0200
+
 weborf (0.20-1) unstable; urgency=low
 
   * New upstream release

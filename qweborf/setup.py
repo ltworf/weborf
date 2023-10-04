@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    version='0.20',
+    version='1.0',
     name='qweborf',
     author="Salvo 'LtWorf' Tomaselli",
     author_email='tiposchi@tiscali.it',
