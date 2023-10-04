@@ -1,4 +1,4 @@
-weborf (0.20-1) UNRELEASED; urgency=medium
+weborf (0.20-1) unstable; urgency=low
 
   * New upstream release
   * Remove X-Python3-Version: >= 3.6 from control file
@@ -8,7 +8,7 @@ weborf (0.20-1) UNRELEASED; urgency=medium
   * Remove dependency on outdated lsb-base for weborf-daemon
   * Clean python egg to allow rebuild in place
 
- -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Sun, 16 Oct 2022 19:29:57 +0200
+ -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Wed, 04 Oct 2023 18:37:46 +0200
 
 weborf (0.19-2.1) unstable; urgency=medium
 
