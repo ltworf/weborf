@@ -1,5 +1,6 @@
 1.0
 - I declare weborf is now stable!
+- Fix a security bug where the path for CGI scripts was not null-terminated in certain configurations
 
 0.20
 - restyle qweborf to fit on a mobile screen
