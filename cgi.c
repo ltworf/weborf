@@ -233,8 +233,7 @@ static inline void cgi_execute_child(connection_t* connection_prop,string_t* pos
     environ = NULL; //Clear env vars
 
     if (strlen(executor) == 0) {
-        executor = malloc(connection_prop->strfile_len + 1);
-        strncpy(executor, connection_prop->strfile, connection_prop->strfile_len);
+        executor = connection_prop->strfile;
     }
 
     cgi_set_http_env_vars(connection_prop->http_param);
