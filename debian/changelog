@@ -1,6 +1,6 @@
 weborf (1.0-1) unstable; urgency=high
 
-  * New upstream release
+  * New upstream release, fixing CVE-2023-46586
 
  -- Salvo 'LtWorf' Tomaselli <tiposchi@tiscali.it>  Thu, 12 Oct 2023 00:12:44 +0200
 
