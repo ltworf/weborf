@@ -1,3 +1,9 @@
+PROJECT MOVED
+=============
+
+[This project moved here](https://codeberg.org/ltworf/weborf/)
+
+
 User friendly webserver
 
 qweborf
